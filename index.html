@@ -26,6 +26,9 @@
     .avatar{width:32px;height:32px;border-radius:50%;background:var(--biru);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.8rem;}
     .role-tag{background:var(--kuning);color:#0A2540;padding:3px 10px;border-radius:20px;font-size:0.6rem;font-weight:700;text-transform:uppercase;}
     .btn-logout{background:#EF4444;color:white;border:none;padding:6px 14px;border-radius:8px;font-size:0.7rem;cursor:pointer;font-weight:600;}
+    .btn-refresh{background:#10B981;color:white;border:none;padding:6px 10px;border-radius:8px;font-size:0.65rem;cursor:pointer;font-weight:600;margin-left:8px;animation: none;}
+    .btn-refresh.loading{animation: spin 1s linear infinite;}
+    @keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
     .menu-tabs{display:flex;overflow-x:auto;gap:4px;padding:8px 10px;background:white;border-bottom:1px solid var(--border);}
     .menu-tabs::-webkit-scrollbar{height:0;}
     .tab{flex:0 0 auto;padding:7px 14px;border-radius:20px;border:1px solid var(--border);background:white;font-size:0.7rem;font-weight:600;cursor:pointer;white-space:nowrap;transition:0.2s;color:#64748B;display:flex;align-items:center;gap:4px;}
@@ -33,7 +36,8 @@
     .tab.active{background:var(--biru);color:white;border-color:var(--biru);}
     .content-area{flex:1;padding:12px;overflow-y:auto;max-height:calc(100vh - 280px);}
     .card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);margin-bottom:10px;border:1px solid var(--border);}
-    .card-title{font-weight:700;font-size:0.9rem;margin-bottom:12px;color:var(--biru);display:flex;align-items:center;gap:6px;}
+    .card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+    .card-title{font-weight:700;font-size:0.9rem;color:var(--biru);display:flex;align-items:center;gap:6px;}
     .card-title i{color:var(--kuning);}
     .form-group{margin-bottom:8px;}
     .form-group label{display:block;font-size:0.7rem;font-weight:600;color:#475569;margin-bottom:3px;}
@@ -74,6 +78,11 @@
     .modal{background:white;border-radius:20px;padding:20px;max-width:400px;width:90%;max-height:85vh;overflow-y:auto;}
     .bank-info{background:#F0F9FF;border:1px solid #BAE6FD;border-radius:10px;padding:10px;margin:10px 0;font-size:0.7rem;}
     .section-title{font-size:0.7rem;font-weight:700;color:var(--biru);margin:12px 0 6px 0;padding-bottom:4px;border-bottom:2px solid var(--kuning);}
+    .sync-indicator{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;}
+    .sync-online{background:#10B981;}
+    .sync-offline{background:#EF4444;}
+    .sync-syncing{background:#F5B41B;animation:pulse 1s infinite;}
+    @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
   </style>
 </head>
 <body>
@@ -99,8 +108,23 @@
     <input type="file" id="logoFileInput" accept="image/*" style="display:none" onchange="uploadLogo(event)">
   </div>
   <div class="nav-bar">
-    <div class="user-info"><div class="avatar" id="userAvatar">A</div><div><div style="font-size:0.75rem;font-weight:600;" id="displayName">Admin</div><span class="role-tag" id="displayRole">ADMIN</span></div></div>
-    <button class="btn-logout" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i></button>
+    <div class="user-info">
+      <div class="avatar" id="userAvatar">A</div>
+      <div>
+        <div style="font-size:0.75rem;font-weight:600;" id="displayName">Admin</div>
+        <span class="role-tag" id="displayRole">ADMIN</span>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="font-size:0.6rem;display:flex;align-items:center;">
+        <span class="sync-indicator sync-offline" id="syncDot"></span>
+        <span id="syncStatus">Offline</span>
+      </span>
+      <button class="btn-refresh" onclick="refreshAllData()" title="Refresh data dari Google Sheets" id="btnRefreshAll">
+        <i class="fas fa-sync-alt"></i> Sync
+      </button>
+      <button class="btn-logout" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i></button>
+    </div>
   </div>
   <div class="menu-tabs" id="menuTabs"></div>
   <div class="content-area" id="contentArea"></div>
@@ -119,7 +143,7 @@ const USE_GOOGLE_SHEETS = true;
 // ============================================
 // STATE
 // ============================================
-let currentUser=null,currentPage='penjualan';
+let currentUser=null,currentPage='penjualan',isOnline=false,isSyncing=false;
 let products=[],pelanggan=[],cart=[],salesHistory=[],stockInHistory=[];
 let drivers=['Hendri','Asep','Budi','Joko'];
 let salesUsers=['Sales A','Sales B'];
@@ -128,12 +152,163 @@ let settings={namaToko:'Tirta Kencana',alamat:'WTC Mangga 2 Lt UG A/53',tagline:
 let allUsers=[{name:'Admin',role:'admin',password:'admin123'},{name:'Sales A',role:'sales',password:'sales123'},{name:'Sales B',role:'sales',password:'sales123'},{name:'Driver',role:'driver',password:'driver123'}];
 
 // ============================================
-// SYNC
+// GOOGLE SHEETS API (FETCH DATA)
 // ============================================
-async function syncToGoogleSheets(action,data){
-  if(!USE_GOOGLE_SHEETS||!GOOGLE_SHEETS_URL||GOOGLE_SHEETS_URL.includes('YOUR'))return false;
-  const url=GOOGLE_SHEETS_URL+'?action='+encodeURIComponent(action)+'&data='+encodeURIComponent(JSON.stringify(data));
-  try{await fetch(url,{method:'GET',mode:'no-cors'});console.log('✅ Synced:',action);return true;}catch(e){console.log('❌ Sync:',e.message);return false;}
+async function fetchFromGoogleSheets() {
+  if (!USE_GOOGLE_SHEETS || !GOOGLE_SHEETS_URL || GOOGLE_SHEETS_URL.includes('YOUR')) return null;
+  
+  try {
+    updateSyncStatus('syncing');
+    
+    // Fetch semua data dari Google Sheets
+    const response = await fetch(GOOGLE_SHEETS_URL + '?action=getAllData');
+    const result = await response.json();
+    
+    if (result.success && result.data) {
+      // Update local data dengan data dari Google Sheets
+      if (result.data.products) products = result.data.products;
+      if (result.data.pelanggan) pelanggan = result.data.pelanggan;
+      if (result.data.salesHistory) salesHistory = result.data.salesHistory;
+      if (result.data.stockInHistory) stockInHistory = result.data.stockInHistory;
+      if (result.data.drivers) drivers = result.data.drivers;
+      if (result.data.banks) banks = result.data.banks;
+      if (result.data.settings) settings = { ...settings, ...result.data.settings };
+      if (result.data.salesUsers) salesUsers = result.data.salesUsers;
+      if (result.data.allUsers) allUsers = result.data.allUsers;
+      
+      saveAllData();
+      updateSyncStatus('online');
+      return result.data;
+    }
+    
+    updateSyncStatus('online');
+    return null;
+  } catch(e) {
+    console.log('Fetch error:', e.message);
+    updateSyncStatus('offline');
+    return null;
+  }
+}
+
+async function syncToGoogleSheets(action, data) {
+  if (!USE_GOOGLE_SHEETS || !GOOGLE_SHEETS_URL || GOOGLE_SHEETS_URL.includes('YOUR')) return false;
+  
+  updateSyncStatus('syncing');
+  
+  const url = GOOGLE_SHEETS_URL + '?action=' + encodeURIComponent(action) + '&data=' + encodeURIComponent(JSON.stringify(data));
+  
+  try {
+    await fetch(url, { method: 'GET', mode: 'no-cors' });
+    console.log('✅ Synced:', action);
+    updateSyncStatus('online');
+    return true;
+  } catch(e) {
+    console.log('❌ Sync:', e.message);
+    updateSyncStatus('offline');
+    return false;
+  }
+}
+
+function updateSyncStatus(status) {
+  const dot = document.getElementById('syncDot');
+  const text = document.getElementById('syncStatus');
+  if (!dot || !text) return;
+  
+  dot.className = 'sync-indicator';
+  switch(status) {
+    case 'online':
+      dot.classList.add('sync-online');
+      text.textContent = 'Online';
+      isOnline = true;
+      break;
+    case 'offline':
+      dot.classList.add('sync-offline');
+      text.textContent = 'Offline';
+      isOnline = false;
+      break;
+    case 'syncing':
+      dot.classList.add('sync-syncing');
+      text.textContent = 'Syncing...';
+      isSyncing = true;
+      setTimeout(() => { if (isSyncing) updateSyncStatus('online'); isSyncing = false; }, 3000);
+      break;
+  }
+}
+
+// ============================================
+// REFRESH ALL DATA (TOMBOOL REFRESH)
+// ============================================
+async function refreshAllData() {
+  const btn = document.getElementById('btnRefreshAll');
+  if (btn) {
+    btn.classList.add('loading');
+    btn.disabled = true;
+  }
+  
+  Swal.fire({
+    title: '🔄 Refresh Data',
+    text: 'Menarik data dari Google Sheets...',
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading()
+  });
+  
+  const data = await fetchFromGoogleSheets();
+  
+  Swal.close();
+  
+  if (btn) {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+  
+  if (data) {
+    // Update tampilan header
+    if (settings.alamat) document.getElementById('headerAlamat').textContent = settings.alamat;
+    if (settings.logo) document.getElementById('logoImg').src = settings.logo;
+    
+    // Refresh halaman saat ini
+    renderContent();
+    
+    Swal.fire({
+      title: '✅ Sukses',
+      text: 'Data berhasil diperbarui dari Google Sheets!',
+      icon: 'success',
+      timer: 1500,
+      showConfirmButton: false
+    });
+  } else {
+    Swal.fire({
+      title: '⚠️ Perhatian',
+      text: 'Tidak dapat terhubung ke Google Sheets. Data lokal yang ditampilkan.',
+      icon: 'warning',
+      timer: 2000,
+      showConfirmButton: false
+    });
+  }
+}
+
+// Tombol refresh kecil di setiap card
+function renderRefreshButton(page) {
+  return `<button class="btn-refresh" onclick="refreshCurrentPage('${page}')" title="Refresh halaman ini" style="padding:4px 8px;font-size:0.6rem;">
+    <i class="fas fa-sync-alt"></i>
+  </button>`;
+}
+
+async function refreshCurrentPage(page) {
+  const btn = event?.target?.closest('.btn-refresh');
+  if (btn) { btn.classList.add('loading'); btn.disabled = true; }
+  
+  await fetchFromGoogleSheets();
+  navigateTo(page);
+  
+  if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
+  
+  Swal.fire({
+    title: '✅ Refreshed',
+    icon: 'success',
+    timer: 800,
+    showConfirmButton: false
+  });
 }
 
 // ============================================
@@ -148,109 +323,30 @@ function loadAllData(){const s=localStorage.getItem('tirtaFullData');if(s)try{co
 function doLogin(){const u=document.getElementById('loginUser').value.trim(),p=document.getElementById('loginPass').value.trim();if(!u||!p){document.getElementById('loginError').textContent='Isi username & password!';document.getElementById('loginError').style.display='block';return;}const found=allUsers.find(x=>x.name===u&&x.password===p);if(found){currentUser={name:found.name,role:found.role};localStorage.setItem('tirtaUser',JSON.stringify(currentUser));showMainApp();}else{document.getElementById('loginError').textContent='Username/password salah!';document.getElementById('loginError').style.display='block';}}
 document.addEventListener('keydown',function(e){if(e.key==='Enter'&&!document.getElementById('loginPage').classList.contains('hidden'))doLogin();});
 function doLogout(){localStorage.removeItem('tirtaUser');currentUser=null;cart=[];document.getElementById('loginPage').classList.remove('hidden');document.getElementById('mainApp').classList.add('hidden');}
-function showMainApp(){document.getElementById('loginPage').classList.add('hidden');document.getElementById('mainApp').classList.remove('hidden');document.getElementById('displayName').textContent=currentUser.name;document.getElementById('displayRole').textContent=currentUser.role.toUpperCase();document.getElementById('userAvatar').textContent=currentUser.name.charAt(0).toUpperCase();if(settings.alamat)document.getElementById('headerAlamat').textContent=settings.alamat;if(settings.logo)document.getElementById('logoImg').src=settings.logo;renderMenuTabs();navigateTo(currentUser.role==='driver'?'inputbarang':'penjualan');}
+async function showMainApp(){document.getElementById('loginPage').classList.add('hidden');document.getElementById('mainApp').classList.remove('hidden');document.getElementById('displayName').textContent=currentUser.name;document.getElementById('displayRole').textContent=currentUser.role.toUpperCase();document.getElementById('userAvatar').textContent=currentUser.name.charAt(0).toUpperCase();if(settings.alamat)document.getElementById('headerAlamat').textContent=settings.alamat;if(settings.logo)document.getElementById('logoImg').src=settings.logo;renderMenuTabs();navigateTo(currentUser.role==='driver'?'inputbarang':'penjualan');updateSyncStatus('syncing');await fetchFromGoogleSheets();}
 
 // ============================================
 // NAVIGATION (ROLE-BASED)
 // ============================================
 function renderMenuTabs(){
-  let h='';
-  const r=currentUser?.role;
-  
-  if(r==='admin'){
-    h=`<button class="tab ${currentPage==='penjualan'?'active':''}" onclick="navigateTo('penjualan')"><i class="fas fa-cash-register"></i> Jual</button>
-    <button class="tab ${currentPage==='rekap'?'active':''}" onclick="navigateTo('rekap')"><i class="fas fa-chart-bar"></i> Rekap Jual</button>
-    <button class="tab ${currentPage==='inputbarang'?'active':''}" onclick="navigateTo('inputbarang')"><i class="fas fa-boxes"></i> Input</button>
-    <button class="tab ${currentPage==='rekaptoko'?'active':''}" onclick="navigateTo('rekaptoko')"><i class="fas fa-warehouse"></i> Rekap Gudang</button>
-    <button class="tab ${currentPage==='produk'?'active':''}" onclick="navigateTo('produk')"><i class="fas fa-cubes"></i> Produk</button>
-    <button class="tab ${currentPage==='pelanggan'?'active':''}" onclick="navigateTo('pelanggan')"><i class="fas fa-address-book"></i> Pelanggan</button>
-    <button class="tab ${currentPage==='pengaturan'?'active':''}" onclick="navigateTo('pengaturan')"><i class="fas fa-cog"></i> Atur</button>`;
-  } else if(r==='sales'){
-    h=`<button class="tab ${currentPage==='penjualan'?'active':''}" onclick="navigateTo('penjualan')"><i class="fas fa-cash-register"></i> Jual</button>
-    <button class="tab ${currentPage==='rekap'?'active':''}" onclick="navigateTo('rekap')"><i class="fas fa-chart-bar"></i> Rekap Jual</button>`;
-  } else if(r==='driver'){
-    h=`<button class="tab ${currentPage==='inputbarang'?'active':''}" onclick="navigateTo('inputbarang')"><i class="fas fa-boxes"></i> Input Barang</button>
-    <button class="tab ${currentPage==='rekaptoko'?'active':''}" onclick="navigateTo('rekaptoko')"><i class="fas fa-warehouse"></i> Rekap Gudang</button>`;
-  }
-  
+  let h='';const r=currentUser?.role;
+  if(r==='admin'){h=`<button class="tab ${currentPage==='penjualan'?'active':''}" onclick="navigateTo('penjualan')"><i class="fas fa-cash-register"></i> Jual</button><button class="tab ${currentPage==='rekap'?'active':''}" onclick="navigateTo('rekap')"><i class="fas fa-chart-bar"></i> Rekap Jual</button><button class="tab ${currentPage==='inputbarang'?'active':''}" onclick="navigateTo('inputbarang')"><i class="fas fa-boxes"></i> Input</button><button class="tab ${currentPage==='rekaptoko'?'active':''}" onclick="navigateTo('rekaptoko')"><i class="fas fa-warehouse"></i> Rekap Gudang</button><button class="tab ${currentPage==='produk'?'active':''}" onclick="navigateTo('produk')"><i class="fas fa-cubes"></i> Produk</button><button class="tab ${currentPage==='pelanggan'?'active':''}" onclick="navigateTo('pelanggan')"><i class="fas fa-address-book"></i> Pelanggan</button><button class="tab ${currentPage==='pengaturan'?'active':''}" onclick="navigateTo('pengaturan')"><i class="fas fa-cog"></i> Atur</button>`;}
+  else if(r==='sales'){h=`<button class="tab ${currentPage==='penjualan'?'active':''}" onclick="navigateTo('penjualan')"><i class="fas fa-cash-register"></i> Jual</button><button class="tab ${currentPage==='rekap'?'active':''}" onclick="navigateTo('rekap')"><i class="fas fa-chart-bar"></i> Rekap Jual</button>`;}
+  else if(r==='driver'){h=`<button class="tab ${currentPage==='inputbarang'?'active':''}" onclick="navigateTo('inputbarang')"><i class="fas fa-boxes"></i> Input Barang</button><button class="tab ${currentPage==='rekaptoko'?'active':''}" onclick="navigateTo('rekaptoko')"><i class="fas fa-warehouse"></i> Rekap Gudang</button>`;}
   document.getElementById('menuTabs').innerHTML=h;
 }
-
 function navigateTo(p){currentPage=p;renderMenuTabs();renderContent();}
-
-function renderContent(){
-  const c=document.getElementById('contentArea');
-  switch(currentPage){
-    case 'penjualan':c.innerHTML=pagePenjualan();initPenjualan();break;
-    case 'rekap':loadRekapPenjualan(c);break;
-    case 'inputbarang':c.innerHTML=pageInputBarang();initInputBarang();break;
-    case 'rekaptoko':loadRekapStockIn(c);break;
-    case 'produk':c.innerHTML=pageProduk();break;
-    case 'pelanggan':c.innerHTML=pagePelanggan();break;
-    case 'pengaturan':c.innerHTML=pagePengaturan();break;
-  }
-}
+function renderContent(){const c=document.getElementById('contentArea');switch(currentPage){case'penjualan':c.innerHTML=pagePenjualan();initPenjualan();break;case'rekap':loadRekapPenjualan(c);break;case'inputbarang':c.innerHTML=pageInputBarang();initInputBarang();break;case'rekaptoko':loadRekapStockIn(c);break;case'produk':c.innerHTML=pageProduk();break;case'pelanggan':c.innerHTML=pagePelanggan();break;case'pengaturan':c.innerHTML=pagePengaturan();break;}}
 
 // ============================================
 // API CALL
 // ============================================
-function apiCall(action,data={}){
-  let result={success:true};
-  const syncActions=['createSale','updateSale','deleteSale','addStockIn','updateStockIn','addProduct','updateProduct','deleteProduct','updateSettings','addPelanggan','deletePelanggan','addDriver','deleteDriver','addBank','deleteBank','addSalesUser','deleteSalesUser','addUser','deleteUser'];
-  
-  switch(action){
-    case 'createSale':{
-      const id='INV-'+Date.now();let total=0,tq=0,td=0;
-      const items=data.items.map(i=>{const q=parseInt(i.qty)||0,h=parseFloat(i.harga)||0,dp=parseFloat(i.disc)||0;const dt=dp*q,sub=(q*h)-dt;total+=sub;tq+=q;td+=dt;return{...i,qty:q,harga:h,disc:dp,discTotal:dt,subtotal:sub};});
-      const ns={id,user:data.user,customer:data.customer,status:data.status,items,total,totalQty:tq,totalDisc:td,date:data.date||new Date().toISOString().split('T')[0],time:new Date().toLocaleTimeString('id-ID')};
-      salesHistory.unshift(ns);
-      data.items.forEach(i=>{const p=products.find(x=>x.sku===i.sku);if(p){p.stokKeluar=(p.stokKeluar||0)+(parseInt(i.qty)||0);p.stokAkhir=(p.stokAwal||0)+(p.stokMasuk||0)-p.stokKeluar;}});
-      if(!pelanggan.includes(data.customer))pelanggan.push(data.customer);
-      saveAllData();syncToGoogleSheets('createSale',ns);
-      result={success:true,data:{id,total}};break;
-    }
-    case 'addStockIn':{
-      const sid='STK-'+Date.now();const q=parseInt(data.qty)||0,m=parseFloat(data.hargaModal)||0;
-      const entry={id:sid,sku:data.sku,nama:data.nama||'',qty:q,hargaModal:m,totalModal:q*m,driver:data.driver||'',rit:data.rit||'',status:data.status||'kiriman',date:new Date().toISOString().split('T')[0]};
-      stockInHistory.unshift(entry);
-      const p=products.find(x=>x.sku===data.sku);if(p){p.stokMasuk=(p.stokMasuk||0)+q;p.stokAkhir=(p.stokAwal||0)+p.stokMasuk-p.stokKeluar;}
-      saveAllData();syncToGoogleSheets('addStockIn',entry);
-      result={success:true};break;
-    }
-    case 'updateStockIn':{
-      const si=stockInHistory.findIndex(x=>x.id===data.id);if(si===-1)return{success:false};
-      if(data.qty!==undefined){stockInHistory[si].qty=parseInt(data.qty);stockInHistory[si].totalModal=stockInHistory[si].qty*stockInHistory[si].hargaModal;}
-      if(data.status!==undefined)stockInHistory[si].status=data.status;
-      if(data.driver!==undefined)stockInHistory[si].driver=data.driver;
-      if(data.rit!==undefined)stockInHistory[si].rit=data.rit;
-      saveAllData();syncToGoogleSheets('updateStockIn',data);
-      result={success:true};break;
-    }
-    case 'addPelanggan':if(data.name&&!pelanggan.includes(data.name)){pelanggan.push(data.name);saveAllData();syncToGoogleSheets('addPelanggan',data);}result={success:true,data:pelanggan};break;
-    case 'deletePelanggan':pelanggan=pelanggan.filter(c=>c!==data.name);saveAllData();syncToGoogleSheets('deletePelanggan',data);result={success:true,data:pelanggan};break;
-    case 'addProduct':{if(!data.sku)return{success:false,message:'SKU wajib'};const st=parseInt(data.stokAwal)||0;products.push({sku:data.sku,nama:data.nama||'',modal:parseFloat(data.modal)||0,jual:parseFloat(data.jual)||0,stokAwal:st,stokMasuk:0,stokKeluar:0,stokAkhir:st});saveAllData();syncToGoogleSheets('addProduct',data);result={success:true};break;}
-    case 'updateProduct':{const pi=products.findIndex(x=>x.sku===data.sku);if(pi===-1)return{success:false};if(data.nama!==undefined)products[pi].nama=data.nama;if(data.modal!==undefined)products[pi].modal=parseFloat(data.modal);if(data.jual!==undefined)products[pi].jual=parseFloat(data.jual);saveAllData();syncToGoogleSheets('updateProduct',data);result={success:true};break;}
-    case 'deleteProduct':{products=products.filter(p=>p.sku!==data.sku);saveAllData();syncToGoogleSheets('deleteProduct',data);result={success:true};break;}
-    case 'updateSale':{const si=salesHistory.findIndex(x=>x.id===data.id);if(si===-1)return{success:false};if(data.status)salesHistory[si].status=data.status;if(data.items){let nt=0,nq=0,nd=0;const ni=data.items.map(i=>{const q=parseInt(i.qty)||0,h=parseFloat(i.harga)||0,dp=parseFloat(i.disc)||0;const dt=dp*q,sub=(q*h)-dt;nt+=sub;nq+=q;nd+=dt;return{...i,qty:q,harga:h,disc:dp,discTotal:dt,subtotal:sub};});salesHistory[si].items=ni;salesHistory[si].total=nt;salesHistory[si].totalQty=nq;salesHistory[si].totalDisc=nd;}saveAllData();syncToGoogleSheets('updateSale',data);result={success:true};break;}
-    case 'deleteSale':salesHistory=salesHistory.filter(x=>x.id!==data.id);saveAllData();syncToGoogleSheets('deleteSale',data);result={success:true};break;
-    case 'updateSettings':settings={...settings,...data};saveAllData();syncToGoogleSheets('updateSettings',data);result={success:true};break;
-    case 'addDriver':if(!drivers.includes(data.name)){drivers.push(data.name);saveAllData();syncToGoogleSheets('addDriver',data);}result={success:true,data:drivers};break;
-    case 'deleteDriver':drivers=drivers.filter(d=>d!==data.name);saveAllData();syncToGoogleSheets('deleteDriver',data);result={success:true,data:drivers};break;
-    case 'addBank':banks.push({name:data.name,number:data.number,holder:data.holder||'',logo:data.logo||'🏦'});saveAllData();syncToGoogleSheets('addBank',data);result={success:true};break;
-    case 'deleteBank':banks=banks.filter(b=>b.name!==data.name);saveAllData();syncToGoogleSheets('deleteBank',data);result={success:true};break;
-    case 'addSalesUser':if(!salesUsers.includes(data.name)){salesUsers.push(data.name);saveAllData();syncToGoogleSheets('addSalesUser',data);}result={success:true,data:salesUsers};break;
-    case 'deleteSalesUser':salesUsers=salesUsers.filter(x=>x!==data.name);saveAllData();syncToGoogleSheets('deleteSalesUser',data);result={success:true,data:salesUsers};break;
-    case 'addUser':if(!allUsers.find(u=>u.name===data.name)){allUsers.push({name:data.name,role:data.role,password:data.password||'123456'});if(data.role==='sales'&&!salesUsers.includes(data.name))salesUsers.push(data.name);saveAllData();syncToGoogleSheets('addUser',data);}result={success:true};break;
-    case 'deleteUser':allUsers=allUsers.filter(u=>u.name!==data.name);salesUsers=salesUsers.filter(x=>x!==data.name);saveAllData();syncToGoogleSheets('deleteUser',data);result={success:true};break;
-    default:result={success:true,data:[]};
-  }
-  return result;
-}
+function apiCall(action,data={}){let result={success:true};switch(action){case'createSale':{const id='INV-'+Date.now();let total=0,tq=0,td=0;const items=data.items.map(i=>{const q=parseInt(i.qty)||0,h=parseFloat(i.harga)||0,dp=parseFloat(i.disc)||0;const dt=dp*q,sub=(q*h)-dt;total+=sub;tq+=q;td+=dt;return{...i,qty:q,harga:h,disc:dp,discTotal:dt,subtotal:sub};});const ns={id,user:data.user,customer:data.customer,status:data.status,items,total,totalQty:tq,totalDisc:td,date:data.date||new Date().toISOString().split('T')[0],time:new Date().toLocaleTimeString('id-ID')};salesHistory.unshift(ns);data.items.forEach(i=>{const p=products.find(x=>x.sku===i.sku);if(p){p.stokKeluar=(p.stokKeluar||0)+(parseInt(i.qty)||0);p.stokAkhir=(p.stokAwal||0)+(p.stokMasuk||0)-p.stokKeluar;}});if(!pelanggan.includes(data.customer))pelanggan.push(data.customer);saveAllData();syncToGoogleSheets('createSale',ns);result={success:true,data:{id,total}};break;}case'addStockIn':{const sid='STK-'+Date.now();const q=parseInt(data.qty)||0,m=parseFloat(data.hargaModal)||0;const entry={id:sid,sku:data.sku,nama:data.nama||'',qty:q,hargaModal:m,totalModal:q*m,driver:data.driver||'',rit:data.rit||'',status:data.status||'kiriman',date:new Date().toISOString().split('T')[0]};stockInHistory.unshift(entry);const p=products.find(x=>x.sku===data.sku);if(p){p.stokMasuk=(p.stokMasuk||0)+q;p.stokAkhir=(p.stokAwal||0)+p.stokMasuk-p.stokKeluar;}saveAllData();syncToGoogleSheets('addStockIn',entry);result={success:true};break;}case'updateStockIn':{const si=stockInHistory.findIndex(x=>x.id===data.id);if(si===-1)return{success:false};if(data.qty!==undefined){stockInHistory[si].qty=parseInt(data.qty);stockInHistory[si].totalModal=stockInHistory[si].qty*stockInHistory[si].hargaModal;}if(data.status!==undefined)stockInHistory[si].status=data.status;if(data.driver!==undefined)stockInHistory[si].driver=data.driver;if(data.rit!==undefined)stockInHistory[si].rit=data.rit;saveAllData();syncToGoogleSheets('updateStockIn',data);result={success:true};break;}case'addPelanggan':if(data.name&&!pelanggan.includes(data.name)){pelanggan.push(data.name);saveAllData();syncToGoogleSheets('addPelanggan',data);}result={success:true,data:pelanggan};break;case'deletePelanggan':pelanggan=pelanggan.filter(c=>c!==data.name);saveAllData();syncToGoogleSheets('deletePelanggan',data);result={success:true,data:pelanggan};break;case'addProduct':{if(!data.sku)return{success:false,message:'SKU wajib'};const st=parseInt(data.stokAwal)||0;products.push({sku:data.sku,nama:data.nama||'',modal:parseFloat(data.modal)||0,jual:parseFloat(data.jual)||0,stokAwal:st,stokMasuk:0,stokKeluar:0,stokAkhir:st});saveAllData();syncToGoogleSheets('addProduct',data);result={success:true};break;}case'updateProduct':{const pi=products.findIndex(x=>x.sku===data.sku);if(pi===-1)return{success:false};if(data.nama!==undefined)products[pi].nama=data.nama;if(data.modal!==undefined)products[pi].modal=parseFloat(data.modal);if(data.jual!==undefined)products[pi].jual=parseFloat(data.jual);saveAllData();syncToGoogleSheets('updateProduct',data);result={success:true};break;}case'deleteProduct':{products=products.filter(p=>p.sku!==data.sku);saveAllData();syncToGoogleSheets('deleteProduct',data);result={success:true};break;}case'updateSale':{const si=salesHistory.findIndex(x=>x.id===data.id);if(si===-1)return{success:false};if(data.status)salesHistory[si].status=data.status;if(data.items){let nt=0,nq=0,nd=0;const ni=data.items.map(i=>{const q=parseInt(i.qty)||0,h=parseFloat(i.harga)||0,dp=parseFloat(i.disc)||0;const dt=dp*q,sub=(q*h)-dt;nt+=sub;nq+=q;nd+=dt;return{...i,qty:q,harga:h,disc:dp,discTotal:dt,subtotal:sub};});salesHistory[si].items=ni;salesHistory[si].total=nt;salesHistory[si].totalQty=nq;salesHistory[si].totalDisc=nd;}saveAllData();syncToGoogleSheets('updateSale',data);result={success:true};break;}case'deleteSale':salesHistory=salesHistory.filter(x=>x.id!==data.id);saveAllData();syncToGoogleSheets('deleteSale',data);result={success:true};break;case'updateSettings':settings={...settings,...data};saveAllData();syncToGoogleSheets('updateSettings',data);result={success:true};break;case'addDriver':if(!drivers.includes(data.name)){drivers.push(data.name);saveAllData();syncToGoogleSheets('addDriver',data);}result={success:true,data:drivers};break;case'deleteDriver':drivers=drivers.filter(d=>d!==data.name);saveAllData();syncToGoogleSheets('deleteDriver',data);result={success:true,data:drivers};break;case'addBank':banks.push({name:data.name,number:data.number,holder:data.holder||'',logo:data.logo||'🏦'});saveAllData();syncToGoogleSheets('addBank',data);result={success:true};break;case'deleteBank':banks=banks.filter(b=>b.name!==data.name);saveAllData();syncToGoogleSheets('deleteBank',data);result={success:true};break;case'addSalesUser':if(!salesUsers.includes(data.name)){salesUsers.push(data.name);saveAllData();syncToGoogleSheets('addSalesUser',data);}result={success:true,data:salesUsers};break;case'deleteSalesUser':salesUsers=salesUsers.filter(x=>x!==data.name);saveAllData();syncToGoogleSheets('deleteSalesUser',data);result={success:true,data:salesUsers};break;case'addUser':if(!allUsers.find(u=>u.name===data.name)){allUsers.push({name:data.name,role:data.role,password:data.password||'123456'});if(data.role==='sales'&&!salesUsers.includes(data.name))salesUsers.push(data.name);saveAllData();syncToGoogleSheets('addUser',data);}result={success:true};break;case'deleteUser':allUsers=allUsers.filter(u=>u.name!==data.name);salesUsers=salesUsers.filter(x=>x!==data.name);saveAllData();syncToGoogleSheets('deleteUser',data);result={success:true};break;default:result={success:true,data:[]};}return result;}
 
 // ============================================
 // PENJUALAN
 // ============================================
-function pagePenjualan(){let co='<option value="">-- Pilih Pelanggan --</option><option value="__new__">+ Tambah Baru</option>';pelanggan.forEach(c=>{co+=`<option value="${c}">${c}</option>`;});return`<div class="card"><div class="card-title"><i class="fas fa-user-check"></i> Data Penjualan</div><div class="form-group"><label>Sales</label><input value="${currentUser?.name||''}" readonly style="background:#E6F0FA;font-weight:600;"></div><div class="form-group"><label>Pelanggan</label><select id="custSelect" onchange="onPelangganSelect()">${co}</select><input id="custNewInput" placeholder="Nama Pelanggan Baru" style="margin-top:4px;display:none;"></div><div class="form-group"><label>Status</label><select id="payStatus" onchange="onStatusChange()"><option value="cod">COD</option><option value="transfer">Transfer</option><option value="qris">QRIS</option><option value="belumbayar">Belum Bayar</option></select></div><div id="bankInfoBox" style="display:none;" class="bank-info"></div></div><div class="card"><div class="card-title"><i class="fas fa-shopping-cart"></i> Item (Diskon × QTY)</div><div id="cartItems"></div><button class="btn btn-outline btn-sm" onclick="addCartItem()"><i class="fas fa-plus"></i> Tambah</button><div class="total-box"><div style="font-size:0.7rem;">Subtotal: Rp <span id="cartSubtotal">0</span></div><div style="font-size:0.7rem;color:#EF4444;">Diskon: -Rp <span id="cartDisc">0</span></div><div style="font-size:1.1rem;font-weight:800;">Total: Rp <span id="cartTotal">0</span></div></div><button class="btn btn-primary btn-block" onclick="saveSale()"><i class="fas fa-save"></i> Simpan</button></div>`;}
+function pagePenjualan(){let co='<option value="">-- Pilih Pelanggan --</option><option value="__new__">+ Tambah Baru</option>';pelanggan.forEach(c=>{co+=`<option value="${c}">${c}</option>`;});return`<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-user-check"></i> Data Penjualan</div>${renderRefreshButton('penjualan')}</div><div class="form-group"><label>Sales</label><input value="${currentUser?.name||''}" readonly style="background:#E6F0FA;font-weight:600;"></div><div class="form-group"><label>Pelanggan</label><select id="custSelect" onchange="onPelangganSelect()">${co}</select><input id="custNewInput" placeholder="Nama Pelanggan Baru" style="margin-top:4px;display:none;"></div><div class="form-group"><label>Status</label><select id="payStatus" onchange="onStatusChange()"><option value="cod">COD</option><option value="transfer">Transfer</option><option value="qris">QRIS</option><option value="belumbayar">Belum Bayar</option></select></div><div id="bankInfoBox" style="display:none;" class="bank-info"></div></div><div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-shopping-cart"></i> Item (Diskon × QTY)</div></div><div id="cartItems"></div><button class="btn btn-outline btn-sm" onclick="addCartItem()"><i class="fas fa-plus"></i> Tambah</button><div class="total-box"><div style="font-size:0.7rem;">Subtotal: Rp <span id="cartSubtotal">0</span></div><div style="font-size:0.7rem;color:#EF4444;">Diskon: -Rp <span id="cartDisc">0</span></div><div style="font-size:1.1rem;font-weight:800;">Total: Rp <span id="cartTotal">0</span></div></div><button class="btn btn-primary btn-block" onclick="saveSale()"><i class="fas fa-save"></i> Simpan</button></div>`;}
 function initPenjualan(){if(cart.length===0)cart.push({sku:'',qty:1,disc:0});renderCart();onStatusChange();}
 function onPelangganSelect(){const s=document.getElementById('custSelect'),n=document.getElementById('custNewInput');if(s.value==='__new__'){n.style.display='block';n.focus();}else{n.style.display='none';n.value='';}}
 function onStatusChange(){const st=document.getElementById('payStatus')?.value,box=document.getElementById('bankInfoBox');if(st==='transfer'){let h='<strong>🏦 Transfer:</strong><br>';banks.forEach(b=>{h+=`• ${b.logo} <b>${b.name}</b> | ${b.number} | ${b.holder}<br>`;});box.innerHTML=h;box.style.display='block';}else if(st==='qris'&&settings.qris){box.innerHTML=`<strong>📱 QRIS</strong><br><img src="${settings.qris}" style="width:100px;">`;box.style.display='block';}else{box.style.display='none';}}
@@ -273,30 +369,29 @@ function kirimWA(){const el=document.getElementById('strukPrintArea');if(!el)ret
 // ============================================
 // REKAP PENJUALAN
 // ============================================
-async function loadRekapPenjualan(container){let h='<div class="card"><div class="card-title"><i class="fas fa-chart-bar"></i> 📊 Rekap Penjualan</div>';if(salesHistory.length>0){const tt=salesHistory.length,tp=salesHistory.reduce((s,x)=>s+(x.total||0),0),tq=salesHistory.reduce((s,x)=>s+(x.totalQty||0),0),td=salesHistory.reduce((s,x)=>s+(x.totalDisc||0),0);h+=`<div class="flex-row mb-2"><div class="summary-box" style="background:#E6F0FA;"><small>Transaksi</small><br><b>${tt}</b></div><div class="summary-box" style="background:#FFF8E1;"><small>Pendapatan</small><br><b>Rp${tp.toLocaleString()}</b></div><div class="summary-box" style="background:#D1FAE5;"><small>QTY</small><br><b>${tq}</b></div><div class="summary-box" style="background:#FEE2E2;"><small>Diskon</small><br><b>Rp${td.toLocaleString()}</b></div></div>`;const ps={};salesHistory.forEach(s=>{const st=s.status||'cod';if(!ps[st])ps[st]={status:st,jumlah:0,total:0,totalQty:0,customers:{},skus:{}};ps[st].jumlah++;ps[st].total+=s.total||0;ps[st].totalQty+=s.totalQty||0;if(!ps[st].customers[s.customer])ps[st].customers[s.customer]={customer:s.customer,jumlah:0,total:0,qty:0};ps[st].customers[s.customer].jumlah++;ps[st].customers[s.customer].total+=s.total||0;ps[st].customers[s.customer].qty+=s.totalQty||0;if(s.items)s.items.forEach(i=>{const sk=i.sku||'?';if(!ps[st].skus[sk])ps[st].skus[sk]={sku:sk,nama:i.nama||'',jumlah:0,totalQty:0,total:0};ps[st].skus[sk].jumlah++;ps[st].skus[sk].totalQty+=i.qty||0;ps[st].skus[sk].total+=((i.qty||0)*(i.harga||0))-((i.disc||0)*(i.qty||0));});});h+='<h4 style="font-size:0.75rem;margin-top:12px;">💳 Per Status (Customer & SKU)</h4>';Object.values(ps).forEach(st=>{h+=`<div class="detail-group"><h5><span class="status-badge status-${st.status}">${st.status.toUpperCase()}</span> | ${st.jumlah} Transaksi | QTY:${st.totalQty} | Rp${st.total.toLocaleString()}</h5><p style="font-size:0.6rem;"><b>👤 Customer:</b></p><table style="margin-bottom:4px;"><tr><th>Customer</th><th>Jml</th><th>QTY</th><th>Total</th></tr>`;Object.values(st.customers).sort((a,b)=>b.total-a.total).forEach(c=>{h+=`<tr><td>${c.customer}</td><td>${c.jumlah}</td><td>${c.qty}</td><td>Rp${c.total.toLocaleString()}</td></tr>`;});h+=`</table><p style="font-size:0.6rem;"><b>📦 SKU:</b></p><table><tr><th>SKU</th><th>Nama</th><th>Jml</th><th>QTY</th><th>Total</th></tr>`;Object.values(st.skus).sort((a,b)=>b.totalQty-a.totalQty).forEach(sk=>{h+=`<tr><td>${sk.sku}</td><td>${sk.nama}</td><td>${sk.jumlah}</td><td>${sk.totalQty}</td><td>Rp${sk.total.toLocaleString()}</td></tr>`;});h+=`</table></div>`;});h+='<h4 style="font-size:0.75rem;">📋 Detail</h4><table><tr><th>ID</th><th>Tgl</th><th>Pelanggan</th><th>Status</th><th>QTY</th><th>Total</th><th>Aksi</th></tr>';salesHistory.slice(0,30).forEach(s=>{h+=`<tr><td style="font-size:0.55rem;">${s.id}</td><td>${s.date}</td><td>${s.customer}</td><td>${currentUser?.role==='admin'?`<select onchange="editSaleStatus('${s.id}',this.value)" class="status-badge status-${s.status}" style="font-size:0.55rem;"><option value="cod" ${s.status==='cod'?'selected':''}>COD</option><option value="transfer" ${s.status==='transfer'?'selected':''}>Transfer</option><option value="qris" ${s.status==='qris'?'selected':''}>QRIS</option><option value="belumbayar" ${s.status==='belumbayar'?'selected':''}>Belum Bayar</option></select>`:`<span class="status-badge status-${s.status}">${s.status}</span>`}</td><td>${s.totalQty||0}</td><td>Rp${(s.total||0).toLocaleString()}</td><td><button class="btn btn-warning btn-sm" onclick="cetakUlangStruk('${s.id}')" style="padding:2px 4px;">📄</button></td></tr>`;});h+='</table>';}else h+='<p class="text-center">Belum ada data</p>';h+='</div>';container.innerHTML=h;}
+async function loadRekapPenjualan(container){let h=`<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-chart-bar"></i> 📊 Rekap Penjualan</div>${renderRefreshButton('rekap')}</div>`;if(salesHistory.length>0){const tt=salesHistory.length,tp=salesHistory.reduce((s,x)=>s+(x.total||0),0),tq=salesHistory.reduce((s,x)=>s+(x.totalQty||0),0),td=salesHistory.reduce((s,x)=>s+(x.totalDisc||0),0);h+=`<div class="flex-row mb-2"><div class="summary-box" style="background:#E6F0FA;"><small>Transaksi</small><br><b>${tt}</b></div><div class="summary-box" style="background:#FFF8E1;"><small>Pendapatan</small><br><b>Rp${tp.toLocaleString()}</b></div><div class="summary-box" style="background:#D1FAE5;"><small>QTY</small><br><b>${tq}</b></div><div class="summary-box" style="background:#FEE2E2;"><small>Diskon</small><br><b>Rp${td.toLocaleString()}</b></div></div>`;const ps={};salesHistory.forEach(s=>{const st=s.status||'cod';if(!ps[st])ps[st]={status:st,jumlah:0,total:0,totalQty:0,customers:{},skus:{}};ps[st].jumlah++;ps[st].total+=s.total||0;ps[st].totalQty+=s.totalQty||0;if(!ps[st].customers[s.customer])ps[st].customers[s.customer]={customer:s.customer,jumlah:0,total:0,qty:0};ps[st].customers[s.customer].jumlah++;ps[st].customers[s.customer].total+=s.total||0;ps[st].customers[s.customer].qty+=s.totalQty||0;if(s.items)s.items.forEach(i=>{const sk=i.sku||'?';if(!ps[st].skus[sk])ps[st].skus[sk]={sku:sk,nama:i.nama||'',jumlah:0,totalQty:0,total:0};ps[st].skus[sk].jumlah++;ps[st].skus[sk].totalQty+=i.qty||0;ps[st].skus[sk].total+=((i.qty||0)*(i.harga||0))-((i.disc||0)*(i.qty||0));});});h+='<h4 style="font-size:0.75rem;margin-top:12px;">💳 Per Status (Customer & SKU)</h4>';Object.values(ps).forEach(st=>{h+=`<div class="detail-group"><h5><span class="status-badge status-${st.status}">${st.status.toUpperCase()}</span> | ${st.jumlah} Transaksi | QTY:${st.totalQty} | Rp${st.total.toLocaleString()}</h5><p style="font-size:0.6rem;"><b>👤 Customer:</b></p><table style="margin-bottom:4px;"><tr><th>Customer</th><th>Jml</th><th>QTY</th><th>Total</th></tr>`;Object.values(st.customers).sort((a,b)=>b.total-a.total).forEach(c=>{h+=`<tr><td>${c.customer}</td><td>${c.jumlah}</td><td>${c.qty}</td><td>Rp${c.total.toLocaleString()}</td></tr>`;});h+=`</table><p style="font-size:0.6rem;"><b>📦 SKU:</b></p><table><tr><th>SKU</th><th>Nama</th><th>Jml</th><th>QTY</th><th>Total</th></tr>`;Object.values(st.skus).sort((a,b)=>b.totalQty-a.totalQty).forEach(sk=>{h+=`<tr><td>${sk.sku}</td><td>${sk.nama}</td><td>${sk.jumlah}</td><td>${sk.totalQty}</td><td>Rp${sk.total.toLocaleString()}</td></tr>`;});h+=`</table></div>`;});h+='<h4 style="font-size:0.75rem;">📋 Detail</h4><table><tr><th>ID</th><th>Tgl</th><th>Pelanggan</th><th>Status</th><th>QTY</th><th>Total</th><th>Aksi</th></tr>';salesHistory.slice(0,30).forEach(s=>{h+=`<tr><td style="font-size:0.55rem;">${s.id}</td><td>${s.date}</td><td>${s.customer}</td><td>${currentUser?.role==='admin'?`<select onchange="editSaleStatus('${s.id}',this.value)" class="status-badge status-${s.status}" style="font-size:0.55rem;"><option value="cod" ${s.status==='cod'?'selected':''}>COD</option><option value="transfer" ${s.status==='transfer'?'selected':''}>Transfer</option><option value="qris" ${s.status==='qris'?'selected':''}>QRIS</option><option value="belumbayar" ${s.status==='belumbayar'?'selected':''}>Belum Bayar</option></select>`:`<span class="status-badge status-${s.status}">${s.status}</span>`}</td><td>${s.totalQty||0}</td><td>Rp${(s.total||0).toLocaleString()}</td><td><button class="btn btn-warning btn-sm" onclick="cetakUlangStruk('${s.id}')" style="padding:2px 4px;">📄</button></td></tr>`;});h+='</table>';}else h+='<p class="text-center">Belum ada data</p>';h+='</div>';container.innerHTML=h;}
 function cetakUlangStruk(id){const s=salesHistory.find(x=>x.id===id);if(!s)return;showStruk(s);Swal.fire({title:'Cetak Ulang',showDenyButton:true,showCancelButton:true,confirmButtonText:'🖨️',denyButtonText:'📥',cancelButtonText:'💬'}).then(r=>{if(r.isConfirmed)cetakBluetooth();else if(r.isDenied)downloadStrukPNG();else if(r.dismiss===Swal.DismissReason.cancel)kirimWA();});}
 async function editSaleStatus(id,st){await apiCall('updateSale',{id,status:st});Swal.fire({title:'Sukses',icon:'success',timer:800,showConfirmButton:false});navigateTo('rekap');}
 
 // ============================================
 // INPUT BARANG
 // ============================================
-function pageInputBarang(){let po='<option value="">Pilih</option>';products.forEach(p=>{po+=`<option value="${p.sku}">${p.sku}-${p.nama}</option>`;});let dO='<option value="">-</option>';drivers.forEach(d=>{dO+=`<option>${d}</option>`;});return`<div class="card"><div class="card-title"><i class="fas fa-boxes"></i> Input Barang</div><div class="form-group"><label>Produk</label><select id="stkSku">${po}</select></div><div class="flex-row"><div class="form-group col-1"><label>Qty</label><input type="number" id="stkQty" value="1" min="1"></div><div class="form-group col-1"><label>Modal</label><input type="number" id="stkModal" value="0"></div></div><div class="flex-row"><div class="form-group col-1"><label>Driver</label><select id="stkDriver">${dO}</select></div><div class="form-group col-1"><label>Rit</label><input id="stkRit" placeholder="Rit"></div></div><div class="form-group"><label>Status</label><select id="stkStatus"><option value="kiriman">Kiriman</option><option value="titipan">Titipan</option></select></div><button class="btn btn-primary btn-block" onclick="saveStockIn()">Simpan</button></div><div class="card"><div class="card-title"><i class="fas fa-history"></i> Riwayat</div><div id="stkHistory"></div></div>`;}
+function pageInputBarang(){let po='<option value="">Pilih</option>';products.forEach(p=>{po+=`<option value="${p.sku}">${p.sku}-${p.nama}</option>`;});let dO='<option value="">-</option>';drivers.forEach(d=>{dO+=`<option>${d}</option>`;});return`<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-boxes"></i> Input Barang</div>${renderRefreshButton('inputbarang')}</div><div class="form-group"><label>Produk</label><select id="stkSku">${po}</select></div><div class="flex-row"><div class="form-group col-1"><label>Qty</label><input type="number" id="stkQty" value="1" min="1"></div><div class="form-group col-1"><label>Modal</label><input type="number" id="stkModal" value="0"></div></div><div class="flex-row"><div class="form-group col-1"><label>Driver</label><select id="stkDriver">${dO}</select></div><div class="form-group col-1"><label>Rit</label><input id="stkRit" placeholder="Rit"></div></div><div class="form-group"><label>Status</label><select id="stkStatus"><option value="kiriman">Kiriman</option><option value="titipan">Titipan</option></select></div><button class="btn btn-primary btn-block" onclick="saveStockIn()">Simpan</button></div><div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-history"></i> Riwayat</div></div><div id="stkHistory"></div></div>`;}
 function initInputBarang(){loadStockHistory();}
 async function saveStockIn(){const sku=document.getElementById('stkSku')?.value,qty=document.getElementById('stkQty')?.value;if(!sku||!qty)return Swal.fire('Error','Lengkapi','error');const p=products.find(x=>x.sku===sku);await apiCall('addStockIn',{sku,nama:p?.nama||'',qty:parseInt(qty),hargaModal:parseFloat(document.getElementById('stkModal')?.value)||0,driver:document.getElementById('stkDriver')?.value,rit:document.getElementById('stkRit')?.value,status:document.getElementById('stkStatus')?.value});Swal.fire('Sukses','Barang masuk dicatat','success');loadStockHistory();}
 async function loadStockHistory(){const el=document.getElementById('stkHistory');if(stockInHistory.length>0){let h='<table><tr><th>ID</th><th>SKU</th><th>Qty</th><th>Driver</th><th>Rit</th><th>Status</th><th>Tgl</th></tr>';stockInHistory.slice(0,20).forEach(s=>{h+=`<tr><td style="font-size:0.55rem;">${s.id}</td><td>${s.sku}</td><td>${s.qty}</td><td>${s.driver||'-'}</td><td>${s.rit||'-'}</td><td><span class="status-badge status-${s.status}">${s.status}</span></td><td>${s.date}</td></tr>`;});h+='</table>';el.innerHTML=h;}else el.innerHTML='<p class="text-sm text-center">Belum ada data</p>';}
 
 // ============================================
-// REKAP GUDANG (QTY & STATUS EDITABLE)
+// REKAP GUDANG (QTY & STATUS EDITABLE + REFRESH)
 // ============================================
-async function loadRekapStockIn(container){let h='<div class="card"><div class="card-title"><i class="fas fa-warehouse"></i> 📊 Rekap Gudang</div>';if(stockInHistory.length>0){const tq=stockInHistory.reduce((s,i)=>s+(i.qty||0),0),tm=stockInHistory.reduce((s,i)=>s+((i.qty||0)*(i.hargaModal||0)),0);h+=`<div class="flex-row mb-2"><div class="summary-box" style="background:#E6F0FA;"><small>Entry</small><br><b>${stockInHistory.length}</b></div><div class="summary-box" style="background:#D1FAE5;"><small>QTY</small><br><b>${tq}</b></div><div class="summary-box" style="background:#FFF8E1;"><small>Modal</small><br><b>Rp${tm.toLocaleString()}</b></div></div>`;const pd={};stockInHistory.forEach(s=>{const d=s.driver||'Tanpa';if(!pd[d])pd[d]={driver:d,jumlah:0,totalQty:0,rits:{},skus:{}};pd[d].jumlah++;pd[d].totalQty+=s.qty||0;const r=s.rit||'-';if(!pd[d].rits[r])pd[d].rits[r]={rit:r,jumlah:0,qty:0};pd[d].rits[r].jumlah++;pd[d].rits[r].qty+=s.qty||0;const sk=s.sku||'?';if(!pd[d].skus[sk])pd[d].skus[sk]={sku:sk,nama:s.nama||'',jumlah:0,qty:0};pd[d].skus[sk].jumlah++;pd[d].skus[sk].qty+=s.qty||0;});h+='<h4 style="font-size:0.75rem;">🚚 Per Driver</h4>';Object.values(pd).forEach(d=>{h+=`<div class="detail-group"><h5>${d.driver} | Entry:${d.jumlah} | QTY:${d.totalQty}</h5><p style="font-size:0.6rem;">Rit: ${Object.values(d.rits).map(r=>`${r.rit}(${r.jumlah}x,${r.qty}qty)`).join(' | ')}</p><p style="font-size:0.6rem;">SKU: ${Object.values(d.skus).map(sk=>`${sk.sku}(${sk.jumlah}x,${sk.qty}qty)`).join(' | ')}</p></div>`;});h+='<h4 style="font-size:0.75rem;">📋 Detail (Edit QTY & Status)</h4><table><tr><th>ID</th><th>SKU</th><th>Qty</th><th>Driver</th><th>Rit</th><th>Status</th><th>Tgl</th></tr>';stockInHistory.slice(0,30).forEach(s=>{h+=`<tr><td style="font-size:0.55rem;">${s.id}</td><td>${s.sku}</td><td><span style="cursor:pointer;background:#FEF3C7;padding:2px 6px;border-radius:6px;" onclick="editStockQty('${s.id}')" title="Klik edit QTY">${s.qty} ✎</span></td><td>${s.driver||'-'}</td><td>${s.rit||'-'}</td><td><select onchange="editStockStatus('${s.id}',this.value)" class="status-badge status-${s.status}" style="font-size:0.55rem;padding:2px;"><option value="kiriman" ${s.status==='kiriman'?'selected':''}>Kiriman</option><option value="titipan" ${s.status==='titipan'?'selected':''}>Titipan</option></select></td><td>${s.date}</td></tr>`;});h+='</table>';}else h+='<p class="text-center">Belum ada data</p>';h+='</div>';container.innerHTML=h;}
-
+async function loadRekapStockIn(container){let h=`<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-warehouse"></i> 📊 Rekap Gudang</div>${renderRefreshButton('rekaptoko')}</div>`;if(stockInHistory.length>0){const tq=stockInHistory.reduce((s,i)=>s+(i.qty||0),0),tm=stockInHistory.reduce((s,i)=>s+((i.qty||0)*(i.hargaModal||0)),0);h+=`<div class="flex-row mb-2"><div class="summary-box" style="background:#E6F0FA;"><small>Entry</small><br><b>${stockInHistory.length}</b></div><div class="summary-box" style="background:#D1FAE5;"><small>QTY</small><br><b>${tq}</b></div><div class="summary-box" style="background:#FFF8E1;"><small>Modal</small><br><b>Rp${tm.toLocaleString()}</b></div></div>`;const pd={};stockInHistory.forEach(s=>{const d=s.driver||'Tanpa';if(!pd[d])pd[d]={driver:d,jumlah:0,totalQty:0,rits:{},skus:{}};pd[d].jumlah++;pd[d].totalQty+=s.qty||0;const r=s.rit||'-';if(!pd[d].rits[r])pd[d].rits[r]={rit:r,jumlah:0,qty:0};pd[d].rits[r].jumlah++;pd[d].rits[r].qty+=s.qty||0;const sk=s.sku||'?';if(!pd[d].skus[sk])pd[d].skus[sk]={sku:sk,nama:s.nama||'',jumlah:0,qty:0};pd[d].skus[sk].jumlah++;pd[d].skus[sk].qty+=s.qty||0;});h+='<h4 style="font-size:0.75rem;">🚚 Per Driver</h4>';Object.values(pd).forEach(d=>{h+=`<div class="detail-group"><h5>${d.driver} | Entry:${d.jumlah} | QTY:${d.totalQty}</h5><p style="font-size:0.6rem;">Rit: ${Object.values(d.rits).map(r=>`${r.rit}(${r.jumlah}x,${r.qty}qty)`).join(' | ')}</p><p style="font-size:0.6rem;">SKU: ${Object.values(d.skus).map(sk=>`${sk.sku}(${sk.jumlah}x,${sk.qty}qty)`).join(' | ')}</p></div>`;});h+='<h4 style="font-size:0.75rem;">📋 Detail (Edit QTY & Status)</h4><table><tr><th>ID</th><th>SKU</th><th>Qty</th><th>Driver</th><th>Rit</th><th>Status</th><th>Tgl</th></tr>';stockInHistory.slice(0,30).forEach(s=>{h+=`<tr><td style="font-size:0.55rem;">${s.id}</td><td>${s.sku}</td><td><span style="cursor:pointer;background:#FEF3C7;padding:2px 6px;border-radius:6px;" onclick="editStockQty('${s.id}')" title="Klik edit QTY">${s.qty} ✎</span></td><td>${s.driver||'-'}</td><td>${s.rit||'-'}</td><td><select onchange="editStockStatus('${s.id}',this.value)" class="status-badge status-${s.status}" style="font-size:0.55rem;padding:2px;"><option value="kiriman" ${s.status==='kiriman'?'selected':''}>Kiriman</option><option value="titipan" ${s.status==='titipan'?'selected':''}>Titipan</option></select></td><td>${s.date}</td></tr>`;});h+='</table>';}else h+='<p class="text-center">Belum ada data</p>';h+='</div>';container.innerHTML=h;}
 async function editStockQty(id){const s=stockInHistory.find(x=>x.id===id);if(!s)return;const{value:newQty}=await Swal.fire({title:'Edit QTY',input:'number',inputValue:s.qty,inputLabel:'Qty Baru',showCancelButton:true,inputValidator:(v)=>{if(!v||v<1)return'Qty minimal 1!';}});if(newQty){await apiCall('updateStockIn',{id,qty:parseInt(newQty),hargaModal:s.hargaModal});s.qty=parseInt(newQty);s.totalModal=s.qty*s.hargaModal;saveAllData();navigateTo('rekaptoko');Swal.fire('Sukses','QTY diupdate','success');}}
 async function editStockStatus(id,newStatus){await apiCall('updateStockIn',{id,status:newStatus});const s=stockInHistory.find(x=>x.id===id);if(s)s.status=newStatus;saveAllData();Swal.fire({title:'Sukses',text:'Status diupdate',icon:'success',timer:800,showConfirmButton:false});}
 
 // ============================================
-// PRODUK (DENGAN TOMBOL HAPUS)
+// PRODUK (DENGAN TOMBOL HAPUS + REFRESH)
 // ============================================
-function pageProduk(){let h='<div class="card"><div class="card-title"><i class="fas fa-cubes"></i> Produk</div><button class="btn btn-primary btn-sm mb-2" onclick="showAddProduct()">+ Tambah</button><table><tr><th>SKU</th><th>Nama</th><th>Modal</th><th>Jual</th><th>Stok</th><th>Aksi</th></tr>';products.forEach(p=>{h+=`<tr><td>${p.sku}</td><td>${p.nama}</td><td>Rp${(p.modal||0).toLocaleString()}</td><td>Rp${(p.jual||0).toLocaleString()}</td><td>${p.stokAkhir||0}</td><td><button class="btn btn-warning btn-sm" onclick="editProduct('${p.sku}')" style="padding:2px 6px;"><i class="fas fa-edit"></i></button> <button class="btn btn-danger btn-sm" onclick="deleteProductConfirm('${p.sku}')" style="padding:2px 6px;"><i class="fas fa-trash"></i></button></td></tr>`;});h+='</table></div><div id="prodForm"></div>';return h;}
+function pageProduk(){let h=`<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-cubes"></i> Produk</div>${renderRefreshButton('produk')}</div><button class="btn btn-primary btn-sm mb-2" onclick="showAddProduct()">+ Tambah</button><table><tr><th>SKU</th><th>Nama</th><th>Modal</th><th>Jual</th><th>Stok</th><th>Aksi</th></tr>`;products.forEach(p=>{h+=`<tr><td>${p.sku}</td><td>${p.nama}</td><td>Rp${(p.modal||0).toLocaleString()}</td><td>Rp${(p.jual||0).toLocaleString()}</td><td>${p.stokAkhir||0}</td><td><button class="btn btn-warning btn-sm" onclick="editProduct('${p.sku}')" style="padding:2px 6px;"><i class="fas fa-edit"></i></button> <button class="btn btn-danger btn-sm" onclick="deleteProductConfirm('${p.sku}')" style="padding:2px 6px;"><i class="fas fa-trash"></i></button></td></tr>`;});h+='</table></div><div id="prodForm"></div>';return h;}
 function showAddProduct(){document.getElementById('prodForm').innerHTML='<div class="card"><div class="card-title">Tambah Produk</div><div class="form-group"><label>SKU</label><input id="newSku"></div><div class="form-group"><label>Nama</label><input id="newNama"></div><div class="flex-row"><div class="form-group col-1"><label>Modal</label><input type="number" id="newModal" value="0"></div><div class="form-group col-1"><label>Jual</label><input type="number" id="newJual" value="0"></div></div><div class="form-group"><label>Stok Awal</label><input type="number" id="newStok" value="0"></div><button class="btn btn-primary btn-block" onclick="saveNewProduct()">Simpan</button></div>';}
 async function saveNewProduct(){const d={sku:document.getElementById('newSku')?.value,nama:document.getElementById('newNama')?.value,modal:parseFloat(document.getElementById('newModal')?.value),jual:parseFloat(document.getElementById('newJual')?.value),stokAwal:parseInt(document.getElementById('newStok')?.value)};if(!d.sku||!d.nama)return Swal.fire('Error','SKU & Nama wajib','error');await apiCall('addProduct',d);loadAllData();navigateTo('produk');Swal.fire('Sukses','Ditambahkan','success');}
 function editProduct(sku){const p=products.find(x=>x.sku===sku);if(!p)return;document.getElementById('prodForm').innerHTML=`<div class="card"><div class="card-title">Edit: ${sku}</div><div class="form-group"><label>Nama</label><input id="editNama" value="${p.nama}"></div><div class="flex-row"><div class="form-group col-1"><label>Modal</label><input type="number" id="editModal" value="${p.modal}"></div><div class="form-group col-1"><label>Jual</label><input type="number" id="editJual" value="${p.jual}"></div></div><button class="btn btn-primary btn-block" onclick="saveEditProduct('${sku}')">Update</button></div>`;}
@@ -306,14 +401,14 @@ async function deleteProductConfirm(sku){const c=await Swal.fire({title:'Hapus P
 // ============================================
 // PELANGGAN
 // ============================================
-function pagePelanggan(){let h='<div class="card"><div class="card-title"><i class="fas fa-address-book"></i> Pelanggan</div><div class="flex-row mb-2"><input id="newCustName" placeholder="Nama" style="flex:2;"><button class="btn btn-primary btn-sm" onclick="addPelanggan()">+</button></div><table><tr><th>No</th><th>Nama</th><th>Aksi</th></tr>';pelanggan.forEach((c,i)=>{h+=`<tr><td>${i+1}</td><td>${c}</td><td><button class="btn btn-danger btn-sm" onclick="deletePelangganConfirm('${c}')"><i class="fas fa-trash"></i></button></td></tr>`;});h+='</table></div>';return h;}
+function pagePelanggan(){let h=`<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-address-book"></i> Pelanggan</div>${renderRefreshButton('pelanggan')}</div><div class="flex-row mb-2"><input id="newCustName" placeholder="Nama" style="flex:2;"><button class="btn btn-primary btn-sm" onclick="addPelanggan()">+</button></div><table><tr><th>No</th><th>Nama</th><th>Aksi</th></tr>`;pelanggan.forEach((c,i)=>{h+=`<tr><td>${i+1}</td><td>${c}</td><td><button class="btn btn-danger btn-sm" onclick="deletePelangganConfirm('${c}')"><i class="fas fa-trash"></i></button></td></tr>`;});h+='</table></div>';return h;}
 async function addPelanggan(){const n=document.getElementById('newCustName')?.value.trim();if(!n)return;await apiCall('addPelanggan',{name:n});loadAllData();navigateTo('pelanggan');}
 async function deletePelangganConfirm(name){const c=await Swal.fire({title:'Hapus?',icon:'warning',showCancelButton:true});if(c.isConfirmed){await apiCall('deletePelanggan',{name});loadAllData();navigateTo('pelanggan');}}
 
 // ============================================
-// PENGATURAN (ADMIN ONLY)
+// PENGATURAN
 // ============================================
-function pagePengaturan(){return`<div class="card"><div class="card-title"><i class="fas fa-store"></i> Info Toko</div><div class="form-group"><label>Nama Toko</label><input id="setNama" value="${settings.namaToko||''}"></div><div class="form-group"><label>Tagline</label><input id="setTagline" value="${settings.tagline||''}"></div><div class="form-group"><label>Alamat</label><input id="setAlamat" value="${settings.alamat||''}"></div><div class="form-group"><label>Bottom Line</label><input id="setBottomLine" value="${settings.bottomLine||''}"></div><button class="btn btn-primary btn-block" onclick="saveSettings()">Simpan</button></div><div class="card"><div class="card-title"><i class="fas fa-upload"></i> Upload</div><div class="form-group"><label>Logo</label><input type="file" accept="image/*" onchange="uploadLogo(event)">${settings.logo?'<img src="'+settings.logo+'" style="width:60px;height:60px;border-radius:50%;margin-top:8px;">':''}</div><div class="form-group"><label>QRIS</label><input type="file" accept="image/*" onchange="uploadQris(event)">${settings.qris?'<img src="'+settings.qris+'" style="width:80px;margin-top:8px;">':''}</div></div><div class="card"><div class="card-title"><i class="fas fa-university"></i> Bank</div>${banks.map(b=>`<div class="flex-between"><span>${b.logo} ${b.name}: ${b.number} (${b.holder})</span><button class="btn btn-danger btn-sm" onclick="deleteBank('${b.name}')"><i class="fas fa-trash"></i></button></div>`).join('')}<div class="flex-row mt-2"><input id="bnkName" placeholder="Bank" style="flex:1;"><input id="bnkNum" placeholder="No.Rek" style="flex:1;"><input id="bnkHolder" placeholder="Pemilik" style="flex:1;"><button class="btn btn-primary btn-sm" onclick="addBank()">+</button></div></div><div class="card"><div class="card-title"><i class="fas fa-users"></i> Sales & User</div><h5 style="font-size:0.7rem;">Sales: ${salesUsers.join(', ')}</h5><div class="flex-row mt-2"><input id="newSalesName" placeholder="Sales" style="flex:2;"><button class="btn btn-primary btn-sm" onclick="addSalesUser()">+</button></div><h5 style="font-size:0.7rem;margin-top:8px;">Users:</h5>${allUsers.map(u=>`<div class="flex-between"><span>🔑 ${u.name} (${u.role})</span><button class="btn btn-danger btn-sm" onclick="deleteUserLogin('${u.name}')"><i class="fas fa-trash"></i></button></div>`).join('')}<div class="flex-row mt-2"><input id="newUserName" placeholder="User" style="flex:1;"><select id="newUserRole" style="flex:1;"><option value="admin">Admin</option><option value="sales">Sales</option><option value="driver">Driver</option></select><input id="newUserPass" placeholder="Pass" value="123456" style="flex:1;"><button class="btn btn-primary btn-sm" onclick="addUserLogin()">+</button></div></div><div class="card"><div class="card-title"><i class="fas fa-truck"></i> Driver</div>${drivers.map(d=>`<div class="flex-between"><span>🚚 ${d}</span><button class="btn btn-danger btn-sm" onclick="deleteDriver('${d}')"><i class="fas fa-trash"></i></button></div>`).join('')}<div class="flex-row mt-2"><input id="drvName" placeholder="Driver" style="flex:2;"><button class="btn btn-primary btn-sm" onclick="addDriver()">+</button></div></div>`;}
+function pagePengaturan(){return`<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-store"></i> Info Toko</div>${renderRefreshButton('pengaturan')}</div><div class="form-group"><label>Nama Toko</label><input id="setNama" value="${settings.namaToko||''}"></div><div class="form-group"><label>Tagline</label><input id="setTagline" value="${settings.tagline||''}"></div><div class="form-group"><label>Alamat</label><input id="setAlamat" value="${settings.alamat||''}"></div><div class="form-group"><label>Bottom Line</label><input id="setBottomLine" value="${settings.bottomLine||''}"></div><button class="btn btn-primary btn-block" onclick="saveSettings()">Simpan</button></div><div class="card"><div class="card-title"><i class="fas fa-upload"></i> Upload</div><div class="form-group"><label>Logo</label><input type="file" accept="image/*" onchange="uploadLogo(event)">${settings.logo?'<img src="'+settings.logo+'" style="width:60px;height:60px;border-radius:50%;margin-top:8px;">':''}</div><div class="form-group"><label>QRIS</label><input type="file" accept="image/*" onchange="uploadQris(event)">${settings.qris?'<img src="'+settings.qris+'" style="width:80px;margin-top:8px;">':''}</div></div><div class="card"><div class="card-title"><i class="fas fa-university"></i> Bank</div>${banks.map(b=>`<div class="flex-between"><span>${b.logo} ${b.name}: ${b.number} (${b.holder})</span><button class="btn btn-danger btn-sm" onclick="deleteBank('${b.name}')"><i class="fas fa-trash"></i></button></div>`).join('')}<div class="flex-row mt-2"><input id="bnkName" placeholder="Bank" style="flex:1;"><input id="bnkNum" placeholder="No.Rek" style="flex:1;"><input id="bnkHolder" placeholder="Pemilik" style="flex:1;"><button class="btn btn-primary btn-sm" onclick="addBank()">+</button></div></div><div class="card"><div class="card-title"><i class="fas fa-users"></i> Sales & User</div><h5 style="font-size:0.7rem;">Sales: ${salesUsers.join(', ')}</h5><div class="flex-row mt-2"><input id="newSalesName" placeholder="Sales" style="flex:2;"><button class="btn btn-primary btn-sm" onclick="addSalesUser()">+</button></div><h5 style="font-size:0.7rem;margin-top:8px;">Users:</h5>${allUsers.map(u=>`<div class="flex-between"><span>🔑 ${u.name} (${u.role})</span><button class="btn btn-danger btn-sm" onclick="deleteUserLogin('${u.name}')"><i class="fas fa-trash"></i></button></div>`).join('')}<div class="flex-row mt-2"><input id="newUserName" placeholder="User" style="flex:1;"><select id="newUserRole" style="flex:1;"><option value="admin">Admin</option><option value="sales">Sales</option><option value="driver">Driver</option></select><input id="newUserPass" placeholder="Pass" value="123456" style="flex:1;"><button class="btn btn-primary btn-sm" onclick="addUserLogin()">+</button></div></div><div class="card"><div class="card-title"><i class="fas fa-truck"></i> Driver</div>${drivers.map(d=>`<div class="flex-between"><span>🚚 ${d}</span><button class="btn btn-danger btn-sm" onclick="deleteDriver('${d}')"><i class="fas fa-trash"></i></button></div>`).join('')}<div class="flex-row mt-2"><input id="drvName" placeholder="Driver" style="flex:2;"><button class="btn btn-primary btn-sm" onclick="addDriver()">+</button></div></div>`;}
 
 async function saveSettings(){settings.namaToko=document.getElementById('setNama')?.value;settings.tagline=document.getElementById('setTagline')?.value;settings.alamat=document.getElementById('setAlamat')?.value;settings.bottomLine=document.getElementById('setBottomLine')?.value;await apiCall('updateSettings',settings);saveAllData();document.getElementById('headerAlamat').textContent=settings.alamat;Swal.fire('Sukses','Disimpan','success');}
 function uploadLogo(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=function(ev){document.getElementById('logoImg').src=ev.target.result;settings.logo=ev.target.result;apiCall('updateSettings',{logo:ev.target.result});saveAllData();};r.readAsDataURL(f);}
