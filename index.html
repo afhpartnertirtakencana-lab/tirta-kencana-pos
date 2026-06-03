@@ -160,24 +160,33 @@ async function fetchFromGoogleSheets() {
   try {
     updateSyncStatus('syncing');
     
-    // Fetch semua data dari Google Sheets
-    const response = await fetch(GOOGLE_SHEETS_URL + '?action=getAllData');
+    // GUNAKAN JSONP ATAU FETCH DENGAN CORS
+    const response = await fetch(GOOGLE_SHEETS_URL + '?action=getAllData', {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' }
+    });
+    
     const result = await response.json();
     
     if (result.success && result.data) {
-      // Update local data dengan data dari Google Sheets
-      if (result.data.products) products = result.data.products;
-      if (result.data.pelanggan) pelanggan = result.data.pelanggan;
+      // Update local data
+      if (result.data.products && result.data.products.length > 0) products = result.data.products;
+      if (result.data.pelanggan && result.data.pelanggan.length > 0) pelanggan = result.data.pelanggan;
       if (result.data.salesHistory) salesHistory = result.data.salesHistory;
       if (result.data.stockInHistory) stockInHistory = result.data.stockInHistory;
-      if (result.data.drivers) drivers = result.data.drivers;
-      if (result.data.banks) banks = result.data.banks;
+      if (result.data.drivers && result.data.drivers.length > 0) drivers = result.data.drivers;
+      if (result.data.banks && result.data.banks.length > 0) banks = result.data.banks;
       if (result.data.settings) settings = { ...settings, ...result.data.settings };
-      if (result.data.salesUsers) salesUsers = result.data.salesUsers;
-      if (result.data.allUsers) allUsers = result.data.allUsers;
+      if (result.data.salesUsers && result.data.salesUsers.length > 0) salesUsers = result.data.salesUsers;
+      if (result.data.allUsers && result.data.allUsers.length > 0) allUsers = result.data.allUsers;
       
       saveAllData();
       updateSyncStatus('online');
+      
+      // Update tampilan header
+      if (settings.alamat) document.getElementById('headerAlamat').textContent = settings.alamat;
+      if (settings.logo) document.getElementById('logoImg').src = settings.logo;
+      
       return result.data;
     }
     
@@ -185,6 +194,13 @@ async function fetchFromGoogleSheets() {
     return null;
   } catch(e) {
     console.log('Fetch error:', e.message);
+    
+    // FALLBACK: Coba dengan mode no-cors (tidak bisa baca response, tapi tetap update status)
+    try {
+      await fetch(GOOGLE_SHEETS_URL + '?action=getAllData', { mode: 'no-cors' });
+      console.log('Fallback fetch sent');
+    } catch(e2) {}
+    
     updateSyncStatus('offline');
     return null;
   }
