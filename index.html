@@ -4,69 +4,51 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
   <meta name="theme-color" content="#0A4D8C">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Tirta Kencana">
-  <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIlRpcnRhIEtlbmNhbmEiLAogICJzaG9ydF9uYW1lIjogIlRpcnRhIEtlbmNhbmEiLAogICJzdGFydF91cmwiOiAiLiIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiIzBBNEQ4QyIsCiAgInRoZW1lX2NvbG9yIjogIiMwQTREOEMiLAogICJpY29ucyI6IFt7InNyYyI6ImRhdGE6aW1hZ2Uvc3ZnK3htbCwlM0NzdmcgIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zycgdmlld0JveD0nMCAwIDE5MiAxOTInJTNFJTNDY2lyY2xlIGZpbGw9JyUyMzBBNEQ4QycgY3g9Jzk2JyBjeT0nOTYnIHI9JzkwJy8lM0UlM0NjaXJjbGUgZmlsbD0nd2hpdGUnIGN4PSc5NicgY3k9Jzk2JyByPSc3MCcvJTNFJTNDdGV4dCB4PSc5NicgeT0nMTEwJyB0ZXh0LWFuY2hvcj0nbWlkZGxlJyBmaWxsPSclMjMwQTREOEMnIGZvbnQtc2l6ZT0nNjAnIGZvbnQtd2VpZ2h0PSdib2xkJyUzRVRLJTNDL3RleHQlM0UlM0Mvc3ZnJTNlIiwic2l6ZXMiOiIxOTJ4MTkyIiwidHlwZSI6ImltYWdlL3N2Zyt4bWwiLCJwdXJwb3NlIjoiYW55IG1hc2thYmxlIn1dfQ==">
   <title>Tirta Kencana · Air Minum</title>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.all.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
   <style>
-    :root{--biru:#0A4D8C;--kuning:#F4B400;--biru-muda:#E6F0FA;--kuning-muda:#FFF8E1;--bg:#F1F5F9;--card:#FFFFFF;--border:#E2E8F0;--shadow:0 2px 12px rgba(0,0,0,0.06);--radius:16px;--text:#1E293B;--merah:#EF4444;--hijau:#10B981;--text-secondary:#64748B;--input-bg:#FFFFFF;}
-    body.dark{--bg:#0F172A;--card:#1E293B;--border:#334155;--text:#E2E8F0;--text-secondary:#94A3B8;--input-bg:#334155;--biru-muda:#1E3A5F;--kuning-muda:#3D2E00;--shadow:0 2px 12px rgba(0,0,0,0.3);}
-    body.dark input,body.dark select,body.dark textarea{background:var(--input-bg);color:var(--text);border-color:var(--border);}
-    body.dark .card{background:var(--card);}body.dark th{background:var(--biru-muda);}
-    body.dark .bottom-bar{background:#1E293B;}body.dark .nav-bar{background:#1E293B;}
-    body.dark .menu-tabs{background:var(--card);}body.dark .tab{background:var(--card);color:var(--text-secondary);}
-    body.dark .tab.active{background:var(--biru);color:white;}
+    :root{--biru:#0A4D8C;--kuning:#F4B400;--bg:#F1F5F9;--card:#FFFFFF;--border:#E2E8F0;--text:#1E293B;--merah:#EF4444;--hijau:#10B981;}
     *{margin:0;padding:0;box-sizing:border-box;}
     body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);display:flex;justify-content:center;align-items:flex-start;min-height:100vh;padding:8px;color:var(--text);}
-    .app-container{max-width:500px;width:100%;background:var(--card);border-radius:24px;box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;min-height:95vh;}
+    .app-container{max-width:500px;width:100%;background:var(--card);border-radius:24px;box-shadow:0 2px 12px rgba(0,0,0,0.06);overflow:hidden;display:flex;flex-direction:column;min-height:95vh;}
     @media(min-width:768px){.app-container{max-width:720px;}}
-    @media(max-width:480px){body{padding:4px;}.app-container{border-radius:16px;}.brand{font-size:1.5rem;}.tab{font-size:0.65rem;padding:6px 10px;}input,select{font-size:0.75rem;padding:8px 10px;}.btn{font-size:0.75rem;padding:8px 12px;}table{font-size:0.65rem;}th,td{padding:4px 5px;}.card{padding:12px;}.card-title{font-size:0.8rem;}}
     .header{background:linear-gradient(135deg,#0A4D8C,#0B5FA5);color:white;padding:18px 20px 14px;text-align:center;}
     .brand{font-size:1.9rem;font-weight:800;display:flex;justify-content:center;gap:6px;}.tirta{color:#fff;}.kencana{color:var(--kuning);}
     .tagline{font-size:0.7rem;margin:4px 0;}.alamat{font-size:0.65rem;opacity:0.8;}
     .nav-bar{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;background:#F8FAFC;border-bottom:1px solid var(--border);}
     .user-info{display:flex;align-items:center;gap:8px;}.avatar{width:32px;height:32px;border-radius:50%;background:var(--biru);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.8rem;}
-    .role-tag{background:var(--kuning);color:#0A2540;padding:3px 10px;border-radius:20px;font-size:0.6rem;font-weight:700;text-transform:uppercase;}
+    .role-tag{background:var(--kuning);color:#0A2540;padding:3px 10px;border-radius:20px;font-size:0.6rem;font-weight:700;}
     .btn-logout{background:var(--merah);color:white;border:none;padding:6px 14px;border-radius:8px;font-size:0.7rem;cursor:pointer;}
-    .btn-refresh{background:var(--hijau);color:white;border:none;padding:6px 10px;border-radius:8px;font-size:0.65rem;cursor:pointer;margin-left:4px;}
-    .btn-darkmode{background:#6366F1;color:white;border:none;padding:6px 10px;border-radius:8px;font-size:0.65rem;cursor:pointer;}
+    .btn-refresh{background:var(--hijau);color:white;border:none;padding:6px 10px;border-radius:8px;font-size:0.65rem;cursor:pointer;}
     .menu-tabs{display:flex;overflow-x:auto;gap:4px;padding:8px 10px;border-bottom:1px solid var(--border);}
-    .tab{flex:0 0 auto;padding:7px 14px;border-radius:20px;border:1px solid var(--border);font-size:0.7rem;font-weight:600;cursor:pointer;white-space:nowrap;color:var(--text-secondary);display:flex;align-items:center;gap:4px;}
+    .tab{flex:0 0 auto;padding:7px 14px;border-radius:20px;border:1px solid var(--border);font-size:0.7rem;font-weight:600;cursor:pointer;white-space:nowrap;color:#64748B;display:flex;align-items:center;gap:4px;}
     .tab.active{background:var(--biru);color:white;border-color:var(--biru);}
     .content-area{flex:1;padding:12px;overflow-y:auto;max-height:calc(100vh - 250px);}
-    .card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);margin-bottom:10px;border:1px solid var(--border);}
+    .card{background:var(--card);border-radius:16px;padding:16px;box-shadow:0 2px 12px rgba(0,0,0,0.06);margin-bottom:10px;border:1px solid var(--border);}
     .card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
     .card-title{font-weight:700;font-size:0.9rem;color:var(--biru);display:flex;align-items:center;gap:6px;}.card-title i{color:var(--kuning);}
-    .form-group{margin-bottom:8px;}.form-group label{display:block;font-size:0.7rem;font-weight:600;color:var(--text-secondary);margin-bottom:3px;}
-    input,select{width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--border);font-size:0.8rem;outline:none;background:var(--input-bg);color:var(--text);}
-    input[readonly]{background:var(--biru-muda);font-weight:600;}
+    .form-group{margin-bottom:8px;}.form-group label{display:block;font-size:0.7rem;font-weight:600;color:#475569;margin-bottom:3px;}
+    input,select{width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--border);font-size:0.8rem;outline:none;}
+    input[readonly]{background:#E6F0FA;font-weight:600;}
     .btn{padding:10px 16px;border-radius:12px;border:none;font-size:0.8rem;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
-    .btn-primary{background:var(--biru);color:white;}.btn-warning{background:var(--kuning);color:#0A2540;}.btn-success{background:var(--hijau);color:white;}.btn-danger{background:var(--merah);color:white;}
-    .btn-outline{background:transparent;border:2px solid var(--biru);color:var(--biru);}.btn-sm{padding:6px 10px;font-size:0.7rem;border-radius:8px;}.btn-block{width:100%;justify-content:center;}
+    .btn-primary{background:var(--biru);color:white;}.btn-success{background:var(--hijau);color:white;}.btn-sm{padding:6px 10px;font-size:0.7rem;border-radius:8px;}.btn-block{width:100%;justify-content:center;}
     .flex-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}.col-1{flex:1;}
-    .total-box{background:var(--kuning-muda);padding:10px 14px;border-radius:12px;margin:8px 0;text-align:right;font-weight:700;font-size:1.1rem;color:var(--biru);}
+    .total-box{background:#FFF8E1;padding:10px 14px;border-radius:12px;margin:8px 0;text-align:right;font-weight:700;font-size:1.1rem;color:var(--biru);}
     .status-badge{padding:3px 8px;border-radius:10px;font-size:0.6rem;font-weight:600;display:inline-block;}
     .status-cod{background:#D1FAE5;color:#065F46;}.status-transfer{background:#DBEAFE;color:#1E40AF;}
-    .status-qris{background:#FEF3C7;color:#92400E;}.status-belumbayar{background:#FEE2E2;color:#991B1B;}
-    .status-kiriman{background:#E0E7FF;color:#3730A3;}.status-titipan{background:#FCE7F3;color:#9D174D;}
     table{width:100%;border-collapse:collapse;font-size:0.7rem;}th,td{padding:6px 8px;text-align:left;border-bottom:1px solid var(--border);}
-    th{background:var(--biru-muda);color:var(--biru);font-weight:700;font-size:0.65rem;}
-    .bottom-bar{text-align:center;font-size:0.65rem;color:var(--text-secondary);padding:10px;border-top:1px solid var(--border);}
+    th{background:#E6F0FA;color:var(--biru);font-weight:700;font-size:0.65rem;}
+    .bottom-bar{text-align:center;font-size:0.65rem;color:#64748B;padding:10px;border-top:1px solid var(--border);}
     .hidden{display:none!important;}.mb-2{margin-bottom:8px;}.text-center{text-align:center;}.text-sm{font-size:0.7rem;}
     .summary-box{flex:1;text-align:center;padding:10px;border-radius:12px;font-size:0.65rem;}
-    .user-section{border:2px solid var(--kuning);border-radius:12px;padding:10px;margin:10px 0;background:var(--kuning-muda);}
     .login-container{display:flex;justify-content:center;align-items:center;min-height:100vh;background:linear-gradient(135deg,#0A4D8C,#0B5FA5);}
     .login-card{background:white;padding:30px;border-radius:24px;width:340px;text-align:center;box-shadow:0 20px 40px rgba(0,0,0,0.2);}
-    .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;justify-content:center;align-items:center;}
-    .modal{background:white;border-radius:20px;padding:20px;max-width:400px;width:90%;max-height:85vh;overflow-y:auto;}
-    .setoran-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);}
-    .setoran-row label{font-size:0.7rem;font-weight:600;min-width:85px;color:var(--text-secondary);}.setoran-row input{flex:1;text-align:right;}
-    .cart-sku-select{flex:3!important;font-size:0.7rem!important;min-width:120px!important;}
-    @media(max-width:480px){.cart-sku-select{flex:2.5!important;font-size:0.65rem!important;min-width:100px!important;}}
+    .setoran-row{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid #F1F5F9;}
+    .setoran-row label{font-size:0.7rem;font-weight:600;min-width:80px;color:#475569;}.setoran-row input{flex:1;text-align:right;}
+    .cart-sku{flex:2.5!important;font-size:0.7rem!important;min-width:110px!important;}
+    @media(max-width:480px){.cart-sku{flex:2!important;font-size:0.65rem!important;min-width:90px!important;}}
   </style>
 </head>
 <body>
@@ -90,17 +72,12 @@
   </div>
   <div class="nav-bar">
     <div class="user-info"><div class="avatar" id="userAvatar">A</div><div><div id="displayName" style="font-size:0.75rem;font-weight:600;">Admin</div><span class="role-tag" id="displayRole">ADMIN</span></div></div>
-    <div>
-      <button class="btn-darkmode" onclick="toggleDarkMode()">🌙</button>
-      <button class="btn-refresh" onclick="refreshAllData()">🔄</button>
-      <button class="btn-logout" onclick="doLogout()">Keluar</button>
-    </div>
+    <div><button class="btn-refresh" onclick="refreshAllData()">🔄 Sync</button><button class="btn-logout" onclick="doLogout()">Keluar</button></div>
   </div>
   <div class="menu-tabs" id="menuTabs"></div>
   <div class="content-area" id="contentArea"></div>
   <div class="bottom-bar">Terima kasih sudah berbelanja · Tirta Kencana</div>
 </div>
-<div class="modal-overlay" id="strukModal" onclick="closeStruk()"><div class="modal" id="strukContent" onclick="event.stopPropagation()"></div></div>
 
 <script>
 const GOOGLE_SHEETS_URL='https://script.google.com/macros/s/AKfycbz5kcAi9G2KTolWa4H9yEjy9qdwBTLDK2wXmWYJFyVVwpMXQQgaNybPGYVT95kRGOCu/exec';
@@ -123,7 +100,9 @@ function loadAllData(){const s=localStorage.getItem('tirtaFullData');if(s)try{co
 
 async function syncToGoogleSheets(action,data){if(!USE_GOOGLE_SHEETS)return;try{await fetch(GOOGLE_SHEETS_URL+'?action='+action+'&data='+encodeURIComponent(JSON.stringify(data)),{method:'GET',mode:'no-cors'});}catch(e){}}
 
+// REFRESH - SIMPAN DATA LOKAL, JANGAN HAPUS
 async function refreshAllData(){
+  Swal.fire({title:'Syncing...',allowOutsideClick:false,didOpen:()=>Swal.showLoading()});
   try{
     const r=await fetch(GOOGLE_SHEETS_URL+'?action=getAllData');
     const d=await r.json();
@@ -132,6 +111,7 @@ async function refreshAllData(){
       if(d.data.pelanggan&&d.data.pelanggan.length>0)pelanggan=d.data.pelanggan;
       if(d.data.salesHistory&&d.data.salesHistory.length>0)salesHistory=d.data.salesHistory;
       if(d.data.stockInHistory&&d.data.stockInHistory.length>0)stockInHistory=d.data.stockInHistory;
+      // SETORAN - JANGAN OVERWRITE DENGAN ARRAY KOSONG
       if(d.data.setoranHistory&&d.data.setoranHistory.length>0)setoranHistory=d.data.setoranHistory;
       if(d.data.drivers&&d.data.drivers.length>0)drivers=d.data.drivers;
       if(d.data.banks&&d.data.banks.length>0)banks=d.data.banks;
@@ -139,17 +119,17 @@ async function refreshAllData(){
       if(d.data.allUsers&&d.data.allUsers.length>0){allUsers=d.data.allUsers;salesUsers=allUsers.filter(u=>u.role==='sales'||u.role==='admin').map(u=>u.name);}
       saveAllData();
       if(settings.alamat)document.getElementById('headerAlamat').textContent=settings.alamat;
-      renderContent();
-    }
-  }catch(e){}
+      // RENDER ULANG - TAPI JANGAN RESET FORM SETORAN
+      if(currentPage!=='setoran')renderContent();
+      else loadSetoranHistoryOnly(); // Hanya refresh riwayat, jangan reset form
+      Swal.fire({title:'✅ Synced',timer:1000,showConfirmButton:false});
+    }else{Swal.fire({title:'⚠️ Server empty',icon:'warning',timer:1000});}
+  }catch(e){Swal.fire({title:'❌ Error',icon:'error',timer:1000});}
 }
-
-function toggleDarkMode(){document.body.classList.toggle('dark');localStorage.setItem('tirtaDarkMode',document.body.classList.contains('dark')?'1':'0');}
-function initDarkMode(){if(localStorage.getItem('tirtaDarkMode')==='1')document.body.classList.add('dark');}
 
 function doLogin(){const u=document.getElementById('loginUser').value.trim(),p=document.getElementById('loginPass').value.trim();if(!u||!p)return;const f=allUsers.find(x=>x.name===u&&x.password===p);if(f){currentUser={name:f.name,role:f.role};localStorage.setItem('tirtaUser',JSON.stringify(currentUser));showMainApp();}}
 function doLogout(){localStorage.removeItem('tirtaUser');currentUser=null;document.getElementById('loginPage').classList.remove('hidden');document.getElementById('mainApp').classList.add('hidden');}
-function showMainApp(){document.getElementById('loginPage').classList.add('hidden');document.getElementById('mainApp').classList.remove('hidden');document.getElementById('displayName').textContent=currentUser.name;document.getElementById('displayRole').textContent=currentUser.role.toUpperCase();document.getElementById('userAvatar').textContent=currentUser.name.charAt(0).toUpperCase();if(settings.alamat)document.getElementById('headerAlamat').textContent=settings.alamat;initDarkMode();renderMenuTabs();navigateTo('penjualan');}
+function showMainApp(){document.getElementById('loginPage').classList.add('hidden');document.getElementById('mainApp').classList.remove('hidden');document.getElementById('displayName').textContent=currentUser.name;document.getElementById('displayRole').textContent=currentUser.role.toUpperCase();document.getElementById('userAvatar').textContent=currentUser.name.charAt(0).toUpperCase();if(settings.alamat)document.getElementById('headerAlamat').textContent=settings.alamat;renderMenuTabs();navigateTo('penjualan');}
 
 function renderMenuTabs(){let h='';const r=currentUser?.role;
   if(r==='admin')h=`<button class="tab ${currentPage==='penjualan'?'active':''}" onclick="navigateTo('penjualan')">Jual</button><button class="tab ${currentPage==='rekap'?'active':''}" onclick="navigateTo('rekap')">Rekap</button><button class="tab ${currentPage==='setoran'?'active':''}" onclick="navigateTo('setoran')">Setoran</button><button class="tab ${currentPage==='gudang'?'active':''}" onclick="navigateTo('gudang')">Gudang</button>`;
@@ -159,33 +139,25 @@ function renderMenuTabs(){let h='';const r=currentUser?.role;
 function navigateTo(p){currentPage=p;renderMenuTabs();renderContent();}
 function renderContent(){const c=document.getElementById('contentArea');
   switch(currentPage){
-    case'penjualan':c.innerHTML=pagePenjualan();initPenjualan();break;
+    case'penjualan':c.innerHTML=pageJual();initJual();break;
     case'rekap':loadRekap(c);break;
     case'setoran':c.innerHTML=pageSetoran();initSetoran();break;
     case'gudang':loadGudang(c);break;
   }
 }
 
-// PENJUALAN - SKU SUPER LEBAR
-function pagePenjualan(){let co='<option value="">Pilih</option>';pelanggan.forEach(c=>{co+=`<option>${c}</option>`;});return`<div class="card"><div class="card-title">Data Penjualan</div><div class="form-group"><label>Sales</label><input value="${currentUser?.name||''}" readonly></div><div class="form-group"><label>Pelanggan</label><select id="custSelect">${co}</select></div><div class="form-group"><label>Status</label><select id="payStatus"><option value="cod">COD</option><option value="transfer">Transfer</option></select></div></div><div class="card"><div class="card-title">Item</div><div id="cartItems"></div><button class="btn btn-outline btn-sm" onclick="addCartItem()">+ Tambah</button><div class="total-box">Total: Rp <span id="cartTotal">0</span></div><button class="btn btn-primary btn-block" onclick="saveSale()">Simpan</button></div>`;}
-function initPenjualan(){if(cart.length===0)cart.push({sku:'',qty:1,disc:0});renderCart();}
+// JUAL
+function pageJual(){let co='<option value="">Pilih</option>';pelanggan.forEach(c=>{co+=`<option>${c}</option>`;});return`<div class="card"><div class="card-title">Data Penjualan</div><div class="form-group"><label>Sales</label><input value="${currentUser?.name||''}" readonly></div><div class="form-group"><label>Pelanggan</label><select id="custSelect">${co}</select></div><div class="form-group"><label>Status</label><select id="payStatus"><option value="cod">COD</option><option value="transfer">Transfer</option></select></div></div><div class="card"><div class="card-title">Item</div><div id="cartItems"></div><button class="btn btn-sm" onclick="addCartItem()">+ Tambah</button><div class="total-box">Total: Rp <span id="cartTotal">0</span></div><button class="btn btn-primary btn-block" onclick="saveSale()">Simpan</button></div>`;}
+function initJual(){if(cart.length===0)cart.push({sku:'',qty:1,disc:0});renderCart();}
 function addCartItem(){cart.push({sku:'',qty:1,disc:0});renderCart();}function removeCartItem(i){cart.splice(i,1);renderCart();}
 function updateCart(i,f,v){if(f==='qty')cart[i].qty=parseInt(v)||1;else if(f==='disc')cart[i].disc=parseInt(v)||0;else cart[i][f]=v;if(f==='sku'){const p=products.find(x=>x.sku===v);if(p){cart[i].harga=p.jual;cart[i].nama=p.nama;cart[i].modal=p.modal;}}renderCart();}
-function renderCart(){const el=document.getElementById('cartItems');if(!el)return;el.innerHTML=cart.map((item,i)=>{const p=products.find(x=>x.sku===item.sku),h=p?p.jual:(item.harga||0),dp=item.disc||0,dt=dp*item.qty,sub=(item.qty*h)-dt;let po='<option value="">Pilih Produk</option>';products.forEach(p=>{po+=`<option value="${p.sku}" ${item.sku===p.sku?'selected':''}>${p.sku}-${p.nama}(${p.stokAkhir})</option>`;});return`<div class="flex-row" style="margin-bottom:4px;align-items:center;"><select onchange="updateCart(${i},'sku',this.value)" class="cart-sku-select">${po}</select><input type="number" value="${item.qty}" onchange="updateCart(${i},'qty',this.value)" style="width:45px;font-size:0.7rem;" min="1"><input type="number" value="${dp}" onchange="updateCart(${i},'disc',this.value)" style="width:55px;font-size:0.7rem;" placeholder="Disc"><span style="font-size:0.7rem;min-width:60px;">Rp${sub.toLocaleString()}</span><button onclick="removeCartItem(${i})" style="color:red;border:none;background:none;cursor:pointer;">✕</button></div>`;}).join('');let sa=0,td=0;cart.forEach(i=>{const p=products.find(x=>x.sku===i.sku),h=p?p.jual:(i.harga||0);sa+=i.qty*h;td+=(i.disc||0)*i.qty;});document.getElementById('cartTotal').textContent=(sa-td).toLocaleString();}
+function renderCart(){const el=document.getElementById('cartItems');if(!el)return;el.innerHTML=cart.map((item,i)=>{const p=products.find(x=>x.sku===item.sku),h=p?p.jual:(item.harga||0),dp=item.disc||0,dt=dp*item.qty,sub=(item.qty*h)-dt;let po='<option value="">Pilih</option>';products.forEach(p=>{po+=`<option value="${p.sku}" ${item.sku===p.sku?'selected':''}>${p.sku}-${p.nama}(${p.stokAkhir})</option>`;});return`<div class="flex-row" style="margin-bottom:4px;"><select onchange="updateCart(${i},'sku',this.value)" class="cart-sku">${po}</select><input type="number" value="${item.qty}" onchange="updateCart(${i},'qty',this.value)" style="width:45px;font-size:0.7rem;" min="1"><input type="number" value="${dp}" onchange="updateCart(${i},'disc',this.value)" style="width:55px;font-size:0.7rem;" placeholder="Disc"><span style="font-size:0.7rem;">Rp${sub.toLocaleString()}</span><button onclick="removeCartItem(${i})" style="color:red;border:none;background:none;cursor:pointer;">✕</button></div>`;}).join('');let sa=0,td=0;cart.forEach(i=>{const p=products.find(x=>x.sku===i.sku),h=p?p.jual:(i.harga||0);sa+=i.qty*h;td+=(i.disc||0)*i.qty;});document.getElementById('cartTotal').textContent=(sa-td).toLocaleString();}
 async function saveSale(){const cust=document.getElementById('custSelect')?.value;if(!cust)return;const valid=cart.filter(i=>i.sku&&products.find(p=>p.sku===i.sku));if(valid.length===0)return;const status=document.getElementById('payStatus')?.value||'cod';const items=valid.map(i=>{const p=products.find(x=>x.sku===i.sku);const hj=p?p.jual:(i.harga||0);const hm=p?p.modal:(i.modal||0);const q=parseInt(i.qty)||0;const dp=parseInt(i.disc)||0;const profit=(hj-dp-hm)*q;const dt=dp*q;const sub=(q*hj)-dt;return{sku:i.sku,nama:p?.nama||'',qty:q,harga:hj,disc:dp,modal:hm,discTotal:dt,subtotal:sub,profit:profit};});let total=0;items.forEach(i=>{total+=i.subtotal;});const ns={id:'INV-'+Date.now(),user:currentUser.name,customer:cust,status,items,total,totalQty:items.reduce((s,i)=>s+i.qty,0),totalDisc:items.reduce((s,i)=>s+i.discTotal,0),totalProfit:items.reduce((s,i)=>s+i.profit,0),date:new Date().toISOString().split('T')[0],time:new Date().toLocaleTimeString('id-ID')};salesHistory.unshift(ns);items.forEach(i=>{const p=products.find(x=>x.sku===i.sku);if(p){p.stokKeluar=(p.stokKeluar||0)+i.qty;p.stokAkhir=(p.stokAwal||0)+(p.stokMasuk||0)-p.stokKeluar;}});if(!pelanggan.includes(cust))pelanggan.push(cust);saveAllData();syncToGoogleSheets('createSale',ns);cart=[{sku:'',qty:1,disc:0}];renderCart();document.getElementById('custSelect').value='';Swal.fire('Sukses','Penjualan disimpan!','success');}
 
-// REKAP - BERHASIL
-function loadRekap(container){
-  let h='<div class="card"><div class="card-header"><div class="card-title">📊 Rekap Penjualan</div><button class="btn-refresh btn-sm" onclick="refreshAllData()">🔄 Sync</button></div>';
-  if(salesHistory.length===0){h+='<p class="text-center">Belum ada data.</p></div>';container.innerHTML=h;return;}
-  const tt=salesHistory.length,tp=salesHistory.reduce((s,x)=>s+(x.total||0),0);
-  h+=`<div class="flex-row mb-2"><div class="summary-box" style="background:#E6F0FA;">Transaksi: <b>${tt}</b></div><div class="summary-box" style="background:#FFF8E1;">Total: <b>Rp${tp.toLocaleString()}</b></div></div>`;
-  h+='<table><tr><th>Tgl</th><th>Customer</th><th>Sales</th><th>Status</th><th>Total</th></tr>';
-  salesHistory.slice(0,30).forEach(s=>{h+=`<tr><td>${s.date}</td><td>${s.customer}</td><td>${s.user}</td><td><span class="status-badge status-${s.status}">${s.status}</span></td><td>Rp${(s.total||0).toLocaleString()}</td></tr>`;});
-  h+='</table></div>';container.innerHTML=h;
-}
+// REKAP
+function loadRekap(container){let h='<div class="card"><div class="card-header"><div class="card-title">📊 Rekap Penjualan</div><button class="btn-refresh btn-sm" onclick="refreshAllData()">🔄</button></div>';if(salesHistory.length===0){h+='<p class="text-center">Belum ada data.</p></div>';container.innerHTML=h;return;}const tt=salesHistory.length,tp=salesHistory.reduce((s,x)=>s+(x.total||0),0);h+=`<div class="flex-row mb-2"><div class="summary-box" style="background:#E6F0FA;">Transaksi: <b>${tt}</b></div><div class="summary-box" style="background:#FFF8E1;">Total: <b>Rp${tp.toLocaleString()}</b></div></div>`;h+='<table><tr><th>Tgl</th><th>Customer</th><th>Sales</th><th>Status</th><th>Total</th></tr>';salesHistory.slice(0,30).forEach(s=>{h+=`<tr><td>${s.date}</td><td>${s.customer}</td><td>${s.user}</td><td><span class="status-badge status-${s.status}">${s.status}</span></td><td>Rp${(s.total||0).toLocaleString()}</td></tr>`;});h+='</table></div>';container.innerHTML=h;}
 
-// SETORAN - CARA SAMA PERSIS SEPERTI REKAP
+// SETORAN - FORM + RIWAYAT (RIWAYAT TIDAK HILANG SAAT SYNC)
 function pageSetoran(){
   const today=new Date().toISOString().split('T')[0];
   const salesList=allUsers.filter(u=>u.role==='sales'||u.role==='admin').map(u=>u.name);
@@ -193,7 +165,7 @@ function pageSetoran(){
   let so=salesList.map(s=>`<option value="${s}" ${currentUser?.name===s?'selected':''}>${s}</option>`).join('');
   if(currentUser?.role==='admin')so='<option value="__all__">-- Semua Sales --</option>'+so;
   
-  return`<div class="card"><div class="card-header"><div class="card-title">💰 Setoran Sales</div><button class="btn-refresh btn-sm" onclick="refreshAllData()">🔄 Sync</button></div>
+  return`<div class="card"><div class="card-header"><div class="card-title">💰 Setoran Sales</div><button class="btn-refresh btn-sm" onclick="refreshAllData()">🔄</button></div>
   <div class="form-group"><label>Sales</label><select id="setSales" onchange="hitungCOD()">${so}</select></div>
   <div class="form-group"><label>Tanggal</label><input type="date" id="setTanggal" value="${today}" onchange="hitungCOD()"></div>
   <div class="setoran-row"><label>COD:</label><input id="setGrandCOD" readonly></div>
@@ -215,7 +187,33 @@ function pageSetoran(){
   <div class="card"><div class="card-title">📋 Riwayat Setoran</div><div id="setHistory"></div></div>`;
 }
 
-function initSetoran(){hitungCOD();hitungTotal();loadSetoranHistory();}
+function initSetoran(){hitungCOD();hitungTotal();loadSetoranHistoryOnly();}
+
+// FUNGSI KHUSUS UNTUK LOAD RIWAYAT SETORAN (DIPANGGIL SAAT SYNC)
+function loadSetoranHistoryOnly(){
+  const el=document.getElementById('setHistory');
+  if(!el)return;
+  
+  if(setoranHistory.length===0){
+    el.innerHTML='<p class="text-center text-sm">📭 Belum ada setoran.</p>';
+    return;
+  }
+  
+  let data=[...setoranHistory];
+  if(currentUser?.role==='sales')data=data.filter(s=>s.sales===currentUser.name);
+  
+  if(data.length===0){
+    el.innerHTML='<p class="text-center text-sm">📭 Belum ada setoran untuk sales ini.</p>';
+    return;
+  }
+  
+  let h='<table><tr><th>Tgl</th><th>Sales</th><th>Total</th><th>Setor</th><th>Selisih</th></tr>';
+  data.slice(0,30).forEach(s=>{
+    h+=`<tr><td>${s.tanggal||'-'}</td><td>${s.sales||'-'}</td><td>Rp${(s.total||0).toLocaleString()}</td><td>Rp${(s.setor||0).toLocaleString()}</td><td style="color:${(s.selisih||0)<0?'#EF4444':'#10B981'}">Rp${(s.selisih||0).toLocaleString()}</td></tr>`;
+  });
+  h+='</table>';
+  el.innerHTML=h;
+}
 
 function hitungCOD(){
   const today=document.getElementById('setTanggal')?.value||new Date().toISOString().split('T')[0];
@@ -271,48 +269,13 @@ async function saveSetoran(){
   saveAllData();
   syncToGoogleSheets('addSetoran',data);
   Swal.fire('Sukses','Setoran disimpan!','success');
-  loadSetoranHistory();
+  loadSetoranHistoryOnly();
 }
 
-// LOAD SETORAN - CARA SAMA PERSIS SEPERTI REKAP
-function loadSetoranHistory(){
-  const el=document.getElementById('setHistory');
-  if(!el)return;
-  
-  // TAMPILKAN DATA LANGSUNG - SAMA PERSIS SEPERTI REKAP
-  if(setoranHistory.length===0){
-    el.innerHTML='<p class="text-center text-sm">📭 Belum ada setoran.</p>';
-    return;
-  }
-  
-  let data=[...setoranHistory];
-  if(currentUser?.role==='sales')data=data.filter(s=>s.sales===currentUser.name);
-  
-  if(data.length===0){
-    el.innerHTML='<p class="text-center text-sm">📭 Belum ada setoran untuk sales ini.</p>';
-    return;
-  }
-  
-  let h='<table><tr><th>Tgl</th><th>Sales</th><th>Total</th><th>Setor</th><th>Selisih</th></tr>';
-  data.slice(0,30).forEach(s=>{
-    h+=`<tr><td>${s.tanggal||'-'}</td><td>${s.sales||'-'}</td><td>Rp${(s.total||0).toLocaleString()}</td><td>Rp${(s.setor||0).toLocaleString()}</td><td style="color:${(s.selisih||0)<0?'#EF4444':'#10B981'}">Rp${(s.selisih||0).toLocaleString()}</td></tr>`;
-  });
-  h+='</table>';
-  el.innerHTML=h;
-}
+// GUDANG
+function loadGudang(container){let h='<div class="card"><div class="card-header"><div class="card-title">📊 Rekap Gudang</div><button class="btn-refresh btn-sm" onclick="refreshAllData()">🔄</button></div>';if(stockInHistory.length===0){h+='<p class="text-center">Belum ada data.</p></div>';container.innerHTML=h;return;}const tq=stockInHistory.reduce((s,i)=>s+(i.qty||0),0);h+=`<div class="flex-row mb-2"><div class="summary-box" style="background:#D1FAE5;">Total QTY: <b>${tq}</b></div></div>`;h+='<table><tr><th>Tgl</th><th>SKU</th><th>Qty</th><th>Driver</th></tr>';stockInHistory.slice(0,30).forEach(s=>{h+=`<tr><td>${s.date}</td><td>${s.sku}</td><td>${s.qty}</td><td>${s.driver||'-'}</td></tr>`;});h+='</table></div>';container.innerHTML=h;}
 
-// GUDANG - BERHASIL
-function loadGudang(container){
-  let h='<div class="card"><div class="card-header"><div class="card-title">📊 Rekap Gudang</div><button class="btn-refresh btn-sm" onclick="refreshAllData()">🔄 Sync</button></div>';
-  if(stockInHistory.length===0){h+='<p class="text-center">Belum ada data.</p></div>';container.innerHTML=h;return;}
-  const tq=stockInHistory.reduce((s,i)=>s+(i.qty||0),0);
-  h+=`<div class="flex-row mb-2"><div class="summary-box" style="background:#D1FAE5;">Total QTY: <b>${tq}</b></div></div>`;
-  h+='<table><tr><th>Tgl</th><th>SKU</th><th>Qty</th><th>Driver</th></tr>';
-  stockInHistory.slice(0,30).forEach(s=>{h+=`<tr><td>${s.date}</td><td>${s.sku}</td><td>${s.qty}</td><td>${s.driver||'-'}</td></tr>`;});
-  h+='</table></div>';container.innerHTML=h;
-}
-
-document.addEventListener('DOMContentLoaded',()=>{loadAllData();initDarkMode();const savedUser=localStorage.getItem('tirtaUser');if(savedUser){currentUser=JSON.parse(savedUser);showMainApp();}});
+document.addEventListener('DOMContentLoaded',()=>{loadAllData();const savedUser=localStorage.getItem('tirtaUser');if(savedUser){currentUser=JSON.parse(savedUser);showMainApp();}});
 </script>
 </body>
 </html>
