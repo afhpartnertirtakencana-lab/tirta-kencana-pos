@@ -74,11 +74,9 @@
     .section-title{font-size:0.7rem;font-weight:700;color:var(--biru);margin:12px 0 6px 0;padding-bottom:4px;border-bottom:2px solid var(--kuning);}
     .setoran-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);}
     .setoran-row label{font-size:0.7rem;font-weight:600;min-width:85px;color:var(--text-secondary);}.setoran-row input{flex:1;text-align:right;}
+    .cart-sku{font-size:0.75rem!important;}
     .cart-qty{width:55px!important;font-size:0.75rem!important;}.cart-disc{width:70px!important;font-size:0.75rem!important;}
     @media(max-width:480px){.cart-qty{width:45px!important;}.cart-disc{width:60px!important;}.setoran-row label{min-width:70px;font-size:0.6rem;}}
-    .pagination{display:flex;justify-content:center;align-items:center;gap:4px;margin-top:8px;flex-wrap:wrap;}
-    .pagination button{min-width:32px;height:32px;padding:4px 8px;border-radius:8px;font-size:0.7rem;}
-    .pagination .active{background:var(--biru);color:white;border-color:var(--biru);}.pagination span{font-size:0.7rem;color:var(--text-secondary);margin:0 4px;}
   </style>
 </head>
 <body>
@@ -143,7 +141,7 @@ function loadAllData(){const s=localStorage.getItem('tirtaFullData');if(s)try{co
 
 async function syncToGoogleSheets(action,data){if(!USE_GOOGLE_SHEETS)return;try{await fetch(GOOGLE_SHEETS_URL+'?action='+action+'&data='+encodeURIComponent(JSON.stringify(data)),{method:'GET',mode:'no-cors'});}catch(e){}}
 
-// REFRESH - JANGAN HAPUS DATA LOKAL
+// REFRESH - CARA SAMA SEPERTI REKAP
 async function refreshAllData(){
   Swal.fire({title:'🔄 Sync',text:'Menarik data...',allowOutsideClick:false,didOpen:()=>Swal.showLoading()});
   try{
@@ -154,7 +152,7 @@ async function refreshAllData(){
       if(d.data.pelanggan&&d.data.pelanggan.length>0)pelanggan=d.data.pelanggan;
       if(d.data.salesHistory&&d.data.salesHistory.length>0)salesHistory=d.data.salesHistory;
       if(d.data.stockInHistory&&d.data.stockInHistory.length>0)stockInHistory=d.data.stockInHistory;
-      // SETORAN - JANGAN OVERWRITE DENGAN ARRAY KOSONG
+      // SETORAN - PASTIKAN DATA MASUK
       if(d.data.setoranHistory&&d.data.setoranHistory.length>0)setoranHistory=d.data.setoranHistory;
       if(d.data.drivers&&d.data.drivers.length>0)drivers=d.data.drivers;
       if(d.data.banks&&d.data.banks.length>0)banks=d.data.banks;
@@ -170,9 +168,6 @@ async function refreshAllData(){
   }catch(e){Swal.fire({title:'❌ Error',text:'Gagal terhubung.',icon:'error'});}
 }
 
-function getPaginatedData(data,page){const s=(page-1)*ITEMS_PER_PAGE;return data.slice(s,s+ITEMS_PER_PAGE);}
-function getPaginationHTML(total,pg,fn){const tp=Math.ceil(total/ITEMS_PER_PAGE);if(tp<=1)return'';let h='<div class="pagination">';h+=`<button class="btn btn-sm btn-outline" onclick="${fn}(${pg-1})" ${pg===1?'disabled':''}>«</button>`;for(let i=1;i<=tp;i++){h+=`<button class="btn btn-sm ${i===pg?'active btn-primary':'btn-outline'}" onclick="${fn}(${i})">${i}</button>`;}h+=`<button class="btn btn-sm btn-outline" onclick="${fn}(${pg+1})" ${pg===tp?'disabled':''}>»</button>`;h+=`<span>Hal ${pg}/${tp}</span></div>`;return h;}
-
 function doLogin(){const u=document.getElementById('loginUser').value.trim(),p=document.getElementById('loginPass').value.trim();if(!u||!p)return Swal.fire('Error','Isi username & password','error');const f=allUsers.find(x=>x.name===u&&x.password===p);if(f){currentUser={name:f.name,role:f.role};localStorage.setItem('tirtaUser',JSON.stringify(currentUser));showMainApp();}else{Swal.fire('Error','Username/password salah!','error');}}
 document.addEventListener('keydown',function(e){if(e.key==='Enter'&&!document.getElementById('loginPage').classList.contains('hidden'))doLogin();});
 function doLogout(){localStorage.removeItem('tirtaUser');currentUser=null;cart=[];document.getElementById('loginPage').classList.remove('hidden');document.getElementById('mainApp').classList.add('hidden');}
@@ -182,7 +177,7 @@ function renderMenuTabs(){let h='';const r=currentUser?.role;if(r==='admin'){h=`
 function navigateTo(p){currentPage=p;paginationPage=1;renderMenuTabs();renderContent();}
 function renderContent(){const c=document.getElementById('contentArea');switch(currentPage){case'penjualan':c.innerHTML=pagePenjualan();initPenjualan();break;case'rekap':loadRekapPenjualan(c);break;case'setoran':c.innerHTML=pageSetoran();initSetoran();break;case'inputbarang':c.innerHTML=pageInputBarang();initInputBarang();break;case'rekaptoko':loadRekapStockIn(c);break;case'keuangan':loadKeuangan(c);break;case'produk':c.innerHTML=pageProduk();break;case'pelanggan':c.innerHTML=pagePelanggan();break;case'pengaturan':c.innerHTML=pagePengaturan();break;}}
 
-// PENJUALAN
+// PENJUALAN - SKU LEBAR
 function pagePenjualan(){let co='<option value="">-- Pilih Pelanggan --</option><option value="__new__">+ Tambah Baru</option>';pelanggan.forEach(c=>{co+=`<option value="${c}">${c}</option>`;});return`<div class="card"><div class="card-title"><i class="fas fa-user-check"></i> Data Penjualan</div><div class="form-group"><label>Sales</label><input value="${currentUser?.name||''}" readonly></div><div class="form-group"><label>Pelanggan</label><select id="custSelect" onchange="onPelangganSelect()">${co}</select><input id="custNewInput" placeholder="Nama Pelanggan Baru" style="margin-top:4px;display:none;"></div><div class="form-group"><label>Status</label><select id="payStatus" onchange="onStatusChange()"><option value="cod">COD</option><option value="transfer">Transfer</option><option value="qris">QRIS</option><option value="belumbayar">Belum Bayar</option></select></div><div id="bankInfoBox" style="display:none;" class="bank-info"></div></div><div class="card"><div class="card-title"><i class="fas fa-shopping-cart"></i> Item</div><div id="cartItems"></div><button class="btn btn-outline btn-sm" onclick="addCartItem()"><i class="fas fa-plus"></i> Tambah</button><div class="total-box"><div>Total: Rp <span id="cartTotal">0</span></div></div><button class="btn btn-primary btn-block" onclick="saveSale()"><i class="fas fa-save"></i> Simpan</button></div>`;}
 function initPenjualan(){if(cart.length===0)cart.push({sku:'',qty:1,disc:0});renderCart();onStatusChange();}
 function onPelangganSelect(){const s=document.getElementById('custSelect'),n=document.getElementById('custNewInput');if(s.value==='__new__'){n.style.display='block';n.focus();}else{n.style.display='none';n.value='';}}
@@ -190,7 +185,7 @@ function onStatusChange(){const st=document.getElementById('payStatus')?.value,b
 function getSelectedPelanggan(){const s=document.getElementById('custSelect'),n=document.getElementById('custNewInput');return s.value==='__new__'?n.value.trim():s.value;}
 function addCartItem(){cart.push({sku:'',qty:1,disc:0});renderCart();}function removeCartItem(i){cart.splice(i,1);renderCart();}
 function updateCart(i,f,v){if(f==='qty')cart[i].qty=parseInt(v)||1;else if(f==='disc')cart[i].disc=parseInt(v)||0;else cart[i][f]=v;if(f==='sku'){const p=products.find(x=>x.sku===v);if(p){cart[i].harga=p.jual;cart[i].nama=p.nama;cart[i].modal=p.modal;}}renderCart();}
-function renderCart(){const el=document.getElementById('cartItems');if(!el)return;el.innerHTML=cart.map((item,i)=>{const p=products.find(x=>x.sku===item.sku),h=p?p.jual:(item.harga||0),dp=item.disc||0,dt=dp*item.qty,sub=(item.qty*h)-dt;let po='<option value="">Pilih</option>';products.forEach(p=>{po+=`<option value="${p.sku}" ${item.sku===p.sku?'selected':''}>${p.sku}-${p.nama}(${p.stokAkhir})</option>`;});return`<div class="flex-row" style="margin-bottom:6px;padding:6px;background:var(--biru-muda);border-radius:8px;"><select onchange="updateCart(${i},'sku',this.value)" style="flex:2;font-size:0.75rem;">${po}</select><input type="number" value="${item.qty}" onchange="updateCart(${i},'qty',this.value)" class="cart-qty" min="1"><span style="font-size:0.7rem;">xRp${h.toLocaleString()}</span><input type="number" value="${dp}" onchange="updateCart(${i},'disc',this.value)" class="cart-disc" placeholder="Disc"><span style="font-size:0.65rem;color:#EF4444;">(-Rp${dt.toLocaleString()})</span><span style="font-size:0.75rem;font-weight:600;">Rp${sub.toLocaleString()}</span><button class="btn btn-danger btn-sm" onclick="removeCartItem(${i})" style="padding:2px 6px;">✕</button></div>`;}).join('');let sa=0,td=0;cart.forEach(i=>{const p=products.find(x=>x.sku===i.sku),h=p?p.jual:(i.harga||0);sa+=i.qty*h;td+=(i.disc||0)*i.qty;});document.getElementById('cartTotal').textContent=(sa-td).toLocaleString();}
+function renderCart(){const el=document.getElementById('cartItems');if(!el)return;el.innerHTML=cart.map((item,i)=>{const p=products.find(x=>x.sku===item.sku),h=p?p.jual:(item.harga||0),dp=item.disc||0,dt=dp*item.qty,sub=(item.qty*h)-dt;let po='<option value="">Pilih</option>';products.forEach(p=>{po+=`<option value="${p.sku}" ${item.sku===p.sku?'selected':''}>${p.sku}-${p.nama}(${p.stokAkhir})</option>`;});return`<div class="flex-row" style="margin-bottom:6px;padding:6px;background:var(--biru-muda);border-radius:8px;"><select onchange="updateCart(${i},'sku',this.value)" style="flex:3;font-size:0.75rem;" class="cart-sku">${po}</select><input type="number" value="${item.qty}" onchange="updateCart(${i},'qty',this.value)" class="cart-qty" min="1"><span style="font-size:0.7rem;">xRp${h.toLocaleString()}</span><input type="number" value="${dp}" onchange="updateCart(${i},'disc',this.value)" class="cart-disc" placeholder="Disc"><span style="font-size:0.65rem;color:#EF4444;">(-Rp${dt.toLocaleString()})</span><span style="font-size:0.75rem;font-weight:600;">Rp${sub.toLocaleString()}</span><button class="btn btn-danger btn-sm" onclick="removeCartItem(${i})" style="padding:2px 6px;">✕</button></div>`;}).join('');let sa=0,td=0;cart.forEach(i=>{const p=products.find(x=>x.sku===i.sku),h=p?p.jual:(i.harga||0);sa+=i.qty*h;td+=(i.disc||0)*i.qty;});document.getElementById('cartTotal').textContent=(sa-td).toLocaleString();}
 async function saveSale(){const cust=getSelectedPelanggan();if(!cust)return Swal.fire('Error','Pilih pelanggan','error');const valid=cart.filter(i=>i.sku&&products.find(p=>p.sku===i.sku));if(valid.length===0)return Swal.fire('Error','Pilih produk','error');const status=document.getElementById('payStatus')?.value||'cod';const items=valid.map(i=>{const p=products.find(x=>x.sku===i.sku);const hj=p?p.jual:(i.harga||0);const hm=p?p.modal:(i.modal||0);const q=parseInt(i.qty)||0;const dp=parseInt(i.disc)||0;const profit=(hj-dp-hm)*q;const dt=dp*q;const sub=(q*hj)-dt;return{sku:i.sku,nama:p?.nama||'',qty:q,harga:hj,disc:dp,modal:hm,discTotal:dt,subtotal:sub,profit:profit};});let total=0,tq=0,td=0,tp=0;items.forEach(i=>{total+=i.subtotal;tq+=i.qty;td+=i.discTotal;tp+=i.profit;});const ns={id:'INV-'+Date.now(),user:currentUser.name,customer:cust,status,items,total,totalQty:tq,totalDisc:td,totalProfit:tp,date:new Date().toISOString().split('T')[0],time:new Date().toLocaleTimeString('id-ID')};salesHistory.unshift(ns);items.forEach(i=>{const p=products.find(x=>x.sku===i.sku);if(p){p.stokKeluar=(p.stokKeluar||0)+i.qty;p.stokAkhir=(p.stokAwal||0)+(p.stokMasuk||0)-p.stokKeluar;}});if(!pelanggan.includes(cust))pelanggan.push(cust);saveAllData();syncToGoogleSheets('createSale',ns);Swal.fire({title:'✅ Berhasil!',html:`Total: <b>Rp${total.toLocaleString()}</b>`,icon:'success',showDenyButton:true,showCancelButton:true,confirmButtonText:'🖨️ Cetak',denyButtonText:'📥 PNG',cancelButtonText:'💬 WA'}).then(ch=>{showStruk(ns);if(ch.isConfirmed)cetakBluetooth();else if(ch.isDenied)downloadStrukPNG();else if(ch.dismiss===Swal.DismissReason.cancel)kirimWA();});cart=[{sku:'',qty:1,disc:0}];renderCart();document.getElementById('custSelect').value='';document.getElementById('custNewInput').style.display='none';}
 
 // STRUK
@@ -200,20 +195,14 @@ async function cetakBluetooth(){try{const d=await navigator.bluetooth.requestDev
 function downloadStrukPNG(){const el=document.getElementById('strukPrintArea');if(!el)return;html2canvas(el,{scale:2,backgroundColor:'#FFFFFF'}).then(c=>{const a=document.createElement('a');a.href=c.toDataURL('image/png');a.download='struk-'+Date.now()+'.png';a.click();});}
 function kirimWA(){const el=document.getElementById('strukPrintArea');if(!el)return;window.open('https://wa.me/?text='+encodeURIComponent(el.innerText),'_blank');}
 
-// SETORAN - DENGAN DATA LOKAL
+// SETORAN - CARA SAMA SEPERTI REKAP (TAMPILKAN DATA LANGSUNG)
 function pageSetoran(){
   const today=new Date().toISOString().split('T')[0];
   const salesList=allUsers.filter(u=>u.role==='sales'||u.role==='admin').map(u=>u.name);
   if(salesList.length===0)salesList.push('Sales A','Sales B');
-  
   let so='';
-  if(currentUser?.role==='admin'){
-    so='<option value="__all__">-- Semua Sales --</option>';
-    salesList.forEach(s=>{so+=`<option value="${s}">${s}</option>`;});
-  }else{
-    so=salesList.map(s=>`<option value="${s}" ${currentUser.name===s?'selected':''}>${s}</option>`).join('');
-  }
-  
+  if(currentUser?.role==='admin'){so='<option value="__all__">-- Semua Sales --</option>';salesList.forEach(s=>{so+=`<option value="${s}">${s}</option>`;});}
+  else{so=salesList.map(s=>`<option value="${s}" ${currentUser.name===s?'selected':''}>${s}</option>`).join('');}
   return`<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-money-bill-wave"></i> Setoran Sales</div><button class="btn-refresh btn-sm" onclick="refreshAllData()">🔄 Sync</button></div>
   <div class="form-group"><label>Sales</label><select id="setSales" onchange="hitungGrandCOD()">${so}</select></div>
   <div class="form-group"><label>Tanggal</label><input type="date" id="setTanggal" value="${today}" onchange="hitungGrandCOD()"></div>
@@ -239,93 +228,32 @@ function pageSetoran(){
   </div>
   <div class="card"><div class="card-title"><i class="fas fa-history"></i> Riwayat Setoran</div><div id="setHistory"></div></div>`;
 }
-
 function initSetoran(){hitungGrandCOD();hitungSetoran();loadSetoranHistory();}
+function hitungGrandCOD(){const today=document.getElementById('setTanggal')?.value||new Date().toISOString().split('T')[0];const sales=document.getElementById('setSales')?.value||currentUser.name;let ct=0;if(sales==='__all__'){ct=salesHistory.filter(s=>s.date===today&&s.status==='cod').reduce((sum,s)=>sum+(s.total||0),0);}else{ct=salesHistory.filter(s=>s.date===today&&s.user===sales&&s.status==='cod').reduce((sum,s)=>sum+(s.total||0),0);}document.getElementById('setGrandCOD').value='Rp '+ct.toLocaleString();document.getElementById('setGrandCOD').dataset.value=ct;}
+function hitungSetoran(){const g=parseInt(document.getElementById('setGrandCOD')?.dataset?.value||0);const a=parseInt(document.getElementById('setMakan')?.value||0),b=parseInt(document.getElementById('setTips')?.value||0),c=parseInt(document.getElementById('setParkir')?.value||0),d=parseInt(document.getElementById('setFlazz')?.value||0),e=parseInt(document.getElementById('setBensin')?.value||0),f=parseInt(document.getElementById('setTransfer')?.value||0),j1=parseInt(document.getElementById('setJml1')?.value||0),j2=parseInt(document.getElementById('setJml2')?.value||0),ci=parseInt(document.getElementById('setCicilan')?.value||0),ta=parseInt(document.getElementById('setTagihan')?.value||0);const total=g-a-b-c-d-e-f-j1-j2+ci+ta;const setor=parseInt(document.getElementById('setSetor')?.value||0);const selisih=setor-total;document.getElementById('setTotal').textContent=total.toLocaleString();document.getElementById('setSelisih').textContent=selisih.toLocaleString();}
+async function saveSetoran(){const sv=document.getElementById('setSales')?.value;const sn=(sv==='__all__')?'Admin (All)':sv;const data={sales:sn,tanggal:document.getElementById('setTanggal')?.value,grandCOD:parseInt(document.getElementById('setGrandCOD')?.dataset?.value||0),makan:parseInt(document.getElementById('setMakan')?.value||0),tips:parseInt(document.getElementById('setTips')?.value||0),parkir:parseInt(document.getElementById('setParkir')?.value||0),flazz:parseInt(document.getElementById('setFlazz')?.value||0),bensin:parseInt(document.getElementById('setBensin')?.value||0),transfer:parseInt(document.getElementById('setTransfer')?.value||0),ket1:document.getElementById('setKet1')?.value||'',jml1:parseInt(document.getElementById('setJml1')?.value||0),ket2:document.getElementById('setKet2')?.value||'',jml2:parseInt(document.getElementById('setJml2')?.value||0),cicilan:parseInt(document.getElementById('setCicilan')?.value||0),tagihan:parseInt(document.getElementById('setTagihan')?.value||0),total:parseInt(document.getElementById('setTotal')?.textContent?.replace(/\D/g,'')||0),setor:parseInt(document.getElementById('setSetor')?.value||0),selisih:parseInt(document.getElementById('setSelisih')?.textContent?.replace(/-/g,'').replace(/\D/g,'')||0)*(document.getElementById('setSelisih')?.textContent?.includes('-')?-1:1),waktu:new Date().toLocaleTimeString('id-ID')};setoranHistory.unshift({id:'SET-'+Date.now(),...data});saveAllData();syncToGoogleSheets('addSetoran',data);Swal.fire('Sukses','Setoran disimpan!','success');loadSetoranHistory();}
 
-function hitungGrandCOD(){
-  const today=document.getElementById('setTanggal')?.value||new Date().toISOString().split('T')[0];
-  const sales=document.getElementById('setSales')?.value||currentUser.name;
-  let ct=0;
-  if(sales==='__all__'){
-    ct=salesHistory.filter(s=>s.date===today&&s.status==='cod').reduce((sum,s)=>sum+(s.total||0),0);
-  }else{
-    ct=salesHistory.filter(s=>s.date===today&&s.user===sales&&s.status==='cod').reduce((sum,s)=>sum+(s.total||0),0);
-  }
-  document.getElementById('setGrandCOD').value='Rp '+ct.toLocaleString();
-  document.getElementById('setGrandCOD').dataset.value=ct;
-}
-
-function hitungSetoran(){
-  const g=parseInt(document.getElementById('setGrandCOD')?.dataset?.value||0);
-  const a=parseInt(document.getElementById('setMakan')?.value||0);
-  const b=parseInt(document.getElementById('setTips')?.value||0);
-  const c=parseInt(document.getElementById('setParkir')?.value||0);
-  const d=parseInt(document.getElementById('setFlazz')?.value||0);
-  const e=parseInt(document.getElementById('setBensin')?.value||0);
-  const f=parseInt(document.getElementById('setTransfer')?.value||0);
-  const j1=parseInt(document.getElementById('setJml1')?.value||0);
-  const j2=parseInt(document.getElementById('setJml2')?.value||0);
-  const ci=parseInt(document.getElementById('setCicilan')?.value||0);
-  const ta=parseInt(document.getElementById('setTagihan')?.value||0);
-  const total=g-a-b-c-d-e-f-j1-j2+ci+ta;
-  const setor=parseInt(document.getElementById('setSetor')?.value||0);
-  const selisih=setor-total;
-  document.getElementById('setTotal').textContent=total.toLocaleString();
-  document.getElementById('setSelisih').textContent=selisih.toLocaleString();
-  document.getElementById('setSelisih').style.color=selisih<0?'#EF4444':selisih>0?'#10B981':'inherit';
-}
-
-async function saveSetoran(){
-  const salesVal=document.getElementById('setSales')?.value;
-  const salesName=(salesVal==='__all__')?'Admin (All)':salesVal;
-  
-  const data={
-    sales:salesName,
-    tanggal:document.getElementById('setTanggal')?.value,
-    grandCOD:parseInt(document.getElementById('setGrandCOD')?.dataset?.value||0),
-    makan:parseInt(document.getElementById('setMakan')?.value||0),
-    tips:parseInt(document.getElementById('setTips')?.value||0),
-    parkir:parseInt(document.getElementById('setParkir')?.value||0),
-    flazz:parseInt(document.getElementById('setFlazz')?.value||0),
-    bensin:parseInt(document.getElementById('setBensin')?.value||0),
-    transfer:parseInt(document.getElementById('setTransfer')?.value||0),
-    ket1:document.getElementById('setKet1')?.value||'',
-    jml1:parseInt(document.getElementById('setJml1')?.value||0),
-    ket2:document.getElementById('setKet2')?.value||'',
-    jml2:parseInt(document.getElementById('setJml2')?.value||0),
-    cicilan:parseInt(document.getElementById('setCicilan')?.value||0),
-    tagihan:parseInt(document.getElementById('setTagihan')?.value||0),
-    total:parseInt(document.getElementById('setTotal')?.textContent?.replace(/\D/g,'')||0),
-    setor:parseInt(document.getElementById('setSetor')?.value||0),
-    selisih:parseInt(document.getElementById('setSelisih')?.textContent?.replace(/-/g,'').replace(/\D/g,'')||0)*(document.getElementById('setSelisih')?.textContent?.includes('-')?-1:1),
-    waktu:new Date().toLocaleTimeString('id-ID')
-  };
-  
-  setoranHistory.unshift({id:'SET-'+Date.now(),...data});
-  saveAllData();
-  syncToGoogleSheets('addSetoran',data);
-  Swal.fire('Sukses','Setoran disimpan!','success');
-  loadSetoranHistory();
-}
-
+// LOAD SETORAN HISTORY - CARA SAMA SEPERTI REKAP
 function loadSetoranHistory(){
   const el=document.getElementById('setHistory');
   if(!el)return;
   
-  // Filter untuk sales
-  let data=[...setoranHistory];
-  if(currentUser?.role==='sales'){
-    data=data.filter(s=>s.sales===currentUser.name);
+  // TAMPILKAN DATA LANGSUNG SEPERTI REKAP
+  if(setoranHistory.length===0){
+    el.innerHTML='<p class="text-sm text-center">📭 Belum ada setoran. Silakan isi form di atas.</p>';
+    return;
   }
   
+  let data=[...setoranHistory];
+  if(currentUser?.role==='sales')data=data.filter(s=>s.sales===currentUser.name);
+  
   if(data.length===0){
-    el.innerHTML='<p class="text-sm text-center">Belum ada setoran. Silakan isi form di atas.</p>';
+    el.innerHTML='<p class="text-sm text-center">📭 Belum ada setoran untuk sales ini.</p>';
     return;
   }
   
   let h='<table><tr><th>Tgl</th><th>Sales</th><th>Total</th><th>Setor</th><th>Selisih</th><th>Aksi</th></tr>';
-  const pg=getPaginatedData(data,paginationPage);
-  pg.forEach(s=>{
+  data.slice(0,30).forEach(s=>{
     h+=`<tr>
       <td>${s.tanggal||'-'}</td>
       <td>${s.sales||'-'}</td>
@@ -336,140 +264,41 @@ function loadSetoranHistory(){
     </tr>`;
   });
   h+='</table>';
-  h+=getPaginationHTML(data.length,paginationPage,'goToSetoranPage');
   el.innerHTML=h;
 }
 
-function goToSetoranPage(pg){paginationPage=pg;loadSetoranHistory();}
-
-function cetakSetoran(){
-  const sv=document.getElementById('setSales')?.value;
-  const sn=(sv==='__all__')?'Admin (All)':sv;
-  const d={
-    sales:sn,tanggal:document.getElementById('setTanggal')?.value,
-    grandCOD:document.getElementById('setGrandCOD')?.dataset?.value||0,
-    makan:document.getElementById('setMakan')?.value||0,
-    tips:document.getElementById('setTips')?.value||0,
-    parkir:document.getElementById('setParkir')?.value||0,
-    flazz:document.getElementById('setFlazz')?.value||0,
-    bensin:document.getElementById('setBensin')?.value||0,
-    transfer:document.getElementById('setTransfer')?.value||0,
-    ket1:document.getElementById('setKet1')?.value||'',jml1:document.getElementById('setJml1')?.value||0,
-    ket2:document.getElementById('setKet2')?.value||'',jml2:document.getElementById('setJml2')?.value||0,
-    cicilan:document.getElementById('setCicilan')?.value||0,
-    tagihan:document.getElementById('setTagihan')?.value||0,
-    total:document.getElementById('setTotal')?.textContent||'0',
-    setor:document.getElementById('setSetor')?.value||0,
-    selisih:document.getElementById('setSelisih')?.textContent||'0'
-  };
-  showStrukSetoran(d);
-  Swal.fire({title:'Cetak',showDenyButton:true,showCancelButton:true,confirmButtonText:'🖨️',denyButtonText:'📥',cancelButtonText:'💬'}).then(r=>{
-    if(r.isConfirmed)cetakBluetooth();else if(r.isDenied)downloadStrukPNG();else if(r.dismiss===Swal.DismissReason.cancel)kirimWA();
-  });
-}
-
-function cetakSetoranByID(id){
-  const s=setoranHistory.find(x=>x.id===id);
-  if(!s)return;
-  showStrukSetoran(s);
-  Swal.fire({title:'Cetak',showDenyButton:true,showCancelButton:true,confirmButtonText:'🖨️',denyButtonText:'📥',cancelButtonText:'💬'}).then(r=>{
-    if(r.isConfirmed)cetakBluetooth();else if(r.isDenied)downloadStrukPNG();else if(r.dismiss===Swal.DismissReason.cancel)kirimWA();
-  });
-}
-
-function showStrukSetoran(d){
-  document.getElementById('strukContent').innerHTML=`<div id="strukPrintArea" style="text-align:center;padding:15px;font-size:0.7rem;max-width:320px;margin:0 auto;">
-    ${settings.logo?`<img src="${settings.logo}" style="width:60px;height:60px;border-radius:50%;margin-bottom:8px;">`:''}
-    <h3 style="color:#0A4D8C;">${settings.namaToko}</h3><p>SETORAN SALES</p><hr>
-    <p>Sales: ${d.sales}</p><p>Tgl: ${d.tanggal}</p><hr>
-    <table style="width:100%;font-size:0.6rem;">
-    <tr><td>Grand Total COD</td><td style="text-align:right;">Rp${(parseInt(d.grandCOD)||0).toLocaleString()}</td></tr>
-    <tr><td>Uang Makan</td><td style="text-align:right;color:#EF4444;">-Rp${(parseInt(d.makan)||0).toLocaleString()}</td></tr>
-    <tr><td>Tips</td><td style="text-align:right;color:#EF4444;">-Rp${(parseInt(d.tips)||0).toLocaleString()}</td></tr>
-    <tr><td>Parkir</td><td style="text-align:right;color:#EF4444;">-Rp${(parseInt(d.parkir)||0).toLocaleString()}</td></tr>
-    <tr><td>Flazz</td><td style="text-align:right;color:#EF4444;">-Rp${(parseInt(d.flazz)||0).toLocaleString()}</td></tr>
-    <tr><td>Bensin</td><td style="text-align:right;color:#EF4444;">-Rp${(parseInt(d.bensin)||0).toLocaleString()}</td></tr>
-    <tr><td>Transfer</td><td style="text-align:right;color:#EF4444;">-Rp${(parseInt(d.transfer)||0).toLocaleString()}</td></tr>
-    ${d.ket1?`<tr><td>${d.ket1}</td><td style="text-align:right;color:#EF4444;">-Rp${(parseInt(d.jml1)||0).toLocaleString()}</td></tr>`:''}
-    ${d.ket2?`<tr><td>${d.ket2}</td><td style="text-align:right;color:#EF4444;">-Rp${(parseInt(d.jml2)||0).toLocaleString()}</td></tr>`:''}
-    <tr><td>Cicilan Hutang</td><td style="text-align:right;color:#10B981;">+Rp${(parseInt(d.cicilan)||0).toLocaleString()}</td></tr>
-    <tr><td>Tagihan</td><td style="text-align:right;color:#10B981;">+Rp${(parseInt(d.tagihan)||0).toLocaleString()}</td></tr>
-    </table><hr>
-    <p><b>Total:</b> Rp${(d.total||'0').toLocaleString()}</p>
-    <p><b>Setor:</b> Rp${(parseInt(d.setor)||0).toLocaleString()}</p>
-    <p style="color:${(parseInt(d.selisih)||0)<0?'#EF4444':'#10B981'}"><b>Selisih:</b> Rp${(d.selisih||'0').toLocaleString()}</p>
-    <p>${settings.bottomLine}</p></div>`;
-  document.getElementById('strukModal').style.display='flex';
-}
+function cetakSetoran(){const sv=document.getElementById('setSales')?.value;const sn=(sv==='__all__')?'Admin (All)':sv;const d={sales:sn,tanggal:document.getElementById('setTanggal')?.value,grandCOD:document.getElementById('setGrandCOD')?.dataset?.value||0,makan:document.getElementById('setMakan')?.value||0,tips:document.getElementById('setTips')?.value||0,parkir:document.getElementById('setParkir')?.value||0,flazz:document.getElementById('setFlazz')?.value||0,bensin:document.getElementById('setBensin')?.value||0,transfer:document.getElementById('setTransfer')?.value||0,ket1:document.getElementById('setKet1')?.value||'',jml1:document.getElementById('setJml1')?.value||0,ket2:document.getElementById('setKet2')?.value||'',jml2:document.getElementById('setJml2')?.value||0,cicilan:document.getElementById('setCicilan')?.value||0,tagihan:document.getElementById('setTagihan')?.value||0,total:document.getElementById('setTotal')?.textContent||'0',setor:document.getElementById('setSetor')?.value||0,selisih:document.getElementById('setSelisih')?.textContent||'0'};showStrukSetoran(d);Swal.fire({title:'Cetak',showDenyButton:true,showCancelButton:true,confirmButtonText:'🖨️',denyButtonText:'📥',cancelButtonText:'💬'}).then(r=>{if(r.isConfirmed)cetakBluetooth();else if(r.isDenied)downloadStrukPNG();else if(r.dismiss===Swal.DismissReason.cancel)kirimWA();});}
+function cetakSetoranByID(id){const s=setoranHistory.find(x=>x.id===id);if(!s)return;showStrukSetoran(s);Swal.fire({title:'Cetak',showDenyButton:true,showCancelButton:true,confirmButtonText:'🖨️',denyButtonText:'📥',cancelButtonText:'💬'}).then(r=>{if(r.isConfirmed)cetakBluetooth();else if(r.isDenied)downloadStrukPNG();else if(r.dismiss===Swal.DismissReason.cancel)kirimWA();});}
+function showStrukSetoran(d){document.getElementById('strukContent').innerHTML=`<div id="strukPrintArea" style="text-align:center;padding:15px;font-size:0.7rem;max-width:320px;margin:0 auto;">${settings.logo?`<img src="${settings.logo}" style="width:60px;height:60px;border-radius:50%;margin-bottom:8px;">`:''}<h3 style="color:#0A4D8C;">${settings.namaToko}</h3><p>SETORAN SALES</p><hr><p>Sales: ${d.sales}</p><p>Tgl: ${d.tanggal}</p><hr><table style="width:100%;font-size:0.6rem;"><tr><td>Grand Total COD</td><td style="text-align:right;">Rp${(parseInt(d.grandCOD)||0).toLocaleString()}</td></tr><tr><td>Uang Makan</td><td style="text-align:right;color:#EF4444;">-Rp${(parseInt(d.makan)||0).toLocaleString()}</td></tr><tr><td>Tips</td><td style="text-align:right;color:#EF4444;">-Rp${(parseInt(d.tips)||0).toLocaleString()}</td></tr><tr><td>Parkir</td><td style="text-align:right;color:#EF4444;">-Rp${(parseInt(d.parkir)||0).toLocaleString()}</td></tr><tr><td>Flazz</td><td style="text-align:right;color:#EF4444;">-Rp${(parseInt(d.flazz)||0).toLocaleString()}</td></tr><tr><td>Bensin</td><td style="text-align:right;color:#EF4444;">-Rp${(parseInt(d.bensin)||0).toLocaleString()}</td></tr><tr><td>Transfer</td><td style="text-align:right;color:#EF4444;">-Rp${(parseInt(d.transfer)||0).toLocaleString()}</td></tr>${d.ket1?`<tr><td>${d.ket1}</td><td style="text-align:right;color:#EF4444;">-Rp${(parseInt(d.jml1)||0).toLocaleString()}</td></tr>`:''}${d.ket2?`<tr><td>${d.ket2}</td><td style="text-align:right;color:#EF4444;">-Rp${(parseInt(d.jml2)||0).toLocaleString()}</td></tr>`:''}<tr><td>Cicilan Hutang</td><td style="text-align:right;color:#10B981;">+Rp${(parseInt(d.cicilan)||0).toLocaleString()}</td></tr><tr><td>Tagihan</td><td style="text-align:right;color:#10B981;">+Rp${(parseInt(d.tagihan)||0).toLocaleString()}</td></tr></table><hr><p><b>Total:</b> Rp${(d.total||'0').toLocaleString()}</p><p><b>Setor:</b> Rp${(parseInt(d.setor)||0).toLocaleString()}</p><p style="color:${(parseInt(d.selisih)||0)<0?'#EF4444':'#10B981'}"><b>Selisih:</b> Rp${(d.selisih||'0').toLocaleString()}</p><p>${settings.bottomLine}</p></div>`;document.getElementById('strukModal').style.display='flex';}
 
 // REKAP PENJUALAN
 function loadRekapPenjualan(container){
   const salesList=allUsers.filter(u=>u.role==='sales'||u.role==='admin').map(u=>u.name);
   if(salesList.length===0)salesList.push('Sales A','Sales B');
-  
   let h=`<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-chart-bar"></i> 📊 Rekap Penjualan</div><button class="btn-refresh btn-sm" onclick="refreshAllData()">🔄 Sync</button></div>`;
-  
-  if(salesHistory.length===0){
-    h+='<p class="text-center">📭 Belum ada data penjualan.<br><button class="btn btn-success btn-sm mt-2" onclick="navigateTo(\'penjualan\')">🛒 Buat Penjualan</button></p></div>';
-    container.innerHTML=h;return;
-  }
-  
+  if(salesHistory.length===0){h+='<p class="text-center">📭 Belum ada data penjualan.<br><button class="btn btn-success btn-sm mt-2" onclick="navigateTo(\'penjualan\')">🛒 Buat Penjualan</button></p></div>';container.innerHTML=h;return;}
   const tt=salesHistory.length,tp=salesHistory.reduce((s,x)=>s+(x.total||0),0),tq=salesHistory.reduce((s,x)=>s+(x.totalQty||0),0);
-  h+=`<div class="flex-row mb-2">
-    <div class="summary-box" style="background:#E6F0FA;"><small>Total Transaksi</small><br><b>${tt}</b></div>
-    <div class="summary-box" style="background:#FFF8E1;"><small>Total Pendapatan</small><br><b>Rp${tp.toLocaleString()}</b></div>
-    <div class="summary-box" style="background:#D1FAE5;"><small>Total QTY</small><br><b>${tq}</b></div>
-  </div>`;
-  
-  if(currentUser?.role==='admin'){
-    h+='<h4 style="font-size:0.8rem;margin-top:12px;color:var(--biru);">👤 Per Sales</h4>';
-    salesList.forEach(userName=>{
-      const us=salesHistory.filter(s=>s.user===userName);
-      if(us.length===0)return;
-      const ut=us.length,up=us.reduce((s,x)=>s+(x.total||0),0);
-      h+=`<div class="user-section"><h4>👤 ${userName} | ${ut} Transaksi | Total: Rp${up.toLocaleString()}</h4>
-      <table style="font-size:0.6rem;"><tr><th>Status</th><th>Jml</th><th>Total</th></tr>`;
-      ['cod','transfer','qris','belumbayar'].forEach(st=>{
-        const ss=us.filter(s=>s.status===st);
-        if(ss.length===0)return;
-        h+=`<tr><td><span class="status-badge status-${st}">${st.toUpperCase()}</span></td><td>${ss.length}</td><td>Rp${ss.reduce((s,x)=>s+(x.total||0),0).toLocaleString()}</td></tr>`;
-      });
-      h+='</table></div>';
-    });
-  }
-  
-  h+='<h4 style="font-size:0.8rem;margin-top:12px;color:var(--biru);">📋 Detail Transaksi Terbaru</h4>';
-  h+='<table><tr><th>Tgl</th><th>Customer</th><th>Sales</th><th>Status</th><th>Total</th></tr>';
-  salesHistory.slice(0,30).forEach(s=>{
-    h+=`<tr><td>${s.date}</td><td>${s.customer}</td><td>${s.user}</td><td><span class="status-badge status-${s.status}">${s.status}</span></td><td>Rp${(s.total||0).toLocaleString()}</td></tr>`;
-  });
-  h+='</table></div>';
-  container.innerHTML=h;
+  h+=`<div class="flex-row mb-2"><div class="summary-box" style="background:#E6F0FA;"><small>Total Transaksi</small><br><b>${tt}</b></div><div class="summary-box" style="background:#FFF8E1;"><small>Total Pendapatan</small><br><b>Rp${tp.toLocaleString()}</b></div><div class="summary-box" style="background:#D1FAE5;"><small>Total QTY</small><br><b>${tq}</b></div></div>`;
+  if(currentUser?.role==='admin'){h+='<h4 style="font-size:0.8rem;margin-top:12px;color:var(--biru);">👤 Per Sales</h4>';salesList.forEach(userName=>{const us=salesHistory.filter(s=>s.user===userName);if(us.length===0)return;const ut=us.length,up=us.reduce((s,x)=>s+(x.total||0),0);h+=`<div class="user-section"><h4>👤 ${userName} | ${ut} Transaksi | Total: Rp${up.toLocaleString()}</h4><table style="font-size:0.6rem;"><tr><th>Status</th><th>Jml</th><th>Total</th></tr>`;['cod','transfer','qris','belumbayar'].forEach(st=>{const ss=us.filter(s=>s.status===st);if(ss.length===0)return;h+=`<tr><td><span class="status-badge status-${st}">${st.toUpperCase()}</span></td><td>${ss.length}</td><td>Rp${ss.reduce((s,x)=>s+(x.total||0),0).toLocaleString()}</td></tr>`;});h+='</table></div>';});}
+  h+='<h4 style="font-size:0.8rem;margin-top:12px;color:var(--biru);">📋 Detail Transaksi Terbaru</h4><table><tr><th>Tgl</th><th>Customer</th><th>Sales</th><th>Status</th><th>Total</th></tr>';
+  salesHistory.slice(0,30).forEach(s=>{h+=`<tr><td>${s.date}</td><td>${s.customer}</td><td>${s.user}</td><td><span class="status-badge status-${s.status}">${s.status}</span></td><td>Rp${(s.total||0).toLocaleString()}</td></tr>`;});
+  h+='</table></div>';container.innerHTML=h;
 }
 
-// KEUANGAN
+// KEUANGAN, GUDANG, INPUT, PRODUK, DLL
 function loadKeuangan(container){let h='<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-file-invoice-dollar"></i> 📊 Laporan Keuangan</div><button class="btn-refresh btn-sm" onclick="refreshAllData()">🔄 Sync</button></div>';if(salesHistory.length===0){h+='<p class="text-center">Belum ada data.</p></div>';container.innerHTML=h;return;}const perUser={};allUsers.filter(u=>u.role==='sales'||u.role==='admin').forEach(u=>{perUser[u.name]={sales:0,total:0,profit:0,qty:0};});salesHistory.forEach(s=>{if(perUser[s.user]){perUser[s.user].sales++;perUser[s.user].total+=s.total||0;perUser[s.user].profit+=s.totalProfit||0;perUser[s.user].qty+=s.totalQty||0;}});h+='<h4 style="font-size:0.75rem;">👤 Per Sales</h4><table><tr><th>User</th><th>Transaksi</th><th>QTY</th><th>Total</th><th>Profit</th></tr>';Object.entries(perUser).forEach(([name,u])=>{h+=`<tr><td>${name}</td><td>${u.sales}</td><td>${u.qty}</td><td>Rp${u.total.toLocaleString()}</td><td>Rp${u.profit.toLocaleString()}</td></tr>`;});h+='</table></div>';container.innerHTML=h;}
-
-// REKAP GUDANG
 function loadRekapStockIn(container){let h='<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-warehouse"></i> 📊 Rekap Gudang</div><button class="btn-refresh btn-sm" onclick="refreshAllData()">🔄 Sync</button></div>';if(stockInHistory.length===0){h+='<p class="text-center">Belum ada data</p></div>';container.innerHTML=h;return;}const tq=stockInHistory.reduce((s,i)=>s+(i.qty||0),0),tm=stockInHistory.reduce((s,i)=>s+((i.qty||0)*(i.hargaModal||0)),0);h+=`<div class="flex-row mb-2"><div class="summary-box" style="background:#E6F0FA;"><small>Entry</small><br><b>${stockInHistory.length}</b></div><div class="summary-box" style="background:#D1FAE5;"><small>QTY</small><br><b>${tq}</b></div><div class="summary-box" style="background:#FFF8E1;"><small>Modal</small><br><b>Rp${tm.toLocaleString()}</b></div></div>`;['kiriman','titipan'].forEach(status=>{const data=stockInHistory.filter(s=>s.status===status);if(data.length===0)return;const tQ=data.reduce((s,i)=>s+(i.qty||0),0),tRp=data.reduce((s,i)=>s+((i.qty||0)*(i.hargaModal||0)),0);h+=`<h4 style="font-size:0.75rem;margin-top:12px;"><span class="status-badge status-${status}">${status.toUpperCase()}</span> | QTY: ${tQ} | Rp${tRp.toLocaleString()}</h4><table><tr><th>Driver</th><th>Entry</th><th>QTY</th><th>Total</th></tr>`;const perDriver={};data.forEach(s=>{const d=s.driver||'Tanpa';if(!perDriver[d])perDriver[d]={driver:d,jumlah:0,totalQty:0,totalRp:0};perDriver[d].jumlah++;perDriver[d].totalQty+=s.qty||0;perDriver[d].totalRp+=(s.qty||0)*(s.hargaModal||0);});Object.values(perDriver).forEach(d=>{h+=`<tr><td>${d.driver}</td><td>${d.jumlah}</td><td>${d.totalQty}</td><td>Rp${d.totalRp.toLocaleString()}</td></tr>`;});h+='</table>';});h+='</div>';container.innerHTML=h;}
-
-// INPUT BARANG
 function pageInputBarang(){let po='<option value="">Pilih</option>';products.forEach(p=>{po+=`<option value="${p.sku}">${p.sku}-${p.nama}</option>`;});let dO='<option value="">-</option>';drivers.forEach(d=>{dO+=`<option>${d}</option>`;});return`<div class="card"><div class="card-title"><i class="fas fa-boxes"></i> Input Barang</div><div class="form-group"><label>Produk</label><select id="stkSku">${po}</select></div><div class="flex-row"><div class="form-group col-1"><label>Qty</label><input type="number" id="stkQty" value="1" min="1"></div><div class="form-group col-1"><label>Modal</label><input type="number" id="stkModal" value="0"></div></div><div class="flex-row"><div class="form-group col-1"><label>Driver</label><select id="stkDriver">${dO}</select></div><div class="form-group col-1"><label>Rit</label><input id="stkRit" placeholder="Rit"></div></div><div class="form-group"><label>Status</label><select id="stkStatus"><option value="kiriman">Kiriman</option><option value="titipan">Titipan</option></select></div><button class="btn btn-primary btn-block" onclick="saveStockIn()">Simpan</button></div><div class="card"><div class="card-title"><i class="fas fa-history"></i> Riwayat</div><div id="stkHistory"></div></div>`;}
 function initInputBarang(){loadStockHistory();}
 async function saveStockIn(){const sku=document.getElementById('stkSku')?.value,qty=document.getElementById('stkQty')?.value;if(!sku||!qty)return Swal.fire('Error','Lengkapi','error');const p=products.find(x=>x.sku===sku);const entry={sku,nama:p?.nama||'',qty:parseInt(qty),hargaModal:parseFloat(document.getElementById('stkModal')?.value)||0,driver:document.getElementById('stkDriver')?.value,rit:document.getElementById('stkRit')?.value,status:document.getElementById('stkStatus')?.value,date:new Date().toISOString().split('T')[0],id:'STK-'+Date.now(),totalModal:parseInt(qty)*parseFloat(document.getElementById('stkModal')?.value||0)};stockInHistory.unshift(entry);if(p){p.stokMasuk=(p.stokMasuk||0)+parseInt(qty);p.stokAkhir=(p.stokAwal||0)+p.stokMasuk-p.stokKeluar;}saveAllData();syncToGoogleSheets('addStockIn',entry);Swal.fire('Sukses','Barang masuk dicatat','success');loadStockHistory();}
-async function loadStockHistory(){const el=document.getElementById('stkHistory');if(stockInHistory.length>0){let h='<table><tr><th>ID</th><th>SKU</th><th>Qty</th><th>Driver</th><th>Rit</th><th>Status</th><th>Tgl</th></tr>';const pg=getPaginatedData(stockInHistory,paginationPage);pg.forEach(s=>{h+=`<tr><td style="font-size:0.55rem;">${s.id}</td><td>${s.sku}</td><td>${s.qty}</td><td>${s.driver||'-'}</td><td>${s.rit||'-'}</td><td><span class="status-badge status-${s.status}">${s.status}</span></td><td>${s.date}</td></tr>`;});h+='</table>';h+=getPaginationHTML(stockInHistory.length,paginationPage,'goToInputPage');el.innerHTML=h;}else el.innerHTML='<p class="text-sm text-center">Belum ada data</p>';}
-function goToInputPage(pg){paginationPage=pg;loadStockHistory();}
-
-// PRODUK, PELANGGAN, PENGATURAN
-function pageProduk(){let h='<div class="card"><div class="card-title"><i class="fas fa-cubes"></i> Produk</div><button class="btn btn-primary btn-sm mb-2" onclick="showAddProduct()">+ Tambah</button><table><tr><th>SKU</th><th>Nama</th><th>Modal</th><th>Jual</th><th>Stok</th><th>Aksi</th></tr>';const pg=getPaginatedData(products,paginationPage);pg.forEach(p=>{h+=`<tr><td>${p.sku}</td><td>${p.nama}</td><td>Rp${(p.modal||0).toLocaleString()}</td><td>Rp${(p.jual||0).toLocaleString()}</td><td>${p.stokAkhir||0}</td><td><button class="btn btn-warning btn-sm" onclick="editProduct('${p.sku}')"><i class="fas fa-edit"></i></button> <button class="btn btn-danger btn-sm" onclick="deleteProductConfirm('${p.sku}')"><i class="fas fa-trash"></i></button></td></tr>`;});h+='</table>';h+=getPaginationHTML(products.length,paginationPage,'goToProdukPage');h+='</div><div id="prodForm"></div>';return h;}
-function goToProdukPage(pg){paginationPage=pg;navigateTo('produk');}
+async function loadStockHistory(){const el=document.getElementById('stkHistory');if(stockInHistory.length>0){let h='<table><tr><th>ID</th><th>SKU</th><th>Qty</th><th>Driver</th><th>Rit</th><th>Status</th><th>Tgl</th></tr>';stockInHistory.slice(0,20).forEach(s=>{h+=`<tr><td style="font-size:0.55rem;">${s.id}</td><td>${s.sku}</td><td>${s.qty}</td><td>${s.driver||'-'}</td><td>${s.rit||'-'}</td><td><span class="status-badge status-${s.status}">${s.status}</span></td><td>${s.date}</td></tr>`;});h+='</table>';el.innerHTML=h;}else el.innerHTML='<p class="text-sm text-center">Belum ada data</p>';}
+function pageProduk(){let h='<div class="card"><div class="card-title"><i class="fas fa-cubes"></i> Produk</div><button class="btn btn-primary btn-sm mb-2" onclick="showAddProduct()">+ Tambah</button><table><tr><th>SKU</th><th>Nama</th><th>Modal</th><th>Jual</th><th>Stok</th><th>Aksi</th></tr>';products.forEach(p=>{h+=`<tr><td>${p.sku}</td><td>${p.nama}</td><td>Rp${(p.modal||0).toLocaleString()}</td><td>Rp${(p.jual||0).toLocaleString()}</td><td>${p.stokAkhir||0}</td><td><button class="btn btn-warning btn-sm" onclick="editProduct('${p.sku}')"><i class="fas fa-edit"></i></button> <button class="btn btn-danger btn-sm" onclick="deleteProductConfirm('${p.sku}')"><i class="fas fa-trash"></i></button></td></tr>`;});h+='</table></div><div id="prodForm"></div>';return h;}
 function showAddProduct(){document.getElementById('prodForm').innerHTML='<div class="card"><div class="card-title">Tambah Produk</div><div class="form-group"><label>SKU</label><input id="newSku"></div><div class="form-group"><label>Nama</label><input id="newNama"></div><div class="flex-row"><div class="form-group col-1"><label>Modal</label><input type="number" id="newModal" value="0"></div><div class="form-group col-1"><label>Jual</label><input type="number" id="newJual" value="0"></div></div><div class="form-group"><label>Stok Awal</label><input type="number" id="newStok" value="0"></div><button class="btn btn-primary btn-block" onclick="saveNewProduct()">Simpan</button></div>';}
 async function saveNewProduct(){const d={sku:document.getElementById('newSku')?.value,nama:document.getElementById('newNama')?.value,modal:parseFloat(document.getElementById('newModal')?.value),jual:parseFloat(document.getElementById('newJual')?.value),stokAwal:parseInt(document.getElementById('newStok')?.value)};if(!d.sku||!d.nama)return Swal.fire('Error','SKU & Nama wajib','error');products.push({...d,stokMasuk:0,stokKeluar:0,stokAkhir:parseInt(d.stokAwal)||0});saveAllData();syncToGoogleSheets('addProduct',d);navigateTo('produk');Swal.fire('Sukses','Ditambahkan','success');}
 function editProduct(sku){const p=products.find(x=>String(x.sku)===String(sku));if(!p)return Swal.fire('Error','Tidak ditemukan','error');document.getElementById('prodForm').innerHTML=`<div class="card"><div class="card-title">Edit: ${p.sku}</div><div class="form-group"><label>Nama</label><input id="editNama" value="${p.nama||''}"></div><div class="flex-row"><div class="form-group col-1"><label>Modal</label><input type="number" id="editModal" value="${p.modal||0}"></div><div class="form-group col-1"><label>Jual</label><input type="number" id="editJual" value="${p.jual||0}"></div></div><button class="btn btn-primary btn-block" onclick="saveEditProduct('${p.sku}')">Update</button><button class="btn btn-danger btn-block mt-2" onclick="deleteProductConfirm('${p.sku}')">Hapus</button></div>`;}
 async function saveEditProduct(sku){const nama=document.getElementById('editNama')?.value,modal=parseFloat(document.getElementById('editModal')?.value)||0,jual=parseFloat(document.getElementById('editJual')?.value)||0;if(!nama)return Swal.fire('Error','Nama wajib','error');const idx=products.findIndex(x=>String(x.sku)===String(sku));if(idx!==-1){products[idx].nama=nama;products[idx].modal=modal;products[idx].jual=jual;}saveAllData();syncToGoogleSheets('updateProduct',{sku,nama,modal,jual});navigateTo('produk');Swal.fire('Sukses','Diupdate','success');}
 async function deleteProductConfirm(sku){const c=await Swal.fire({title:'Hapus?',icon:'warning',showCancelButton:true,confirmButtonText:'Ya'});if(c.isConfirmed){products=products.filter(x=>String(x.sku)!==String(sku));saveAllData();syncToGoogleSheets('deleteProduct',{sku});navigateTo('produk');Swal.fire('Sukses','Dihapus','success');}}
-function pagePelanggan(){let h='<div class="card"><div class="card-title"><i class="fas fa-address-book"></i> Pelanggan</div><div class="flex-row mb-2"><input id="newCustName" placeholder="Nama" style="flex:2;"><button class="btn btn-primary btn-sm" onclick="addPelanggan()">+</button></div><table><tr><th>No</th><th>Nama</th></tr>';const pg=getPaginatedData(pelanggan,paginationPage);pg.forEach((c,i)=>{h+=`<tr><td>${((paginationPage-1)*ITEMS_PER_PAGE)+i+1}</td><td>${c}</td></tr>`;});h+='</table>';h+=getPaginationHTML(pelanggan.length,paginationPage,'goToPelangganPage');h+='</div>';return h;}
-function goToPelangganPage(pg){paginationPage=pg;navigateTo('pelanggan');}
+function pagePelanggan(){let h='<div class="card"><div class="card-title"><i class="fas fa-address-book"></i> Pelanggan</div><div class="flex-row mb-2"><input id="newCustName" placeholder="Nama" style="flex:2;"><button class="btn btn-primary btn-sm" onclick="addPelanggan()">+</button></div><table><tr><th>No</th><th>Nama</th></tr>';pelanggan.forEach((c,i)=>{h+=`<tr><td>${i+1}</td><td>${c}</td></tr>`;});h+='</table></div>';return h;}
 async function addPelanggan(){const n=document.getElementById('newCustName')?.value.trim();if(!n)return;if(!pelanggan.includes(n)){pelanggan.push(n);saveAllData();syncToGoogleSheets('addPelanggan',{name:n});}navigateTo('pelanggan');}
 function pagePengaturan(){return`<div class="card"><div class="card-title"><i class="fas fa-store"></i> Info Toko</div><div class="form-group"><label>Nama Toko</label><input id="setNama" value="${settings.namaToko||''}"></div><div class="form-group"><label>Tagline</label><input id="setTagline" value="${settings.tagline||''}"></div><div class="form-group"><label>Alamat</label><input id="setAlamat" value="${settings.alamat||''}"></div><button class="btn btn-primary btn-block" onclick="saveSettings()">Simpan</button></div><div class="card"><div class="card-title"><i class="fas fa-upload"></i> Upload</div><div class="form-group"><label>Logo</label><input type="file" accept="image/*" onchange="uploadLogo(event)">${settings.logo?'<img src="'+settings.logo+'" style="width:60px;height:60px;border-radius:50%;margin-top:8px;">':''}</div><div class="form-group"><label>QRIS</label><input type="file" accept="image/*" onchange="uploadQris(event)">${settings.qris?'<img src="'+settings.qris+'" style="width:80px;margin-top:8px;">':''}</div></div><div class="card"><div class="card-title"><i class="fas fa-university"></i> Bank</div>${banks.map(b=>`<div class="flex-between"><span>${b.logo} <b>${b.name}</b>: ${b.number} (${b.holder})</span><button class="btn btn-danger btn-sm" onclick="deleteBank('${b.name}')"><i class="fas fa-trash"></i></button></div>`).join('')}<div class="flex-row mt-2"><input id="bnkName" placeholder="Bank" style="flex:1;"><input id="bnkNum" placeholder="No.Rek" style="flex:1;"><input id="bnkHolder" placeholder="Pemilik" style="flex:1;"><button class="btn btn-primary btn-sm" onclick="addBank()">+</button></div></div><div class="card"><div class="card-title"><i class="fas fa-users"></i> User</div>${allUsers.map(u=>`<div class="flex-between"><span>🔑 ${u.name} (${u.role})</span></div>`).join('')}<div class="flex-row mt-2"><input id="newUserName" placeholder="User" style="flex:1;"><select id="newUserRole" style="flex:1;"><option value="admin">Admin</option><option value="sales">Sales</option><option value="driver">Driver</option></select><input id="newUserPass" value="123456" style="flex:1;"><button class="btn btn-primary btn-sm" onclick="addUserLogin()">+</button></div></div><div class="card"><div class="card-title"><i class="fas fa-truck"></i> Driver</div>${drivers.map(d=>`<div class="flex-between"><span>🚚 ${d}</span><button class="btn btn-danger btn-sm" onclick="deleteDriver('${d}')"><i class="fas fa-trash"></i></button></div>`).join('')}<div class="flex-row mt-2"><input id="drvName" placeholder="Driver" style="flex:2;"><button class="btn btn-primary btn-sm" onclick="addDriver()">+</button></div></div><div class="card"><div class="card-title"><i class="fas fa-database"></i> Backup & Restore</div><button class="btn btn-success btn-block mb-2" onclick="backupData()"><i class="fas fa-download"></i> Backup Data</button><button class="btn btn-warning btn-block" onclick="restoreData()"><i class="fas fa-upload"></i> Restore Data</button></div>`;}
 async function saveSettings(){settings.namaToko=document.getElementById('setNama')?.value;settings.tagline=document.getElementById('setTagline')?.value;settings.alamat=document.getElementById('setAlamat')?.value;await syncToGoogleSheets('updateSettings',settings);saveAllData();document.getElementById('headerAlamat').textContent=settings.alamat;Swal.fire('Sukses','Disimpan','success');}
