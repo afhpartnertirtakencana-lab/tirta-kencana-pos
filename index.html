@@ -294,6 +294,68 @@ function loadRekapPenjualan(container){
   h+='</table></div>';container.innerHTML=h;
 }
 
+// ============ SETORAN VIEW ============
+function loadSetoranView(){
+  const el=document.getElementById('setHistory');if(!el)return;
+  const today=document.getElementById('setTanggal')?.value||new Date().toISOString().split('T')[0];
+  const salesList=allUsers.filter(u=>u.role==='sales'||u.role==='admin').map(u=>u.name);
+  if(salesList.length===0){el.innerHTML='<p class="text-center text-sm">📭 Tidak ada sales terdaftar.</p>';return;}
+
+  if(currentUser?.role==='admin'){
+    // ADMIN: LAPORAN REKAPAN SEMUA SALES
+    let h='';let grandTotal=0;
+    salesList.forEach(sn=>{
+      const codSales=salesHistory.filter(s=>s.date===today&&s.user===sn&&s.status==='cod');
+      const codTotal=codSales.reduce((sum,s)=>sum+(s.total||0),0);
+      grandTotal+=codTotal;
+      const setoranTersimpan=setoranHistory.filter(s=>s.tanggal===today&&s.sales===sn);
+      const totalSetoran=setoranTersimpan.reduce((sum,s)=>sum+(s.total||0),0);
+      if(codTotal>0||totalSetoran>0){
+        h+=`<div class="user-section"><h4>👤 ${sn}</h4>
+          <table>
+            <tr><td>💰 COD Hari Ini</td><td style="text-align:right;"><b>Rp${codTotal.toLocaleString()}</b></td></tr>
+            <tr><td>💾 Setoran Tersimpan</td><td style="text-align:right;">Rp${totalSetoran.toLocaleString()}</td></tr>
+            <tr><td>📋 Selisih</td><td style="text-align:right;color:${codTotal-totalSetoran>0?'#EF4444':'#10B981'}">Rp${(codTotal-totalSetoran).toLocaleString()}</td></tr>
+          </table>`;
+        if(setoranTersimpan.length>0){
+          h+='<table style="margin-top:4px;"><tr><th>Tgl</th><th>Total</th><th>Setor</th><th>Selisih</th></tr>';
+          setoranTersimpan.slice(0,5).forEach(s=>{h+=`<tr><td>${s.tanggal}</td><td>Rp${(s.total||0).toLocaleString()}</td><td>Rp${(s.setor||0).toLocaleString()}</td><td style="color:${(s.selisih||0)<0?'#EF4444':'#10B981'}">Rp${(s.selisih||0).toLocaleString()}</td></tr>`;});
+          h+='</table>';
+        }
+        h+='</div>';
+      }
+    });
+    h+=`<div class="total-box">📊 Grand Total COD Hari Ini: <b>Rp${grandTotal.toLocaleString()}</b></div>`;
+    el.innerHTML=h||'<p class="text-center text-sm">📭 Tidak ada transaksi COD hari ini.</p>';
+  }else{
+    // SALES: HANYA LIHAT DATA SENDIRI
+    const codSales=salesHistory.filter(s=>s.date===today&&s.user===currentUser.name&&s.status==='cod');
+    const codTotal=codSales.reduce((sum,s)=>sum+(s.total||0),0);
+    const mySetoran=setoranHistory.filter(s=>s.sales===currentUser.name);
+    let h=`<div class="total-box">💰 COD Hari Ini: <b>Rp${codTotal.toLocaleString()}</b></div>`;
+    if(mySetoran.length===0){h+='<p class="text-center text-sm">📭 Belum ada setoran.</p>';}
+    else{h+='<table><tr><th>Tgl</th><th>Total</th><th>Setor</th><th>Selisih</th></tr>';mySetoran.slice(0,20).forEach(s=>{h+=`<tr><td>${s.tanggal}</td><td>Rp${(s.total||0).toLocaleString()}</td><td>Rp${(s.setor||0).toLocaleString()}</td><td style="color:${(s.selisih||0)<0?'#EF4444':'#10B981'}">Rp${(s.selisih||0).toLocaleString()}</td></tr>`;});h+='</table>';}
+    el.innerHTML=h;
+  }
+}
+
+async function saveSetoranAuto(){
+  const today=document.getElementById('setTanggal')?.value||new Date().toISOString().split('T')[0];
+  const salesList=allUsers.filter(u=>u.role==='sales'||u.role==='admin').map(u=>u.name);
+  if(salesList.length===0)return Swal.fire('Error','Tidak ada sales terdaftar','error');
+  let saved=0;
+  for(const sn of salesList){
+    const codTotal=salesHistory.filter(s=>s.date===today&&s.user===sn&&s.status==='cod').reduce((sum,s)=>sum+(s.total||0),0);
+    if(codTotal>0){
+      const data={sales:sn,tanggal:today,grandCOD:codTotal,makan:0,tips:0,parkir:0,flazz:0,bensin:0,transfer:0,ket1:'',jml1:0,ket2:'',jml2:0,cicilan:0,tagihan:0,total:codTotal,setor:codTotal,selisih:0,waktu:new Date().toLocaleTimeString('id-ID')};
+      setoranHistory.unshift({id:'SET-'+Date.now()+'-'+sn,...data});
+      saved++;
+    }
+  }
+  if(saved>0){saveAllData();syncToGoogleSheets('syncAll',{setoranHistory});Swal.fire('✅ Sukses',`${saved} setoran disimpan!`,'success');}
+  else{Swal.fire('ℹ️ Info','Tidak ada transaksi COD hari ini','info');}
+  loadSetoranView();
+}
 // KEUANGAN
 function loadKeuangan(container){let h='<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-file-invoice-dollar"></i> 📊 Laporan Keuangan</div><button class="btn-refresh btn-sm" onclick="refreshAllData()">🔄 Sync</button></div>';if(salesHistory.length===0){h+='<p class="text-center">Belum ada data.</p></div>';container.innerHTML=h;return;}const perUser={};allUsers.filter(u=>u.role==='sales'||u.role==='admin').forEach(u=>{perUser[u.name]={sales:0,total:0,profit:0,qty:0};});salesHistory.forEach(s=>{if(perUser[s.user]){perUser[s.user].sales++;perUser[s.user].total+=s.total||0;perUser[s.user].profit+=s.totalProfit||0;perUser[s.user].qty+=s.totalQty||0;}});h+='<h4 style="font-size:0.75rem;">👤 Per Sales (Semua Data)</h4><table><tr><th>User</th><th>Transaksi</th><th>QTY</th><th>Total</th><th>Profit</th></tr>';Object.entries(perUser).forEach(([name,u])=>{h+=`<tr><td>${name}</td><td>${u.sales}</td><td>${u.qty}</td><td>Rp${u.total.toLocaleString()}</td><td>Rp${u.profit.toLocaleString()}</td></tr>`;});h+='</table></div>';container.innerHTML=h;}
 
