@@ -4,14 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
   <meta name="theme-color" content="#0A4D8C">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Tirta Kencana">
-  <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIlRpcnRhIEtlbmNhbmEiLAogICJzaG9ydF9uYW1lIjogIlRpcnRhIEtlbmNhbmEiLAogICJzdGFydF91cmwiOiAiLiIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiIzBBNEQ4QyIsCiAgInRoZW1lX2NvbG9yIjogIiMwQTREOEMiLAogICJpY29ucyI6IFt7InNyYyI6ImRhdGE6aW1hZ2Uvc3ZnK3htbCwlM0NzdmcgIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zycgdmlld0JveD0nMCAwIDE5MiAxOTInJTNFJTNDY2lyY2xlIGZpbGw9JyUyMzBBNEQ4QycgY3g9Jzk2JyBjeT0nOTYnIHI9JzkwJy8lM0UlM0NjaXJjbGUgZmlsbD0nd2hpdGUnIGN4PSc5NicgY3k9Jzk2JyByPSc3MCcvJTNFJTNDdGV4dCB4PSc5NicgeT0nMTEwJyB0ZXh0LWFuY2hvcj0nbWlkZGxlJyBmaWxsPSclMjMwQTREOEMnIGZvbnQtc2l6ZT0nNjAnIGZvbnQtd2VpZ2h0PSdib2xkJyUzRVRLJTNDL3RleHQlM0UlM0Mvc3ZnJTNlIiwic2l6ZXMiOiIxOTJ4MTkyIiwidHlwZSI6ImltYWdlL3N2Zyt4bWwiLCJwdXJwb3NlIjoiYW55IG1hc2thYmxlIn1dfQ==">
   <title>Tirta Kencana · Air Minum</title>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.all.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
   <style>
     :root{--biru:#0A4D8C;--kuning:#F4B400;--bg:#F1F5F9;--card:#FFFFFF;--border:#E2E8F0;--text:#1E293B;--merah:#EF4444;--hijau:#10B981;}
     *{margin:0;padding:0;box-sizing:border-box;}
@@ -21,12 +16,13 @@
     .header{background:linear-gradient(135deg,#0A4D8C,#0B5FA5);color:white;padding:18px 20px 14px;text-align:center;}
     .brand{font-size:1.9rem;font-weight:800;display:flex;justify-content:center;gap:6px;}.tirta{color:#fff;}.kencana{color:var(--kuning);}
     .tagline{font-size:0.7rem;margin:4px 0;}.alamat{font-size:0.65rem;opacity:0.8;}
+    .logo-circle{width:45px;height:45px;background:white;border-radius:50%;margin:6px auto 0;overflow:hidden;border:2px solid var(--kuning);display:flex;align-items:center;justify-content:center;}
+    .logo-circle img{width:100%;height:100%;object-fit:contain;}
     .nav-bar{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;background:#F8FAFC;border-bottom:1px solid var(--border);}
     .user-info{display:flex;align-items:center;gap:8px;}.avatar{width:32px;height:32px;border-radius:50%;background:var(--biru);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.8rem;}
     .role-tag{background:var(--kuning);color:#0A2540;padding:3px 10px;border-radius:20px;font-size:0.6rem;font-weight:700;}
     .btn-logout{background:var(--merah);color:white;border:none;padding:6px 14px;border-radius:8px;font-size:0.7rem;cursor:pointer;}
     .btn-refresh{background:var(--hijau);color:white;border:none;padding:6px 10px;border-radius:8px;font-size:0.65rem;cursor:pointer;}
-    .btn-darkmode{background:#6366F1;color:white;border:none;padding:6px 10px;border-radius:8px;font-size:0.65rem;cursor:pointer;}
     .menu-tabs{display:flex;overflow-x:auto;gap:4px;padding:8px 10px;border-bottom:1px solid var(--border);}
     .tab{flex:0 0 auto;padding:7px 14px;border-radius:20px;border:1px solid var(--border);font-size:0.7rem;font-weight:600;cursor:pointer;white-space:nowrap;color:#64748B;display:flex;align-items:center;gap:4px;}
     .tab.active{background:var(--biru);color:white;border-color:var(--biru);}
@@ -42,12 +38,14 @@
     .flex-row{display:flex;gap:6px;align-items:center;}.col-1{flex:1;}
     .total-box{background:#FFF8E1;padding:10px 14px;border-radius:12px;margin:8px 0;text-align:right;font-weight:700;font-size:1.1rem;color:var(--biru);}
     .status-badge{padding:3px 8px;border-radius:10px;font-size:0.6rem;font-weight:600;display:inline-block;}
-    .status-cod{background:#D1FAE5;color:#065F46;}
+    .status-cod{background:#D1FAE5;color:#065F46;}.status-transfer{background:#DBEAFE;color:#1E40AF;}
     table{width:100%;border-collapse:collapse;font-size:0.7rem;}th,td{padding:6px 8px;text-align:left;border-bottom:1px solid var(--border);}
     th{background:#E6F0FA;color:var(--biru);font-weight:700;font-size:0.65rem;}
     .bottom-bar{text-align:center;font-size:0.65rem;color:#64748B;padding:10px;border-top:1px solid var(--border);}
     .hidden{display:none!important;}.mb-2{margin-bottom:8px;}.text-center{text-align:center;}.text-sm{font-size:0.7rem;}
     .summary-box{flex:1;text-align:center;padding:10px;border-radius:12px;font-size:0.65rem;}
+    .user-section{border:2px solid var(--kuning);border-radius:12px;padding:10px;margin:10px 0;background:#FFF8E1;}
+    .user-section h4{color:var(--biru);margin-bottom:6px;}
     .login-container{display:flex;justify-content:center;align-items:center;min-height:100vh;background:linear-gradient(135deg,#0A4D8C,#0B5FA5);}
     .login-card{background:white;padding:30px;border-radius:24px;width:340px;text-align:center;box-shadow:0 20px 40px rgba(0,0,0,0.2);}
     .setoran-row{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid #F1F5F9;}
@@ -75,10 +73,11 @@
     <div class="brand"><span class="tirta">Tirta</span><span class="kencana">Kencana</span></div>
     <div class="tagline">DO GOOD AND GOOD WILL COME TO YOU</div>
     <div class="alamat" id="headerAlamat">WTC Mangga 2 Lt UG A/53</div>
+    <div class="logo-circle"><img id="logoImg" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Ccircle fill='%230A4D8C' cx='20' cy='20' r='18'/%3E%3Ctext x='20' y='26' text-anchor='middle' fill='white' font-size='16'%3E💧%3C/text%3E%3C/svg%3E" alt="Logo"></div>
   </div>
   <div class="nav-bar">
     <div class="user-info"><div class="avatar" id="userAvatar">A</div><div><div id="displayName" style="font-size:0.75rem;font-weight:600;">Admin</div><span class="role-tag" id="displayRole">ADMIN</span></div></div>
-    <div><button class="btn-darkmode" onclick="toggleDarkMode()">🌙</button><button class="btn-refresh" onclick="refreshAllData()">🔄</button><button class="btn-logout" onclick="doLogout()">Keluar</button></div>
+    <div><button class="btn-refresh" onclick="refreshAllData()">🔄 Sync</button><button class="btn-logout" onclick="doLogout()">Keluar</button></div>
   </div>
   <div class="menu-tabs" id="menuTabs"></div>
   <div class="content-area" id="contentArea"></div>
@@ -120,19 +119,18 @@ async function refreshAllData(){
       if(d.data.allUsers&&d.data.allUsers.length>0){allUsers=d.data.allUsers;salesUsers=allUsers.filter(u=>u.role==='sales'||u.role==='admin').map(u=>u.name);}
       saveAllData();
       if(settings.alamat)document.getElementById('headerAlamat').textContent=settings.alamat;
-      if(currentPage==='setoran'){hitungCOD2();loadSetoranHistory2();}else{renderContent();}
+      if(currentPage==='setoran'){loadSetoranView();}else{renderContent();}
     }
   }catch(e){}
 }
 
-function toggleDarkMode(){document.body.classList.toggle('dark');}
 function doLogin(){const u=document.getElementById('loginUser').value.trim(),p=document.getElementById('loginPass').value.trim();if(!u||!p)return;const f=allUsers.find(x=>x.name===u&&x.password===p);if(f){currentUser={name:f.name,role:f.role};localStorage.setItem('tirtaUser',JSON.stringify(currentUser));showMainApp();}}
 function doLogout(){localStorage.removeItem('tirtaUser');currentUser=null;document.getElementById('loginPage').classList.remove('hidden');document.getElementById('mainApp').classList.add('hidden');}
 function showMainApp(){document.getElementById('loginPage').classList.add('hidden');document.getElementById('mainApp').classList.remove('hidden');document.getElementById('displayName').textContent=currentUser.name;document.getElementById('displayRole').textContent=currentUser.role.toUpperCase();document.getElementById('userAvatar').textContent=currentUser.name.charAt(0).toUpperCase();if(settings.alamat)document.getElementById('headerAlamat').textContent=settings.alamat;renderMenuTabs();navigateTo('penjualan');}
 
 function renderMenuTabs(){let h='';const r=currentUser?.role;
   if(r==='admin')h=`<button class="tab ${currentPage==='penjualan'?'active':''}" onclick="navigateTo('penjualan')">Jual</button><button class="tab ${currentPage==='rekap'?'active':''}" onclick="navigateTo('rekap')">Rekap</button><button class="tab ${currentPage==='setoran'?'active':''}" onclick="navigateTo('setoran')">Setoran</button><button class="tab ${currentPage==='gudang'?'active':''}" onclick="navigateTo('gudang')">Gudang</button>`;
-  else if(r==='sales')h=`<button class="tab ${currentPage==='penjualan'?'active':''}" onclick="navigateTo('penjualan')">Jual</button><button class="tab ${currentPage==='rekap'?'active':''}" onclick="navigateTo('rekap')">Rekap</button><button class="tab ${currentPage==='setoran'?'active':''}" onclick="navigateTo('setoran')">Setoran</button>`;
+  else h=`<button class="tab ${currentPage==='penjualan'?'active':''}" onclick="navigateTo('penjualan')">Jual</button><button class="tab ${currentPage==='rekap'?'active':''}" onclick="navigateTo('rekap')">Rekap</button><button class="tab ${currentPage==='setoran'?'active':''}" onclick="navigateTo('setoran')">Setoran</button>`;
   document.getElementById('menuTabs').innerHTML=h;
 }
 function navigateTo(p){currentPage=p;renderMenuTabs();renderContent();}
@@ -140,7 +138,7 @@ function renderContent(){const c=document.getElementById('contentArea');
   switch(currentPage){
     case'penjualan':c.innerHTML=pageJual();initJual();break;
     case'rekap':loadRekap(c);break;
-    case'setoran':c.innerHTML=pageSetoran();setTimeout(()=>{hitungCOD2();loadSetoranHistory2();},200);break;
+    case'setoran':c.innerHTML=pageSetoran();setTimeout(()=>loadSetoranView(),100);break;
     case'gudang':loadGudang(c);break;
   }
 }
@@ -151,158 +149,83 @@ function initJual(){if(cart.length===0)cart.push({sku:'',qty:1,disc:0});renderCa
 function addCartItem(){cart.push({sku:'',qty:1,disc:0});renderCart();}function removeCartItem(i){cart.splice(i,1);renderCart();}
 function updateCart(i,f,v){if(f==='qty')cart[i].qty=parseInt(v)||1;else if(f==='disc')cart[i].disc=parseInt(v)||0;else cart[i][f]=v;if(f==='sku'){const p=products.find(x=>x.sku===v);if(p){cart[i].harga=p.jual;cart[i].nama=p.nama;cart[i].modal=p.modal;}}renderCart();}
 function renderCart(){const el=document.getElementById('cartItems');if(!el)return;el.innerHTML=cart.map((item,i)=>{const p=products.find(x=>x.sku===item.sku),h=p?p.jual:(item.harga||0),dp=item.disc||0,dt=dp*item.qty,sub=(item.qty*h)-dt;let po='<option value="">Pilih</option>';products.forEach(p=>{po+=`<option value="${p.sku}" ${item.sku===p.sku?'selected':''}>${p.sku}-${p.nama}(${p.stokAkhir})</option>`;});return`<div class="flex-row" style="margin-bottom:4px;"><select onchange="updateCart(${i},'sku',this.value)" class="cart-sku">${po}</select><input type="number" value="${item.qty}" onchange="updateCart(${i},'qty',this.value)" class="cart-qty" min="1"><input type="number" value="${dp}" onchange="updateCart(${i},'disc',this.value)" class="cart-disc" placeholder="Disc"><span style="font-size:0.7rem;">Rp${sub.toLocaleString()}</span><button onclick="removeCartItem(${i})" style="color:red;border:none;background:none;cursor:pointer;">✕</button></div>`;}).join('');let sa=0,td=0;cart.forEach(i=>{const p=products.find(x=>x.sku===i.sku),h=p?p.jual:(i.harga||0);sa+=i.qty*h;td+=(i.disc||0)*i.qty;});document.getElementById('cartTotal').textContent=(sa-td).toLocaleString();}
-async function saveSale(){const cust=document.getElementById('custSelect')?.value;if(!cust)return;const valid=cart.filter(i=>i.sku&&products.find(p=>p.sku===i.sku));if(valid.length===0)return;const status=document.getElementById('payStatus')?.value||'cod';const items=valid.map(i=>{const p=products.find(x=>x.sku===i.sku);const hj=p?p.jual:(i.harga||0);const hm=p?p.modal:(i.modal||0);const q=parseInt(i.qty)||0;const dp=parseInt(i.disc)||0;const profit=(hj-dp-hm)*q;const dt=dp*q;const sub=(q*hj)-dt;return{sku:i.sku,nama:p?.nama||'',qty:q,harga:hj,disc:dp,modal:hm,discTotal:dt,subtotal:sub,profit:profit};});let total=0;items.forEach(i=>{total+=i.subtotal;});const ns={id:'INV-'+Date.now(),user:currentUser.name,customer:cust,status,items,total,totalQty:items.reduce((s,i)=>s+i.qty,0),totalDisc:items.reduce((s,i)=>s+i.discTotal,0),totalProfit:items.reduce((s,i)=>s+i.profit,0),date:new Date().toISOString().split('T')[0],time:new Date().toLocaleTimeString('id-ID')};salesHistory.unshift(ns);items.forEach(i=>{const p=products.find(x=>x.sku===i.sku);if(p){p.stokKeluar=(p.stokKeluar||0)+i.qty;p.stokAkhir=(p.stokAwal||0)+(p.stokMasuk||0)-p.stokKeluar;}});if(!pelanggan.includes(cust))pelanggan.push(cust);saveAllData();syncToGoogleSheets('createSale',ns);cart=[{sku:'',qty:1,disc:0}];renderCart();document.getElementById('custSelect').value='';Swal.fire('Sukses','Penjualan disimpan!','success');}
+async function saveSale(){const cust=document.getElementById('custSelect')?.value;if(!cust)return;const valid=cart.filter(i=>i.sku&&products.find(p=>p.sku===i.sku));if(valid.length===0)return;const status=document.getElementById('payStatus')?.value||'cod';const items=valid.map(i=>{const p=products.find(x=>x.sku===i.sku);const hj=p?p.jual:(i.harga||0);const hm=p?p.modal:(i.modal||0);const q=parseInt(i.qty)||0;const dp=parseInt(i.disc)||0;const profit=(hj-dp-hm)*q;const dt=dp*q;const sub=(q*hj)-dt;return{sku:i.sku,nama:p?.nama||'',qty:q,harga:hj,disc:dp,modal:hm,discTotal:dt,subtotal:sub,profit:profit};});let total=0;items.forEach(i=>{total+=i.subtotal;});const ns={id:'INV-'+Date.now(),user:currentUser.name,customer:cust,status,items,total,totalQty:items.reduce((s,i)=>s+i.qty,0),date:new Date().toISOString().split('T')[0],time:new Date().toLocaleTimeString('id-ID')};salesHistory.unshift(ns);items.forEach(i=>{const p=products.find(x=>x.sku===i.sku);if(p){p.stokKeluar=(p.stokKeluar||0)+i.qty;p.stokAkhir=(p.stokAwal||0)+(p.stokMasuk||0)-p.stokKeluar;}});if(!pelanggan.includes(cust))pelanggan.push(cust);saveAllData();syncToGoogleSheets('createSale',ns);cart=[{sku:'',qty:1,disc:0}];renderCart();document.getElementById('custSelect').value='';Swal.fire('Sukses','Penjualan disimpan!','success');}
 
 // REKAP
 function loadRekap(container){let h='<div class="card"><div class="card-header"><div class="card-title">📊 Rekap Penjualan</div><button class="btn-refresh btn-sm" onclick="refreshAllData()">🔄</button></div>';if(salesHistory.length===0){h+='<p class="text-center">Belum ada data.</p></div>';container.innerHTML=h;return;}const tt=salesHistory.length,tp=salesHistory.reduce((s,x)=>s+(x.total||0),0);h+=`<div class="flex-row mb-2"><div class="summary-box" style="background:#E6F0FA;">Transaksi: <b>${tt}</b></div><div class="summary-box" style="background:#FFF8E1;">Total: <b>Rp${tp.toLocaleString()}</b></div></div>`;h+='<table><tr><th>Tgl</th><th>Customer</th><th>Sales</th><th>Status</th><th>Total</th></tr>';salesHistory.slice(0,30).forEach(s=>{h+=`<tr><td>${s.date}</td><td>${s.customer}</td><td>${s.user}</td><td><span class="status-badge status-${s.status}">${s.status}</span></td><td>Rp${(s.total||0).toLocaleString()}</td></tr>`;});h+='</table></div>';container.innerHTML=h;}
 
-// SETORAN - PERHITUNGAN COD YANG BENAR
+// SETORAN - TANPA DROPDOWN, TAMPIL SEMUA USERS SEPERTI REKAP
 function pageSetoran(){
   const today=new Date().toISOString().split('T')[0];
-  const salesList=allUsers.filter(u=>u.role==='sales'||u.role==='admin').map(u=>u.name);
-  if(salesList.length===0)salesList.push('Sales A','Sales B');
-  let so=salesList.map(s=>`<option value="${s}" ${currentUser?.name===s?'selected':''}>${s}</option>`).join('');
-  if(currentUser?.role==='admin')so='<option value="__all__">-- Semua Sales --</option>'+so;
-  
   return`<div class="card"><div class="card-header"><div class="card-title">💰 Setoran Sales</div><button class="btn-refresh btn-sm" onclick="refreshAllData()">🔄</button></div>
-  <div class="form-group"><label>Sales</label><select id="setSales" onchange="hitungCOD2()">${so}</select></div>
-  <div class="form-group"><label>Tanggal</label><input type="date" id="setTanggal" value="${today}" onchange="hitungCOD2()"></div>
-  <div class="setoran-row"><label>COD:</label><input id="setGrandCOD" readonly></div>
-  <div class="setoran-row"><label>Makan:</label><input type="number" id="setMakan" value="0" onchange="hitungTotal2()"></div>
-  <div class="setoran-row"><label>Tips:</label><input type="number" id="setTips" value="0" onchange="hitungTotal2()"></div>
-  <div class="setoran-row"><label>Parkir:</label><input type="number" id="setParkir" value="0" onchange="hitungTotal2()"></div>
-  <div class="setoran-row"><label>Flazz:</label><input type="number" id="setFlazz" value="0" onchange="hitungTotal2()"></div>
-  <div class="setoran-row"><label>Bensin:</label><input type="number" id="setBensin" value="0" onchange="hitungTotal2()"></div>
-  <div class="setoran-row"><label>Transfer:</label><input type="number" id="setTransfer" value="0" onchange="hitungTotal2()"></div>
-  <div class="setoran-row"><label>Ket.1:</label><input id="setKet1" placeholder="Keterangan"><input type="number" id="setJml1" value="0" onchange="hitungTotal2()" style="width:100px;"></div>
-  <div class="setoran-row"><label>Ket.2:</label><input id="setKet2" placeholder="Keterangan"><input type="number" id="setJml2" value="0" onchange="hitungTotal2()" style="width:100px;"></div>
-  <div class="setoran-row"><label>Cicilan:</label><input type="number" id="setCicilan" value="0" onchange="hitungTotal2()"></div>
-  <div class="setoran-row"><label>Tagihan:</label><input type="number" id="setTagihan" value="0" onchange="hitungTotal2()"></div>
-  <div class="total-box">Total: Rp <span id="setTotal">0</span></div>
-  <div class="setoran-row"><label><b>SETOR:</b></label><input type="number" id="setSetor" value="0" onchange="hitungTotal2()" style="font-weight:bold;"></div>
-  <div class="total-box" style="background:#FEE2E2;color:#EF4444;">Selisih: Rp <span id="setSelisih">0</span></div>
-  <button class="btn btn-primary btn-block" onclick="saveSetoran2()">Simpan Setoran</button>
+  <div class="form-group"><label>Tanggal</label><input type="date" id="setTanggal" value="${today}"></div>
+  <button class="btn btn-primary btn-block mb-2" onclick="saveSetoranAuto()">💾 Simpan Setoran Hari Ini (Auto)</button>
   </div>
-  <div class="card"><div class="card-title">📋 Riwayat Setoran</div><div id="setHistory"></div></div>`;
+  <div class="card"><div class="card-title">📋 Riwayat Setoran</div><div id="setoranView"></div></div>`;
 }
 
-// FUNGSI COD YANG BENAR - PASTIKAN DOM SUDAH ADA
-function hitungCOD2(){
-  // Ambil nilai langsung dari DOM
-  const salesEl=document.getElementById('setSales');
-  const tanggalEl=document.getElementById('setTanggal');
-  const codEl=document.getElementById('setGrandCOD');
+// SIMPAN SETORAN OTOMATIS BERDASARKAN DATA COD HARI INI
+async function saveSetoranAuto(){
+  const today=document.getElementById('setTanggal')?.value||new Date().toISOString().split('T')[0];
+  const salesList=allUsers.filter(u=>u.role==='sales'||u.role==='admin').map(u=>u.name);
+  if(salesList.length===0)return Swal.fire('Error','Tidak ada sales terdaftar','error');
   
-  if(!salesEl||!tanggalEl||!codEl)return;
-  
-  const sales=salesEl.value||currentUser?.name||'';
-  const tanggal=tanggalEl.value||new Date().toISOString().split('T')[0];
-  
-  // Filter salesHistory berdasarkan tanggal dan sales
-  let codSales=[];
-  if(sales==='__all__'){
-    codSales=salesHistory.filter(s=>s.date===tanggal&&s.status==='cod');
-  }else{
-    codSales=salesHistory.filter(s=>s.date===tanggal&&s.user===sales&&s.status==='cod');
+  let saved=0;
+  for(const sales of salesList){
+    const codTotal=salesHistory.filter(s=>s.date===today&&s.user===sales&&s.status==='cod').reduce((sum,s)=>sum+(s.total||0),0);
+    if(codTotal>0||confirm(`Simpan setoran untuk ${sales}? (COD: Rp${codTotal.toLocaleString()})`)){
+      const data={
+        sales:sales,tanggal:today,grandCOD:codTotal,
+        makan:0,tips:0,parkir:0,flazz:0,bensin:0,transfer:0,
+        ket1:'',jml1:0,ket2:'',jml2:0,cicilan:0,tagihan:0,
+        total:codTotal,setor:codTotal,selisih:0,waktu:new Date().toLocaleTimeString('id-ID')
+      };
+      setoranHistory.unshift({id:'SET-'+Date.now()+'-'+sales,...data});
+      saved++;
+    }
   }
   
-  // Hitung total
-  let totalCOD=0;
-  codSales.forEach(s=>{totalCOD+=(s.total||0);});
-  
-  // Tampilkan
-  codEl.value='Rp '+totalCOD.toLocaleString();
-  codEl.dataset.cod=totalCOD;
-  
-  // Update total juga
-  hitungTotal2();
+  if(saved>0){saveAllData();syncToGoogleSheets('syncAll',{setoranHistory});Swal.fire('Sukses',`${saved} setoran disimpan!`,'success');}
+  loadSetoranView();
 }
 
-function hitungTotal2(){
-  const codEl=document.getElementById('setGrandCOD');
-  const g=parseInt(codEl?.dataset?.cod||0);
-  const m=parseInt(document.getElementById('setMakan')?.value||0);
-  const t=parseInt(document.getElementById('setTips')?.value||0);
-  const p=parseInt(document.getElementById('setParkir')?.value||0);
-  const f=parseInt(document.getElementById('setFlazz')?.value||0);
-  const b=parseInt(document.getElementById('setBensin')?.value||0);
-  const tr=parseInt(document.getElementById('setTransfer')?.value||0);
-  const j1=parseInt(document.getElementById('setJml1')?.value||0);
-  const j2=parseInt(document.getElementById('setJml2')?.value||0);
-  const ci=parseInt(document.getElementById('setCicilan')?.value||0);
-  const ta=parseInt(document.getElementById('setTagihan')?.value||0);
-  
-  const total=g-m-t-p-f-b-tr-j1-j2+ci+ta;
-  const setor=parseInt(document.getElementById('setSetor')?.value||0);
-  const selisih=setor-total;
-  
-  const totalEl=document.getElementById('setTotal');
-  const selisihEl=document.getElementById('setSelisih');
-  if(totalEl)totalEl.textContent=total.toLocaleString();
-  if(selisihEl)selisihEl.textContent=selisih.toLocaleString();
-}
-
-async function saveSetoran2(){
-  const salesEl=document.getElementById('setSales');
-  const tanggalEl=document.getElementById('setTanggal');
-  const codEl=document.getElementById('setGrandCOD');
-  
-  if(!salesEl||!tanggalEl)return;
-  
-  const sv=salesEl.value;
-  const sn=(sv==='__all__')?'Admin (All)':sv;
-  
-  const data={
-    sales:sn,
-    tanggal:tanggalEl.value,
-    grandCOD:parseInt(codEl?.dataset?.cod||0),
-    makan:parseInt(document.getElementById('setMakan')?.value||0),
-    tips:parseInt(document.getElementById('setTips')?.value||0),
-    parkir:parseInt(document.getElementById('setParkir')?.value||0),
-    flazz:parseInt(document.getElementById('setFlazz')?.value||0),
-    bensin:parseInt(document.getElementById('setBensin')?.value||0),
-    transfer:parseInt(document.getElementById('setTransfer')?.value||0),
-    ket1:document.getElementById('setKet1')?.value||'',
-    jml1:parseInt(document.getElementById('setJml1')?.value||0),
-    ket2:document.getElementById('setKet2')?.value||'',
-    jml2:parseInt(document.getElementById('setJml2')?.value||0),
-    cicilan:parseInt(document.getElementById('setCicilan')?.value||0),
-    tagihan:parseInt(document.getElementById('setTagihan')?.value||0),
-    total:parseInt(document.getElementById('setTotal')?.textContent?.replace(/\D/g,'')||0),
-    setor:parseInt(document.getElementById('setSetor')?.value||0),
-    selisih:parseInt(document.getElementById('setSelisih')?.textContent?.replace(/-/g,'').replace(/\D/g,'')||0)*(document.getElementById('setSelisih')?.textContent?.includes('-')?-1:1),
-    waktu:new Date().toLocaleTimeString('id-ID')
-  };
-  
-  setoranHistory.unshift({id:'SET-'+Date.now(),...data});
-  saveAllData();
-  syncToGoogleSheets('addSetoran',data);
-  Swal.fire('Sukses','Setoran disimpan!','success');
-  loadSetoranHistory2();
-}
-
-function loadSetoranHistory2(){
-  const el=document.getElementById('setHistory');
+// TAMPILAN SETORAN - TANPA DROPDOWN, SEPERTI REKAP
+function loadSetoranView(){
+  const el=document.getElementById('setoranView');
   if(!el)return;
   
   if(setoranHistory.length===0){
-    el.innerHTML='<p class="text-center text-sm">📭 Belum ada setoran.</p>';
+    el.innerHTML='<p class="text-center text-sm">📭 Belum ada setoran. Klik tombol Simpan Setoran di atas.</p>';
     return;
   }
   
-  let data=[...setoranHistory];
-  if(currentUser?.role==='sales')data=data.filter(s=>s.sales===currentUser.name);
+  const today=document.getElementById('setTanggal')?.value||new Date().toISOString().split('T')[0];
   
-  if(data.length===0){
-    el.innerHTML='<p class="text-center text-sm">📭 Belum ada setoran untuk sales ini.</p>';
-    return;
-  }
+  // TAMPILKAN PER SALES (SEPERTI REKAP)
+  const salesList=allUsers.filter(u=>u.role==='sales'||u.role==='admin').map(u=>u.name);
   
-  let h='<table><tr><th>Tgl</th><th>Sales</th><th>Total</th><th>Setor</th><th>Selisih</th></tr>';
-  data.slice(0,30).forEach(s=>{
-    h+=`<tr><td>${s.tanggal||'-'}</td><td>${s.sales||'-'}</td><td>Rp${(s.total||0).toLocaleString()}</td><td>Rp${(s.setor||0).toLocaleString()}</td><td style="color:${(s.selisih||0)<0?'#EF4444':'#10B981'}">Rp${(s.selisih||0).toLocaleString()}</td></tr>`;
+  let h='';
+  
+  // TOTAL KESELURUHAN
+  const totalSetoran=setoranHistory.reduce((s,x)=>s+(x.total||0),0);
+  h+=`<div class="flex-row mb-2"><div class="summary-box" style="background:#E6F0FA;">Total Setoran: <b>Rp${totalSetoran.toLocaleString()}</b></div></div>`;
+  
+  // PER SALES
+  salesList.forEach(salesName=>{
+    const data=setoranHistory.filter(s=>s.sales===salesName);
+    if(data.length===0)return;
+    const total=data.reduce((s,x)=>s+(x.total||0),0);
+    const todayData=data.filter(s=>s.tanggal===today);
+    const todayTotal=todayData.reduce((s,x)=>s+(x.total||0),0);
+    
+    h+=`<div class="user-section"><h4>👤 ${salesName} | Total: Rp${total.toLocaleString()} | Hari Ini: Rp${todayTotal.toLocaleString()}</h4>`;
+    h+='<table><tr><th>Tgl</th><th>COD</th><th>Total</th><th>Setor</th><th>Selisih</th></tr>';
+    data.slice(0,10).forEach(s=>{
+      h+=`<tr><td>${s.tanggal}</td><td>Rp${(s.grandCOD||0).toLocaleString()}</td><td>Rp${(s.total||0).toLocaleString()}</td><td>Rp${(s.setor||0).toLocaleString()}</td><td style="color:${(s.selisih||0)<0?'#EF4444':'#10B981'}">Rp${(s.selisih||0).toLocaleString()}</td></tr>`;
+    });
+    h+='</table></div>';
   });
-  h+='</table>';
+  
   el.innerHTML=h;
 }
 
