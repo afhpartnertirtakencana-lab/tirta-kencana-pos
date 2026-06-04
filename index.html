@@ -160,33 +160,111 @@ async function fetchFromGoogleSheets() {
   try {
     updateSyncStatus('syncing');
     
-    // GUNAKAN JSONP ATAU FETCH DENGAN CORS
-    const response = await fetch(GOOGLE_SHEETS_URL + '?action=getAllData', {
-      method: 'GET',
-      headers: { 'Accept': 'application/json' }
-    });
-    
+    const response = await fetch(GOOGLE_SHEETS_URL + '?action=getAllData');
     const result = await response.json();
     
     if (result.success && result.data) {
-      // Update local data
-      if (result.data.products && result.data.products.length > 0) products = result.data.products;
-      if (result.data.pelanggan && result.data.pelanggan.length > 0) pelanggan = result.data.pelanggan;
-      if (result.data.salesHistory) salesHistory = result.data.salesHistory;
-      if (result.data.stockInHistory) stockInHistory = result.data.stockInHistory;
-      if (result.data.drivers && result.data.drivers.length > 0) drivers = result.data.drivers;
-      if (result.data.banks && result.data.banks.length > 0) banks = result.data.banks;
-      if (result.data.settings) settings = { ...settings, ...result.data.settings };
-      if (result.data.salesUsers && result.data.salesUsers.length > 0) salesUsers = result.data.salesUsers;
-      if (result.data.allUsers && result.data.allUsers.length > 0) allUsers = result.data.allUsers;
+      // Update products
+      if (result.data.products && result.data.products.length > 0) {
+        products = result.data.products.map(p => ({
+          sku: String(p.sku || ''),
+          nama: String(p.nama || ''),
+          modal: parseFloat(p.modal) || 0,
+          jual: parseFloat(p.jual) || 0,
+          stokAwal: parseInt(p.stokAwal) || 0,
+          stokMasuk: parseInt(p.stokMasuk) || 0,
+          stokKeluar: parseInt(p.stokKeluar) || 0,
+          stokAkhir: parseInt(p.stokAkhir) || 0
+        }));
+      }
+      
+      // Update pelanggan
+      if (result.data.pelanggan && result.data.pelanggan.length > 0) {
+        pelanggan = result.data.pelanggan.map(c => String(c));
+      }
+      
+      // Update sales history
+      if (result.data.salesHistory) {
+        salesHistory = result.data.salesHistory.map(s => ({
+          id: String(s.id || ''),
+          user: String(s.user || ''),
+          customer: String(s.customer || ''),
+          total: parseFloat(s.total) || 0,
+          totalDisc: parseFloat(s.totalDisc) || 0,
+          totalQty: parseInt(s.totalQty) || 0,
+          status: String(s.status || 'cod'),
+          date: String(s.date || ''),
+          time: String(s.time || ''),
+          items: (s.items || []).map(i => ({
+            sku: String(i.sku || ''),
+            nama: String(i.nama || ''),
+            qty: parseInt(i.qty) || 0,
+            harga: parseFloat(i.harga) || 0,
+            disc: parseFloat(i.discPerItem || i.disc) || 0,
+            discTotal: parseFloat(i.discTotal) || 0,
+            subtotal: parseFloat(i.subtotal) || 0
+          }))
+        }));
+      }
+      
+      // Update stock in history
+      if (result.data.stockInHistory) {
+        stockInHistory = result.data.stockInHistory.map(s => ({
+          id: String(s.id || ''),
+          sku: String(s.sku || ''),
+          nama: String(s.nama || ''),
+          qty: parseInt(s.qty) || 0,
+          hargaModal: parseFloat(s.hargaModal) || 0,
+          totalModal: parseFloat(s.totalModal) || 0,
+          driver: String(s.driver || ''),
+          rit: String(s.rit || ''),
+          status: String(s.status || 'kiriman'),
+          date: String(s.date || '')
+        }));
+      }
+      
+      // Update drivers
+      if (result.data.drivers && result.data.drivers.length > 0) {
+        drivers = result.data.drivers.map(d => String(d));
+      }
+      
+      // Update banks
+      if (result.data.banks && result.data.banks.length > 0) {
+        banks = result.data.banks.map(b => ({
+          name: String(b.name || ''),
+          number: String(b.number || ''),
+          holder: String(b.holder || ''),
+          logo: String(b.logo || '🏦')
+        }));
+      }
+      
+      // Update settings
+      if (result.data.settings) {
+        settings = { ...settings, ...result.data.settings };
+      }
+      
+      // Update sales users
+      if (result.data.salesUsers && result.data.salesUsers.length > 0) {
+        salesUsers = result.data.salesUsers.map(s => String(s));
+      }
+      
+      // Update all users
+      if (result.data.allUsers && result.data.allUsers.length > 0) {
+        allUsers = result.data.allUsers.map(u => ({
+          name: String(u.name || ''),
+          role: String(u.role || 'sales'),
+          password: String(u.password || '123456')
+        }));
+      }
       
       saveAllData();
       updateSyncStatus('online');
       
-      // Update tampilan header
+      // Update header
       if (settings.alamat) document.getElementById('headerAlamat').textContent = settings.alamat;
       if (settings.logo) document.getElementById('logoImg').src = settings.logo;
       
+      console.log('✅ Data loaded from Google Sheets');
       return result.data;
     }
     
@@ -194,13 +272,6 @@ async function fetchFromGoogleSheets() {
     return null;
   } catch(e) {
     console.log('Fetch error:', e.message);
-    
-    // FALLBACK: Coba dengan mode no-cors (tidak bisa baca response, tapi tetap update status)
-    try {
-      await fetch(GOOGLE_SHEETS_URL + '?action=getAllData', { mode: 'no-cors' });
-      console.log('Fallback fetch sent');
-    } catch(e2) {}
-    
     updateSyncStatus('offline');
     return null;
   }
