@@ -143,6 +143,7 @@ function loadAllData(){const s=localStorage.getItem('tirtaFullData');if(s)try{co
 
 async function syncToGoogleSheets(action,data){if(!USE_GOOGLE_SHEETS)return;try{await fetch(GOOGLE_SHEETS_URL+'?action='+action+'&data='+encodeURIComponent(JSON.stringify(data)),{method:'GET',mode:'no-cors'});}catch(e){}}
 
+// REFRESH - JANGAN HAPUS DATA LOKAL
 async function refreshAllData(){
   Swal.fire({title:'🔄 Sync',text:'Menarik data...',allowOutsideClick:false,didOpen:()=>Swal.showLoading()});
   try{
@@ -153,6 +154,7 @@ async function refreshAllData(){
       if(d.data.pelanggan&&d.data.pelanggan.length>0)pelanggan=d.data.pelanggan;
       if(d.data.salesHistory&&d.data.salesHistory.length>0)salesHistory=d.data.salesHistory;
       if(d.data.stockInHistory&&d.data.stockInHistory.length>0)stockInHistory=d.data.stockInHistory;
+      // SETORAN - JANGAN OVERWRITE DENGAN ARRAY KOSONG
       if(d.data.setoranHistory&&d.data.setoranHistory.length>0)setoranHistory=d.data.setoranHistory;
       if(d.data.drivers&&d.data.drivers.length>0)drivers=d.data.drivers;
       if(d.data.banks&&d.data.banks.length>0)banks=d.data.banks;
@@ -198,22 +200,210 @@ async function cetakBluetooth(){try{const d=await navigator.bluetooth.requestDev
 function downloadStrukPNG(){const el=document.getElementById('strukPrintArea');if(!el)return;html2canvas(el,{scale:2,backgroundColor:'#FFFFFF'}).then(c=>{const a=document.createElement('a');a.href=c.toDataURL('image/png');a.download='struk-'+Date.now()+'.png';a.click();});}
 function kirimWA(){const el=document.getElementById('strukPrintArea');if(!el)return;window.open('https://wa.me/?text='+encodeURIComponent(el.innerText),'_blank');}
 
-// SETORAN
-function pageSetoran(){const today=new Date().toISOString().split('T')[0];const sl=allUsers.filter(u=>u.role==='sales'||u.role==='admin').map(u=>u.name);if(sl.length===0)sl.push('Sales A','Sales B');let so='';if(currentUser?.role==='admin'){so='<option value="__all__">-- Semua Sales --</option>';sl.forEach(s=>{so+=`<option value="${s}">${s}</option>`;});}else{so=sl.map(s=>`<option value="${s}" ${currentUser.name===s?'selected':''}>${s}</option>`).join('');}return`<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-money-bill-wave"></i> Setoran Sales</div><button class="btn-refresh btn-sm" onclick="refreshAllData()">🔄 Sync</button></div><div class="form-group"><label>Sales</label><select id="setSales" onchange="hitungGrandCOD()">${so}</select></div><div class="form-group"><label>Tanggal</label><input type="date" id="setTanggal" value="${today}" onchange="hitungGrandCOD()"></div><div class="section-title">📊 Grand Total COD</div><div class="setoran-row"><label>COD Sales:</label><input id="setGrandCOD" readonly class="plus"></div><div class="section-title">➖ Pengeluaran</div><div class="setoran-row"><label>Uang Makan:</label><input type="number" id="setMakan" value="0" class="minus" onchange="hitungSetoran()"></div><div class="setoran-row"><label>Tips:</label><input type="number" id="setTips" value="0" class="minus" onchange="hitungSetoran()"></div><div class="setoran-row"><label>Parkir:</label><input type="number" id="setParkir" value="0" class="minus" onchange="hitungSetoran()"></div><div class="setoran-row"><label>Flazz:</label><input type="number" id="setFlazz" value="0" class="minus" onchange="hitungSetoran()"></div><div class="setoran-row"><label>Bensin:</label><input type="number" id="setBensin" value="0" class="minus" onchange="hitungSetoran()"></div><div class="setoran-row"><label>Transfer:</label><input type="number" id="setTransfer" value="0" class="minus" onchange="hitungSetoran()"></div><div class="setoran-row"><label>Ket.1:</label><input id="setKet1" placeholder="Keterangan"><input type="number" id="setJml1" value="0" class="minus" onchange="hitungSetoran()" style="width:120px;"></div><div class="setoran-row"><label>Ket.2:</label><input id="setKet2" placeholder="Keterangan"><input type="number" id="setJml2" value="0" class="minus" onchange="hitungSetoran()" style="width:120px;"></div><div class="section-title">➕ Tambahan</div><div class="setoran-row"><label>Cicilan Hutang:</label><input type="number" id="setCicilan" value="0" class="plus" onchange="hitungSetoran()"></div><div class="setoran-row"><label>Tagihan:</label><input type="number" id="setTagihan" value="0" class="plus" onchange="hitungSetoran()"></div><div class="total-box"><div>Total: Rp <span id="setTotal">0</span></div></div><div class="setoran-row"><label><b>SETOR:</b></label><input type="number" id="setSetor" value="0" onchange="hitungSetoran()" style="font-weight:bold;font-size:1rem;"></div><div class="total-box danger"><div>Selisih: Rp <span id="setSelisih">0</span></div></div><button class="btn btn-primary btn-block" onclick="saveSetoran()"><i class="fas fa-save"></i> Simpan</button><button class="btn btn-success btn-block mt-2" onclick="cetakSetoran()"><i class="fas fa-print"></i> Cetak</button></div><div class="card"><div class="card-title"><i class="fas fa-history"></i> Riwayat Setoran</div><div id="setHistory"></div></div>`;}
-function initSetoran(){hitungGrandCOD();hitungSetoran();loadSetoranHistory();}
-function hitungGrandCOD(){const today=document.getElementById('setTanggal')?.value||new Date().toISOString().split('T')[0];const sales=document.getElementById('setSales')?.value||currentUser.name;let ct=0;if(sales==='__all__'){ct=salesHistory.filter(s=>s.date===today&&s.status==='cod').reduce((sum,s)=>sum+(s.total||0),0);}else{ct=salesHistory.filter(s=>s.date===today&&s.user===sales&&s.status==='cod').reduce((sum,s)=>sum+(s.total||0),0);}document.getElementById('setGrandCOD').value='Rp '+ct.toLocaleString();document.getElementById('setGrandCOD').dataset.value=ct;}
-function hitungSetoran(){const g=parseInt(document.getElementById('setGrandCOD')?.dataset?.value||0);const a=parseInt(document.getElementById('setMakan')?.value||0),b=parseInt(document.getElementById('setTips')?.value||0),c=parseInt(document.getElementById('setParkir')?.value||0),d=parseInt(document.getElementById('setFlazz')?.value||0),e=parseInt(document.getElementById('setBensin')?.value||0),f=parseInt(document.getElementById('setTransfer')?.value||0),j1=parseInt(document.getElementById('setJml1')?.value||0),j2=parseInt(document.getElementById('setJml2')?.value||0),ci=parseInt(document.getElementById('setCicilan')?.value||0),ta=parseInt(document.getElementById('setTagihan')?.value||0);const total=g-a-b-c-d-e-f-j1-j2+ci+ta;const setor=parseInt(document.getElementById('setSetor')?.value||0);const selisih=setor-total;document.getElementById('setTotal').textContent=total.toLocaleString();document.getElementById('setSelisih').textContent=selisih.toLocaleString();}
-async function saveSetoran(){const sv=document.getElementById('setSales')?.value;const sn=(sv==='__all__')?'Admin (All)':sv;const data={sales:sn,tanggal:document.getElementById('setTanggal')?.value,grandCOD:parseInt(document.getElementById('setGrandCOD')?.dataset?.value||0),makan:parseInt(document.getElementById('setMakan')?.value||0),tips:parseInt(document.getElementById('setTips')?.value||0),parkir:parseInt(document.getElementById('setParkir')?.value||0),flazz:parseInt(document.getElementById('setFlazz')?.value||0),bensin:parseInt(document.getElementById('setBensin')?.value||0),transfer:parseInt(document.getElementById('setTransfer')?.value||0),ket1:document.getElementById('setKet1')?.value||'',jml1:parseInt(document.getElementById('setJml1')?.value||0),ket2:document.getElementById('setKet2')?.value||'',jml2:parseInt(document.getElementById('setJml2')?.value||0),cicilan:parseInt(document.getElementById('setCicilan')?.value||0),tagihan:parseInt(document.getElementById('setTagihan')?.value||0),total:parseInt(document.getElementById('setTotal')?.textContent?.replace(/\D/g,'')||0),setor:parseInt(document.getElementById('setSetor')?.value||0),selisih:parseInt(document.getElementById('setSelisih')?.textContent?.replace(/-/g,'').replace(/\D/g,'')||0)*(document.getElementById('setSelisih')?.textContent?.includes('-')?-1:1),waktu:new Date().toLocaleTimeString('id-ID')};setoranHistory.unshift({id:'SET-'+Date.now(),...data});saveAllData();syncToGoogleSheets('addSetoran',data);Swal.fire('Sukses','Setoran disimpan!','success');loadSetoranHistory();}
-function loadSetoranHistory(){const el=document.getElementById('setHistory');if(!el)return;let data=setoranHistory;if(currentUser?.role==='sales')data=data.filter(s=>s.sales===currentUser.name);if(data.length===0){el.innerHTML='<p class="text-sm text-center">Belum ada setoran</p>';return;}let h='<table><tr><th>Tgl</th><th>Sales</th><th>Total</th><th>Setor</th><th>Selisih</th><th>Aksi</th></tr>';const pg=getPaginatedData(data,paginationPage);pg.forEach(s=>{h+=`<tr><td>${s.tanggal}</td><td>${s.sales}</td><td>Rp${(s.total||0).toLocaleString()}</td><td>Rp${(s.setor||0).toLocaleString()}</td><td style="color:${(s.selisih||0)<0?'#EF4444':'#10B981'}">Rp${(s.selisih||0).toLocaleString()}</td><td><button class="btn btn-warning btn-sm" onclick="cetakSetoranByID('${s.id}')">📄</button></td></tr>`;});h+='</table>';h+=getPaginationHTML(data.length,paginationPage,'goToSetoranPage');el.innerHTML=h;}
-function goToSetoranPage(pg){paginationPage=pg;loadSetoranHistory();}
-function cetakSetoran(){const sv=document.getElementById('setSales')?.value;const sn=(sv==='__all__')?'Admin (All)':sv;const d={sales:sn,tanggal:document.getElementById('setTanggal')?.value,grandCOD:document.getElementById('setGrandCOD')?.dataset?.value||0,makan:document.getElementById('setMakan')?.value||0,tips:document.getElementById('setTips')?.value||0,parkir:document.getElementById('setParkir')?.value||0,flazz:document.getElementById('setFlazz')?.value||0,bensin:document.getElementById('setBensin')?.value||0,transfer:document.getElementById('setTransfer')?.value||0,ket1:document.getElementById('setKet1')?.value||'',jml1:document.getElementById('setJml1')?.value||0,ket2:document.getElementById('setKet2')?.value||'',jml2:document.getElementById('setJml2')?.value||0,cicilan:document.getElementById('setCicilan')?.value||0,tagihan:document.getElementById('setTagihan')?.value||0,total:document.getElementById('setTotal')?.textContent||'0',setor:document.getElementById('setSetor')?.value||0,selisih:document.getElementById('setSelisih')?.textContent||'0'};showStrukSetoran(d);Swal.fire({title:'Cetak',showDenyButton:true,showCancelButton:true,confirmButtonText:'🖨️',denyButtonText:'📥',cancelButtonText:'💬'}).then(r=>{if(r.isConfirmed)cetakBluetooth();else if(r.isDenied)downloadStrukPNG();else if(r.dismiss===Swal.DismissReason.cancel)kirimWA();});}
-function cetakSetoranByID(id){const s=setoranHistory.find(x=>x.id===id);if(!s)return;showStrukSetoran(s);Swal.fire({title:'Cetak',showDenyButton:true,showCancelButton:true,confirmButtonText:'🖨️',denyButtonText:'📥',cancelButtonText:'💬'}).then(r=>{if(r.isConfirmed)cetakBluetooth();else if(r.isDenied)downloadStrukPNG();else if(r.dismiss===Swal.DismissReason.cancel)kirimWA();});}
-function showStrukSetoran(d){document.getElementById('strukContent').innerHTML=`<div id="strukPrintArea" style="text-align:center;padding:15px;font-size:0.7rem;max-width:320px;margin:0 auto;">${settings.logo?`<img src="${settings.logo}" style="width:60px;height:60px;border-radius:50%;margin-bottom:8px;">`:''}<h3 style="color:#0A4D8C;">${settings.namaToko}</h3><p>SETORAN SALES</p><hr><p>Sales: ${d.sales}</p><p>Tgl: ${d.tanggal}</p><hr><table style="width:100%;font-size:0.6rem;"><tr><td>Grand Total COD</td><td style="text-align:right;">Rp${(parseInt(d.grandCOD)||0).toLocaleString()}</td></tr><tr><td>Uang Makan</td><td style="text-align:right;color:#EF4444;">-Rp${(parseInt(d.makan)||0).toLocaleString()}</td></tr><tr><td>Tips</td><td style="text-align:right;color:#EF4444;">-Rp${(parseInt(d.tips)||0).toLocaleString()}</td></tr><tr><td>Parkir</td><td style="text-align:right;color:#EF4444;">-Rp${(parseInt(d.parkir)||0).toLocaleString()}</td></tr><tr><td>Flazz</td><td style="text-align:right;color:#EF4444;">-Rp${(parseInt(d.flazz)||0).toLocaleString()}</td></tr><tr><td>Bensin</td><td style="text-align:right;color:#EF4444;">-Rp${(parseInt(d.bensin)||0).toLocaleString()}</td></tr><tr><td>Transfer</td><td style="text-align:right;color:#EF4444;">-Rp${(parseInt(d.transfer)||0).toLocaleString()}</td></tr>${d.ket1?`<tr><td>${d.ket1}</td><td style="text-align:right;color:#EF4444;">-Rp${(parseInt(d.jml1)||0).toLocaleString()}</td></tr>`:''}${d.ket2?`<tr><td>${d.ket2}</td><td style="text-align:right;color:#EF4444;">-Rp${(parseInt(d.jml2)||0).toLocaleString()}</td></tr>`:''}<tr><td>Cicilan Hutang</td><td style="text-align:right;color:#10B981;">+Rp${(parseInt(d.cicilan)||0).toLocaleString()}</td></tr><tr><td>Tagihan</td><td style="text-align:right;color:#10B981;">+Rp${(parseInt(d.tagihan)||0).toLocaleString()}</td></tr></table><hr><p><b>Total:</b> Rp${(d.total||'0').toLocaleString()}</p><p><b>Setor:</b> Rp${(parseInt(d.setor)||0).toLocaleString()}</p><p style="color:${(parseInt(d.selisih)||0)<0?'#EF4444':'#10B981'}"><b>Selisih:</b> Rp${(d.selisih||'0').toLocaleString()}</p><p>${settings.bottomLine}</p></div>`;document.getElementById('strukModal').style.display='flex';}
-
-// REKAP PENJUALAN - TANPA DEBUG BOX, TAMPILAN RAPI
-function loadRekapPenjualan(container){
+// SETORAN - DENGAN DATA LOKAL
+function pageSetoran(){
   const today=new Date().toISOString().split('T')[0];
-  const yesterday=new Date(Date.now()-86400000).toISOString().split('T')[0];
+  const salesList=allUsers.filter(u=>u.role==='sales'||u.role==='admin').map(u=>u.name);
+  if(salesList.length===0)salesList.push('Sales A','Sales B');
+  
+  let so='';
+  if(currentUser?.role==='admin'){
+    so='<option value="__all__">-- Semua Sales --</option>';
+    salesList.forEach(s=>{so+=`<option value="${s}">${s}</option>`;});
+  }else{
+    so=salesList.map(s=>`<option value="${s}" ${currentUser.name===s?'selected':''}>${s}</option>`).join('');
+  }
+  
+  return`<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-money-bill-wave"></i> Setoran Sales</div><button class="btn-refresh btn-sm" onclick="refreshAllData()">🔄 Sync</button></div>
+  <div class="form-group"><label>Sales</label><select id="setSales" onchange="hitungGrandCOD()">${so}</select></div>
+  <div class="form-group"><label>Tanggal</label><input type="date" id="setTanggal" value="${today}" onchange="hitungGrandCOD()"></div>
+  <div class="section-title">📊 Grand Total COD</div>
+  <div class="setoran-row"><label>COD Sales:</label><input id="setGrandCOD" readonly></div>
+  <div class="section-title">➖ Pengeluaran</div>
+  <div class="setoran-row"><label>Uang Makan:</label><input type="number" id="setMakan" value="0" onchange="hitungSetoran()"></div>
+  <div class="setoran-row"><label>Tips:</label><input type="number" id="setTips" value="0" onchange="hitungSetoran()"></div>
+  <div class="setoran-row"><label>Parkir:</label><input type="number" id="setParkir" value="0" onchange="hitungSetoran()"></div>
+  <div class="setoran-row"><label>Flazz:</label><input type="number" id="setFlazz" value="0" onchange="hitungSetoran()"></div>
+  <div class="setoran-row"><label>Bensin:</label><input type="number" id="setBensin" value="0" onchange="hitungSetoran()"></div>
+  <div class="setoran-row"><label>Transfer:</label><input type="number" id="setTransfer" value="0" onchange="hitungSetoran()"></div>
+  <div class="setoran-row"><label>Ket.1:</label><input id="setKet1" placeholder="Keterangan"><input type="number" id="setJml1" value="0" onchange="hitungSetoran()" style="width:120px;"></div>
+  <div class="setoran-row"><label>Ket.2:</label><input id="setKet2" placeholder="Keterangan"><input type="number" id="setJml2" value="0" onchange="hitungSetoran()" style="width:120px;"></div>
+  <div class="section-title">➕ Tambahan</div>
+  <div class="setoran-row"><label>Cicilan Hutang:</label><input type="number" id="setCicilan" value="0" onchange="hitungSetoran()"></div>
+  <div class="setoran-row"><label>Tagihan:</label><input type="number" id="setTagihan" value="0" onchange="hitungSetoran()"></div>
+  <div class="total-box"><div>Total: Rp <span id="setTotal">0</span></div></div>
+  <div class="setoran-row"><label><b>SETOR:</b></label><input type="number" id="setSetor" value="0" onchange="hitungSetoran()" style="font-weight:bold;font-size:1rem;"></div>
+  <div class="total-box danger"><div>Selisih: Rp <span id="setSelisih">0</span></div></div>
+  <button class="btn btn-primary btn-block" onclick="saveSetoran()"><i class="fas fa-save"></i> Simpan</button>
+  <button class="btn btn-success btn-block mt-2" onclick="cetakSetoran()"><i class="fas fa-print"></i> Cetak</button>
+  </div>
+  <div class="card"><div class="card-title"><i class="fas fa-history"></i> Riwayat Setoran</div><div id="setHistory"></div></div>`;
+}
+
+function initSetoran(){hitungGrandCOD();hitungSetoran();loadSetoranHistory();}
+
+function hitungGrandCOD(){
+  const today=document.getElementById('setTanggal')?.value||new Date().toISOString().split('T')[0];
+  const sales=document.getElementById('setSales')?.value||currentUser.name;
+  let ct=0;
+  if(sales==='__all__'){
+    ct=salesHistory.filter(s=>s.date===today&&s.status==='cod').reduce((sum,s)=>sum+(s.total||0),0);
+  }else{
+    ct=salesHistory.filter(s=>s.date===today&&s.user===sales&&s.status==='cod').reduce((sum,s)=>sum+(s.total||0),0);
+  }
+  document.getElementById('setGrandCOD').value='Rp '+ct.toLocaleString();
+  document.getElementById('setGrandCOD').dataset.value=ct;
+}
+
+function hitungSetoran(){
+  const g=parseInt(document.getElementById('setGrandCOD')?.dataset?.value||0);
+  const a=parseInt(document.getElementById('setMakan')?.value||0);
+  const b=parseInt(document.getElementById('setTips')?.value||0);
+  const c=parseInt(document.getElementById('setParkir')?.value||0);
+  const d=parseInt(document.getElementById('setFlazz')?.value||0);
+  const e=parseInt(document.getElementById('setBensin')?.value||0);
+  const f=parseInt(document.getElementById('setTransfer')?.value||0);
+  const j1=parseInt(document.getElementById('setJml1')?.value||0);
+  const j2=parseInt(document.getElementById('setJml2')?.value||0);
+  const ci=parseInt(document.getElementById('setCicilan')?.value||0);
+  const ta=parseInt(document.getElementById('setTagihan')?.value||0);
+  const total=g-a-b-c-d-e-f-j1-j2+ci+ta;
+  const setor=parseInt(document.getElementById('setSetor')?.value||0);
+  const selisih=setor-total;
+  document.getElementById('setTotal').textContent=total.toLocaleString();
+  document.getElementById('setSelisih').textContent=selisih.toLocaleString();
+  document.getElementById('setSelisih').style.color=selisih<0?'#EF4444':selisih>0?'#10B981':'inherit';
+}
+
+async function saveSetoran(){
+  const salesVal=document.getElementById('setSales')?.value;
+  const salesName=(salesVal==='__all__')?'Admin (All)':salesVal;
+  
+  const data={
+    sales:salesName,
+    tanggal:document.getElementById('setTanggal')?.value,
+    grandCOD:parseInt(document.getElementById('setGrandCOD')?.dataset?.value||0),
+    makan:parseInt(document.getElementById('setMakan')?.value||0),
+    tips:parseInt(document.getElementById('setTips')?.value||0),
+    parkir:parseInt(document.getElementById('setParkir')?.value||0),
+    flazz:parseInt(document.getElementById('setFlazz')?.value||0),
+    bensin:parseInt(document.getElementById('setBensin')?.value||0),
+    transfer:parseInt(document.getElementById('setTransfer')?.value||0),
+    ket1:document.getElementById('setKet1')?.value||'',
+    jml1:parseInt(document.getElementById('setJml1')?.value||0),
+    ket2:document.getElementById('setKet2')?.value||'',
+    jml2:parseInt(document.getElementById('setJml2')?.value||0),
+    cicilan:parseInt(document.getElementById('setCicilan')?.value||0),
+    tagihan:parseInt(document.getElementById('setTagihan')?.value||0),
+    total:parseInt(document.getElementById('setTotal')?.textContent?.replace(/\D/g,'')||0),
+    setor:parseInt(document.getElementById('setSetor')?.value||0),
+    selisih:parseInt(document.getElementById('setSelisih')?.textContent?.replace(/-/g,'').replace(/\D/g,'')||0)*(document.getElementById('setSelisih')?.textContent?.includes('-')?-1:1),
+    waktu:new Date().toLocaleTimeString('id-ID')
+  };
+  
+  setoranHistory.unshift({id:'SET-'+Date.now(),...data});
+  saveAllData();
+  syncToGoogleSheets('addSetoran',data);
+  Swal.fire('Sukses','Setoran disimpan!','success');
+  loadSetoranHistory();
+}
+
+function loadSetoranHistory(){
+  const el=document.getElementById('setHistory');
+  if(!el)return;
+  
+  // Filter untuk sales
+  let data=[...setoranHistory];
+  if(currentUser?.role==='sales'){
+    data=data.filter(s=>s.sales===currentUser.name);
+  }
+  
+  if(data.length===0){
+    el.innerHTML='<p class="text-sm text-center">Belum ada setoran. Silakan isi form di atas.</p>';
+    return;
+  }
+  
+  let h='<table><tr><th>Tgl</th><th>Sales</th><th>Total</th><th>Setor</th><th>Selisih</th><th>Aksi</th></tr>';
+  const pg=getPaginatedData(data,paginationPage);
+  pg.forEach(s=>{
+    h+=`<tr>
+      <td>${s.tanggal||'-'}</td>
+      <td>${s.sales||'-'}</td>
+      <td>Rp${(s.total||0).toLocaleString()}</td>
+      <td>Rp${(s.setor||0).toLocaleString()}</td>
+      <td style="color:${(s.selisih||0)<0?'#EF4444':'#10B981'}">Rp${(s.selisih||0).toLocaleString()}</td>
+      <td><button class="btn btn-warning btn-sm" onclick="cetakSetoranByID('${s.id}')">📄</button></td>
+    </tr>`;
+  });
+  h+='</table>';
+  h+=getPaginationHTML(data.length,paginationPage,'goToSetoranPage');
+  el.innerHTML=h;
+}
+
+function goToSetoranPage(pg){paginationPage=pg;loadSetoranHistory();}
+
+function cetakSetoran(){
+  const sv=document.getElementById('setSales')?.value;
+  const sn=(sv==='__all__')?'Admin (All)':sv;
+  const d={
+    sales:sn,tanggal:document.getElementById('setTanggal')?.value,
+    grandCOD:document.getElementById('setGrandCOD')?.dataset?.value||0,
+    makan:document.getElementById('setMakan')?.value||0,
+    tips:document.getElementById('setTips')?.value||0,
+    parkir:document.getElementById('setParkir')?.value||0,
+    flazz:document.getElementById('setFlazz')?.value||0,
+    bensin:document.getElementById('setBensin')?.value||0,
+    transfer:document.getElementById('setTransfer')?.value||0,
+    ket1:document.getElementById('setKet1')?.value||'',jml1:document.getElementById('setJml1')?.value||0,
+    ket2:document.getElementById('setKet2')?.value||'',jml2:document.getElementById('setJml2')?.value||0,
+    cicilan:document.getElementById('setCicilan')?.value||0,
+    tagihan:document.getElementById('setTagihan')?.value||0,
+    total:document.getElementById('setTotal')?.textContent||'0',
+    setor:document.getElementById('setSetor')?.value||0,
+    selisih:document.getElementById('setSelisih')?.textContent||'0'
+  };
+  showStrukSetoran(d);
+  Swal.fire({title:'Cetak',showDenyButton:true,showCancelButton:true,confirmButtonText:'🖨️',denyButtonText:'📥',cancelButtonText:'💬'}).then(r=>{
+    if(r.isConfirmed)cetakBluetooth();else if(r.isDenied)downloadStrukPNG();else if(r.dismiss===Swal.DismissReason.cancel)kirimWA();
+  });
+}
+
+function cetakSetoranByID(id){
+  const s=setoranHistory.find(x=>x.id===id);
+  if(!s)return;
+  showStrukSetoran(s);
+  Swal.fire({title:'Cetak',showDenyButton:true,showCancelButton:true,confirmButtonText:'🖨️',denyButtonText:'📥',cancelButtonText:'💬'}).then(r=>{
+    if(r.isConfirmed)cetakBluetooth();else if(r.isDenied)downloadStrukPNG();else if(r.dismiss===Swal.DismissReason.cancel)kirimWA();
+  });
+}
+
+function showStrukSetoran(d){
+  document.getElementById('strukContent').innerHTML=`<div id="strukPrintArea" style="text-align:center;padding:15px;font-size:0.7rem;max-width:320px;margin:0 auto;">
+    ${settings.logo?`<img src="${settings.logo}" style="width:60px;height:60px;border-radius:50%;margin-bottom:8px;">`:''}
+    <h3 style="color:#0A4D8C;">${settings.namaToko}</h3><p>SETORAN SALES</p><hr>
+    <p>Sales: ${d.sales}</p><p>Tgl: ${d.tanggal}</p><hr>
+    <table style="width:100%;font-size:0.6rem;">
+    <tr><td>Grand Total COD</td><td style="text-align:right;">Rp${(parseInt(d.grandCOD)||0).toLocaleString()}</td></tr>
+    <tr><td>Uang Makan</td><td style="text-align:right;color:#EF4444;">-Rp${(parseInt(d.makan)||0).toLocaleString()}</td></tr>
+    <tr><td>Tips</td><td style="text-align:right;color:#EF4444;">-Rp${(parseInt(d.tips)||0).toLocaleString()}</td></tr>
+    <tr><td>Parkir</td><td style="text-align:right;color:#EF4444;">-Rp${(parseInt(d.parkir)||0).toLocaleString()}</td></tr>
+    <tr><td>Flazz</td><td style="text-align:right;color:#EF4444;">-Rp${(parseInt(d.flazz)||0).toLocaleString()}</td></tr>
+    <tr><td>Bensin</td><td style="text-align:right;color:#EF4444;">-Rp${(parseInt(d.bensin)||0).toLocaleString()}</td></tr>
+    <tr><td>Transfer</td><td style="text-align:right;color:#EF4444;">-Rp${(parseInt(d.transfer)||0).toLocaleString()}</td></tr>
+    ${d.ket1?`<tr><td>${d.ket1}</td><td style="text-align:right;color:#EF4444;">-Rp${(parseInt(d.jml1)||0).toLocaleString()}</td></tr>`:''}
+    ${d.ket2?`<tr><td>${d.ket2}</td><td style="text-align:right;color:#EF4444;">-Rp${(parseInt(d.jml2)||0).toLocaleString()}</td></tr>`:''}
+    <tr><td>Cicilan Hutang</td><td style="text-align:right;color:#10B981;">+Rp${(parseInt(d.cicilan)||0).toLocaleString()}</td></tr>
+    <tr><td>Tagihan</td><td style="text-align:right;color:#10B981;">+Rp${(parseInt(d.tagihan)||0).toLocaleString()}</td></tr>
+    </table><hr>
+    <p><b>Total:</b> Rp${(d.total||'0').toLocaleString()}</p>
+    <p><b>Setor:</b> Rp${(parseInt(d.setor)||0).toLocaleString()}</p>
+    <p style="color:${(parseInt(d.selisih)||0)<0?'#EF4444':'#10B981'}"><b>Selisih:</b> Rp${(d.selisih||'0').toLocaleString()}</p>
+    <p>${settings.bottomLine}</p></div>`;
+  document.getElementById('strukModal').style.display='flex';
+}
+
+// REKAP PENJUALAN
+function loadRekapPenjualan(container){
   const salesList=allUsers.filter(u=>u.role==='sales'||u.role==='admin').map(u=>u.name);
   if(salesList.length===0)salesList.push('Sales A','Sales B');
   
@@ -224,17 +414,13 @@ function loadRekapPenjualan(container){
     container.innerHTML=h;return;
   }
   
-  // RINGKASAN
-  const tt=salesHistory.length;
-  const tp=salesHistory.reduce((s,x)=>s+(x.total||0),0);
-  const tq=salesHistory.reduce((s,x)=>s+(x.totalQty||0),0);
+  const tt=salesHistory.length,tp=salesHistory.reduce((s,x)=>s+(x.total||0),0),tq=salesHistory.reduce((s,x)=>s+(x.totalQty||0),0);
   h+=`<div class="flex-row mb-2">
     <div class="summary-box" style="background:#E6F0FA;"><small>Total Transaksi</small><br><b>${tt}</b></div>
     <div class="summary-box" style="background:#FFF8E1;"><small>Total Pendapatan</small><br><b>Rp${tp.toLocaleString()}</b></div>
     <div class="summary-box" style="background:#D1FAE5;"><small>Total QTY</small><br><b>${tq}</b></div>
   </div>`;
   
-  // PER SALES (ADMIN)
   if(currentUser?.role==='admin'){
     h+='<h4 style="font-size:0.8rem;margin-top:12px;color:var(--biru);">👤 Per Sales</h4>';
     salesList.forEach(userName=>{
@@ -252,7 +438,6 @@ function loadRekapPenjualan(container){
     });
   }
   
-  // DETAIL TRANSAKSI
   h+='<h4 style="font-size:0.8rem;margin-top:12px;color:var(--biru);">📋 Detail Transaksi Terbaru</h4>';
   h+='<table><tr><th>Tgl</th><th>Customer</th><th>Sales</th><th>Status</th><th>Total</th></tr>';
   salesHistory.slice(0,30).forEach(s=>{
@@ -263,7 +448,7 @@ function loadRekapPenjualan(container){
 }
 
 // KEUANGAN
-function loadKeuangan(container){let h='<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-file-invoice-dollar"></i> 📊 Laporan Keuangan</div><button class="btn-refresh btn-sm" onclick="refreshAllData()">🔄 Sync</button></div>';if(salesHistory.length===0){h+='<p class="text-center">Belum ada data.</p></div>';container.innerHTML=h;return;}const perUser={};allUsers.filter(u=>u.role==='sales'||u.role==='admin').forEach(u=>{perUser[u.name]={sales:0,total:0,profit:0,qty:0};});salesHistory.forEach(s=>{if(perUser[s.user]){perUser[s.user].sales++;perUser[s.user].total+=s.total||0;perUser[s.user].profit+=s.totalProfit||0;perUser[s.user].qty+=s.totalQty||0;}});h+='<h4 style="font-size:0.75rem;">👤 Per Sales (Semua Data)</h4><table><tr><th>User</th><th>Transaksi</th><th>QTY</th><th>Total</th><th>Profit</th></tr>';Object.entries(perUser).forEach(([name,u])=>{h+=`<tr><td>${name}</td><td>${u.sales}</td><td>${u.qty}</td><td>Rp${u.total.toLocaleString()}</td><td>Rp${u.profit.toLocaleString()}</td></tr>`;});h+='</table></div>';container.innerHTML=h;}
+function loadKeuangan(container){let h='<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-file-invoice-dollar"></i> 📊 Laporan Keuangan</div><button class="btn-refresh btn-sm" onclick="refreshAllData()">🔄 Sync</button></div>';if(salesHistory.length===0){h+='<p class="text-center">Belum ada data.</p></div>';container.innerHTML=h;return;}const perUser={};allUsers.filter(u=>u.role==='sales'||u.role==='admin').forEach(u=>{perUser[u.name]={sales:0,total:0,profit:0,qty:0};});salesHistory.forEach(s=>{if(perUser[s.user]){perUser[s.user].sales++;perUser[s.user].total+=s.total||0;perUser[s.user].profit+=s.totalProfit||0;perUser[s.user].qty+=s.totalQty||0;}});h+='<h4 style="font-size:0.75rem;">👤 Per Sales</h4><table><tr><th>User</th><th>Transaksi</th><th>QTY</th><th>Total</th><th>Profit</th></tr>';Object.entries(perUser).forEach(([name,u])=>{h+=`<tr><td>${name}</td><td>${u.sales}</td><td>${u.qty}</td><td>Rp${u.total.toLocaleString()}</td><td>Rp${u.profit.toLocaleString()}</td></tr>`;});h+='</table></div>';container.innerHTML=h;}
 
 // REKAP GUDANG
 function loadRekapStockIn(container){let h='<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-warehouse"></i> 📊 Rekap Gudang</div><button class="btn-refresh btn-sm" onclick="refreshAllData()">🔄 Sync</button></div>';if(stockInHistory.length===0){h+='<p class="text-center">Belum ada data</p></div>';container.innerHTML=h;return;}const tq=stockInHistory.reduce((s,i)=>s+(i.qty||0),0),tm=stockInHistory.reduce((s,i)=>s+((i.qty||0)*(i.hargaModal||0)),0);h+=`<div class="flex-row mb-2"><div class="summary-box" style="background:#E6F0FA;"><small>Entry</small><br><b>${stockInHistory.length}</b></div><div class="summary-box" style="background:#D1FAE5;"><small>QTY</small><br><b>${tq}</b></div><div class="summary-box" style="background:#FFF8E1;"><small>Modal</small><br><b>Rp${tm.toLocaleString()}</b></div></div>`;['kiriman','titipan'].forEach(status=>{const data=stockInHistory.filter(s=>s.status===status);if(data.length===0)return;const tQ=data.reduce((s,i)=>s+(i.qty||0),0),tRp=data.reduce((s,i)=>s+((i.qty||0)*(i.hargaModal||0)),0);h+=`<h4 style="font-size:0.75rem;margin-top:12px;"><span class="status-badge status-${status}">${status.toUpperCase()}</span> | QTY: ${tQ} | Rp${tRp.toLocaleString()}</h4><table><tr><th>Driver</th><th>Entry</th><th>QTY</th><th>Total</th></tr>`;const perDriver={};data.forEach(s=>{const d=s.driver||'Tanpa';if(!perDriver[d])perDriver[d]={driver:d,jumlah:0,totalQty:0,totalRp:0};perDriver[d].jumlah++;perDriver[d].totalQty+=s.qty||0;perDriver[d].totalRp+=(s.qty||0)*(s.hargaModal||0);});Object.values(perDriver).forEach(d=>{h+=`<tr><td>${d.driver}</td><td>${d.jumlah}</td><td>${d.totalQty}</td><td>Rp${d.totalRp.toLocaleString()}</td></tr>`;});h+='</table>';});h+='</div>';container.innerHTML=h;}
