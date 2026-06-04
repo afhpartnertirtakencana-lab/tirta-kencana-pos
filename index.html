@@ -137,7 +137,7 @@
 // ============================================
 // CONFIG
 // ============================================
-const GOOGLE_SHEETS_URL = 'https://script.google.com/macros/s/AKfycby3CiYLPyIKCeRZhRw5mCb4oy0v9uQGOX3evG5b0E0iKSNq423ORsOVv2vhKVPjmI_P/exec';
+const GOOGLE_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwYBZYwjX6jb1DxYrMODvro-zGhSNcBdhfPI-8iw6mszTqNKqo89X68TseaWIvAoi89/exec';
 const USE_GOOGLE_SHEETS = true;
 
 // ============================================
@@ -229,33 +229,14 @@ async function fetchFromGoogleSheets() {
       }
       
       // Update banks
-      if (result.data.banks && result.data.banks.length > 0) {
-        banks = result.data.banks.map(b => ({
-          name: String(b.name || ''),
-          number: String(b.number || ''),
-          holder: String(b.holder || ''),
-          logo: String(b.logo || '🏦')
-        }));
-      }
-      
-      // Update settings
-      if (result.data.settings) {
-        settings = { ...settings, ...result.data.settings };
-      }
-      
-      // Update sales users
-      if (result.data.salesUsers && result.data.salesUsers.length > 0) {
-        salesUsers = result.data.salesUsers.map(s => String(s));
-      }
-      
-      // Update all users
-      if (result.data.allUsers && result.data.allUsers.length > 0) {
-        allUsers = result.data.allUsers.map(u => ({
-          name: String(u.name || ''),
-          role: String(u.role || 'sales'),
-          password: String(u.password || '123456')
-        }));
-      }
+if (result.data.banks && result.data.banks.length > 0) {
+  banks = result.data.banks;
+}
+
+// Update all users
+if (result.data.allUsers && result.data.allUsers.length > 0) {
+  allUsers = result.data.allUsers;
+}
       
       saveAllData();
       updateSyncStatus('online');
@@ -495,7 +476,7 @@ async function deletePelangganConfirm(name){const c=await Swal.fire({title:'Hapu
 // ============================================
 // PENGATURAN
 // ============================================
-function pagePengaturan(){return`<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-store"></i> Info Toko</div>${renderRefreshButton('pengaturan')}</div><div class="form-group"><label>Nama Toko</label><input id="setNama" value="${settings.namaToko||''}"></div><div class="form-group"><label>Tagline</label><input id="setTagline" value="${settings.tagline||''}"></div><div class="form-group"><label>Alamat</label><input id="setAlamat" value="${settings.alamat||''}"></div><div class="form-group"><label>Bottom Line</label><input id="setBottomLine" value="${settings.bottomLine||''}"></div><button class="btn btn-primary btn-block" onclick="saveSettings()">Simpan</button></div><div class="card"><div class="card-title"><i class="fas fa-upload"></i> Upload</div><div class="form-group"><label>Logo</label><input type="file" accept="image/*" onchange="uploadLogo(event)">${settings.logo?'<img src="'+settings.logo+'" style="width:60px;height:60px;border-radius:50%;margin-top:8px;">':''}</div><div class="form-group"><label>QRIS</label><input type="file" accept="image/*" onchange="uploadQris(event)">${settings.qris?'<img src="'+settings.qris+'" style="width:80px;margin-top:8px;">':''}</div></div><div class="card"><div class="card-title"><i class="fas fa-university"></i> Bank</div>${banks.map(b=>`<div class="flex-between"><span>${b.logo} ${b.name}: ${b.number} (${b.holder})</span><button class="btn btn-danger btn-sm" onclick="deleteBank('${b.name}')"><i class="fas fa-trash"></i></button></div>`).join('')}<div class="flex-row mt-2"><input id="bnkName" placeholder="Bank" style="flex:1;"><input id="bnkNum" placeholder="No.Rek" style="flex:1;"><input id="bnkHolder" placeholder="Pemilik" style="flex:1;"><button class="btn btn-primary btn-sm" onclick="addBank()">+</button></div></div><div class="card"><div class="card-title"><i class="fas fa-users"></i> Sales & User</div><h5 style="font-size:0.7rem;">Sales: ${salesUsers.join(', ')}</h5><div class="flex-row mt-2"><input id="newSalesName" placeholder="Sales" style="flex:2;"><button class="btn btn-primary btn-sm" onclick="addSalesUser()">+</button></div><h5 style="font-size:0.7rem;margin-top:8px;">Users:</h5>${allUsers.map(u=>`<div class="flex-between"><span>🔑 ${u.name} (${u.role})</span><button class="btn btn-danger btn-sm" onclick="deleteUserLogin('${u.name}')"><i class="fas fa-trash"></i></button></div>`).join('')}<div class="flex-row mt-2"><input id="newUserName" placeholder="User" style="flex:1;"><select id="newUserRole" style="flex:1;"><option value="admin">Admin</option><option value="sales">Sales</option><option value="driver">Driver</option></select><input id="newUserPass" placeholder="Pass" value="123456" style="flex:1;"><button class="btn btn-primary btn-sm" onclick="addUserLogin()">+</button></div></div><div class="card"><div class="card-title"><i class="fas fa-truck"></i> Driver</div>${drivers.map(d=>`<div class="flex-between"><span>🚚 ${d}</span><button class="btn btn-danger btn-sm" onclick="deleteDriver('${d}')"><i class="fas fa-trash"></i></button></div>`).join('')}<div class="flex-row mt-2"><input id="drvName" placeholder="Driver" style="flex:2;"><button class="btn btn-primary btn-sm" onclick="addDriver()">+</button></div></div>`;}
+function pagePengaturan(){return`<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-store"></i> Info Toko</div>${renderRefreshButton('pengaturan')}</div><div class="form-group"><label>Nama Toko</label><input id="setNama" value="${settings.namaToko||''}"></div><div class="form-group"><label>Tagline</label><input id="setTagline" value="${settings.tagline||''}"></div><div class="form-group"><label>Alamat</label><input id="setAlamat" value="${settings.alamat||''}"></div><div class="form-group"><label>Bottom Line</label><input id="setBottomLine" value="${settings.bottomLine||''}"></div><button class="btn btn-primary btn-block" onclick="saveSettings()">Simpan</button></div><div class="card"><div class="card-title"><i class="fas fa-upload"></i> Upload</div><div class="form-group"><label>Logo</label><input type="file" accept="image/*" onchange="uploadLogo(event)">${settings.logo?'<img src="'+settings.logo+'" style="width:60px;height:60px;border-radius:50%;margin-top:8px;">':''}</div><div class="form-group"><label>QRIS</label><input type="file" accept="image/*" onchange="uploadQris(event)">${settings.qris?'<img src="'+settings.qris+'" style="width:80px;margin-top:8px;">':''}</div></div><div class="card"><div class="card-title"><i class="fas fa-university"></i> Bank</div>${banks.map(b => `<div class="flex-between"><span>${b.logo||'🏦'} <b>${b.name||''}</b>: ${b.number||''} (${b.holder||''})</span><button class="btn btn-danger btn-sm" onclick="deleteBank('${b.name}')"><i class="fas fa-trash"></i></button></div>`).join('')}<div class="flex-row mt-2"><input id="bnkName" placeholder="Bank" style="flex:1;"><input id="bnkNum" placeholder="No.Rek" style="flex:1;"><input id="bnkHolder" placeholder="Pemilik" style="flex:1;"><button class="btn btn-primary btn-sm" onclick="addBank()">+</button></div></div><div class="card"><div class="card-title"><i class="fas fa-users"></i> Sales & User</div><h5 style="font-size:0.7rem;">Sales: ${salesUsers.join(', ')}</h5><div class="flex-row mt-2"><input id="newSalesName" placeholder="Sales" style="flex:2;"><button class="btn btn-primary btn-sm" onclick="addSalesUser()">+</button></div><h5 style="font-size:0.7rem;margin-top:8px;">Users:</h5>${allUsers.map(u => `<div class="flex-between"><span>🔑 <b>${u.name||''}</b> (${u.role||''})</span><button class="btn btn-danger btn-sm" onclick="deleteUserLogin('${u.name}')"><i class="fas fa-trash"></i></button></div>`).join('')}<div class="flex-row mt-2"><input id="newUserName" placeholder="User" style="flex:1;"><select id="newUserRole" style="flex:1;"><option value="admin">Admin</option><option value="sales">Sales</option><option value="driver">Driver</option></select><input id="newUserPass" placeholder="Pass" value="123456" style="flex:1;"><button class="btn btn-primary btn-sm" onclick="addUserLogin()">+</button></div></div><div class="card"><div class="card-title"><i class="fas fa-truck"></i> Driver</div>${drivers.map(d=>`<div class="flex-between"><span>🚚 ${d}</span><button class="btn btn-danger btn-sm" onclick="deleteDriver('${d}')"><i class="fas fa-trash"></i></button></div>`).join('')}<div class="flex-row mt-2"><input id="drvName" placeholder="Driver" style="flex:2;"><button class="btn btn-primary btn-sm" onclick="addDriver()">+</button></div></div>`;}
 
 async function saveSettings(){settings.namaToko=document.getElementById('setNama')?.value;settings.tagline=document.getElementById('setTagline')?.value;settings.alamat=document.getElementById('setAlamat')?.value;settings.bottomLine=document.getElementById('setBottomLine')?.value;await apiCall('updateSettings',settings);saveAllData();document.getElementById('headerAlamat').textContent=settings.alamat;Swal.fire('Sukses','Disimpan','success');}
 function uploadLogo(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=function(ev){document.getElementById('logoImg').src=ev.target.result;settings.logo=ev.target.result;apiCall('updateSettings',{logo:ev.target.result});saveAllData();};r.readAsDataURL(f);}
