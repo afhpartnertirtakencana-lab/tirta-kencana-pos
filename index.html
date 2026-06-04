@@ -8,7 +8,17 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
   <style>
-    :root { --biru:#0A4D8C; --kuning:#F5B41B; --biru-muda:#E6F0FA; --kuning-muda:#FFF8E1; --bg:#F1F5F9; --card:#FFFFFF; --border:#E2E8F0; --shadow:0 2px 12px rgba(0,0,0,0.06); --radius:16px; --text:#1E293B; }
+    :root { 
+  --biru:#0A4D8C; 
+  --kuning:#F4B400; /* GANTI DARI #F5B41B KE #F4B400 (GOOGLE YELLOW) */
+  --kuning-muda:#FFF8E1; 
+  --bg:#F1F5F9; 
+  --card:#FFFFFF; 
+  --border:#E2E8F0; 
+  --shadow:0 2px 12px rgba(0,0,0,0.06); 
+  --radius:16px; 
+  --text:#1E293B; 
+}
     *{margin:0;padding:0;box-sizing:border-box;}
     body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);display:flex;justify-content:center;align-items:flex-start;min-height:100vh;padding:12px;color:var(--text);}
     .app-container{max-width:500px;width:100%;background:white;border-radius:24px;box-shadow:0 20px 40px rgba(10,77,140,0.12);overflow:hidden;display:flex;flex-direction:column;min-height:95vh;}
@@ -16,15 +26,15 @@
     @media(min-width:1024px){.app-container{max-width:1000px;}}
     .header{background:linear-gradient(135deg,#0A4D8C 0%,#0B5FA5 100%);color:white;padding:18px 20px 14px;text-align:center;}
     .brand{font-size:1.9rem;font-weight:800;display:flex;justify-content:center;gap:6px;}
-    .tirta{color:#fff;}.kencana{color:#F5B41B;}
+    .tirta{color:#fff;}.kencana { color: #F4B400; } /* Ganti dari #F5B41B */
     .tagline{font-size:0.7rem;opacity:0.9;letter-spacing:0.5px;margin:4px 0;}
     .alamat{font-size:0.65rem;opacity:0.8;}
-    .logo-header{width:48px;height:48px;background:white;border-radius:50%;margin:8px auto 0;overflow:hidden;border:2px solid #F5B41B;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+    .logo-header{width:48px;height:48px;background:white;border-radius:50%;margin:8px auto 0;overflow:hidden;border: 2px solid #F4B400;display:flex;align-items:center;justify-content:center;cursor:pointer;}
     .logo-header img{width:100%;height:100%;object-fit:contain;}
     .nav-bar{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;background:#F8FAFC;border-bottom:1px solid var(--border);}
     .user-info{display:flex;align-items:center;gap:8px;}
     .avatar{width:32px;height:32px;border-radius:50%;background:var(--biru);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.8rem;}
-    .role-tag{background:var(--kuning);color:#0A2540;padding:3px 10px;border-radius:20px;font-size:0.6rem;font-weight:700;text-transform:uppercase;}
+    .role-tag{background:#F4B400;color:#0A2540;padding:3px 10px;border-radius:20px;font-size:0.6rem;font-weight:700;text-transform:uppercase;}
     .btn-logout{background:#EF4444;color:white;border:none;padding:6px 14px;border-radius:8px;font-size:0.7rem;cursor:pointer;font-weight:600;}
     .btn-refresh{background:#10B981;color:white;border:none;padding:6px 10px;border-radius:8px;font-size:0.65rem;cursor:pointer;font-weight:600;margin-left:8px;animation: none;}
     .btn-refresh.loading{animation: spin 1s linear infinite;}
@@ -38,7 +48,7 @@
     .card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);margin-bottom:10px;border:1px solid var(--border);}
     .card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
     .card-title{font-weight:700;font-size:0.9rem;color:var(--biru);display:flex;align-items:center;gap:6px;}
-    .card-title i{color:var(--kuning);}
+    .card-title i { color: #F4B400; }
     .form-group{margin-bottom:8px;}
     .form-group label{display:block;font-size:0.7rem;font-weight:600;color:#475569;margin-bottom:3px;}
     input,select,textarea{width:100%;padding:9px 12px;border-radius:10px;border:1px solid #CBD5E1;font-size:0.8rem;outline:none;background:white;}
@@ -462,10 +472,102 @@ async function editStockStatus(id,newStatus){await apiCall('updateStockIn',{id,s
 function pageProduk(){let h=`<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-cubes"></i> Produk</div>${renderRefreshButton('produk')}</div><button class="btn btn-primary btn-sm mb-2" onclick="showAddProduct()">+ Tambah</button><table><tr><th>SKU</th><th>Nama</th><th>Modal</th><th>Jual</th><th>Stok</th><th>Aksi</th></tr>`;products.forEach(p=>{h+=`<tr><td>${p.sku}</td><td>${p.nama}</td><td>Rp${(p.modal||0).toLocaleString()}</td><td>Rp${(p.jual||0).toLocaleString()}</td><td>${p.stokAkhir||0}</td><td><button class="btn btn-warning btn-sm" onclick="editProduct('${p.sku}')" style="padding:2px 6px;"><i class="fas fa-edit"></i></button> <button class="btn btn-danger btn-sm" onclick="deleteProductConfirm('${p.sku}')" style="padding:2px 6px;"><i class="fas fa-trash"></i></button></td></tr>`;});h+='</table></div><div id="prodForm"></div>';return h;}
 function showAddProduct(){document.getElementById('prodForm').innerHTML='<div class="card"><div class="card-title">Tambah Produk</div><div class="form-group"><label>SKU</label><input id="newSku"></div><div class="form-group"><label>Nama</label><input id="newNama"></div><div class="flex-row"><div class="form-group col-1"><label>Modal</label><input type="number" id="newModal" value="0"></div><div class="form-group col-1"><label>Jual</label><input type="number" id="newJual" value="0"></div></div><div class="form-group"><label>Stok Awal</label><input type="number" id="newStok" value="0"></div><button class="btn btn-primary btn-block" onclick="saveNewProduct()">Simpan</button></div>';}
 async function saveNewProduct(){const d={sku:document.getElementById('newSku')?.value,nama:document.getElementById('newNama')?.value,modal:parseFloat(document.getElementById('newModal')?.value),jual:parseFloat(document.getElementById('newJual')?.value),stokAwal:parseInt(document.getElementById('newStok')?.value)};if(!d.sku||!d.nama)return Swal.fire('Error','SKU & Nama wajib','error');await apiCall('addProduct',d);loadAllData();navigateTo('produk');Swal.fire('Sukses','Ditambahkan','success');}
-function editProduct(sku){const p=products.find(x=>x.sku===sku);if(!p)return;document.getElementById('prodForm').innerHTML=`<div class="card"><div class="card-title">Edit: ${sku}</div><div class="form-group"><label>Nama</label><input id="editNama" value="${p.nama}"></div><div class="flex-row"><div class="form-group col-1"><label>Modal</label><input type="number" id="editModal" value="${p.modal}"></div><div class="form-group col-1"><label>Jual</label><input type="number" id="editJual" value="${p.jual}"></div></div><button class="btn btn-primary btn-block" onclick="saveEditProduct('${sku}')">Update</button></div>`;}
-async function saveEditProduct(sku){const d={sku,nama:document.getElementById('editNama')?.value,modal:parseFloat(document.getElementById('editModal')?.value),jual:parseFloat(document.getElementById('editJual')?.value)};await apiCall('updateProduct',d);loadAllData();navigateTo('produk');Swal.fire('Sukses','Diupdate','success');}
-async function deleteProductConfirm(sku){const c=await Swal.fire({title:'Hapus Produk?',text:`Hapus ${sku}?`,icon:'warning',showCancelButton:true,confirmButtonText:'Ya, Hapus'});if(c.isConfirmed){await apiCall('deleteProduct',{sku});loadAllData();navigateTo('produk');Swal.fire('Sukses','Dihapus','success');}}
-
+function editProduct(sku) {
+  const p = products.find(x => String(x.sku) === String(sku));
+  if (!p) {
+    Swal.fire('Error', 'Produk tidak ditemukan', 'error');
+    return;
+  }
+  
+  document.getElementById('prodForm').innerHTML = `
+    <div class="card">
+      <div class="card-title">Edit Produk: ${p.sku}</div>
+      <div class="form-group">
+        <label>Nama Produk</label>
+        <input id="editNama" value="${p.nama || ''}">
+      </div>
+      <div class="flex-row">
+        <div class="form-group col-1">
+          <label>Harga Modal</label>
+          <input type="number" id="editModal" value="${p.modal || 0}">
+        </div>
+        <div class="form-group col-1">
+          <label>Harga Jual</label>
+          <input type="number" id="editJual" value="${p.jual || 0}">
+        </div>
+      </div>
+      <div class="flex-row">
+        <div class="form-group col-1">
+          <label>Stok Awal</label>
+          <input type="number" id="editStokAwal" value="${p.stokAwal || 0}" readonly style="background:#E6F0FA;">
+        </div>
+        <div class="form-group col-1">
+          <label>Stok Akhir</label>
+          <input type="number" id="editStokAkhir" value="${p.stokAkhir || 0}" readonly style="background:#E6F0FA;">
+        </div>
+      </div>
+      <button class="btn btn-primary btn-block" onclick="saveEditProduct('${p.sku}')">
+        <i class="fas fa-save"></i> Update Produk
+      </button>
+      <button class="btn btn-danger btn-block mt-2" onclick="deleteProductConfirm('${p.sku}')">
+        <i class="fas fa-trash"></i> Hapus Produk
+      </button>
+    </div>
+  `;
+}
+async function saveEditProduct(sku) {
+  const nama = document.getElementById('editNama')?.value;
+  const modal = document.getElementById('editModal')?.value;
+  const jual = document.getElementById('editJual')?.value;
+  
+  if (!nama) return Swal.fire('Error', 'Nama produk wajib diisi', 'error');
+  
+  const result = await apiCall('updateProduct', {
+    sku: sku,
+    nama: nama,
+    modal: parseFloat(modal) || 0,
+    jual: parseFloat(jual) || 0
+  });
+  
+  if (result.success) {
+    // Update local data
+    const idx = products.findIndex(x => String(x.sku) === String(sku));
+    if (idx !== -1) {
+      products[idx].nama = nama;
+      products[idx].modal = parseFloat(modal) || 0;
+      products[idx].jual = parseFloat(jual) || 0;
+    }
+    saveAllData();
+    navigateTo('produk');
+    Swal.fire('Sukses', 'Produk berhasil diupdate', 'success');
+  } else {
+    Swal.fire('Error', result.message || 'Gagal update', 'error');
+  }
+}
+async function deleteProductConfirm(sku) {
+  const result = await Swal.fire({
+    title: 'Hapus Produk?',
+    text: `Produk ${sku} akan dihapus permanen`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Ya, Hapus',
+    confirmButtonColor: '#EF4444',
+    cancelButtonText: 'Batal'
+  });
+  
+  if (result.isConfirmed) {
+    const res = await apiCall('deleteProduct', { sku: sku });
+    if (res.success) {
+      products = products.filter(x => String(x.sku) !== String(sku));
+      saveAllData();
+      document.getElementById('prodForm').innerHTML = '';
+      navigateTo('produk');
+      Swal.fire('Sukses', 'Produk berhasil dihapus', 'success');
+    } else {
+      Swal.fire('Error', 'Gagal menghapus produk', 'error');
+    }
+  }
+}
 // ============================================
 // PELANGGAN
 // ============================================
