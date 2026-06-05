@@ -328,25 +328,22 @@ function loadLaporanSetoran(c){
 }
 function exportSetoranToCSV(){let csvRows=[['Nama Sales','Tanggal Setor','Total Setoran','Jumlah Disetor','Selisih','Grand COD','Makan','Tips','Parkir','Flazz','Bensin','Transfer','Cicilan','Tagihan','Waktu']];setoranHistory.forEach(s=>{csvRows.push([s.sales||'',s.tanggal||'',(s.total||0),(s.setor||0),(s.selisih||0),(s.grandCOD||0),(s.makan||0),(s.tips||0),(s.parkir||0),(s.flazz||0),(s.bensin||0),(s.transfer||0),(s.cicilan||0),(s.tagihan||0),s.waktu||'']);});const csvContent=csvRows.map(row=>row.join(',')).join('\n');const blob=new Blob([csvContent],{type:'text/csv;charset=utf-8;'});const link=document.createElement('a');const url=URL.createObjectURL(blob);link.href=url;link.setAttribute('download',`laporan_setoran_${new Date().toISOString().split('T')[0]}.csv`);document.body.appendChild(link);link.click();document.body.removeChild(link);URL.revokeObjectURL(url);Swal.fire('Sukses','File CSV telah diunduh','success');}
 
-// ============ REKAP PENJUALAN (10 TERAKHIR, BISA EDIT STATUS & CETAK) ============
+// ============ REKAP PENJUALAN (10 TERAKHIR GABUNGAN UNTUK ADMIN, 10 TERAKHIR MILIK SALES) ============
 function loadRekapPenjualan(container){
   let h=`<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-chart-bar"></i> 📊 Rekap Penjualan</div><button class="btn-refresh btn-sm" onclick="refreshAllData()">🔄 Sync</button></div>`;
   if(salesHistory.length===0){h+='<p class="text-center">📭 Belum ada data penjualan.<br><button class="btn btn-success btn-sm mt-2" onclick="navigateTo(\'penjualan\')">🛒 Buat Penjualan</button></p></div>';container.innerHTML=h;return;}
   const tt=salesHistory.length,tp=salesHistory.reduce((s,x)=>s+(x.total||0),0),tq=salesHistory.reduce((s,x)=>s+(x.totalQty||0),0);
   h+=`<div class="flex-row mb-2"><div class="summary-box"><small>Total Transaksi</small><br><b>${tt}</b></div><div class="summary-box"><small>Total Pendapatan</small><br><b>Rp${tp.toLocaleString()}</b></div><div class="summary-box"><small>Total QTY</small><br><b>${tq}</b></div></div>`;
   if(currentUser?.role==='admin'){
-    const salesList=allUsers.filter(u=>u.role==='sales'||u.role==='admin').map(u=>u.name);
-    salesList.forEach(userName=>{
-      const us=salesHistory.filter(s=>s.user===userName);
-      if(us.length===0)return;
-      const ut=us.length,up=us.reduce((s,x)=>s+(x.total||0),0);
-      h+=`<div class="user-section"><h4>👤 ${userName} | ${ut} Transaksi | Total: Rp${up.toLocaleString()}</h4>
-        <div class="detail-transaksi show">
-          <h5 style="font-size:0.7rem;margin:8px 0 4px;">📋 10 Transaksi Terakhir</h5>
-          <table style="width:100%;font-size:0.65rem;">
-            <tr><th>Tanggal</th><th>Customer</th><th>Jumlah</th><th style="width:80px;">Status</th><th style="width:40px;"></th></tr>`;
-      us.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,10).forEach(s=>{
+    // Gabungkan semua transaksi, urutkan terbaru, ambil 10 terakhir
+    const allSorted = [...salesHistory].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,10);
+    h+=`<h4 style="font-size:0.8rem;margin-top:12px;color:var(--biru);">📋 10 Transaksi Terakhir (Semua Sales)</h4>`;
+    if(allSorted.length===0)h+='<p class="text-center text-sm">📭 Belum ada transaksi.</p>';
+    else {
+      h+=`<table style="width:100%;font-size:0.65rem;"><tr><th>User</th><th>Tanggal</th><th>Customer</th><th>Jumlah</th><th style="width:80px;">Status</th><th style="width:40px;"></th></tr>`;
+      allSorted.forEach(s=>{
         h+=`<tr>
+              <td>${s.user||'-'}</td>
               <td>${s.date}</td>
               <td>${s.customer||'-'}</td>
               <td style="text-align:right;">Rp${(s.total||0).toLocaleString()}</td>
@@ -359,15 +356,16 @@ function loadRekapPenjualan(container){
               <td><button class="btn-primary btn-sm" onclick="printStrukById('${s.id}')" style="padding:2px 6px;font-size:0.6rem;" title="Cetak"><i class="fas fa-print"></i></button></td>
             </tr>`;
       });
-      h+=`</table></div></div>`;
-    });
+      h+=`</table>`;
+    }
   } else {
     const mySales=salesHistory.filter(s=>s.user===currentUser?.name);
     h+=`<h4 style="font-size:0.8rem;margin-top:12px;color:var(--biru);">📋 10 Transaksi Terakhir Saya</h4>`;
     if(mySales.length===0)h+='<p class="text-center text-sm">📭 Belum ada transaksi.</p>';
     else {
+      const sorted = mySales.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,10);
       h+=`<table style="width:100%;font-size:0.65rem;"><tr><th>Tanggal</th><th>Customer</th><th>Jumlah</th><th style="width:80px;">Status</th><th style="width:40px;"></th></tr>`;
-      mySales.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,10).forEach(s=>{
+      sorted.forEach(s=>{
         h+=`<tr>
               <td>${s.date}</td>
               <td>${s.customer||'-'}</td>
