@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
   <style>
+    /* CSS tetap sama seperti sebelumnya, tidak diubah agar tidak memakan tempat */
     :root{--biru:#0A4D8C;--kuning:#F4B400;--biru-muda:#E6F0FA;--kuning-muda:#FFF8E1;--bg:#F1F5F9;--card:#FFFFFF;--border:#E2E8F0;--shadow:0 2px 12px rgba(0,0,0,0.06);--radius:16px;--text:#1E293B;--merah:#EF4444;--hijau:#10B981;--text-secondary:#64748B;--input-bg:#FFFFFF;}
     body.dark{--bg:#0F172A;--card:#1E293B;--border:#334155;--text:#E2E8F0;--text-secondary:#94A3B8;--input-bg:#334155;--biru-muda:#1E3A5F;--kuning-muda:#3D2E00;--shadow:0 2px 12px rgba(0,0,0,0.3);}
     body.dark input,body.dark select,body.dark textarea{background:var(--input-bg);color:var(--text);border-color:var(--border);}
@@ -123,48 +124,6 @@
 <div class="modal-overlay" id="strukModal" onclick="closeStruk()"><div class="modal" id="strukContent" onclick="event.stopPropagation()"></div></div>
 
 <script>
-/*
-  ============================================
-  HEADER UNTUK GOOGLE SHEETS (AGAR DATA TERBACA DENGAN BENAR)
-  ============================================
-  Sheet: Sales
-  ID | User | Customer | Status | Total | TotalQty | TotalDisc | TotalProfit | Date | Time
-
-  Sheet: SalesItems
-  SaleID | SKU | Nama | Qty | Harga | Disc | Modal | DiscTotal | Subtotal | Profit
-
-  Pastikan Apps Script Anda menggabungkan kedua sheet menjadi array of objects
-  seperti contoh di bawah ini untuk dikirim sebagai "salesHistory":
-  [
-    {
-      "id": "INV-...",
-      "user": "Sales A",
-      "customer": "Warung Mpok",
-      "status": "cod",
-      "items": [
-        {
-          "sku": "AQ001",
-          "nama": "Aqua 330ml",
-          "qty": 2,
-          "harga": 3500,
-          "disc": 0,
-          "modal": 2200,
-          "discTotal": 0,
-          "subtotal": 7000,
-          "profit": 2600
-        }
-      ],
-      "total": 7000,
-      "totalQty": 2,
-      "totalDisc": 0,
-      "totalProfit": 2600,
-      "date": "2024-05-20",
-      "time": "14:30:00"
-    }
-  ]
-  ============================================
-*/
-
 const GOOGLE_SHEETS_URL='https://script.google.com/macros/s/AKfycbyPy3A2MM1c2kmPCpnAy2mRmuaxUyvGlBne7E0WLul-Fyg2Njuua3AMFN--h2M2N_tl/exec';
 const USE_GOOGLE_SHEETS=true, ITEMS_PER_PAGE=10;
 const NOMOR_TELEPON='088211058000';
@@ -200,9 +159,15 @@ async function refreshAllData(){
     const d=await r.json();
     if(d.success && d.data){
       // Hanya perbarui data lokal jika server mengirim data yang tidak kosong
+      // Untuk salesHistory, jika server kirim array kosong, jangan timpa data lokal
       if(d.data.products && d.data.products.length > 0) products = d.data.products;
       if(d.data.pelanggan && d.data.pelanggan.length > 0) pelanggan = d.data.pelanggan;
-      if(d.data.salesHistory && d.data.salesHistory.length > 0) salesHistory = d.data.salesHistory;
+      if(d.data.salesHistory && d.data.salesHistory.length > 0) {
+        salesHistory = d.data.salesHistory;
+      } else {
+        // jika server kosong, pertahankan data lokal
+        console.log('Server mengirim salesHistory kosong, data lokal tetap dipakai');
+      }
       if(d.data.stockInHistory && d.data.stockInHistory.length > 0) stockInHistory = d.data.stockInHistory;
       if(d.data.setoranHistory && d.data.setoranHistory.length > 0) setoranHistory = d.data.setoranHistory;
       if(d.data.drivers && d.data.drivers.length > 0) drivers = d.data.drivers;
@@ -290,7 +255,7 @@ function showStrukSetoran(d){document.getElementById('strukContent').innerHTML=`
 function loadLaporanSetoran(c){const today=new Date().toISOString().split('T')[0];let h=`<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-file-invoice-dollar"></i> 📊 Laporan Setoran Semua Sales</div><button class="btn-refresh btn-sm" onclick="refreshAllData()">🔄 Sync</button></div><div class="form-group"><label>Pilih Tanggal</label><input type="date" id="lapSetTgl" value="${today}" onchange="loadLaporanSetoran(document.getElementById('contentArea'))"></div>`;const tgl=document.getElementById('lapSetTgl')?.value||today;let salesUsers=allUsers.filter(u=>u.role==='sales'||u.role==='admin').map(u=>u.name);const uniqueSalesFromHistory=[...new Set(salesHistory.map(s=>s.user))];uniqueSalesFromHistory.forEach(u=>{if(!salesUsers.includes(u))salesUsers.push(u);});if(salesUsers.length===0){h+='<p class="text-center text-sm">📭 Tidak ada data sales.</p></div>';c.innerHTML=h;return;}let grandTotalCOD=0,grandTotalSetor=0,grandSelisih=0;salesUsers.sort();salesUsers.forEach(sn=>{const codSalesToday=salesHistory.filter(s=>s.date===tgl&&s.user===sn&&s.status==='cod');const codTotalToday=codSalesToday.reduce((sum,s)=>sum+(s.total||0),0);const setoranUser=setoranHistory.filter(s=>s.sales===sn&&s.tanggal===tgl);const totalSetoranUser=setoranUser.reduce((sum,s)=>sum+(s.total||0),0);const totalSetorUser=setoranUser.reduce((sum,s)=>sum+(s.setor||0),0);const totalSelisihUser=setoranUser.reduce((sum,s)=>sum+(s.selisih||0),0);if(codTotalToday>0||totalSetoranUser>0){grandTotalCOD+=codTotalToday;grandTotalSetor+=totalSetorUser;grandSelisih+=totalSelisihUser;h+=`<div class="user-section"><h4>👤 ${sn}</h4>`;if(codTotalToday>0)h+=`<div style="background:#D1FAE5;padding:8px;border-radius:8px;margin-bottom:8px;"><strong>💰 COD ${tgl}:</strong> Rp${codTotalToday.toLocaleString()}</div>`;h+=`<table style="width:100%;font-size:0.65rem;margin-bottom:8px;"><tr><th>Total Setoran</th><td style="text-align:right;">Rp${totalSetoranUser.toLocaleString()}</td></tr><tr><th>Total Disetor</th><td style="text-align:right;">Rp${totalSetorUser.toLocaleString()}</td></tr><tr><th>Total Selisih</th><td style="text-align:right;color:${totalSelisihUser<0?'#EF4444':(totalSelisihUser>0?'#10B981':'#666')};">Rp${totalSelisihUser.toLocaleString()}</td></tr></table>`;if(setoranUser.length>0){h+=`<details><summary style="cursor:pointer;color:var(--biru);font-weight:600;">📋 Detail Setoran (${setoranUser.length})</summary><table style="margin-top:8px;width:100%;font-size:0.6rem;"><tr><th>Tgl</th><th>Total</th><th>Setor</th><th>Selisih</th></tr>`;setoranUser.forEach(s=>{h+=`<tr><td style="padding:4px;">${s.tanggal||'-'}</td><td style="text-align:right;">Rp${(s.total||0).toLocaleString()}</td><td style="text-align:right;">Rp${(s.setor||0).toLocaleString()}</td><td style="text-align:right;color:${(s.selisih||0)<0?'#EF4444':'#10B981'};">Rp${(s.selisih||0).toLocaleString()}</td></tr>`;});h+=`</table></details>`;}if(codSalesToday.length>0){h+=`<details><summary style="cursor:pointer;color:var(--biru);font-weight:600;">📦 Transaksi COD (${codSalesToday.length})</summary><table style="margin-top:8px;width:100%;font-size:0.6rem;"><tr><th>Tgl</th><th>Customer</th><th>Total</th></tr>`;codSalesToday.forEach(s=>{h+=`<tr><td style="padding:4px;">${s.date||'-'}</td><td style="padding:4px;">${(s.customer||'').substring(0,15)}</td><td style="text-align:right;">Rp${(s.total||0).toLocaleString()}</td></tr>`;});h+=`</table></details>`;}h+=`</div>`;}});if(grandTotalCOD>0||grandTotalSetor>0)h+=`<div class="total-box">📊 RINGKASAN TANGGAL ${tgl}<br>Total COD: Rp${grandTotalCOD.toLocaleString()}<br>Total Disetor: Rp${grandTotalSetor.toLocaleString()}<br><span style="color:${grandSelisih<0?'#EF4444':'#10B981'};">Total Selisih: Rp${grandSelisih.toLocaleString()}</span></div>`;else h+=`<div class="total-box">ℹ️ Tidak ada data setoran/COD untuk tanggal ${tgl}.</div>`;h+=`</div><div class="card text-center"><button class="btn btn-success btn-sm" onclick="exportSetoranToCSV()"><i class="fas fa-download"></i> Export CSV</button></div>`;c.innerHTML=h;}
 function exportSetoranToCSV(){let csvRows=[['Nama Sales','Tanggal Setor','Total Setoran','Jumlah Disetor','Selisih','Grand COD','Makan','Tips','Parkir','Flazz','Bensin','Transfer','Cicilan','Tagihan','Waktu']];setoranHistory.forEach(s=>{csvRows.push([s.sales||'',s.tanggal||'',(s.total||0),(s.setor||0),(s.selisih||0),(s.grandCOD||0),(s.makan||0),(s.tips||0),(s.parkir||0),(s.flazz||0),(s.bensin||0),(s.transfer||0),(s.cicilan||0),(s.tagihan||0),s.waktu||'']);});const csvContent=csvRows.map(row=>row.join(',')).join('\n');const blob=new Blob([csvContent],{type:'text/csv;charset=utf-8;'});const link=document.createElement('a');const url=URL.createObjectURL(blob);link.href=url;link.setAttribute('download',`laporan_setoran_${new Date().toISOString().split('T')[0]}.csv`);document.body.appendChild(link);link.click();document.body.removeChild(link);URL.revokeObjectURL(url);Swal.fire('Sukses','File CSV telah diunduh','success');}
 
-// ============ REKAP PENJUALAN (PERBAIKAN SUB-TAB) ============
+// ============ REKAP PENJUALAN (BERFUNGSI PENUH) ============
 function loadRekapPenjualan(container){
   let h=`<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-chart-bar"></i> 📊 Rekap Penjualan</div><button class="btn-refresh btn-sm" onclick="refreshAllData()">🔄 Sync</button></div>`;
   if(salesHistory.length===0){h+='<p class="text-center">📭 Belum ada data penjualan.<br><button class="btn btn-success btn-sm mt-2" onclick="navigateTo(\'penjualan\')">🛒 Buat Penjualan</button></p></div>';container.innerHTML=h;return;}
@@ -300,6 +265,7 @@ function loadRekapPenjualan(container){
   subTabs.forEach(t=>{const label=t==='ringkasan'?'📊 Ringkasan':t==='perSKU'?'📦 Per SKU':t==='perCustomer'?'👥 Per Customer':t==='topQty'?'🔢 Top Qty':t==='status'?'💰 Status':t==='statusUser'?'👥 Status User':'';h+=`<button class="sub-tab ${rekapSubTab===t?'active':''}" onclick="rekapSubTab='${t}';loadRekapPenjualan(document.getElementById('contentArea'))">${label}</button>`;});h+=`</div>`;
   const tt=salesHistory.length,tp=salesHistory.reduce((s,x)=>s+(x.total||0),0),tq=salesHistory.reduce((s,x)=>s+(x.totalQty||0),0);
   h+=`<div class="flex-row mb-2"><div class="summary-box"><small>Total Transaksi</small><br><b>${tt}</b></div><div class="summary-box"><small>Total Pendapatan</small><br><b>Rp${tp.toLocaleString()}</b></div><div class="summary-box"><small>Total QTY</small><br><b>${tq}</b></div></div>`;
+
   if(rekapSubTab==='ringkasan'){
     if(currentUser?.role==='admin'){
       const sorted=[...salesHistory].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,10);
@@ -323,97 +289,36 @@ function loadRekapPenjualan(container){
   else if(rekapSubTab==='perSKU'){
     h+=`<h4 style="font-size:0.8rem;margin-top:12px;color:var(--biru);">📦 Rekap Per SKU (SKU, Customer, Qty) - Semua Transaksi</h4>`;
     const itemsList = [];
-    salesHistory.forEach(s => {
-      if(s.items && Array.isArray(s.items)) {
-        s.items.forEach(item => itemsList.push({ customer: s.customer, sku: item.sku, qty: item.qty || 0 }));
-      }
-    });
-    if(itemsList.length===0) h+='<p class="text-center text-sm">📭 Tidak ada detail item dalam transaksi.</p>';
-    else {
-      h+=`<table style="width:100%;font-size:0.65rem;"><tr><th>SKU</th><th>Customer</th><th>Qty</th></tr>`;
-      itemsList.forEach(r=>{ h+=`<tr><td>${r.sku||'-'}</td><td>${r.customer||'-'}</td><td style="text-align:center;">${r.qty}</td></tr>`; });
-      h+=`</table>`;
-    }
+    salesHistory.forEach(s => { if(s.items&&Array.isArray(s.items)) s.items.forEach(item => itemsList.push({customer:s.customer, sku:item.sku, qty:item.qty||0})); });
+    if(itemsList.length===0) h+='<p class="text-center text-sm">📭 Tidak ada detail item.</p>';
+    else { h+=`<table style="width:100%;font-size:0.65rem;"><tr><th>SKU</th><th>Customer</th><th>Qty</th></tr>`; itemsList.forEach(r=>{h+=`<tr><td>${r.sku||'-'}</td><td>${r.customer||'-'}</td><td style="text-align:center;">${r.qty}</td></tr>`;}); h+=`</table>`; }
   }
   else if(rekapSubTab==='perCustomer'){
-    h+=`<h4 style="font-size:0.8rem;margin-top:12px;color:var(--biru);">👥 Rekap Per Customer (Customer, SKU, Total Qty, Total Rp) - Semua Transaksi</h4>`;
-    const agg = {};
-    salesHistory.forEach(s => {
-      if(s.items && Array.isArray(s.items)) {
-        s.items.forEach(item => {
-          const key = `${s.customer}|${item.sku}`;
-          if(!agg[key]) agg[key] = { customer: s.customer, sku: item.sku, qty: 0, total: 0 };
-          agg[key].qty += item.qty || 0;
-          agg[key].total += (item.qty || 0) * (item.harga || 0);
-        });
-      }
-    });
-    const arr = Object.values(agg).sort((a,b) => b.total - a.total);
-    if(arr.length===0) h+='<p class="text-center text-sm">📭 Tidak ada data.</p>';
-    else {
-      h+=`<table style="width:100%;font-size:0.65rem;"><tr><th>Customer</th><th>SKU</th><th>Total Qty</th><th>Total Rp</th></tr>`;
-      arr.forEach(r=>{ h+=`<tr><td>${r.customer}</td><td>${r.sku}</td><td style="text-align:center;">${r.qty}</td><td style="text-align:right;">Rp${r.total.toLocaleString()}</td></tr>`; });
-      h+=`</table>`;
-    }
+    h+=`<h4 style="font-size:0.8rem;margin-top:12px;color:var(--biru);">👥 Rekap Per Customer (Customer, SKU, Total Qty, Total Rp)</h4>`;
+    const agg={};
+    salesHistory.forEach(s=>{if(s.items&&Array.isArray(s.items)) s.items.forEach(item=>{const key=`${s.customer}|${item.sku}`;if(!agg[key])agg[key]={customer:s.customer,sku:item.sku,qty:0,total:0};agg[key].qty+=item.qty||0;agg[key].total+=(item.qty||0)*(item.harga||0);});});
+    const arr=Object.values(agg).sort((a,b)=>b.total-a.total);
+    if(arr.length===0)h+='<p class="text-center text-sm">📭 Tidak ada data.</p>';
+    else{h+=`<table style="width:100%;font-size:0.65rem;"><tr><th>Customer</th><th>SKU</th><th>Total Qty</th><th>Total Rp</th></tr>`;arr.forEach(r=>{h+=`<tr><td>${r.customer}</td><td>${r.sku}</td><td style="text-align:center;">${r.qty}</td><td style="text-align:right;">Rp${r.total.toLocaleString()}</td></tr>`;});h+=`</table>`;}
   }
   else if(rekapSubTab==='topQty'){
-    h+=`<h4 style="font-size:0.8rem;margin-top:12px;color:var(--biru);">🔢 Top Qty (Customer, SKU, Qty, Total) - Semua Transaksi</h4>`;
-    const allItems = [];
-    salesHistory.forEach(s => {
-      if(s.items && Array.isArray(s.items)) {
-        s.items.forEach(item => allItems.push({
-          customer: s.customer,
-          sku: item.sku,
-          qty: item.qty || 0,
-          total: (item.qty || 0) * (item.harga || 0)
-        }));
-      }
-    });
-    allItems.sort((a,b) => b.qty - a.qty);
-    const top = allItems.slice(0, 50);
-    if(top.length===0) h+='<p class="text-center text-sm">📭 Tidak ada data.</p>';
-    else {
-      h+=`<table style="width:100%;font-size:0.65rem;"><tr><th>Customer</th><th>SKU</th><th>Qty</th><th>Total</th></tr>`;
-      top.forEach(r=>{ h+=`<tr><td>${r.customer}</td><td>${r.sku}</td><td style="text-align:center;">${r.qty}</td><td style="text-align:right;">Rp${r.total.toLocaleString()}</td></tr>`; });
-      h+=`</table>`;
-    }
+    h+=`<h4 style="font-size:0.8rem;margin-top:12px;color:var(--biru);">🔢 Top Qty (Customer, SKU, Qty, Total)</h4>`;
+    const allItems=[];
+    salesHistory.forEach(s=>{if(s.items&&Array.isArray(s.items)) s.items.forEach(item=>allItems.push({customer:s.customer,sku:item.sku,qty:item.qty||0,total:(item.qty||0)*(item.harga||0)}));});
+    allItems.sort((a,b)=>b.qty-a.qty);
+    const top=allItems.slice(0,50);
+    if(top.length===0)h+='<p class="text-center text-sm">📭 Tidak ada data.</p>';
+    else{h+=`<table style="width:100%;font-size:0.65rem;"><tr><th>Customer</th><th>SKU</th><th>Qty</th><th>Total</th></tr>`;top.forEach(r=>{h+=`<tr><td>${r.customer}</td><td>${r.sku}</td><td style="text-align:center;">${r.qty}</td><td style="text-align:right;">Rp${r.total.toLocaleString()}</td></tr>`;});h+=`</table>`;}
   }
   else if(rekapSubTab==='status'){
-    const user = currentUser?.name;
-    const data = salesHistory.filter(s => s.user === user);
+    const user=currentUser?.name;const data=salesHistory.filter(s=>s.user===user);
     h+=`<h4 style="font-size:0.8rem;margin-top:12px;color:var(--biru);">💰 Status Transaksi Saya</h4>`;
-    ['cod','transfer','qris','belumbayar'].forEach(st => {
-      const filtered = data.filter(s => s.status === st);
-      if(filtered.length===0) return;
-      const total = filtered.reduce((s,x) => s + (x.total||0), 0);
-      h+=`<div class="user-section"><h4><span class="status-badge status-${st}">${st.toUpperCase()}</span> | ${filtered.length} transaksi | Total: Rp${total.toLocaleString()}</h4>`;
-      h+=`<table style="width:100%;font-size:0.65rem;"><tr><th>Customer</th><th>Total</th></tr>`;
-      const custMap = {};
-      filtered.forEach(s => { custMap[s.customer] = (custMap[s.customer]||0) + (s.total||0); });
-      Object.entries(custMap).sort((a,b) => b[1] - a[1]).forEach(([cust,tot]) => { h+=`<tr><td>${cust}</td><td style="text-align:right;">Rp${tot.toLocaleString()}</td></tr>`; });
-      h+=`</table></div>`;
-    });
+    ['cod','transfer','qris','belumbayar'].forEach(st=>{const filtered=data.filter(s=>s.status===st);if(filtered.length===0)return;const total=filtered.reduce((s,x)=>s+(x.total||0),0);h+=`<div class="user-section"><h4><span class="status-badge status-${st}">${st.toUpperCase()}</span> | ${filtered.length} transaksi | Total: Rp${total.toLocaleString()}</h4>`;h+=`<table style="width:100%;font-size:0.65rem;"><tr><th>Customer</th><th>Total</th></tr>`;const custMap={};filtered.forEach(s=>{custMap[s.customer]=(custMap[s.customer]||0)+(s.total||0);});Object.entries(custMap).sort((a,b)=>b[1]-a[1]).forEach(([cust,tot])=>{h+=`<tr><td>${cust}</td><td style="text-align:right;">Rp${tot.toLocaleString()}</td></tr>`;});h+=`</table></div>`;});
   }
   else if(rekapSubTab==='statusUser' && currentUser?.role==='admin'){
     h+=`<h4 style="font-size:0.8rem;margin-top:12px;color:var(--biru);">👥 Status per User</h4>`;
-    const users = allUsers.filter(u => u.role==='sales' || u.role==='admin').map(u => u.name);
-    users.forEach(user => {
-      const data = salesHistory.filter(s => s.user === user);
-      if(data.length===0) return;
-      h+=`<div class="user-section"><h4>👤 ${user}</h4>`;
-      ['cod','transfer','qris','belumbayar'].forEach(st => {
-        const filtered = data.filter(s => s.status === st);
-        if(filtered.length===0) return;
-        const total = filtered.reduce((s,x) => s + (x.total||0), 0);
-        h+=`<h5 style="font-size:0.7rem;margin-top:8px;"><span class="status-badge status-${st}">${st.toUpperCase()}</span> | ${filtered.length} transaksi | Total: Rp${total.toLocaleString()}</h5>`;
-        h+=`<table style="width:100%;font-size:0.6rem;"><tr><th>Customer</th><th>Total</th></tr>`;
-        const custMap = {};
-        filtered.forEach(s => { custMap[s.customer] = (custMap[s.customer]||0) + (s.total||0); });
-        Object.entries(custMap).sort((a,b) => b[1] - a[1]).forEach(([cust,tot]) => { h+=`<tr><td>${cust}</td><td style="text-align:right;">Rp${tot.toLocaleString()}</td></tr>`; });
-        h+=`</table>`;
-      });
-      h+=`</div>`;
-    });
+    const users=allUsers.filter(u=>u.role==='sales'||u.role==='admin').map(u=>u.name);
+    users.forEach(user=>{const data=salesHistory.filter(s=>s.user===user);if(data.length===0)return;h+=`<div class="user-section"><h4>👤 ${user}</h4>`;['cod','transfer','qris','belumbayar'].forEach(st=>{const filtered=data.filter(s=>s.status===st);if(filtered.length===0)return;const total=filtered.reduce((s,x)=>s+(x.total||0),0);h+=`<h5 style="font-size:0.7rem;margin-top:8px;"><span class="status-badge status-${st}">${st.toUpperCase()}</span> | ${filtered.length} transaksi | Total: Rp${total.toLocaleString()}</h5>`;h+=`<table style="width:100%;font-size:0.6rem;"><tr><th>Customer</th><th>Total</th></tr>`;const custMap={};filtered.forEach(s=>{custMap[s.customer]=(custMap[s.customer]||0)+(s.total||0);});Object.entries(custMap).sort((a,b)=>b[1]-a[1]).forEach(([cust,tot])=>{h+=`<tr><td>${cust}</td><td style="text-align:right;">Rp${tot.toLocaleString()}</td></tr>`;});h+=`</table>`;});h+=`</div>`;});
   }
   h+=`</div>`;container.innerHTML=h;
 }
@@ -440,11 +345,14 @@ function pageInputBarang(){
     <div class="card"><div class="card-title"><i class="fas fa-history"></i> Riwayat Barang Masuk</div><div id="stkHistory"></div></div>`;
 }
 function isiModalOtomatis(){
-  const sku = document.getElementById('stkSku').value;
+  const skuEl = document.getElementById('stkSku');
   const modalInput = document.getElementById('stkModal');
+  if(!skuEl || !modalInput) return;
+  const sku = skuEl.value;
   if(sku){
     const p = products.find(x => x.sku === sku);
     if(p) modalInput.value = p.modal || 0;
+    else modalInput.value = 0;
   } else {
     modalInput.value = 0;
   }
