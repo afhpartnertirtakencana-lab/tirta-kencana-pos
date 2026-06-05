@@ -13,7 +13,6 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
   <style>
-    /* CSS tetap sama seperti sebelumnya, tidak diubah agar tidak memakan tempat */
     :root{--biru:#0A4D8C;--kuning:#F4B400;--biru-muda:#E6F0FA;--kuning-muda:#FFF8E1;--bg:#F1F5F9;--card:#FFFFFF;--border:#E2E8F0;--shadow:0 2px 12px rgba(0,0,0,0.06);--radius:16px;--text:#1E293B;--merah:#EF4444;--hijau:#10B981;--text-secondary:#64748B;--input-bg:#FFFFFF;}
     body.dark{--bg:#0F172A;--card:#1E293B;--border:#334155;--text:#E2E8F0;--text-secondary:#94A3B8;--input-bg:#334155;--biru-muda:#1E3A5F;--kuning-muda:#3D2E00;--shadow:0 2px 12px rgba(0,0,0,0.3);}
     body.dark input,body.dark select,body.dark textarea{background:var(--input-bg);color:var(--text);border-color:var(--border);}
@@ -125,8 +124,9 @@
 
 <script>
 const GOOGLE_SHEETS_URL='https://script.google.com/macros/s/AKfycbzVcFoJQyRQll17cx9_ACk2PYwnhKJNxAO8JdeU5sjcCpZg1kdsDa0e0-v8pR_rhYB3GQ/exec';
-const USE_GOOGLE_SHEETS=true, ITEMS_PER_PAGE=10;
+const USE_GOOGLE_SHEETS=true;
 const NOMOR_TELEPON='088211058000';
+let autoSyncInterval;
 
 let deferredPrompt;
 window.addEventListener('beforeinstallprompt',(e)=>{e.preventDefault();deferredPrompt=e;document.getElementById('installBtn').style.display='block';});
@@ -152,22 +152,15 @@ function loadAllData(){const s=localStorage.getItem('tirtaFullData');if(s)try{co
 
 async function syncToGoogleSheets(action,data){if(!USE_GOOGLE_SHEETS)return;try{await fetch(GOOGLE_SHEETS_URL+'?action='+action+'&data='+encodeURIComponent(JSON.stringify(data)),{method:'GET',mode:'no-cors'});}catch(e){}}
 
-async function refreshAllData(){
-  Swal.fire({title:'🔄 Sync',text:'Menarik data...',allowOutsideClick:false,didOpen:()=>Swal.showLoading()});
+async function refreshAllData(silent=false){
+  if(!silent) Swal.fire({title:'🔄 Sync',text:'Menarik data...',allowOutsideClick:false,didOpen:()=>Swal.showLoading()});
   try{
     const r=await fetch(GOOGLE_SHEETS_URL+'?action=getAllData');
     const d=await r.json();
     if(d.success && d.data){
-      // Hanya perbarui data lokal jika server mengirim data yang tidak kosong
-      // Untuk salesHistory, jika server kirim array kosong, jangan timpa data lokal
       if(d.data.products && d.data.products.length > 0) products = d.data.products;
       if(d.data.pelanggan && d.data.pelanggan.length > 0) pelanggan = d.data.pelanggan;
-      if(d.data.salesHistory && d.data.salesHistory.length > 0) {
-        salesHistory = d.data.salesHistory;
-      } else {
-        // jika server kosong, pertahankan data lokal
-        console.log('Server mengirim salesHistory kosong, data lokal tetap dipakai');
-      }
+      if(d.data.salesHistory && d.data.salesHistory.length > 0) salesHistory = d.data.salesHistory;
       if(d.data.stockInHistory && d.data.stockInHistory.length > 0) stockInHistory = d.data.stockInHistory;
       if(d.data.setoranHistory && d.data.setoranHistory.length > 0) setoranHistory = d.data.setoranHistory;
       if(d.data.drivers && d.data.drivers.length > 0) drivers = d.data.drivers;
@@ -182,12 +175,12 @@ async function refreshAllData(){
       if(settings.logo) document.getElementById('logoImg').src = settings.logo;
       if(currentPage==='setoran' && document.getElementById('setGrandCOD')) hitungSetoran();
       renderContent();
-      Swal.fire({title:'✅ Sukses',text:'Data diperbarui!',icon:'success',timer:1500,showConfirmButton:false});
+      if(!silent) Swal.fire({title:'✅ Sukses',text:'Data diperbarui!',icon:'success',timer:1500,showConfirmButton:false});
     } else {
-      Swal.fire({title:'⚠️ Info',text:'Server kosong. Data lokal tetap aman.',icon:'warning'});
+      if(!silent) Swal.fire({title:'⚠️ Info',text:'Server kosong. Data lokal tetap aman.',icon:'warning'});
     }
   } catch(e) {
-    Swal.fire({title:'❌ Error',text:'Gagal terhubung.',icon:'error'});
+    if(!silent) Swal.fire({title:'❌ Error',text:'Gagal terhubung.',icon:'error'});
   }
 }
 
@@ -196,12 +189,37 @@ function doLogin(){
   const u=document.getElementById('loginUser').value.trim(),p=document.getElementById('loginPass').value.trim();
   if(!u||!p)return Swal.fire('Error','Isi username & password','error');
   const f=allUsers.find(x=>x.name===u&&x.password===p);
-  if(f){currentUser={name:f.name,role:f.role};localStorage.setItem('tirtaUser',JSON.stringify(currentUser));showMainApp();}
-  else{Swal.fire('Error','Username/password salah!','error');}
+  if(f){
+    currentUser={name:f.name,role:f.role};
+    localStorage.setItem('tirtaUser',JSON.stringify(currentUser));
+    showMainApp();
+  }else{
+    Swal.fire('Error','Username/password salah!','error');
+  }
 }
 document.addEventListener('keydown',function(e){if(e.key==='Enter'&&!document.getElementById('loginPage').classList.contains('hidden'))doLogin();});
-function doLogout(){localStorage.removeItem('tirtaUser');currentUser=null;cart=[];document.getElementById('loginPage').classList.remove('hidden');document.getElementById('mainApp').classList.add('hidden');}
-async function showMainApp(){document.getElementById('loginPage').classList.add('hidden');document.getElementById('mainApp').classList.remove('hidden');document.getElementById('displayName').textContent=currentUser.name;document.getElementById('displayRole').textContent=currentUser.role.toUpperCase();document.getElementById('userAvatar').textContent=currentUser.name.charAt(0).toUpperCase();if(settings.alamat)document.getElementById('headerAlamat').textContent=settings.alamat;if(settings.logo)document.getElementById('logoImg').src=settings.logo;initDarkMode();renderMenuTabs();navigateTo(currentUser.role==='driver'?'inputbarang':'penjualan');}
+function doLogout(){
+  clearInterval(autoSyncInterval);
+  localStorage.removeItem('tirtaUser');
+  currentUser=null;cart=[];
+  document.getElementById('loginPage').classList.remove('hidden');
+  document.getElementById('mainApp').classList.add('hidden');
+}
+async function showMainApp(){
+  document.getElementById('loginPage').classList.add('hidden');
+  document.getElementById('mainApp').classList.remove('hidden');
+  document.getElementById('displayName').textContent=currentUser.name;
+  document.getElementById('displayRole').textContent=currentUser.role.toUpperCase();
+  document.getElementById('userAvatar').textContent=currentUser.name.charAt(0).toUpperCase();
+  if(settings.alamat)document.getElementById('headerAlamat').textContent=settings.alamat;
+  if(settings.logo)document.getElementById('logoImg').src=settings.logo;
+  initDarkMode();
+  renderMenuTabs();
+  await refreshAllData(true);
+  clearInterval(autoSyncInterval);
+  autoSyncInterval = setInterval(()=> refreshAllData(true), 30000);
+  navigateTo(currentUser.role==='driver'?'inputbarang':'penjualan');
+}
 
 function renderMenuTabs(){let h='';const r=currentUser?.role;
   if(r==='admin')h=`<button class="tab ${currentPage==='penjualan'?'active':''}" onclick="navigateTo('penjualan')"><i class="fas fa-cash-register"></i> Jual</button><button class="tab ${currentPage==='rekap'?'active':''}" onclick="navigateTo('rekap')"><i class="fas fa-chart-bar"></i> Rekap</button><button class="tab ${currentPage==='setoran'?'active':''}" onclick="navigateTo('setoran')"><i class="fas fa-money-bill-wave"></i> Setoran</button><button class="tab ${currentPage==='lapsetoran'?'active':''}" onclick="navigateTo('lapsetoran')"><i class="fas fa-file-invoice-dollar"></i> Lap. Setoran</button><button class="tab ${currentPage==='inputbarang'?'active':''}" onclick="navigateTo('inputbarang')"><i class="fas fa-boxes"></i> Input</button><button class="tab ${currentPage==='rekaptoko'?'active':''}" onclick="navigateTo('rekaptoko')"><i class="fas fa-warehouse"></i> Gudang</button><button class="tab ${currentPage==='keuangan'?'active':''}" onclick="navigateTo('keuangan')"><i class="fas fa-chart-pie"></i> Keuangan</button><button class="tab ${currentPage==='produk'?'active':''}" onclick="navigateTo('produk')"><i class="fas fa-cubes"></i> Produk</button><button class="tab ${currentPage==='pelanggan'?'active':''}" onclick="navigateTo('pelanggan')"><i class="fas fa-address-book"></i> Pelanggan</button><button class="tab ${currentPage==='pengaturan'?'active':''}" onclick="navigateTo('pengaturan')"><i class="fas fa-cog"></i> Atur</button>`;
@@ -220,7 +238,7 @@ function renderContent(){const c=document.getElementById('contentArea');
     case'rekaptoko':loadRekapStockIn(c);break;
     case'keuangan':loadKeuangan(c);break;
     case'produk':c.innerHTML=pageProduk();break;
-    case'pelanggan':c.innerHTML=pagePelanggan();break;
+    case'pelanggan':c.innerHTML=pagePelanggan();renderPelangganList();break;
     case'pengaturan':c.innerHTML=pagePengaturan();break;
   }
 }
@@ -255,18 +273,33 @@ function showStrukSetoran(d){document.getElementById('strukContent').innerHTML=`
 function loadLaporanSetoran(c){const today=new Date().toISOString().split('T')[0];let h=`<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-file-invoice-dollar"></i> 📊 Laporan Setoran Semua Sales</div><button class="btn-refresh btn-sm" onclick="refreshAllData()">🔄 Sync</button></div><div class="form-group"><label>Pilih Tanggal</label><input type="date" id="lapSetTgl" value="${today}" onchange="loadLaporanSetoran(document.getElementById('contentArea'))"></div>`;const tgl=document.getElementById('lapSetTgl')?.value||today;let salesUsers=allUsers.filter(u=>u.role==='sales'||u.role==='admin').map(u=>u.name);const uniqueSalesFromHistory=[...new Set(salesHistory.map(s=>s.user))];uniqueSalesFromHistory.forEach(u=>{if(!salesUsers.includes(u))salesUsers.push(u);});if(salesUsers.length===0){h+='<p class="text-center text-sm">📭 Tidak ada data sales.</p></div>';c.innerHTML=h;return;}let grandTotalCOD=0,grandTotalSetor=0,grandSelisih=0;salesUsers.sort();salesUsers.forEach(sn=>{const codSalesToday=salesHistory.filter(s=>s.date===tgl&&s.user===sn&&s.status==='cod');const codTotalToday=codSalesToday.reduce((sum,s)=>sum+(s.total||0),0);const setoranUser=setoranHistory.filter(s=>s.sales===sn&&s.tanggal===tgl);const totalSetoranUser=setoranUser.reduce((sum,s)=>sum+(s.total||0),0);const totalSetorUser=setoranUser.reduce((sum,s)=>sum+(s.setor||0),0);const totalSelisihUser=setoranUser.reduce((sum,s)=>sum+(s.selisih||0),0);if(codTotalToday>0||totalSetoranUser>0){grandTotalCOD+=codTotalToday;grandTotalSetor+=totalSetorUser;grandSelisih+=totalSelisihUser;h+=`<div class="user-section"><h4>👤 ${sn}</h4>`;if(codTotalToday>0)h+=`<div style="background:#D1FAE5;padding:8px;border-radius:8px;margin-bottom:8px;"><strong>💰 COD ${tgl}:</strong> Rp${codTotalToday.toLocaleString()}</div>`;h+=`<table style="width:100%;font-size:0.65rem;margin-bottom:8px;"><tr><th>Total Setoran</th><td style="text-align:right;">Rp${totalSetoranUser.toLocaleString()}</td></tr><tr><th>Total Disetor</th><td style="text-align:right;">Rp${totalSetorUser.toLocaleString()}</td></tr><tr><th>Total Selisih</th><td style="text-align:right;color:${totalSelisihUser<0?'#EF4444':(totalSelisihUser>0?'#10B981':'#666')};">Rp${totalSelisihUser.toLocaleString()}</td></tr></table>`;if(setoranUser.length>0){h+=`<details><summary style="cursor:pointer;color:var(--biru);font-weight:600;">📋 Detail Setoran (${setoranUser.length})</summary><table style="margin-top:8px;width:100%;font-size:0.6rem;"><tr><th>Tgl</th><th>Total</th><th>Setor</th><th>Selisih</th></tr>`;setoranUser.forEach(s=>{h+=`<tr><td style="padding:4px;">${s.tanggal||'-'}</td><td style="text-align:right;">Rp${(s.total||0).toLocaleString()}</td><td style="text-align:right;">Rp${(s.setor||0).toLocaleString()}</td><td style="text-align:right;color:${(s.selisih||0)<0?'#EF4444':'#10B981'};">Rp${(s.selisih||0).toLocaleString()}</td></tr>`;});h+=`</table></details>`;}if(codSalesToday.length>0){h+=`<details><summary style="cursor:pointer;color:var(--biru);font-weight:600;">📦 Transaksi COD (${codSalesToday.length})</summary><table style="margin-top:8px;width:100%;font-size:0.6rem;"><tr><th>Tgl</th><th>Customer</th><th>Total</th></tr>`;codSalesToday.forEach(s=>{h+=`<tr><td style="padding:4px;">${s.date||'-'}</td><td style="padding:4px;">${(s.customer||'').substring(0,15)}</td><td style="text-align:right;">Rp${(s.total||0).toLocaleString()}</td></tr>`;});h+=`</table></details>`;}h+=`</div>`;}});if(grandTotalCOD>0||grandTotalSetor>0)h+=`<div class="total-box">📊 RINGKASAN TANGGAL ${tgl}<br>Total COD: Rp${grandTotalCOD.toLocaleString()}<br>Total Disetor: Rp${grandTotalSetor.toLocaleString()}<br><span style="color:${grandSelisih<0?'#EF4444':'#10B981'};">Total Selisih: Rp${grandSelisih.toLocaleString()}</span></div>`;else h+=`<div class="total-box">ℹ️ Tidak ada data setoran/COD untuk tanggal ${tgl}.</div>`;h+=`</div><div class="card text-center"><button class="btn btn-success btn-sm" onclick="exportSetoranToCSV()"><i class="fas fa-download"></i> Export CSV</button></div>`;c.innerHTML=h;}
 function exportSetoranToCSV(){let csvRows=[['Nama Sales','Tanggal Setor','Total Setoran','Jumlah Disetor','Selisih','Grand COD','Makan','Tips','Parkir','Flazz','Bensin','Transfer','Cicilan','Tagihan','Waktu']];setoranHistory.forEach(s=>{csvRows.push([s.sales||'',s.tanggal||'',(s.total||0),(s.setor||0),(s.selisih||0),(s.grandCOD||0),(s.makan||0),(s.tips||0),(s.parkir||0),(s.flazz||0),(s.bensin||0),(s.transfer||0),(s.cicilan||0),(s.tagihan||0),s.waktu||'']);});const csvContent=csvRows.map(row=>row.join(',')).join('\n');const blob=new Blob([csvContent],{type:'text/csv;charset=utf-8;'});const link=document.createElement('a');const url=URL.createObjectURL(blob);link.href=url;link.setAttribute('download',`laporan_setoran_${new Date().toISOString().split('T')[0]}.csv`);document.body.appendChild(link);link.click();document.body.removeChild(link);URL.revokeObjectURL(url);Swal.fire('Sukses','File CSV telah diunduh','success');}
 
-// ============ REKAP PENJUALAN (BERFUNGSI PENUH) ============
+// ============ REKAP PENJUALAN (DENGAN SUB-TAB BARU) ============
 function loadRekapPenjualan(container){
   let h=`<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-chart-bar"></i> 📊 Rekap Penjualan</div><button class="btn-refresh btn-sm" onclick="refreshAllData()">🔄 Sync</button></div>`;
   if(salesHistory.length===0){h+='<p class="text-center">📭 Belum ada data penjualan.<br><button class="btn btn-success btn-sm mt-2" onclick="navigateTo(\'penjualan\')">🛒 Buat Penjualan</button></p></div>';container.innerHTML=h;return;}
-  const subTabs=['ringkasan','perSKU','perCustomer','topQty','status'];
-  if(currentUser?.role==='admin')subTabs.push('statusUser');
+
+  // Sub-tab berbeda untuk admin dan sales
+  let subTabs = ['ringkasan'];
+  if(currentUser?.role==='admin'){
+    subTabs.push('perSKU','perCustomer','perQty','statusUser','lapSales');
+  } else {
+    subTabs.push('status'); // hanya status sendiri
+  }
   h+=`<div class="sub-tabs">`;
-  subTabs.forEach(t=>{const label=t==='ringkasan'?'📊 Ringkasan':t==='perSKU'?'📦 Per SKU':t==='perCustomer'?'👥 Per Customer':t==='topQty'?'🔢 Top Qty':t==='status'?'💰 Status':t==='statusUser'?'👥 Status User':'';h+=`<button class="sub-tab ${rekapSubTab===t?'active':''}" onclick="rekapSubTab='${t}';loadRekapPenjualan(document.getElementById('contentArea'))">${label}</button>`;});h+=`</div>`;
+  subTabs.forEach(t=>{
+    const label={
+      ringkasan:'📊 Ringkasan', perSKU:'📦 Per SKU', perCustomer:'👥 Per Customer',
+      perQty:'🔢 Per Qty', statusUser:'💰 Status User', lapSales:'📈 Lap. Sales', status:'💰 Status Saya'
+    }[t]||'';
+    h+=`<button class="sub-tab ${rekapSubTab===t?'active':''}" onclick="rekapSubTab='${t}';loadRekapPenjualan(document.getElementById('contentArea'))">${label}</button>`;
+  });
+  h+=`</div>`;
+
   const tt=salesHistory.length,tp=salesHistory.reduce((s,x)=>s+(x.total||0),0),tq=salesHistory.reduce((s,x)=>s+(x.totalQty||0),0);
   h+=`<div class="flex-row mb-2"><div class="summary-box"><small>Total Transaksi</small><br><b>${tt}</b></div><div class="summary-box"><small>Total Pendapatan</small><br><b>Rp${tp.toLocaleString()}</b></div><div class="summary-box"><small>Total QTY</small><br><b>${tq}</b></div></div>`;
 
   if(rekapSubTab==='ringkasan'){
+    // Kode ringkasan seperti sebelumnya (10 transaksi terakhir), bisa tetap sama
     if(currentUser?.role==='admin'){
       const sorted=[...salesHistory].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,10);
       h+=`<h4 style="font-size:0.8rem;margin-top:12px;color:var(--biru);">📋 10 Transaksi Terakhir (Semua User)</h4>`;
@@ -287,38 +320,149 @@ function loadRekapPenjualan(container){
     }
   }
   else if(rekapSubTab==='perSKU'){
-    h+=`<h4 style="font-size:0.8rem;margin-top:12px;color:var(--biru);">📦 Rekap Per SKU (SKU, Customer, Qty) - Semua Transaksi</h4>`;
-    const itemsList = [];
-    salesHistory.forEach(s => { if(s.items&&Array.isArray(s.items)) s.items.forEach(item => itemsList.push({customer:s.customer, sku:item.sku, qty:item.qty||0})); });
-    if(itemsList.length===0) h+='<p class="text-center text-sm">📭 Tidak ada detail item.</p>';
-    else { h+=`<table style="width:100%;font-size:0.65rem;"><tr><th>SKU</th><th>Customer</th><th>Qty</th></tr>`; itemsList.forEach(r=>{h+=`<tr><td>${r.sku||'-'}</td><td>${r.customer||'-'}</td><td style="text-align:center;">${r.qty}</td></tr>`;}); h+=`</table>`; }
+    h+=`<h4 style="font-size:0.8rem;margin-top:12px;color:var(--biru);">📦 Rekap Per SKU</h4>`;
+    const skuMap = new Map();
+    salesHistory.forEach(s => {
+      if(s.items && Array.isArray(s.items)){
+        s.items.forEach(item => {
+          const sku = item.sku;
+          if(!skuMap.has(sku)) skuMap.set(sku, []);
+          skuMap.get(sku).push({ customer: s.customer, qty: item.qty||0 });
+        });
+      }
+    });
+    if(skuMap.size===0){ h+='<p class="text-center text-sm">📭 Tidak ada data.</p>'; }
+    else {
+      const sortedSkus = Array.from(skuMap.entries()).sort();
+      sortedSkus.forEach(([sku, entries]) => {
+        // Gabungkan qty per customer untuk SKU ini
+        const custMap = new Map();
+        entries.forEach(e => { custMap.set(e.customer, (custMap.get(e.customer)||0) + e.qty); });
+        h+=`<div class="user-section"><h4>${sku}</h4>`;
+        h+=`<table style="width:100%;font-size:0.65rem;"><tr><th>Customer</th><th>Qty</th></tr>`;
+        let totalQty = 0;
+        Array.from(custMap.entries()).sort((a,b)=>b[1]-a[1]).forEach(([cust,qty]) => {
+          h+=`<tr><td>${cust}</td><td style="text-align:center;">${qty}</td></tr>`;
+          totalQty += qty;
+        });
+        h+=`<tr style="font-weight:bold;background:#f9f9f9;"><td>${sku} Total</td><td style="text-align:center;">${totalQty}</td></tr>`;
+        h+=`</table></div>`;
+      });
+    }
   }
   else if(rekapSubTab==='perCustomer'){
-    h+=`<h4 style="font-size:0.8rem;margin-top:12px;color:var(--biru);">👥 Rekap Per Customer (Customer, SKU, Total Qty, Total Rp)</h4>`;
-    const agg={};
-    salesHistory.forEach(s=>{if(s.items&&Array.isArray(s.items)) s.items.forEach(item=>{const key=`${s.customer}|${item.sku}`;if(!agg[key])agg[key]={customer:s.customer,sku:item.sku,qty:0,total:0};agg[key].qty+=item.qty||0;agg[key].total+=(item.qty||0)*(item.harga||0);});});
-    const arr=Object.values(agg).sort((a,b)=>b.total-a.total);
-    if(arr.length===0)h+='<p class="text-center text-sm">📭 Tidak ada data.</p>';
-    else{h+=`<table style="width:100%;font-size:0.65rem;"><tr><th>Customer</th><th>SKU</th><th>Total Qty</th><th>Total Rp</th></tr>`;arr.forEach(r=>{h+=`<tr><td>${r.customer}</td><td>${r.sku}</td><td style="text-align:center;">${r.qty}</td><td style="text-align:right;">Rp${r.total.toLocaleString()}</td></tr>`;});h+=`</table>`;}
+    h+=`<h4 style="font-size:0.8rem;margin-top:12px;color:var(--biru);">👥 Rekap Per Customer</h4>`;
+    const custMap = new Map();
+    salesHistory.forEach(s => {
+      if(s.items && Array.isArray(s.items)){
+        const customer = s.customer;
+        if(!custMap.has(customer)) custMap.set(customer, []);
+        s.items.forEach(item => custMap.get(customer).push({ sku: item.sku, qty: item.qty||0, subtotal: (item.qty||0)*(item.harga||0) }));
+      }
+    });
+    if(custMap.size===0){ h+='<p class="text-center text-sm">📭 Tidak ada data.</p>'; }
+    else {
+      const sortedCust = Array.from(custMap.keys()).sort();
+      sortedCust.forEach(customer => {
+        const entries = custMap.get(customer);
+        // Gabungkan per SKU
+        const skuAgg = new Map();
+        let custTotal = 0;
+        entries.forEach(e => {
+          const key = e.sku;
+          if(!skuAgg.has(key)) skuAgg.set(key, { qty:0, subtotal:0 });
+          const agg = skuAgg.get(key);
+          agg.qty += e.qty;
+          agg.subtotal += e.subtotal;
+          custTotal += e.subtotal;
+        });
+        h+=`<div class="user-section"><h4>${customer}</h4>`;
+        h+=`<table style="width:100%;font-size:0.65rem;"><tr><th>SKU</th><th>Qty</th><th>Total</th></tr>`;
+        Array.from(skuAgg.entries()).sort().forEach(([sku, a]) => {
+          h+=`<tr><td>${sku}</td><td style="text-align:center;">${a.qty}</td><td style="text-align:right;">Rp${a.subtotal.toLocaleString()}</td></tr>`;
+        });
+        h+=`<tr style="font-weight:bold;background:#f9f9f9;"><td>${customer} Total</td><td></td><td style="text-align:right;">Rp${custTotal.toLocaleString()}</td></tr>`;
+        h+=`</table></div>`;
+      });
+    }
   }
-  else if(rekapSubTab==='topQty'){
-    h+=`<h4 style="font-size:0.8rem;margin-top:12px;color:var(--biru);">🔢 Top Qty (Customer, SKU, Qty, Total)</h4>`;
-    const allItems=[];
-    salesHistory.forEach(s=>{if(s.items&&Array.isArray(s.items)) s.items.forEach(item=>allItems.push({customer:s.customer,sku:item.sku,qty:item.qty||0,total:(item.qty||0)*(item.harga||0)}));});
-    allItems.sort((a,b)=>b.qty-a.qty);
-    const top=allItems.slice(0,50);
-    if(top.length===0)h+='<p class="text-center text-sm">📭 Tidak ada data.</p>';
-    else{h+=`<table style="width:100%;font-size:0.65rem;"><tr><th>Customer</th><th>SKU</th><th>Qty</th><th>Total</th></tr>`;top.forEach(r=>{h+=`<tr><td>${r.customer}</td><td>${r.sku}</td><td style="text-align:center;">${r.qty}</td><td style="text-align:right;">Rp${r.total.toLocaleString()}</td></tr>`;});h+=`</table>`;}
+  else if(rekapSubTab==='perQty'){
+    h+=`<h4 style="font-size:0.8rem;margin-top:12px;color:var(--biru);">🔢 Per Qty (Customer, SKU, Qty)</h4>`;
+    const itemsList = [];
+    salesHistory.forEach(s => {
+      if(s.items && Array.isArray(s.items)){
+        s.items.forEach(item => itemsList.push({ customer: s.customer, sku: item.sku, qty: item.qty||0 }));
+      }
+    });
+    itemsList.sort((a,b)=> b.qty - a.qty);
+    if(itemsList.length===0){ h+='<p class="text-center text-sm">📭 Tidak ada data.</p>'; }
+    else {
+      h+=`<table style="width:100%;font-size:0.65rem;"><tr><th>Customer</th><th>SKU</th><th>Qty</th></tr>`;
+      itemsList.forEach(r=>{ h+=`<tr><td>${r.customer}</td><td>${r.sku}</td><td style="text-align:center;">${r.qty}</td></tr>`; });
+      h+=`</table>`;
+    }
   }
   else if(rekapSubTab==='status'){
-    const user=currentUser?.name;const data=salesHistory.filter(s=>s.user===user);
+    // Status transaksi user yang login (sama seperti sebelumnya)
+    const user = currentUser?.name;
+    const data = salesHistory.filter(s => s.user === user);
     h+=`<h4 style="font-size:0.8rem;margin-top:12px;color:var(--biru);">💰 Status Transaksi Saya</h4>`;
-    ['cod','transfer','qris','belumbayar'].forEach(st=>{const filtered=data.filter(s=>s.status===st);if(filtered.length===0)return;const total=filtered.reduce((s,x)=>s+(x.total||0),0);h+=`<div class="user-section"><h4><span class="status-badge status-${st}">${st.toUpperCase()}</span> | ${filtered.length} transaksi | Total: Rp${total.toLocaleString()}</h4>`;h+=`<table style="width:100%;font-size:0.65rem;"><tr><th>Customer</th><th>Total</th></tr>`;const custMap={};filtered.forEach(s=>{custMap[s.customer]=(custMap[s.customer]||0)+(s.total||0);});Object.entries(custMap).sort((a,b)=>b[1]-a[1]).forEach(([cust,tot])=>{h+=`<tr><td>${cust}</td><td style="text-align:right;">Rp${tot.toLocaleString()}</td></tr>`;});h+=`</table></div>`;});
+    ['cod','transfer','qris','belumbayar'].forEach(st => {
+      const filtered = data.filter(s => s.status === st);
+      if(filtered.length===0) return;
+      const total = filtered.reduce((s,x)=> s + (x.total||0), 0);
+      h+=`<div class="user-section"><h4><span class="status-badge status-${st}">${st.toUpperCase()}</span> | ${filtered.length} transaksi | Total: Rp${total.toLocaleString()}</h4>`;
+      h+=`<table style="width:100%;font-size:0.65rem;"><tr><th>Customer</th><th>Total</th></tr>`;
+      const custMap = new Map();
+      filtered.forEach(s => { custMap.set(s.customer, (custMap.get(s.customer)||0) + (s.total||0)); });
+      Array.from(custMap.entries()).sort((a,b)=> b[1]-a[1]).forEach(([cust,tot]) => {
+        h+=`<tr><td>${cust}</td><td style="text-align:right;">Rp${tot.toLocaleString()}</td></tr>`;
+      });
+      h+=`<tr style="font-weight:bold;"><td>Grand Total</td><td style="text-align:right;">Rp${total.toLocaleString()}</td></tr>`;
+      h+=`</table></div>`;
+    });
   }
-  else if(rekapSubTab==='statusUser' && currentUser?.role==='admin'){
+  else if(rekapSubTab==='statusUser'){
+    // Admin melihat status per pengguna
     h+=`<h4 style="font-size:0.8rem;margin-top:12px;color:var(--biru);">👥 Status per User</h4>`;
-    const users=allUsers.filter(u=>u.role==='sales'||u.role==='admin').map(u=>u.name);
-    users.forEach(user=>{const data=salesHistory.filter(s=>s.user===user);if(data.length===0)return;h+=`<div class="user-section"><h4>👤 ${user}</h4>`;['cod','transfer','qris','belumbayar'].forEach(st=>{const filtered=data.filter(s=>s.status===st);if(filtered.length===0)return;const total=filtered.reduce((s,x)=>s+(x.total||0),0);h+=`<h5 style="font-size:0.7rem;margin-top:8px;"><span class="status-badge status-${st}">${st.toUpperCase()}</span> | ${filtered.length} transaksi | Total: Rp${total.toLocaleString()}</h5>`;h+=`<table style="width:100%;font-size:0.6rem;"><tr><th>Customer</th><th>Total</th></tr>`;const custMap={};filtered.forEach(s=>{custMap[s.customer]=(custMap[s.customer]||0)+(s.total||0);});Object.entries(custMap).sort((a,b)=>b[1]-a[1]).forEach(([cust,tot])=>{h+=`<tr><td>${cust}</td><td style="text-align:right;">Rp${tot.toLocaleString()}</td></tr>`;});h+=`</table>`;});h+=`</div>`;});
+    const users = allUsers.filter(u => u.role==='sales' || u.role==='admin').map(u => u.name);
+    users.forEach(user => {
+      const data = salesHistory.filter(s => s.user === user);
+      if(data.length===0) return;
+      h+=`<div class="user-section"><h4>👤 ${user}</h4>`;
+      ['cod','transfer','qris','belumbayar'].forEach(st => {
+        const filtered = data.filter(s => s.status === st);
+        if(filtered.length===0) return;
+        const total = filtered.reduce((s,x)=> s + (x.total||0), 0);
+        h+=`<h5 style="font-size:0.7rem;margin-top:8px;"><span class="status-badge status-${st}">${st.toUpperCase()}</span> | ${filtered.length} transaksi | Total: Rp${total.toLocaleString()}</h5>`;
+        h+=`<table style="width:100%;font-size:0.65rem;"><tr><th>Customer</th><th>Total</th></tr>`;
+        const custMap = new Map();
+        filtered.forEach(s => { custMap.set(s.customer, (custMap.get(s.customer)||0) + (s.total||0)); });
+        Array.from(custMap.entries()).sort((a,b)=> b[1]-a[1]).forEach(([cust,tot]) => {
+          h+=`<tr><td>${cust}</td><td style="text-align:right;">Rp${tot.toLocaleString()}</td></tr>`;
+        });
+        h+=`<tr style="font-weight:bold;"><td>Grand Total</td><td style="text-align:right;">Rp${total.toLocaleString()}</td></tr>`;
+        h+=`</table>`;
+      });
+      h+=`</div>`;
+    });
+  }
+  else if(rekapSubTab==='lapSales'){
+    h+=`<h4 style="font-size:0.8rem;margin-top:12px;color:var(--biru);">📈 Laporan per Sales</h4>`;
+    const users = allUsers.filter(u => u.role==='sales' || u.role==='admin').map(u => u.name);
+    let grandTotal = 0, grandProfit = 0;
+    h+=`<table style="width:100%;font-size:0.65rem;"><tr><th>Sales</th><th>Total</th><th>Profit</th></tr>`;
+    users.forEach(user => {
+      const data = salesHistory.filter(s => s.user === user);
+      if(data.length===0) return;
+      const total = data.reduce((s,x)=> s + (x.total||0), 0);
+      const profit = data.reduce((s,x)=> s + (x.totalProfit||0), 0);
+      h+=`<tr><td>${user}</td><td style="text-align:right;">Rp${total.toLocaleString()}</td><td style="text-align:right;">Rp${profit.toLocaleString()}</td></tr>`;
+      grandTotal += total;
+      grandProfit += profit;
+    });
+    h+=`<tr style="font-weight:bold;background:#f9f9f9;"><td>Grand Total</td><td style="text-align:right;">Rp${grandTotal.toLocaleString()}</td><td style="text-align:right;">Rp${grandProfit.toLocaleString()}</td></tr>`;
+    h+=`</table>`;
   }
   h+=`</div>`;container.innerHTML=h;
 }
@@ -328,7 +472,7 @@ function printStrukById(id){const sale=salesHistory.find(s=>s.id===id);if(sale)s
 // ============ KEUANGAN ============
 function loadKeuangan(container){const today=new Date().toISOString().split('T')[0];let h=`<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-chart-pie"></i> 📊 Laporan Keuangan</div><button class="btn-refresh btn-sm" onclick="refreshAllData()">🔄 Sync</button></div><div class="form-group"><label>Pilih Tanggal</label><input type="date" id="keuTgl" value="${today}" onchange="loadKeuangan(document.getElementById('contentArea'))"></div>`;const tgl=document.getElementById('keuTgl')?.value||today;const filteredSales=salesHistory.filter(s=>s.date===tgl);if(filteredSales.length===0){h+=`<p class="text-center">Belum ada data transaksi untuk ${tgl}.</p></div>`;container.innerHTML=h;return;}const perUser={};allUsers.filter(u=>u.role==='sales'||u.role==='admin').forEach(u=>{perUser[u.name]={sales:0,total:0,profit:0,qty:0};});filteredSales.forEach(s=>{if(perUser[s.user]){perUser[s.user].sales++;perUser[s.user].total+=s.total||0;perUser[s.user].profit+=s.totalProfit||0;perUser[s.user].qty+=s.totalQty||0;}});h+=`<h4 style="font-size:0.75rem;">👤 Per Sales (Tanggal ${tgl})</h4><table style="width:100%;font-size:0.65rem;"><tr><th>User</th><th>Transaksi</th><th>QTY</th><th>Total</th><th>Profit</th></tr>`;Object.entries(perUser).forEach(([name,u])=>{if(u.sales>0)h+=`<tr><td style="padding:4px;">${name}</td><td style="text-align:center;">${u.sales}</td><td style="text-align:center;">${u.qty}</td><td style="text-align:right;">Rp${u.total.toLocaleString()}</td><td style="text-align:right;">Rp${u.profit.toLocaleString()}</td></tr>`;});h+='</table></div>';container.innerHTML=h;}
 
-// ============ INPUT BARANG (HARGA MODAL OTOMATIS) ============
+// ============ INPUT BARANG (VALIDASI DRIVER & RIT) ============
 function pageInputBarang(){
   let po='<option value="">Pilih Produk</option>';
   products.forEach(p=>{po+=`<option value="${p.sku}">${p.sku} - ${p.nama}</option>`;});
@@ -338,29 +482,96 @@ function pageInputBarang(){
     <div class="form-group"><label>Produk</label><select id="stkSku" onchange="isiModalOtomatis()">${po}</select></div>
     <div class="flex-row"><div class="form-group col-1"><label>Qty</label><input type="number" id="stkQty" value="1" min="1"></div>
     <div class="form-group col-1"><label>Harga Modal</label><input type="number" id="stkModal" value="0"></div></div>
-    <div class="flex-row"><div class="form-group col-1"><label>Driver</label><select id="stkDriver">${dO}</select></div>
-    <div class="form-group col-1"><label>Rit</label><input id="stkRit" placeholder="Rit"></div></div>
+    <div class="flex-row"><div class="form-group col-1"><label>Driver *</label><select id="stkDriver" required>${dO}</select></div>
+    <div class="form-group col-1"><label>Rit *</label><input id="stkRit" placeholder="Rit" required></div></div>
     <div class="form-group"><label>Status</label><select id="stkStatus"><option value="kiriman">Kiriman</option><option value="titipan">Titipan</option></select></div>
     <button class="btn btn-primary btn-block" onclick="saveStockIn()">Simpan</button></div>
     <div class="card"><div class="card-title"><i class="fas fa-history"></i> Riwayat Barang Masuk</div><div id="stkHistory"></div></div>`;
 }
-function isiModalOtomatis(){
-  const skuEl = document.getElementById('stkSku');
-  const modalInput = document.getElementById('stkModal');
-  if(!skuEl || !modalInput) return;
-  const sku = skuEl.value;
-  if(sku){
-    const p = products.find(x => x.sku === sku);
-    if(p) modalInput.value = p.modal || 0;
-    else modalInput.value = 0;
-  } else {
-    modalInput.value = 0;
-  }
-}
+function isiModalOtomatis(){const sku=document.getElementById('stkSku').value;const modalInput=document.getElementById('stkModal');if(sku){const p=products.find(x=>x.sku===sku);if(p)modalInput.value=p.modal||0;}else{modalInput.value=0;}}
 function initInputBarang(){loadStockHistory();}
-async function saveStockIn(){const sku=document.getElementById('stkSku')?.value,qty=document.getElementById('stkQty')?.value;if(!sku||!qty)return Swal.fire('Error','Lengkapi data','error');const p=products.find(x=>x.sku===sku);const entry={sku,nama:p?.nama||'',qty:parseInt(qty),hargaModal:parseFloat(document.getElementById('stkModal')?.value)||0,driver:document.getElementById('stkDriver')?.value,rit:document.getElementById('stkRit')?.value,status:document.getElementById('stkStatus')?.value,date:new Date().toISOString().split('T')[0],id:'STK-'+Date.now(),totalModal:parseInt(qty)*parseFloat(document.getElementById('stkModal')?.value||0)};stockInHistory.unshift(entry);if(p){p.stokMasuk=(p.stokMasuk||0)+parseInt(qty);p.stokAkhir=(p.stokAwal||0)+p.stokMasuk-p.stokKeluar;}saveAllData();syncToGoogleSheets('addStockIn',entry);Swal.fire('Sukses','Barang masuk dicatat','success');loadStockHistory();}
+async function saveStockIn(){
+  const sku=document.getElementById('stkSku')?.value;
+  const qty=document.getElementById('stkQty')?.value;
+  const driver=document.getElementById('stkDriver')?.value;
+  const rit=document.getElementById('stkRit')?.value.trim();
+  if(!sku||!qty) return Swal.fire('Error','Lengkapi produk dan qty','error');
+  if(!driver || driver==='') return Swal.fire('Error','Driver harus dipilih','error');
+  if(!rit) return Swal.fire('Error','Rit tidak boleh kosong','error');
+  const p=products.find(x=>x.sku===sku);
+  const entry={sku,nama:p?.nama||'',qty:parseInt(qty),hargaModal:parseFloat(document.getElementById('stkModal')?.value)||0,driver:driver,rit:rit,status:document.getElementById('stkStatus')?.value,date:new Date().toISOString().split('T')[0],id:'STK-'+Date.now(),totalModal:parseInt(qty)*parseFloat(document.getElementById('stkModal')?.value||0)};
+  stockInHistory.unshift(entry);
+  if(p){p.stokMasuk=(p.stokMasuk||0)+parseInt(qty);p.stokAkhir=(p.stokAwal||0)+p.stokMasuk-p.stokKeluar;}
+  saveAllData();syncToGoogleSheets('addStockIn',entry);
+  Swal.fire('Sukses','Barang masuk dicatat','success');
+  loadStockHistory();
+}
 function loadStockHistory(){const el=document.getElementById('stkHistory');if(stockInHistory.length>0){let h='<table style="width:100%;font-size:0.65rem;"><tr><th>ID</th><th>SKU</th><th>Qty</th><th>Driver</th><th>Rit</th><th>Status</th><th>Tgl</th></tr>';stockInHistory.slice(0,30).forEach(s=>{h+=`<tr><td style="font-size:0.55rem;padding:4px;">${s.id}</td><td style="padding:4px;">${s.sku}</td><td style="text-align:center;">${s.qty}</td><td style="padding:4px;">${s.driver||'-'}</td><td style="padding:4px;">${s.rit||'-'}</td><td style="padding:4px;"><span class="status-badge status-${s.status}">${s.status}</span></td><td style="padding:4px;">${s.date}</td></tr>`;});h+='</table>';el.innerHTML=h;}else el.innerHTML='<p class="text-sm text-center">Belum ada data</p>';}
-function loadRekapStockIn(container){let h='<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-warehouse"></i> 📊 Rekap Gudang (Barang Masuk)</div><button class="btn-refresh btn-sm" onclick="refreshAllData()">🔄 Sync</button></div>';if(stockInHistory.length===0){h+='<p class="text-center">Belum ada data barang masuk</p></div>';container.innerHTML=h;return;}const tq=stockInHistory.reduce((s,i)=>s+(i.qty||0),0),tm=stockInHistory.reduce((s,i)=>s+((i.qty||0)*(i.hargaModal||0)),0);h+=`<div class="flex-row mb-2"><div class="summary-box"><small>Entry</small><br><b>${stockInHistory.length}</b></div><div class="summary-box"><small>Total QTY</small><br><b>${tq}</b></div><div class="summary-box"><small>Total Modal</small><br><b>Rp${tm.toLocaleString()}</b></div></div>`;['kiriman','titipan'].forEach(status=>{const data=stockInHistory.filter(s=>s.status===status);if(data.length===0)return;const tQ=data.reduce((s,i)=>s+(i.qty||0),0),tRp=data.reduce((s,i)=>s+((i.qty||0)*(i.hargaModal||0)),0);h+=`<h4 style="font-size:0.75rem;margin-top:12px;"><span class="status-badge status-${status}">${status.toUpperCase()}</span> | QTY: ${tQ} | Rp${tRp.toLocaleString()}</h4><table style="width:100%;font-size:0.65rem;"><tr><th>Driver</th><th>Entry</th><th>QTY</th><th>Total Modal</th></tr>`;const perDriver={};data.forEach(s=>{const d=s.driver||'Tanpa Driver';if(!perDriver[d])perDriver[d]={driver:d,jumlah:0,totalQty:0,totalRp:0};perDriver[d].jumlah++;perDriver[d].totalQty+=s.qty||0;perDriver[d].totalRp+=(s.qty||0)*(s.hargaModal||0);});Object.values(perDriver).forEach(d=>{h+=`<tr><td style="padding:4px;">${d.driver}</td><td style="text-align:center;">${d.jumlah}</td><td style="text-align:center;">${d.totalQty}</td><td style="text-align:right;">Rp${d.totalRp.toLocaleString()}</td></tr>`;});h+='<td>';});h+='</div>';container.innerHTML=h;}
+
+// ============ REKAP GUDANG (FORMAT BARU) ============
+function loadRekapStockIn(container){
+  let h=`<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-warehouse"></i> 📊 Rekap Gudang</div><button class="btn-refresh btn-sm" onclick="refreshAllData()">🔄 Sync</button></div>`;
+  if(stockInHistory.length===0){h+='<p class="text-center">Belum ada data barang masuk</p></div>';container.innerHTML=h;return;}
+  const tq=stockInHistory.reduce((s,i)=>s+(i.qty||0),0),tm=stockInHistory.reduce((s,i)=>s+((i.qty||0)*(i.hargaModal||0)),0);
+  h+=`<div class="flex-row mb-2"><div class="summary-box"><small>Entry</small><br><b>${stockInHistory.length}</b></div><div class="summary-box"><small>Total QTY</small><br><b>${tq}</b></div><div class="summary-box"><small>Total Modal</small><br><b>Rp${tm.toLocaleString()}</b></div></div>`;
+  h += buildGudangTable('TOTAL KIRIMAN + TITIPAN (Rp)', stockInHistory, 'rp');
+  h += buildGudangTable('TOTAL KIRIMAN (Rp)', stockInHistory.filter(s=>s.status==='kiriman'), 'rp');
+  h += buildGudangTable('TOTAL TITIPAN (Rp)', stockInHistory.filter(s=>s.status==='titipan'), 'rp');
+  h += buildGudangTable('TOTAL KIRIMAN (QTY)', stockInHistory.filter(s=>s.status==='kiriman'), 'qty');
+  h += buildGudangTable('TOTAL TITIPAN (QTY)', stockInHistory.filter(s=>s.status==='titipan'), 'qty');
+  container.innerHTML = h;
+}
+
+function buildGudangTable(title, data, type){
+  if(data.length===0) return `<div class="gudang-table"><h4 style="font-size:0.75rem;color:var(--biru);">${title}</h4><p class="text-sm text-center">📭 Tidak ada data.</p></div>`;
+  let html = `<div class="gudang-table"><h4 style="font-size:0.75rem;color:var(--biru);margin-bottom:6px;">${title}</h4>`;
+  html += `<table><thead><tr>`;
+  html += `<th>Driver</th><th>Rit</th>`;
+  if(type==='qty') html += `<th>SKU</th>`;
+  html += `<th>Total ${type==='rp'?'Rp':'Qty'}</th></tr></thead><tbody>`;
+
+  const map = new Map();
+  data.forEach(row=>{
+    const driver = row.driver || 'Tanpa Driver';
+    const rit = row.rit || '-';
+    const sku = row.sku || '';
+    const key = type==='rp' ? `${driver}|${rit}` : `${driver}|${rit}|${sku}`;
+    if(!map.has(key)) map.set(key, { driver, rit, sku, total: 0 });
+    const entry = map.get(key);
+    if(type==='rp') entry.total += (row.qty||0) * (row.hargaModal||0);
+    else entry.total += row.qty||0;
+  });
+
+  const sorted = Array.from(map.values()).sort((a,b)=>{
+    if(a.driver < b.driver) return -1;
+    if(a.driver > b.driver) return 1;
+    const ritA = parseInt(a.rit) || 0;
+    const ritB = parseInt(b.rit) || 0;
+    return ritA - ritB;
+  });
+
+  let lastDriver = '';
+  let grandTotal = 0;
+  sorted.forEach(row=>{
+    const showDriver = row.driver !== lastDriver;
+    html += `<tr>`;
+    html += `<td>${showDriver ? row.driver : ''}</td>`;
+    html += `<td>${row.rit}</td>`;
+    if(type==='qty') html += `<td>${row.sku}</td>`;
+    if(type==='rp') html += `<td style="text-align:right;">Rp${row.total.toLocaleString()}</td>`;
+    else html += `<td style="text-align:center;">${row.total}</td>`;
+    html += `</tr>`;
+    grandTotal += row.total;
+    lastDriver = row.driver;
+  });
+
+  html += `<tr class="total-row"><td colspan="${type==='qty'?3:2}" style="text-align:right;font-weight:bold;">Grand Total</td>`;
+  if(type==='rp') html += `<td style="text-align:right;">Rp${grandTotal.toLocaleString()}</td>`;
+  else html += `<td style="text-align:center;">${grandTotal}</td>`;
+  html += `</tr>`;
+  html += `</tbody></table></div>`;
+  return html;
+}
 
 // ============ PRODUK, PELANGGAN, PENGATURAN ============
 function pageProduk(){let h='<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-cubes"></i> Manajemen Produk</div><button class="btn-primary btn-sm" onclick="showAddProduct()" style="padding:6px 12px;">+ Tambah</button></div><div style="overflow-x:auto;"><table style="width:100%;font-size:0.65rem;"><tr><th>SKU</th><th>Nama</th><th>Modal</th><th>Jual</th><th>Stok</th><th>Aksi</th><tr>';products.forEach(p=>{h+=`<tr><td style="padding:4px;font-weight:600;">${p.sku}</td><td style="padding:4px;">${p.nama}</td><td style="text-align:right;">Rp${(p.modal||0).toLocaleString()}</td><td style="text-align:right;">Rp${(p.jual||0).toLocaleString()}</td><td style="text-align:center;${p.stokAkhir<10?'color:#EF4444;font-weight:bold;':''}">${p.stokAkhir||0}</td><td style="padding:4px;"><button class="btn-warning btn-sm" onclick="editProduct('${p.sku}')" style="padding:4px 8px;"><i class="fas fa-edit"></i></button> <button class="btn-danger btn-sm" onclick="deleteProductConfirm('${p.sku}')" style="padding:4px 8px;"><i class="fas fa-trash"></i></button></td></tr>`;});h+='</table></div></div><div id="prodForm"></div>';return h;}
@@ -369,6 +580,7 @@ async function saveNewProduct(){const d={sku:document.getElementById('newSku')?.
 function editProduct(sku){const p=products.find(x=>String(x.sku)===String(sku));if(!p)return;document.getElementById('prodForm').innerHTML=`<div class="card"><div class="card-title">Edit Produk: ${p.sku}</div><div class="form-group"><label>Nama</label><input id="editNama" value="${p.nama||''}"></div><div class="flex-row"><div class="form-group col-1"><label>Modal</label><input type="number" id="editModal" value="${p.modal||0}"></div><div class="form-group col-1"><label>Jual</label><input type="number" id="editJual" value="${p.jual||0}"></div></div><button class="btn-primary btn-block" onclick="saveEditProduct('${p.sku}')">Update</button><button class="btn-danger btn-block mt-2" onclick="deleteProductConfirm('${p.sku}')">Hapus Produk</button><button class="btn-outline btn-block mt-2" onclick="document.getElementById('prodForm').innerHTML=''">Batal</button></div>`;}
 async function saveEditProduct(sku){const nama=document.getElementById('editNama')?.value.trim(),modal=parseFloat(document.getElementById('editModal')?.value)||0,jual=parseFloat(document.getElementById('editJual')?.value)||0;if(!nama)return Swal.fire('Error','Nama wajib diisi','error');const idx=products.findIndex(x=>String(x.sku)===String(sku));if(idx!==-1){products[idx].nama=nama;products[idx].modal=modal;products[idx].jual=jual;}saveAllData();syncToGoogleSheets('updateProduct',{sku,nama,modal,jual});document.getElementById('prodForm').innerHTML='';navigateTo('produk');Swal.fire('Sukses','Produk diupdate','success');}
 async function deleteProductConfirm(sku){const c=await Swal.fire({title:'Hapus produk?',text:`Produk ${sku} akan dihapus`,icon:'warning',showCancelButton:true,confirmButtonText:'Ya, Hapus'});if(c.isConfirmed){products=products.filter(x=>String(x.sku)!==String(sku));saveAllData();syncToGoogleSheets('deleteProduct',{sku});document.getElementById('prodForm').innerHTML='';navigateTo('produk');Swal.fire('Sukses','Produk dihapus','success');}}
+
 function pagePelanggan(){let h='<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-address-book"></i> Daftar Pelanggan</div><button class="btn-primary btn-sm" onclick="showAddPelangganForm()" style="padding:6px 12px;">+ Tambah</button></div><div id="pelangganList"></div></div>';return h;}
 function showAddPelangganForm(){Swal.fire({title:'Tambah Pelanggan',input:'text',inputPlaceholder:'Nama Pelanggan',showCancelButton:true,confirmButtonText:'Tambah',preConfirm:(n)=>{if(!n)return Swal.showValidationMessage('Nama tidak boleh kosong');if(pelanggan.includes(n))return Swal.showValidationMessage('Nama sudah ada');pelanggan.push(n);saveAllData();syncToGoogleSheets('addPelanggan',{name:n});renderPelangganList();return n;}});}
 function renderPelangganList(){const el=document.getElementById('pelangganList');if(!el)return;if(pelanggan.length===0){el.innerHTML='<p class="text-center text-sm">📭 Belum ada pelanggan</p>';return;}let h='<table style="width:100%;font-size:0.65rem;"><tr><th>No</th><th>Nama Pelanggan</th><th>Aksi</th><tr>';pelanggan.forEach((c,i)=>{h+=`<tr><td style="padding:4px;width:40px;">${i+1}</td><td style="padding:4px;">${c}</td><td style="padding:4px;"><button class="btn-danger btn-sm" onclick="deletePelanggan('${c}')" style="padding:4px 8px;"><i class="fas fa-trash"></i></button></td></tr>`;});h+='</table>';el.innerHTML=h;}
