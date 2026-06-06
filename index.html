@@ -15,7 +15,6 @@
   <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <style>
-    /* ... (CSS sama persis dengan versi sebelumnya, tidak diubah) ... */
     :root {
       --biru: #1A6DB5; --biru2: #2B8FDE; --kuning: #F4B400;
       --biru-muda: #EAF4FD; --kuning-muda: #FFF8E1;
@@ -47,7 +46,19 @@
     .btn-darkmode{background:#6366F1;color:white;border:none;padding:6px 10px;border-radius:8px;font-size:0.65rem;cursor:pointer;font-weight:600;}
     .btn-install{background:#8B5CF6;color:white;border:none;padding:6px 10px;border-radius:8px;font-size:0.65rem;cursor:pointer;font-weight:600;display:none;}
     .btn-scan{background:var(--teal);color:white;border:none;} .btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border);} .btn-icon{padding:6px 8px;min-width:32px;justify-content:center;}
-    .menu-tabs { display:flex; overflow-x:auto; gap:4px; padding:8px 10px; background:var(--card); border-bottom:1px solid var(--border); } .menu-tabs::-webkit-scrollbar{height:0;} .tab{flex:0 0 auto;padding:7px 14px;border-radius:20px;border:1px solid var(--border);background:var(--card);font-size:0.7rem;font-weight:600;cursor:pointer;white-space:nowrap;transition:0.2s;color:var(--text2);display:flex;align-items:center;gap:4px;font-family:var(--font);} .tab i{font-size:0.8rem;} .tab.active{background:var(--biru);color:white;border-color:var(--biru);}
+    
+    /* Menu Tabs dengan scrollbar kecil */
+    .menu-tabs { 
+      display:flex; overflow-x:auto; gap:4px; padding:8px 10px; 
+      background:var(--card); border-bottom:1px solid var(--border); 
+      scrollbar-width: thin; scrollbar-color: var(--biru) transparent;
+    } 
+    .menu-tabs::-webkit-scrollbar { height: 5px; }
+    .menu-tabs::-webkit-scrollbar-track { background: transparent; }
+    .menu-tabs::-webkit-scrollbar-thumb { background: var(--biru); border-radius: 10px; }
+    .menu-tabs::-webkit-scrollbar-thumb:hover { background: var(--biru2); }
+    
+    .tab{flex:0 0 auto;padding:7px 14px;border-radius:20px;border:1px solid var(--border);background:var(--card);font-size:0.7rem;font-weight:600;cursor:pointer;white-space:nowrap;transition:0.2s;color:var(--text2);display:flex;align-items:center;gap:4px;font-family:var(--font);} .tab i{font-size:0.8rem;} .tab.active{background:var(--biru);color:white;border-color:var(--biru);}
     .content-area { flex:1; padding:12px; overflow-y:auto; max-height:calc(100vh - 280px); }
     .card { background:var(--card); border-radius:var(--radius); padding:16px; box-shadow:var(--shadow); margin-bottom:10px; border:1px solid var(--border); transition:background 0.3s; }
     .card-title { font-weight:700; font-size:0.9rem; color:var(--biru); display:flex; align-items:center; gap:6px; margin-bottom:12px; } .card-title i{color:var(--kuning);}
@@ -174,6 +185,7 @@
     let _logoUrl = '', _qrisUrl = '';
     let _scannerMode = null, _scanTargetIdx = null, _scanResult = '', _scanStream = null, _scanTimer = null, _scannerActive = false;
     let _strKData = null;
+    let _lastSetoranPayload = null;
 
     function saveLocalData() {
       localStorage.setItem('tirtaFullData', JSON.stringify({
@@ -418,6 +430,7 @@
       Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Transaksi tersimpan' });
       resetTrx();
       showStrukModal();
+      syncMasterStockToSheet(); // perbarui master stock setelah transaksi
     }
 
     // ========== STRUK ==========
@@ -521,7 +534,165 @@
       window.open('https://wa.me/?text='+encodeURIComponent(lines.join('\n')),'_blank');
     }
 
-    // ========== TRANSAKSI (tanpa kolom TotalModal & TotalProfit) ==========
+    // ========== SETORAN ==========
+    function loadSetoran() {
+      let sOpts = '<option value="">Pilih Sales</option>';
+      (settings.salesList||[]).forEach(s => { sOpts += `<option value="${esc(s)}">${esc(s)}</option>`; });
+      document.getElementById('contentArea').innerHTML = `<div class="card"><div class="flex-row mb-2"><div class="form-group col-1"><label>Tanggal</label><input type="date" id="setorTgl"></div><div class="form-group col-1"><label>Sales</label><select id="setorSales">${sOpts}</select></div><button class="btn btn-primary" onclick="doSetoran()" style="height:44px;align-self:flex-end">💰 Tampilkan</button></div></div><div id="setoranContent"><div class="text-center text-sm" style="padding:40px">Pilih tanggal & sales lalu klik Tampilkan</div></div>`;
+      document.getElementById('setorTgl').value = new Date().toISOString().slice(0,10);
+    }
+    function doSetoran() {
+      const tgl = document.getElementById('setorTgl').value;
+      const sales = document.getElementById('setorSales').value;
+      if (!tgl || !sales) return Swal.fire('Error','Pilih tanggal & sales!','error');
+      const filtered = allTrxList.filter(t => (t.tgl||'').substring(0,10) === tgl && (t.sales||'').toLowerCase().trim() === sales.toLowerCase().trim());
+      const grand = filtered.filter(t=>t.status==='cod').reduce((s,t)=>s+(t.nett||0),0);
+      document.getElementById('setoranContent').innerHTML = `<div class="card">
+        <div class="flex-between mb-2"><div><strong>💰 Setoran: ${esc(sales)}</strong><br><span class="text-sm">${fmtDate(tgl)}</span></div><div style="font-size:1.2rem;font-weight:800;color:var(--biru)">Grand Total COD: ${fmtRp(grand)}</div></div>
+        <input type="hidden" id="stGrand" value="${grand}">
+        <div class="form-group"><label>🍽️ Uang Makan</label><input type="number" id="stMakan" value="0" min="0" oninput="calcSetoran()"></div>
+        <div class="form-group"><label>🎁 Tips</label><input type="number" id="stTips" value="0" min="0" oninput="calcSetoran()"></div>
+        <div class="form-group"><label>🅿️ Parkir</label><input type="number" id="stParkir" value="0" min="0" oninput="calcSetoran()"></div>
+        <div class="form-group"><label>⛽ Bensin</label><input type="number" id="stBensin" value="0" min="0" oninput="calcSetoran()"></div>
+        <div class="form-group"><label>💳 Flazz</label><input type="number" id="stFlazz" value="0" min="0" oninput="calcSetoran()"></div>
+        <div class="form-group"><label>🏦 Transfer</label><input type="number" id="stTransfer" value="0" min="0" oninput="calcSetoran()"></div>
+        <div class="form-group"><label>💵 Cicilan</label><input type="number" id="stCicilan" value="0" min="0" oninput="calcSetoran()"></div>
+        <div class="form-group"><label>📄 Tagihan</label><input type="number" id="stTagihan" value="0" min="0" oninput="calcSetoran()"></div>
+        <div class="total-box"><div class="flex-between"><span>TOTAL</span><span id="stTotal">Rp 0</span></div></div>
+        <div class="form-group"><label>✅ SETOR</label><input type="number" id="stSetor" value="0" min="0" oninput="calcSetoran()"></div>
+        <div class="total-box danger"><div class="flex-between"><span>SELISIH</span><span id="stSelisih">Rp 0</span></div></div>
+        <button class="btn btn-primary btn-block mt-2" onclick="saveSetoran()">💾 Simpan Setoran</button></div>`;
+      calcSetoran();
+    }
+    function calcSetoran() {
+      const gv = id => parseFloat(document.getElementById(id)?.value)||0;
+      const grand = gv('stGrand');
+      const pengeluaran = gv('stMakan')+gv('stTips')+gv('stParkir')+gv('stBensin')+gv('stFlazz')+gv('stTransfer');
+      const total = grand + gv('stTagihan') + gv('stCicilan') - pengeluaran;
+      const setor = gv('stSetor');
+      const selisih = total - setor;
+      document.getElementById('stTotal').textContent = fmtRp(total);
+      document.getElementById('stSelisih').textContent = fmtRp(selisih);
+    }
+    async function saveSetoran() {
+      const payload = {
+        tgl: document.getElementById('setorTgl').value,
+        sales: document.getElementById('setorSales').value,
+        grandTotal: parseFloat(document.getElementById('stGrand')?.value)||0,
+        makan: parseFloat(document.getElementById('stMakan')?.value)||0,
+        tips: parseFloat(document.getElementById('stTips')?.value)||0,
+        parkir: parseFloat(document.getElementById('stParkir')?.value)||0,
+        bensin: parseFloat(document.getElementById('stBensin')?.value)||0,
+        flazz: parseFloat(document.getElementById('stFlazz')?.value)||0,
+        transfer: parseFloat(document.getElementById('stTransfer')?.value)||0,
+        cicilan: parseFloat(document.getElementById('stCicilan')?.value)||0,
+        tagihan: parseFloat(document.getElementById('stTagihan')?.value)||0,
+        total: parseFloat(document.getElementById('stTotal')?.textContent.replace(/[^0-9]/g,''))||0,
+        setor: parseFloat(document.getElementById('stSetor')?.value)||0,
+        selisih: parseFloat(document.getElementById('stSelisih')?.textContent.replace(/[^0-9]/g,''))||0
+      };
+      try {
+        await gasCall('saveSetoran', [payload]);
+        _lastSetoranPayload = payload;
+        showSetoranStrukModal(payload);
+      } catch(e) {
+        Swal.fire('Error',e.message,'error');
+      }
+    }
+
+    function buildSetoranStrukHTML(payload) {
+      const now = new Date();
+      const timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+      const logoHtml = _logoUrl ? `<img src="${_logoUrl}" style="width:48px;height:48px;border-radius:10px;object-fit:contain;background:#fff;padding:3px;flex-shrink:0;border:1.5px solid rgba(255,255,255,.4)">` : '<div style="width:48px;height:48px;border-radius:10px;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🏪</div>';
+      return `<div id="setoran-root" style="width:360px;background:#fff;border-radius:16px;overflow:hidden;font-family:'DM Sans',sans-serif;box-shadow:0 8px 32px rgba(29,111,164,.18)">
+      <div style="background:linear-gradient(135deg,#1A6DB5,#2B8FDE);padding:18px 18px 14px;display:flex;align-items:center;gap:12px">${logoHtml}<div><div style="font-size:15px;font-weight:800;color:#fff;letter-spacing:-.3px">${esc(settings.namaToko||'Tirta Kencana')}</div>${settings.tagline?`<div style="font-size:11px;color:rgba(255,255,255,.75);margin-top:1px">${esc(settings.tagline)}</div>`:''}${settings.alamat?`<div style="font-size:10px;color:rgba(255,255,255,.6);margin-top:2px">${esc(settings.alamat)}</div>`:''}</div></div>
+      <div style="background:#EBF4FB;padding:10px 18px;display:flex;justify-content:space-between;align-items:center;font-size:11px">
+        <div><div style="color:#7BAAC4;font-weight:700;text-transform:uppercase;letter-spacing:.8px;font-size:9px">Setoran Sales</div><div style="font-weight:700;color:#1D6FA4;font-size:13px">${esc(payload.sales)}</div></div>
+        <div style="text-align:right"><div style="color:#7BAAC4;font-weight:700;text-transform:uppercase;letter-spacing:.8px;font-size:9px">Tanggal · Waktu</div><div style="font-weight:600;color:#0D2B3E;font-size:11px">${fmtDate(payload.tgl)} · ${timeStr}</div></div>
+      </div>
+      <div style="padding:14px 18px">
+        <table style="width:100%;border-collapse:collapse;margin-bottom:12px">
+          <tr><td style="padding:6px 0;font-size:12px;color:#4A6882">Grand Total COD</td><td style="text-align:right;font-weight:600;font-size:12px;color:#0D2B3E">${fmtRp(payload.grandTotal)}</td></tr>
+          <tr><td style="padding:6px 0;font-size:12px;color:#4A6882">Tagihan</td><td style="text-align:right;font-weight:600;font-size:12px;color:#0D2B3E">${fmtRp(payload.tagihan)}</td></tr>
+          <tr><td style="padding:6px 0;font-size:12px;color:#4A6882">Cicilan</td><td style="text-align:right;font-weight:600;font-size:12px;color:#16A34A">${fmtRp(payload.cicilan)}</td></tr>
+          <tr style="border-bottom:1px dashed #C5DFF0"><td colspan="2" style="padding:6px 0;font-size:10px;font-weight:700;color:#7BAAC4">Pengeluaran</td></tr>
+          <tr><td style="padding:6px 0;font-size:12px;color:#4A6882">Makan</td><td style="text-align:right;font-size:12px;color:#DC2626">-${fmtRp(payload.makan)}</td></tr>
+          <tr><td style="padding:6px 0;font-size:12px;color:#4A6882">Tips</td><td style="text-align:right;font-size:12px;color:#DC2626">-${fmtRp(payload.tips)}</td></tr>
+          <tr><td style="padding:6px 0;font-size:12px;color:#4A6882">Parkir</td><td style="text-align:right;font-size:12px;color:#DC2626">-${fmtRp(payload.parkir)}</td></tr>
+          <tr><td style="padding:6px 0;font-size:12px;color:#4A6882">Bensin</td><td style="text-align:right;font-size:12px;color:#DC2626">-${fmtRp(payload.bensin)}</td></tr>
+          <tr><td style="padding:6px 0;font-size:12px;color:#4A6882">Flazz</td><td style="text-align:right;font-size:12px;color:#DC2626">-${fmtRp(payload.flazz)}</td></tr>
+          <tr><td style="padding:6px 0;font-size:12px;color:#4A6882">Transfer</td><td style="text-align:right;font-size:12px;color:#DC2626">-${fmtRp(payload.transfer)}</td></tr>
+        </table>
+        <div style="border-top:1.5px dashed #C5DFF0;padding-top:10px;display:flex;justify-content:space-between;font-size:13px;font-weight:800;color:#0D2B3E"><span>TOTAL SETORAN</span><span style="color:#1A6DB5">${fmtRp(payload.total)}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;color:#4A6882;margin-top:4px"><span>Setor</span><span style="font-weight:600">${fmtRp(payload.setor)}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:800;margin-top:2px;color:${payload.selisih>=0?'#16A34A':'#DC2626'}"><span>SELISIH</span><span>${fmtRp(payload.selisih)}</span></div>
+      </div>
+      <div style="background:#EBF4FB;padding:12px 18px;text-align:center;font-size:11.5px;color:#3D6880;font-weight:600;border-top:1px dashed #C5DFF0">${esc(settings.bottomLine||'Terima kasih telah berbelanja!')}</div></div>`;
+    }
+    function showSetoranStrukModal(payload) {
+      const html = buildSetoranStrukHTML(payload);
+      document.getElementById('strukContent').innerHTML = `
+        <div class="modal-header"><h2>🧾 Struk Setoran</h2><button class="modal-close" onclick="closeStruk()">✕</button></div>
+        <div class="action-grid">
+          <div class="action-card" onclick="doSetoranPrint()"><div style="font-size:28px">🖨️</div><div style="font-size:13px;font-weight:700">Print</div></div>
+          <div class="action-card" onclick="doSetoranPng()"><div style="font-size:28px">📥</div><div style="font-size:13px;font-weight:700">Download PNG</div></div>
+          <div class="action-card" onclick="doSetoranWA()"><div style="font-size:28px">💬</div><div style="font-size:13px;font-weight:700">WhatsApp</div></div>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:14px;overflow:auto;max-height:480px;background:#e8f2f9;padding:14px"><div style="width:360px;margin:0 auto">${html}</div></div>`;
+      document.getElementById('strukModal').classList.add('show');
+    }
+    function doSetoranPrint() {
+      if (!_lastSetoranPayload) return;
+      const win = window.open('','_blank','width=420,height=700');
+      win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Struk Setoran</title></head><body style="margin:16px;background:#e8f2f9;display:flex;justify-content:center">');
+      win.document.write(buildSetoranStrukHTML(_lastSetoranPayload));
+      win.document.write('<script>window.onload=function(){window.print();}<\/script></body></html>');
+      win.document.close();
+    }
+    function doSetoranPng() {
+      if (!_lastSetoranPayload) return;
+      const off = document.getElementById('strukOffscreen');
+      off.style.cssText = 'position:fixed;left:-9999px;top:0;pointer-events:none;z-index:-1;background:#e8f2f9;padding:20px';
+      off.innerHTML = buildSetoranStrukHTML(_lastSetoranPayload);
+      const el = off.querySelector('#setoran-root');
+      if (!el) return Swal.fire('Error','Gagal render','error');
+      setTimeout(() => {
+        html2canvas(el, {backgroundColor:'#e8f2f9',scale:2.5,useCORS:true,allowTaint:true,logging:false}).then(canvas => {
+          const a = document.createElement('a');
+          a.download = 'Setoran-'+(_lastSetoranPayload.sales)+'-'+(_lastSetoranPayload.tgl)+'.png';
+          a.href = canvas.toDataURL('image/png');
+          document.body.appendChild(a); a.click(); document.body.removeChild(a);
+          off.innerHTML = '';
+          Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, icon: 'success', title: 'Struk setoran tersimpan' });
+        }).catch(err => { off.innerHTML=''; Swal.fire('Error',err.message,'error'); });
+      }, 400);
+    }
+    function doSetoranWA() {
+      if (!_lastSetoranPayload) return;
+      const p = _lastSetoranPayload;
+      let lines = ['🧾 *STRUK SETORAN*','*'+(settings.namaToko||'Tirta Kencana')+'*','━━━━━━━━━━'];
+      lines.push('Sales: *'+p.sales+'*');
+      lines.push('Tgl: '+fmtDate(p.tgl));
+      lines.push('━━━━━━━━━━');
+      lines.push('Grand COD : '+fmtRp(p.grandTotal));
+      lines.push('Tagihan   : '+fmtRp(p.tagihan));
+      lines.push('Cicilan   : '+fmtRp(p.cicilan));
+      lines.push('━━━━━━━━━━');
+      lines.push('Pengeluaran:');
+      lines.push('  Makan   : -'+fmtRp(p.makan));
+      lines.push('  Tips    : -'+fmtRp(p.tips));
+      lines.push('  Parkir  : -'+fmtRp(p.parkir));
+      lines.push('  Bensin  : -'+fmtRp(p.bensin));
+      lines.push('  Flazz   : -'+fmtRp(p.flazz));
+      lines.push('  Transfer: -'+fmtRp(p.transfer));
+      lines.push('━━━━━━━━━━');
+      lines.push('*TOTAL SETORAN : '+fmtRp(p.total)+'*');
+      lines.push('Setor      : '+fmtRp(p.setor));
+      lines.push('Selisih    : '+fmtRp(p.selisih));
+      window.open('https://wa.me/?text='+encodeURIComponent(lines.join('\n')),'_blank');
+    }
+
+    // ========== TRANSAKSI ==========
     function loadTransaksi() {
       document.getElementById('contentArea').innerHTML = `<div class="filter-bar"><input id="trxSearch" class="form-control" placeholder="🔍 Cari ID/pelanggan…" oninput="filterTrx()" style="min-width:160px"><select id="trxFilterStatus" class="form-control" onchange="filterTrx()"><option value="">Semua Status</option><option value="cod">COD</option><option value="transfer">Transfer</option><option value="qris">QRIS</option><option value="belumtransfer">Belum Transfer</option></select></div><div class="card" style="padding:0;overflow:hidden"><div class="table-wrap"><table><thead><tr><th>ID</th><th>Tgl</th><th>Customer</th><th>Sales</th><th>Gross</th><th>Diskon</th><th>Nett</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="trxTbody"></tbody></table></div></div>`;
       renderTrxTable();
@@ -572,6 +743,7 @@
         try { await gasCall('deleteTrx', [id]); } catch(e) { console.warn('Gagal hapus di GAS:', e); }
         filterTrx();
         Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Transaksi dihapus' });
+        syncMasterStockToSheet(); // update stok setelah hapus transaksi
       }
     }
     function openStrukById(id) {
@@ -686,7 +858,6 @@
 
       if (allItems.length === 0) { document.getElementById('rekapContent').innerHTML = h; return; }
 
-      // Rekap per Sales
       const salesMap = new Map();
       allItems.forEach(item => {
         const s = item.sales || 'Tanpa Sales';
@@ -710,7 +881,6 @@
         h += '</div>';
       });
 
-      // Rekap per SKU
       const skuMap = new Map();
       allItems.forEach(item => {
         if (!skuMap.has(item.sku)) skuMap.set(item.sku, []);
@@ -735,7 +905,6 @@
       else h += '<p class="text-sm text-center">Tidak ada data</p>';
       h += '</div>';
 
-      // Rekap per Customer dengan Subtotal = qty * nettPer
       const custMap = new Map();
       allItems.forEach(item => {
         if (!custMap.has(item.customer)) custMap.set(item.customer, []);
@@ -766,7 +935,6 @@
       else h += '<p class="text-sm text-center">Tidak ada data</p>';
       h += '</div>';
 
-      // Rekap per Qty
       const qtyAgg = {};
       allItems.forEach(item => {
         const key = `${item.customer}|${item.sku}`;
@@ -785,47 +953,109 @@
       document.getElementById('rekapContent').innerHTML = h;
     }
 
-    // ========== REKAP INPUT ==========
+    // ========== REKAP INPUT (dengan pilihan tanggal) ==========
     async function loadRekapInput() {
-      document.getElementById('contentArea').innerHTML = '<div class="loading">Memuat data rekap input...</div>';
-      try {
-        const data = await gasCall('getRekapInput', []);
-        renderRekapInput(data);
-      } catch(e) {
-        document.getElementById('contentArea').innerHTML = '<p class="text-center text-sm" style="padding:40px">Gagal memuat data: '+e.message+'</p>';
-      }
-      // Tambahkan laporan masuk barang dengan edit qty & status
-      let historyTable = buildStockDetailTable();
-      document.getElementById('contentArea').innerHTML += historyTable;
+      const today = new Date().toISOString().slice(0,10);
+      document.getElementById('contentArea').innerHTML = `
+        <div class="card"><div class="flex-row mb-2">
+          <div class="form-group col-1"><label>Tanggal</label><input type="date" id="rekapInputTgl" value="${today}"></div>
+          <button class="btn btn-primary" onclick="doRekapInput()" style="height:44px;align-self:flex-end">📊 Tampilkan</button>
+        </div></div>
+        <div id="rekapInputContent"><div class="text-center text-sm" style="padding:40px">Pilih tanggal lalu klik Tampilkan</div></div>
+      `;
+      doRekapInput(); // langsung tampilkan hari ini
     }
-    function buildStockDetailTable() {
-      if (!stockInHistory.length) return '<div class="card"><p class="text-sm text-center">Belum ada data input barang.</p></div>';
-      let rows = stockInHistory.slice(0,50).map(s => `<tr>
-        <td style="font-family:var(--mono);font-size:11px">${esc(s.id)}</td>
-        <td>${s.date||s.createdAt? (s.createdAt||s.date).substring(0,10) : '-'}</td>
+    function doRekapInput() {
+      const tgl = document.getElementById('rekapInputTgl').value;
+      if (!tgl) return Swal.fire('Error','Pilih tanggal','error');
+      // Hitung rekap secara lokal dari stockInHistory
+      const filtered = stockInHistory.filter(s => (s.date||s.tgl||'').substring(0,10) === tgl);
+      const data = hitungRekapLokal(filtered);
+      renderRekapInput(data);
+      // Tampilkan juga tabel detail input barang untuk tanggal tersebut
+      let historyTable = buildStockDetailTable(filtered);
+      document.getElementById('rekapInputContent').innerHTML += historyTable;
+    }
+    function hitungRekapLokal(list) {
+      const driverMap = {};
+      list.forEach(entry => {
+        const driver = entry.driver || '';
+        const rit = entry.rit || '';
+        const status = (entry.status||'').toLowerCase();
+        const sku = entry.sku || '';
+        const qty = entry.qty || 0;
+        const hargaModal = entry.hargaModal || 0;
+        const disc = entry.disc || 0;
+        const netModalPerItem = hargaModal - disc;
+        const totalRp = qty * netModalPerItem;
+        if (!driver || !rit || !sku || qty === 0) return;
+
+        if (!driverMap[driver]) driverMap[driver] = {};
+        if (!driverMap[driver][rit]) driverMap[driver][rit] = {
+          totalRp: 0,
+          kiriman: { totalRp: 0, items: {} },
+          titipan: { totalRp: 0, items: {} }
+        };
+        driverMap[driver][rit].totalRp += totalRp;
+        if (status === 'kiriman') {
+          driverMap[driver][rit].kiriman.totalRp += totalRp;
+          if (!driverMap[driver][rit].kiriman.items[sku]) driverMap[driver][rit].kiriman.items[sku] = 0;
+          driverMap[driver][rit].kiriman.items[sku] += qty;
+        } else if (status === 'titipan') {
+          driverMap[driver][rit].titipan.totalRp += totalRp;
+          if (!driverMap[driver][rit].titipan.items[sku]) driverMap[driver][rit].titipan.items[sku] = 0;
+          driverMap[driver][rit].titipan.items[sku] += qty;
+        }
+      });
+
+      const rekap = [], kiriman = [], titipan = [], kirimanQty = [], titipanQty = [];
+      for (const d in driverMap) {
+        for (const r in driverMap[d]) {
+          const entry = driverMap[d][r];
+          rekap.push({ driver: d, rit: r, total: entry.totalRp });
+          if (entry.kiriman.totalRp > 0) {
+            kiriman.push({ driver: d, rit: r, total: entry.kiriman.totalRp });
+            for (const sku in entry.kiriman.items) {
+              kirimanQty.push({ driver: d, rit: r, sku, qty: entry.kiriman.items[sku] });
+            }
+          }
+          if (entry.titipan.totalRp > 0) {
+            titipan.push({ driver: d, rit: r, total: entry.titipan.totalRp });
+            for (const sku in entry.titipan.items) {
+              titipanQty.push({ driver: d, rit: r, sku, qty: entry.titipan.items[sku] });
+            }
+          }
+        }
+      }
+      const sum = arr => arr.reduce((s,x)=>s+x.total,0);
+      return {
+        rekap, grandRekap: sum(rekap),
+        kiriman, grandKiriman: sum(kiriman),
+        titipan, grandTitipan: sum(titipan),
+        kirimanQty, titipanQty
+      };
+    }
+    function buildStockDetailTable(filteredList) {
+      if (!filteredList.length) return '<div class="card"><p class="text-sm text-center">Tidak ada data input barang untuk tanggal ini.</p></div>';
+      let rows = filteredList.slice(0,50).map(s => {
+        const netModal = (s.hargaModal - (s.disc||0)) * s.qty;
+        return `<tr>
+        <td style="font-family:var(--mono);font-size:10px">${esc(s.id)}</td>
+        <td>${s.date||s.tgl||''}</td>
         <td>${esc(s.sku)}</td>
         <td>${esc(s.nama||'')}</td>
-        <td><input type="number" id="stkQtyRekap-${s.id}" value="${s.qty}" min="0" style="width:60px;font-size:12px;padding:4px 6px"></td>
+        <td>${s.qty}</td>
+        <td>${fmtRp(s.disc||0)}</td>
+        <td>${fmtRp(s.hargaModal)}</td>
+        <td>${fmtRp(netModal)}</td>
         <td>${esc(s.driver||'-')}</td>
         <td>${esc(s.rit||'-')}</td>
-        <td><select id="stkStatusRekap-${s.id}" style="font-size:12px;padding:4px 6px"><option value="kiriman" ${s.status==='kiriman'?'selected':''}>Kiriman</option><option value="titipan" ${s.status==='titipan'?'selected':''}>Titipan</option></select></td>
-        <td style="font-size:10px">${s.createdAt ? s.createdAt.substring(0,19).replace('T',' ') : (s.date||'')}</td>
-        <td><button class="btn btn-success btn-sm" onclick="saveStockEditRekap('${s.id}')">💾</button></td>
-      </tr>`).join('');
-      return `<div class="card mt-2"><div class="card-title"><i class="fas fa-clipboard-list"></i> Laporan Masuk Barang</div>
-      <div class="table-wrap"><table><thead><tr><th>ID</th><th>Tanggal</th><th>SKU</th><th>Nama</th><th>Qty</th><th>Driver</th><th>Rit</th><th>Status</th><th>CreatedAt</th><th>Aksi</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
-    }
-    function saveStockEditRekap(id) {
-      const entry = stockInHistory.find(s => s.id === id);
-      if (!entry) return;
-      const newQty = parseInt(document.getElementById('stkQtyRekap-'+id)?.value);
-      const newStatus = document.getElementById('stkStatusRekap-'+id)?.value;
-      if (isNaN(newQty) || newQty < 0) return Swal.fire('Error', 'Qty tidak valid', 'error');
-      entry.qty = newQty;
-      entry.status = newStatus;
-      saveLocalData();
-      try { gasCall('updateInputBarang', [entry]); } catch(e) { console.warn('Gagal update input barang ke GAS:', e); }
-      Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Data diperbarui' });
+        <td>${s.status}</td>
+        <td>${s.createdAt||s.date||''}</td>
+      </tr>`;
+      }).join('');
+      return `<div class="card mt-2"><div class="card-title"><i class="fas fa-clipboard-list"></i> Detail Input Barang</div>
+      <div class="table-wrap"><table><thead><tr><th>ID</th><th>Tanggal</th><th>SKU</th><th>Nama</th><th>Qty</th><th>Disc</th><th>Harga Modal</th><th>Net Modal</th><th>Driver</th><th>Rit</th><th>Status</th><th>CreatedAt</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
     }
     function renderRekapInput(data) {
       let h = '';
@@ -834,7 +1064,7 @@
       h += buildRekapTable('TOTAL TITIPAN (Rp)', data.titipan, data.grandTitipan);
       h += buildQtyTable('TOTAL KIRIMAN (QTY)', data.kirimanQty);
       h += buildQtyTable('TOTAL TITIPAN (QTY)', data.titipanQty);
-      document.getElementById('contentArea').innerHTML = h || '<p class="text-center text-sm">Belum ada data input barang.</p>';
+      document.getElementById('rekapInputContent').innerHTML = h || '<p class="text-center text-sm">Belum ada data input barang.</p>';
     }
     function buildRekapTable(title, rows, grandTotal) {
       let html = `<div class="card"><div class="card-title"><i class="fas fa-table"></i> ${title}</div>`;
@@ -866,93 +1096,157 @@
       return html;
     }
 
-    // ========== SETORAN ==========
-    function loadSetoran() {
-      let sOpts = '<option value="">Pilih Sales</option>';
-      (settings.salesList||[]).forEach(s => { sOpts += `<option value="${esc(s)}">${esc(s)}</option>`; });
-      document.getElementById('contentArea').innerHTML = `<div class="card"><div class="flex-row mb-2"><div class="form-group col-1"><label>Tanggal</label><input type="date" id="setorTgl"></div><div class="form-group col-1"><label>Sales</label><select id="setorSales">${sOpts}</select></div><button class="btn btn-primary" onclick="doSetoran()" style="height:44px;align-self:flex-end">💰 Tampilkan</button></div></div><div id="setoranContent"><div class="text-center text-sm" style="padding:40px">Pilih tanggal & sales lalu klik Tampilkan</div></div>`;
-      document.getElementById('setorTgl').value = new Date().toISOString().slice(0,10);
-    }
-    function doSetoran() {
-      const tgl = document.getElementById('setorTgl').value;
-      const sales = document.getElementById('setorSales').value;
-      if (!tgl || !sales) return Swal.fire('Error','Pilih tanggal & sales!','error');
-      const filtered = allTrxList.filter(t => (t.tgl||'').substring(0,10) === tgl && (t.sales||'').toLowerCase().trim() === sales.toLowerCase().trim());
-      const grand = filtered.filter(t=>t.status==='cod').reduce((s,t)=>s+(t.nett||0),0);
-      document.getElementById('setoranContent').innerHTML = `<div class="card">
-        <div class="flex-between mb-2"><div><strong>💰 Setoran: ${esc(sales)}</strong><br><span class="text-sm">${fmtDate(tgl)}</span></div><div style="font-size:1.2rem;font-weight:800;color:var(--biru)">Grand Total COD: ${fmtRp(grand)}</div></div>
-        <input type="hidden" id="stGrand" value="${grand}">
-        <div class="form-group"><label>🍽️ Uang Makan</label><input type="number" id="stMakan" value="0" min="0" oninput="calcSetoran()"></div>
-        <div class="form-group"><label>🎁 Tips</label><input type="number" id="stTips" value="0" min="0" oninput="calcSetoran()"></div>
-        <div class="form-group"><label>🅿️ Parkir</label><input type="number" id="stParkir" value="0" min="0" oninput="calcSetoran()"></div>
-        <div class="form-group"><label>⛽ Bensin</label><input type="number" id="stBensin" value="0" min="0" oninput="calcSetoran()"></div>
-        <div class="form-group"><label>💳 Flazz</label><input type="number" id="stFlazz" value="0" min="0" oninput="calcSetoran()"></div>
-        <div class="form-group"><label>🏦 Transfer</label><input type="number" id="stTransfer" value="0" min="0" oninput="calcSetoran()"></div>
-        <div class="form-group"><label>💵 Cicilan</label><input type="number" id="stCicilan" value="0" min="0" oninput="calcSetoran()"></div>
-        <div class="form-group"><label>📄 Tagihan</label><input type="number" id="stTagihan" value="0" min="0" oninput="calcSetoran()"></div>
-        <div class="total-box"><div class="flex-between"><span>TOTAL</span><span id="stTotal">Rp 0</span></div></div>
-        <div class="form-group"><label>✅ SETOR</label><input type="number" id="stSetor" value="0" min="0" oninput="calcSetoran()"></div>
-        <div class="total-box danger"><div class="flex-between"><span>SELISIH</span><span id="stSelisih">Rp 0</span></div></div>
-        <button class="btn btn-primary btn-block mt-2" onclick="saveSetoran()">💾 Simpan Setoran</button></div>`;
-      calcSetoran();
-    }
-    function calcSetoran() {
-      const gv = id => parseFloat(document.getElementById(id)?.value)||0;
-      const grand = gv('stGrand');
-      const pengeluaran = gv('stMakan')+gv('stTips')+gv('stParkir')+gv('stBensin')+gv('stFlazz')+gv('stTransfer')+gv('stCicilan');
-      const tagihan = gv('stTagihan');
-      const total = grand + tagihan - pengeluaran;
-      const setor = gv('stSetor');
-      const selisih = total - setor;
-      document.getElementById('stTotal').textContent = fmtRp(total);
-      document.getElementById('stSelisih').textContent = fmtRp(selisih);
-    }
-    async function saveSetoran() {
-      const payload = {
-        tgl: document.getElementById('setorTgl').value,
-        sales: document.getElementById('setorSales').value,
-        grandTotal: parseFloat(document.getElementById('stGrand')?.value)||0,
-        makan: parseFloat(document.getElementById('stMakan')?.value)||0,
-        tips: parseFloat(document.getElementById('stTips')?.value)||0,
-        parkir: parseFloat(document.getElementById('stParkir')?.value)||0,
-        bensin: parseFloat(document.getElementById('stBensin')?.value)||0,
-        flazz: parseFloat(document.getElementById('stFlazz')?.value)||0,
-        transfer: parseFloat(document.getElementById('stTransfer')?.value)||0,
-        cicilan: parseFloat(document.getElementById('stCicilan')?.value)||0,
-        tagihan: parseFloat(document.getElementById('stTagihan')?.value)||0,
-        total: parseFloat(document.getElementById('stTotal')?.textContent.replace(/[^0-9]/g,''))||0,
-        setor: parseFloat(document.getElementById('stSetor')?.value)||0,
-        selisih: parseFloat(document.getElementById('stSelisih')?.textContent.replace(/[^0-9]/g,''))||0
-      };
-      try { await gasCall('saveSetoran', [payload]); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Setoran tersimpan' }); } catch(e) { Swal.fire('Error',e.message,'error'); }
-    }
-
     // ========== INPUT BARANG ==========
     function loadInputBarang() {
       let pOpts = '<option value="">Pilih Produk</option>';
       products.forEach(p => { pOpts += `<option value="${p.sku}">${p.sku} - ${p.nama}</option>`; });
       let dOpts = '<option value="">Pilih Driver</option>';
       drivers.forEach(d => { dOpts += `<option>${d}</option>`; });
+      const inpId = 'INP-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).substring(2,4).toUpperCase();
       document.getElementById('contentArea').innerHTML = `<div class="card"><div class="card-title"><i class="fas fa-boxes"></i> Input Barang Masuk</div>
-      <div class="form-group"><label>Produk</label><select id="stkSku" onchange="isiModalOtomatis()">${pOpts}</select></div>
-      <div class="flex-row"><div class="form-group col-1"><label>Qty</label><input type="number" id="stkQty" value="1" min="1"></div><div class="form-group col-1"><label>Harga Modal (auto)</label><input type="number" id="stkModal" value="0" readonly></div></div>
-      <div class="flex-row"><div class="form-group col-1"><label>Driver *</label><select id="stkDriver">${dOpts}</select></div><div class="form-group col-1"><label>Rit *</label><input id="stkRit" placeholder="Rit"></div></div>
-      <div class="form-group"><label>Status</label><select id="stkStatus"><option value="kiriman">Kiriman</option><option value="titipan">Titipan</option></select></div>
-      <button class="btn btn-primary btn-block" onclick="saveStockIn()">Simpan</button></div>
+      <div class="form-group"><label>ID Input</label><input id="inpId" readonly value="${inpId}" style="font-family:var(--mono)"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><strong style="font-size:0.8rem">📦 Item</strong><button class="btn btn-outline btn-sm" onclick="addItemInputRow()">+ Item</button></div>
+      <div id="inputItemsContainer"></div>
+      <div class="total-box"><div class="flex-between"><span>Total Qty</span><span id="inpTotalQty">0</span></div><div class="flex-between"><span>Gross Modal</span><span id="inpGrossModal" style="font-family:var(--mono)">Rp 0</span></div><div class="flex-between"><span>Total Disc</span><span id="inpTotalDisc" style="font-family:var(--mono);color:var(--merah)">Rp 0</span></div><div class="flex-between" style="font-size:1.1rem;font-weight:800"><span>TOTAL MODAL BERSIH</span><span id="inpNetModal" style="font-family:var(--mono);color:var(--biru)">Rp 0</span></div></div>
+      <div class="flex-row"><div class="form-group col-1"><label>Driver *</label><select id="inpDriver">${dOpts}</select></div><div class="form-group col-1"><label>Rit *</label><input id="inpRit" placeholder="Rit"></div></div>
+      <div class="form-group"><label>Status</label><select id="inpStatus"><option value="kiriman">Kiriman</option><option value="titipan">Titipan</option></select></div>
+      <button class="btn btn-primary btn-block" onclick="saveStockIn()">💾 Simpan Input Barang</button></div>
       <div class="card"><div class="card-title"><i class="fas fa-history"></i> Riwayat Barang Masuk</div><div id="stkHistory"></div></div>`;
+      addItemInputRow();
       renderStockHistory();
       syncStockHistoryFromGAS();
     }
-    function isiModalOtomatis() {
-      const sku = document.getElementById('stkSku')?.value;
+    function addItemInputRow(skuVal) {
+      let pOpts = '<option value="">-- pilih --</option>';
+      products.forEach(p => { pOpts += `<option value="${p.sku}">${p.sku} - ${p.nama}</option>`; });
+      const div = document.createElement('div');
+      div.className = 'cart-item-row';
+      div.innerHTML = `<select class="cart-item-select" style="flex:2;min-width:100px" onchange="isiModalInputRow(this)">${pOpts}</select>
+      <input class="cart-qty" type="number" min="1" value="1" style="width:50px" oninput="recalcInputTotals()">
+      <input class="cart-disc" type="number" min="0" value="0" placeholder="Harga Modal" readonly style="width:70px;background:var(--biru-muda)">
+      <input class="cart-disc" type="number" min="0" value="0" placeholder="Disc" style="width:55px" oninput="recalcInputTotals()">
+      <button class="btn btn-danger btn-sm" onclick="this.parentElement.remove();recalcInputTotals()">✕</button>`;
+      document.getElementById('inputItemsContainer').appendChild(div);
+      if (skuVal) {
+        const sel = div.querySelector('select');
+        sel.value = skuVal;
+        isiModalInputRow(sel);
+      }
+      recalcInputTotals();
+    }
+    function isiModalInputRow(sel) {
+      const sku = sel.value;
       const p = products.find(x => x.sku === sku);
-      if (p) document.getElementById('stkModal').value = p.modal || 0;
+      const row = sel.closest('.cart-item-row');
+      if (!row) return;
+      const inputs = row.querySelectorAll('input');
+      if (p) {
+        inputs[1].value = p.modal || 0;
+      } else {
+        inputs[1].value = 0;
+      }
+      recalcInputTotals();
+    }
+    function recalcInputTotals() {
+      const rows = document.querySelectorAll('#inputItemsContainer .cart-item-row');
+      let totalQty = 0, grossModal = 0, totalDisc = 0;
+      rows.forEach(row => {
+        const inputs = row.querySelectorAll('input');
+        const qty = parseInt(inputs[0].value) || 0;
+        const harga = parseFloat(inputs[1].value) || 0;
+        const disc = parseFloat(inputs[2].value) || 0;
+        totalQty += qty;
+        grossModal += qty * harga;
+        totalDisc += qty * disc;
+      });
+      document.getElementById('inpTotalQty').textContent = totalQty;
+      document.getElementById('inpGrossModal').textContent = fmtRp(grossModal);
+      document.getElementById('inpTotalDisc').textContent = fmtRp(totalDisc);
+      document.getElementById('inpNetModal').textContent = fmtRp(grossModal - totalDisc);
+    }
+    function getInputItems() {
+      const rows = document.querySelectorAll('#inputItemsContainer .cart-item-row');
+      const items = [];
+      rows.forEach(row => {
+        const sel = row.querySelector('select');
+        const inputs = row.querySelectorAll('input');
+        const sku = sel.value;
+        const p = products.find(x => x.sku === sku);
+        if (!sku || !p) return;
+        const qty = parseInt(inputs[0].value) || 0;
+        const hargaModal = parseFloat(inputs[1].value) || 0;
+        const disc = parseFloat(inputs[2].value) || 0;
+        if (qty > 0) {
+          items.push({ sku, nama: p.nama, qty, hargaModal, disc, netModal: (hargaModal - disc) * qty });
+        }
+      });
+      return items;
+    }
+    async function saveStockIn() {
+      const inpId = document.getElementById('inpId').value.trim();
+      const driver = document.getElementById('inpDriver').value;
+      const rit = document.getElementById('inpRit').value.trim();
+      const status = document.getElementById('inpStatus').value;
+      if (!driver || !rit) return Swal.fire('Error','Driver dan Rit wajib diisi','error');
+      const items = getInputItems();
+      if (!items.length) return Swal.fire('Error','Minimal satu item harus diisi','error');
+      const now = new Date();
+      const date = now.toISOString().slice(0,10);
+      const createdAt = now.toISOString().slice(0,19).replace('T',' ');
+      const entries = items.map((it, idx) => ({
+        id: inpId + '-' + (idx+1),
+        groupId: inpId,
+        sku: it.sku,
+        nama: it.nama,
+        qty: it.qty,
+        hargaModal: it.hargaModal,
+        disc: it.disc,
+        netModal: it.netModal,
+        driver,
+        rit,
+        status,
+        date,
+        createdAt
+      }));
+      entries.forEach(e => stockInHistory.unshift(e));
+      saveLocalData();
+      try {
+        for (const e of entries) {
+          await gasCall('saveInputBarang', [e]);
+        }
+      } catch(e) { console.warn('Gagal simpan ke GAS:', e); }
+      Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Barang masuk dicatat' });
+      loadInputBarang();
+      syncMasterStockToSheet(); // update master stock setelah input barang
     }
     function renderStockHistory() {
       const el = document.getElementById('stkHistory');
       if (!el) return;
       if (!stockInHistory.length) { el.innerHTML = '<p class="text-sm text-center">Memuat data...</p>'; return; }
-      el.innerHTML = `<div class="table-wrap"><table><thead><tr><th>ID</th><th>SKU</th><th>Qty</th><th>Driver</th><th>Rit</th><th>Status</th></tr></thead><tbody>${stockInHistory.slice(0,20).map(s => `<tr><td>${s.id}</td><td>${s.sku}</td><td>${s.qty}</td><td>${s.driver||'-'}</td><td>${s.rit||'-'}</td><td><span class="status-badge status-${s.status}">${s.status}</span></td></tr>`).join('')}</tbody></table></div>`;
+      el.innerHTML = `<div class="table-wrap"><table><thead><tr>
+        <th>ID</th><th>Tanggal</th><th>SKU</th><th>Nama</th><th>Qty</th>
+        <th>Harga Modal</th><th>Disc</th><th>Harga Modal Net</th>
+        <th>Driver</th><th>Rit</th><th>Status</th><th>CreatedAt</th>
+      </tr></thead><tbody>
+        ${stockInHistory.slice(0,30).map(s => {
+          const disc = s.disc || 0;
+          const netModal = (s.hargaModal - disc) * s.qty;
+          return `<tr>
+            <td style="font-family:var(--mono);font-size:10px">${esc(s.id)}</td>
+            <td>${s.date || (s.createdAt ? s.createdAt.substring(0,10) : '-')}</td>
+            <td>${esc(s.sku)}</td>
+            <td>${esc(s.nama||'')}</td>
+            <td>${s.qty}</td>
+            <td style="font-family:var(--mono);font-size:11px">${fmtRp(s.hargaModal)}</td>
+            <td style="font-family:var(--mono);font-size:11px">${fmtRp(disc)}</td>
+            <td style="font-weight:700;color:var(--biru);font-family:var(--mono);font-size:11px">${fmtRp(netModal)}</td>
+            <td>${esc(s.driver||'-')}</td>
+            <td>${esc(s.rit||'-')}</td>
+            <td><span class="status-badge status-${s.status}">${s.status}</span></td>
+            <td style="font-size:10px">${s.createdAt ? s.createdAt.substring(0,19).replace('T',' ') : (s.date||'')}</td>
+          </tr>`;
+        }).join('')}
+      </tbody></table></div>`;
     }
     async function syncStockHistoryFromGAS() {
       try {
@@ -964,26 +1258,37 @@
         }
       } catch(e) { console.warn('Gagal ambil riwayat input barang:', e); }
     }
-    async function saveStockIn() {
-      const sku = document.getElementById('stkSku')?.value, qty = parseInt(document.getElementById('stkQty')?.value)||0;
-      const driver = document.getElementById('stkDriver')?.value, rit = document.getElementById('stkRit')?.value.trim();
-      if (!sku || !qty || !driver || !rit) return Swal.fire('Error','Lengkapi semua field','error');
-      const p = products.find(x=>x.sku===sku);
-      const now = new Date();
-      const createdAt = now.toISOString().slice(0,19).replace('T',' ');
-      const entry = { id:'STK-'+Date.now(), sku, nama:p?.nama||'', qty, hargaModal: parseFloat(document.getElementById('stkModal')?.value)||0, driver, rit, status: document.getElementById('stkStatus')?.value, date: now.toISOString().slice(0,10), createdAt };
-      stockInHistory.unshift(entry);
-      saveLocalData();
-      try { await gasCall('saveInputBarang', [entry]); } catch(e) { console.warn('Gagal simpan input barang ke GAS:', e); }
-      Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Barang masuk dicatat' });
-      renderStockHistory();
-    }
 
-    // ========== GUDANG ==========
-    function loadGudang() {
-      const masterStock = hitungMasterStock();
-      let h = `<div class="card"><div class="card-title"><i class="fas fa-warehouse"></i> Master Stock</div>
-      <div class="table-wrap"><table><thead><tr><th>SKU</th><th>Nama</th><th>Stok Awal</th><th>Masuk (Kiriman)</th><th>Keluar (Jual)</th><th>Stok Akhir</th></tr></thead><tbody id="masterStockTbody"></tbody></table></div></div>`;
+    // ========== GUDANG & MASTER STOCK SYNC ==========
+    async function loadGudang() {
+      document.getElementById('contentArea').innerHTML = '<div class="loading">Memuat master stock...</div>';
+      try {
+        // Ambil master stock dari sheet khusus di GAS
+        let stockData = await gasCall('getMasterStockSheet', []);
+        if (!Array.isArray(stockData) || stockData.length === 0) {
+          // Jika belum ada, hitung ulang dan simpan
+          stockData = hitungMasterStock();
+          await gasCall('saveMasterStock', [stockData]);
+        }
+        renderMasterStockFromData(stockData);
+      } catch (e) {
+        // fallback ke hitung lokal
+        const localStock = hitungMasterStock();
+        renderMasterStockFromData(localStock);
+      }
+    }
+    function renderMasterStockFromData(stockData) {
+      let h = `<div class="card"><div class="card-title"><i class="fas fa-warehouse"></i> Master Stock (Sinkron Google Sheets)</div>
+      <div class="table-wrap"><table><thead><tr><th>SKU</th><th>Nama</th><th>Stok Awal</th><th>Masuk</th><th>Keluar</th><th>Stok Akhir</th></tr></thead><tbody>`;
+      if (stockData.length) {
+        stockData.forEach(item => {
+          h += `<tr><td style="font-family:var(--mono);font-size:11px">${esc(item.sku)}</td><td>${esc(item.nama)}</td><td>${item.stokAwal||0}</td><td>${item.masuk||0}</td><td>${item.keluar||0}</td><td class="fw-bold" style="color:var(--biru)">${item.stokAkhir||0}</td></tr>`;
+        });
+      } else {
+        h += '<tr><td colspan="6" class="text-center text-sm">Belum ada data</td></tr>';
+      }
+      h += '</tbody></table></div></div>';
+      // Rekap barang masuk
       if (stockInHistory.length) {
         const tq = stockInHistory.reduce((s,i)=>s+i.qty,0);
         const tm = stockInHistory.reduce((s,i)=>s+(i.qty*(i.hargaModal||0)),0);
@@ -995,22 +1300,6 @@
         h += '</tbody></table></div></div>';
       }
       document.getElementById('contentArea').innerHTML = h;
-      renderMasterStockTable(masterStock);
-      syncMasterStockFromGAS();
-    }
-    function renderMasterStockTable(data) {
-      const tb = document.getElementById('masterStockTbody');
-      if (!tb) return;
-      if (!data.length) { tb.innerHTML = '<tr><td colspan="6" class="text-center text-sm">Belum ada data</td></tr>'; return; }
-      tb.innerHTML = data.map(item => `<tr><td style="font-family:var(--mono);font-size:11px">${esc(item.sku)}</td><td>${esc(item.nama)}</td><td>${item.stokAwal}</td><td>${item.masuk}</td><td>${item.keluar}</td><td class="fw-bold" style="color:var(--biru)">${item.stokAkhir}</td></tr>`).join('');
-    }
-    async function syncMasterStockFromGAS() {
-      try {
-        const stock = await gasCall('getMasterStock', []);
-        if (Array.isArray(stock) && stock.length > 0) {
-          renderMasterStockTable(stock);
-        }
-      } catch(e) { console.warn('Gagal ambil master stock:', e); }
     }
     function hitungMasterStock() {
       const map = new Map();
@@ -1022,7 +1311,22 @@
           if (existing) existing.keluar += item.qty || 0;
         });
       });
-      return Array.from(map.values()).map(item => ({ ...item, stokAkhir: item.stokAwal + item.masuk - item.keluar }));
+      return Array.from(map.values()).map(item => ({
+        sku: item.sku,
+        nama: item.nama,
+        stokAwal: item.stokAwal,
+        masuk: item.masuk,
+        keluar: item.keluar,
+        stokAkhir: item.stokAwal + item.masuk - item.keluar
+      }));
+    }
+    async function syncMasterStockToSheet() {
+      try {
+        const stock = hitungMasterStock();
+        await gasCall('saveMasterStock', [stock]);
+      } catch(e) {
+        console.warn('Gagal sinkron master stock ke sheet:', e);
+      }
     }
 
     // ========== PRODUK ==========
@@ -1071,9 +1375,10 @@
       closeProdukForm();
       renderProdukList();
       Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Produk disimpan' });
+      syncMasterStockToSheet(); // update master stock jika produk berubah
     }
     function deleteProduk(idx) {
-      Swal.fire({ title:'Hapus?', text:'Hapus '+products[idx].nama+'?', icon:'warning', showCancelButton:true }).then(r => { if (r.isConfirmed) { products.splice(idx,1); saveLocalData(); renderProdukList(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Produk dihapus' }); } });
+      Swal.fire({ title:'Hapus?', text:'Hapus '+products[idx].nama+'?', icon:'warning', showCancelButton:true }).then(r => { if (r.isConfirmed) { products.splice(idx,1); saveLocalData(); renderProdukList(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Produk dihapus' }); syncMasterStockToSheet(); } });
     }
 
     // ========== PELANGGAN ==========
