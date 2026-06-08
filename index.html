@@ -47,7 +47,6 @@
     .btn-install{background:#8B5CF6;color:white;border:none;padding:6px 10px;border-radius:8px;font-size:0.65rem;cursor:pointer;font-weight:600;display:none;}
     .btn-scan{background:var(--teal);color:white;border:none;} .btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border);} .btn-icon{padding:6px 8px;min-width:32px;justify-content:center;}
     
-    /* Menu Tabs dengan scrollbar kecil */
     .menu-tabs { 
       display:flex; overflow-x:auto; gap:4px; padding:8px 10px; 
       background:var(--card); border-bottom:1px solid var(--border); 
@@ -139,7 +138,7 @@
 
   <script>
     // ══════════════════════════════════════════════════════
-    //  KONFIGURASI GAS
+    //  KONFIGURASI GAS - ORIGINAL TIDAK BERUBAH
     // ══════════════════════════════════════════════════════
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbyIJyLA7dcMko4SizGPs7fA9rL7VobwrSpSzWZHsIwA_S5SbAl5g588YAU8gizKsiFQcw/exec';
 
@@ -176,7 +175,7 @@
       });
     }
 
-    // Global state
+    // Global state - ORIGINAL
     let currentUser = null, currentPage = 'dashboard';
     let products = [], pelanggan = [], allTrxList = [], allCustomers = [], stockInHistory = [], setoranHistory = [];
     let drivers = ['oji','sps'];
@@ -186,10 +185,13 @@
     let _scannerMode = null, _scanTargetIdx = null, _scanResult = '', _scanStream = null, _scanTimer = null, _scannerActive = false;
     let _strKData = null;
     let _lastSetoranPayload = null;
+    
+    // TAMBAHAN: Master stock dengan tanggal
+    let masterStockHistory = {};
 
     function saveLocalData() {
       localStorage.setItem('tirtaFullData', JSON.stringify({
-        products, pelanggan, allTrxList, allCustomers, stockInHistory, setoranHistory, drivers, settings, allUsers
+        products, pelanggan, allTrxList, allCustomers, stockInHistory, setoranHistory, drivers, settings, allUsers, masterStockHistory
       }));
     }
     function loadLocalData() {
@@ -201,6 +203,7 @@
           allCustomers = d.allCustomers || []; stockInHistory = d.stockInHistory || [];
           setoranHistory = d.setoranHistory || []; drivers = d.drivers || ['oji','sps'];
           settings = { ...settings, ...(d.settings || {}) }; allUsers = d.allUsers || [];
+          masterStockHistory = d.masterStockHistory || {};
         } catch(e) {}
       }
       if (products.length === 0) products = [
@@ -312,7 +315,7 @@
       }
     }
 
-    // ========== DASHBOARD ==========
+    // ========== DASHBOARD - ORIGINAL ==========
     function loadDashboard() {
       const cod = allTrxList.filter(t=>t.status==='cod').reduce((s,t)=>s+(t.nett||0),0);
       const transfer = allTrxList.filter(t=>t.status==='transfer').reduce((s,t)=>s+(t.nett||0),0);
@@ -334,7 +337,7 @@
       document.getElementById('contentArea').innerHTML = h;
     }
 
-    // ========== PENJUALAN ==========
+    // ========== PENJUALAN - ORIGINAL ==========
     let _itemIdx = 0;
     function loadPenjualan() {
       let pOpts = '<option value="">Pilih Produk</option>';
@@ -430,10 +433,10 @@
       Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Transaksi tersimpan' });
       resetTrx();
       showStrukModal();
-      syncMasterStockToSheet(); // perbarui master stock setelah transaksi
+      syncMasterStockToSheet();
     }
 
-    // ========== STRUK ==========
+    // ========== STRUK - ORIGINAL ==========
     function buildStrukHTML(data) {
       const trx = data.trx, items = data.items || [];
       const ns = (trx.status||'').toLowerCase().replace(/\s/g,'');
@@ -534,7 +537,7 @@
       window.open('https://wa.me/?text='+encodeURIComponent(lines.join('\n')),'_blank');
     }
 
-    // ========== SETORAN ==========
+    // ========== SETORAN - ORIGINAL ==========
     function loadSetoran() {
       let sOpts = '<option value="">Pilih Sales</option>';
       (settings.salesList||[]).forEach(s => { sOpts += `<option value="${esc(s)}">${esc(s)}</option>`; });
@@ -692,7 +695,7 @@
       window.open('https://wa.me/?text='+encodeURIComponent(lines.join('\n')),'_blank');
     }
 
-    // ========== TRANSAKSI ==========
+    // ========== TRANSAKSI - ORIGINAL ==========
     function loadTransaksi() {
       document.getElementById('contentArea').innerHTML = `<div class="filter-bar"><input id="trxSearch" class="form-control" placeholder="🔍 Cari ID/pelanggan…" oninput="filterTrx()" style="min-width:160px"><select id="trxFilterStatus" class="form-control" onchange="filterTrx()"><option value="">Semua Status</option><option value="cod">COD</option><option value="transfer">Transfer</option><option value="qris">QRIS</option><option value="belumtransfer">Belum Transfer</option></select></div><div class="card" style="padding:0;overflow:hidden"><div class="table-wrap"><table><thead><tr><th>ID</th><th>Tgl</th><th>Customer</th><th>Sales</th><th>Gross</th><th>Diskon</th><th>Nett</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="trxTbody"></tbody></table></div></div>`;
       renderTrxTable();
@@ -743,7 +746,7 @@
         try { await gasCall('deleteTrx', [id]); } catch(e) { console.warn('Gagal hapus di GAS:', e); }
         filterTrx();
         Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Transaksi dihapus' });
-        syncMasterStockToSheet(); // update stok setelah hapus transaksi
+        syncMasterStockToSheet();
       }
     }
     function openStrukById(id) {
@@ -753,7 +756,7 @@
       showStrukModal();
     }
 
-    // ========== SCANNER ==========
+    // ========== SCANNER - ORIGINAL ==========
     function openScanner(mode, idx) {
       _scannerMode = mode; _scanTargetIdx = idx ?? null; _scanResult = '';
       document.getElementById('scannerResult').innerHTML = 'Memulai kamera...';
@@ -817,7 +820,7 @@
       }, 200);
     }
 
-    // ========== REKAP ==========
+    // ========== REKAP - ORIGINAL ==========
     function loadRekap() {
       let sOpts = '<option value="">Semua Sales</option>';
       (settings.salesList||[]).forEach(s => { sOpts += `<option value="${esc(s)}">${esc(s)}</option>`; });
@@ -953,7 +956,7 @@
       document.getElementById('rekapContent').innerHTML = h;
     }
 
-    // ========== REKAP INPUT (dengan pilihan tanggal) ==========
+    // ========== REKAP INPUT - ORIGINAL ==========
     async function loadRekapInput() {
       const today = new Date().toISOString().slice(0,10);
       document.getElementById('contentArea').innerHTML = `
@@ -963,16 +966,14 @@
         </div></div>
         <div id="rekapInputContent"><div class="text-center text-sm" style="padding:40px">Pilih tanggal lalu klik Tampilkan</div></div>
       `;
-      doRekapInput(); // langsung tampilkan hari ini
+      doRekapInput();
     }
     function doRekapInput() {
       const tgl = document.getElementById('rekapInputTgl').value;
       if (!tgl) return Swal.fire('Error','Pilih tanggal','error');
-      // Hitung rekap secara lokal dari stockInHistory
       const filtered = stockInHistory.filter(s => (s.date||s.tgl||'').substring(0,10) === tgl);
       const data = hitungRekapLokal(filtered);
       renderRekapInput(data);
-      // Tampilkan juga tabel detail input barang untuk tanggal tersebut
       let historyTable = buildStockDetailTable(filtered);
       document.getElementById('rekapInputContent').innerHTML += historyTable;
     }
@@ -1096,7 +1097,7 @@
       return html;
     }
 
-    // ========== INPUT BARANG ==========
+    // ========== INPUT BARANG - ORIGINAL ==========
     function loadInputBarang() {
       let pOpts = '<option value="">Pilih Produk</option>';
       products.forEach(p => { pOpts += `<option value="${p.sku}">${p.sku} - ${p.nama}</option>`; });
@@ -1217,7 +1218,7 @@
       } catch(e) { console.warn('Gagal simpan ke GAS:', e); }
       Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Barang masuk dicatat' });
       loadInputBarang();
-      syncMasterStockToSheet(); // update master stock setelah input barang
+      syncMasterStockToSheet();
     }
     function renderStockHistory() {
       const el = document.getElementById('stkHistory');
@@ -1259,58 +1260,162 @@
       } catch(e) { console.warn('Gagal ambil riwayat input barang:', e); }
     }
 
-    // ========== GUDANG & MASTER STOCK SYNC ==========
+    // ========== GUDANG & MASTER STOCK (DIPERBARUI) ==========
     async function loadGudang() {
-      document.getElementById('contentArea').innerHTML = '<div class="loading">Memuat master stock...</div>';
-      try {
-        // Ambil master stock dari sheet khusus di GAS
-        let stockData = await gasCall('getMasterStockSheet', []);
-        if (!Array.isArray(stockData) || stockData.length === 0) {
-          // Jika belum ada, hitung ulang dan simpan
-          stockData = hitungMasterStock();
-          await gasCall('saveMasterStock', [stockData]);
-        }
-        renderMasterStockFromData(stockData);
-      } catch (e) {
-        // fallback ke hitung lokal
-        const localStock = hitungMasterStock();
-        renderMasterStockFromData(localStock);
-      }
+      const today = new Date().toISOString().slice(0,10);
+      document.getElementById('contentArea').innerHTML = `
+        <div class="card">
+          <div class="flex-row mb-2">
+            <div class="form-group col-1"><label>Tanggal Stock</label><input type="date" id="gudangTgl" value="${today}"></div>
+            <button class="btn btn-primary" onclick="loadGudangByDate()" style="height:44px;align-self:flex-end">📊 Tampilkan</button>
+            <button class="btn btn-success" onclick="initNewDayStock()" style="height:44px;align-self:flex-end">🔄 Hari Baru</button>
+          </div>
+        </div>
+        <div id="gudangContent"><div class="loading">Memuat master stock...</div></div>
+      `;
+      loadGudangByDate();
     }
-    function renderMasterStockFromData(stockData) {
-      let h = `<div class="card"><div class="card-title"><i class="fas fa-warehouse"></i> Master Stock (Sinkron Google Sheets)</div>
-      <div class="table-wrap"><table><thead><tr><th>SKU</th><th>Nama</th><th>Stok Awal</th><th>Masuk</th><th>Keluar</th><th>Stok Akhir</th></tr></thead><tbody>`;
-      if (stockData.length) {
+    
+    function loadGudangByDate() {
+      const tgl = document.getElementById('gudangTgl')?.value || new Date().toISOString().slice(0,10);
+      document.getElementById('gudangContent').innerHTML = '<div class="loading">Memuat master stock...</div>';
+      
+      let stockData = masterStockHistory[tgl];
+      
+      if (!stockData || stockData.length === 0) {
+        stockData = hitungMasterStockByDate(tgl);
+        masterStockHistory[tgl] = stockData;
+        saveLocalData();
+      }
+      
+      renderMasterStockFromData(stockData, tgl);
+      
+      try {
+        gasCall('getMasterStockByDate', [tgl]).then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+            masterStockHistory[tgl] = data;
+            saveLocalData();
+            renderMasterStockFromData(data, tgl);
+          }
+        }).catch(e => console.warn('Gagal ambil dari GAS:', e));
+      } catch(e) {}
+    }
+    
+    function initNewDayStock() {
+      Swal.fire({
+        title: 'Inisialisasi Hari Baru?',
+        text: 'Stok akhir kemarin akan jadi stok awal hari ini. Masuk & keluar direset 0.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Ya',
+        cancelButtonText: 'Batal'
+      }).then(result => {
+        if (result.isConfirmed) {
+          const today = new Date().toISOString().slice(0,10);
+          const yesterday = getYesterdayDate(today);
+          
+          let yesterdayStock = masterStockHistory[yesterday];
+          if (!yesterdayStock || yesterdayStock.length === 0) {
+            yesterdayStock = hitungMasterStockByDate(yesterday);
+            masterStockHistory[yesterday] = yesterdayStock;
+          }
+          
+          const newStock = yesterdayStock.map(item => ({
+            sku: item.sku,
+            nama: item.nama,
+            stokAwal: item.stokAkhir || 0,
+            masuk: 0,
+            keluar: 0,
+            stokAkhir: item.stokAkhir || 0
+          }));
+          
+          masterStockHistory[today] = newStock;
+          saveLocalData();
+          
+          try {
+            gasCall('saveMasterStock', [{ date: today, stock: newStock }]);
+          } catch(e) { console.warn('Gagal simpan ke GAS:', e); }
+          
+          renderMasterStockFromData(newStock, today);
+          Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, icon: 'success', title: 'Stok hari baru siap' });
+        }
+      });
+    }
+    
+    function renderMasterStockFromData(stockData, date) {
+      let h = `<div class="card">
+        <div class="card-title"><i class="fas fa-warehouse"></i> Master Stock: ${fmtDate(date)}</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>SKU</th><th>Nama</th><th>Stok Awal</th><th>Masuk</th><th>Keluar</th><th>Stok Akhir</th></tr></thead>
+            <tbody>`;
+      
+      if (stockData && stockData.length) {
         stockData.forEach(item => {
-          h += `<tr><td style="font-family:var(--mono);font-size:11px">${esc(item.sku)}</td><td>${esc(item.nama)}</td><td>${item.stokAwal||0}</td><td>${item.masuk||0}</td><td>${item.keluar||0}</td><td class="fw-bold" style="color:var(--biru)">${item.stokAkhir||0}</td></tr>`;
+          h += `<tr>
+            <td style="font-family:var(--mono);font-size:11px">${esc(item.sku)}</td>
+            <td>${esc(item.nama)}</td>
+            <td>${item.stokAwal||0}</td>
+            <td style="color:var(--hijau)">${item.masuk||0}</td>
+            <td style="color:var(--merah)">${item.keluar||0}</td>
+            <td class="fw-bold" style="color:var(--biru)">${item.stokAkhir||0}</td>
+          </tr>`;
         });
       } else {
         h += '<tr><td colspan="6" class="text-center text-sm">Belum ada data</td></tr>';
       }
+      
       h += '</tbody></table></div></div>';
-      // Rekap barang masuk
+      
       if (stockInHistory.length) {
-        const tq = stockInHistory.reduce((s,i)=>s+i.qty,0);
-        const tm = stockInHistory.reduce((s,i)=>s+(i.qty*(i.hargaModal||0)),0);
-        h += `<div class="card"><div class="card-title"><i class="fas fa-truck"></i> Rekap Barang Masuk</div><div class="flex-row mb-2"><div class="summary-box"><small>Entry</small><br><b>${stockInHistory.length}</b></div><div class="summary-box"><small>Total QTY</small><br><b>${tq}</b></div><div class="summary-box"><small>Total Modal</small><br><b>${fmtRp(tm)}</b></div></div>`;
-        const map = new Map();
-        stockInHistory.forEach(s => { const key = `${s.driver}|${s.rit}`; if (!map.has(key)) map.set(key,{driver:s.driver,rit:s.rit,total:0}); map.get(key).total += s.qty*(s.hargaModal||0); });
-        h += '<div class="table-wrap"><table><thead><tr><th>Driver</th><th>Rit</th><th>Total Modal</th></tr></thead><tbody>';
-        Array.from(map.values()).forEach(r => { h += `<tr><td>${r.driver}</td><td>${r.rit}</td><td style="text-align:right">${fmtRp(r.total)}</td></tr>`; });
-        h += '</tbody></table></div></div>';
+        const tglFiltered = stockInHistory.filter(s => (s.date||s.tgl||'').substring(0,10) === date);
+        if (tglFiltered.length) {
+          const tq = tglFiltered.reduce((s,i)=>s+(i.qty||0),0);
+          h += `<div class="card"><div class="card-title"><i class="fas fa-truck"></i> Barang Masuk ${fmtDate(date)}</div>
+            <div class="flex-row mb-2">
+              <div class="summary-box"><small>Entry</small><br><b>${tglFiltered.length}</b></div>
+              <div class="summary-box"><small>Total QTY</small><br><b>${tq}</b></div>
+            </div></div>`;
+        }
       }
-      document.getElementById('contentArea').innerHTML = h;
+      
+      document.getElementById('gudangContent').innerHTML = h;
     }
-    function hitungMasterStock() {
+    
+    function hitungMasterStockByDate(date) {
       const map = new Map();
-      products.forEach(p => { map.set(p.sku, { sku: p.sku, nama: p.nama, stokAwal: p.stokAwal || 0, masuk: 0, keluar: 0 }); });
-      stockInHistory.filter(s => s.status === 'kiriman').forEach(s => { const existing = map.get(s.sku); if (existing) existing.masuk += s.qty || 0; });
-      allTrxList.forEach(trx => {
-        (trx.items || []).forEach(item => {
-          const existing = map.get(item.sku);
-          if (existing) existing.keluar += item.qty || 0;
-        });
+      
+      products.forEach(p => { 
+        map.set(p.sku, { sku: p.sku, nama: p.nama, stokAwal: p.stokAwal || 0, masuk: 0, keluar: 0 }); 
       });
+      
+      const yesterday = getYesterdayDate(date);
+      const yesterdayStock = masterStockHistory[yesterday];
+      
+      if (yesterdayStock && yesterdayStock.length > 0) {
+        yesterdayStock.forEach(item => {
+          if (map.has(item.sku)) {
+            map.get(item.sku).stokAwal = item.stokAkhir || 0;
+          }
+        });
+      }
+      
+      stockInHistory
+        .filter(s => s.status === 'kiriman' && (s.date||s.tgl||'').substring(0,10) === date)
+        .forEach(s => {
+          const existing = map.get(s.sku);
+          if (existing) existing.masuk += s.qty || 0;
+        });
+      
+      allTrxList
+        .filter(t => (t.tgl||'').substring(0,10) === date)
+        .forEach(trx => {
+          (trx.items || []).forEach(item => {
+            const existing = map.get(item.sku);
+            if (existing) existing.keluar += item.qty || 0;
+          });
+        });
+      
       return Array.from(map.values()).map(item => ({
         sku: item.sku,
         nama: item.nama,
@@ -1320,16 +1425,31 @@
         stokAkhir: item.stokAwal + item.masuk - item.keluar
       }));
     }
+    
+    function getYesterdayDate(dateStr) {
+      const d = new Date(dateStr);
+      d.setDate(d.getDate() - 1);
+      return d.toISOString().slice(0,10);
+    }
+    
+    function hitungMasterStock() {
+      const today = new Date().toISOString().slice(0,10);
+      return hitungMasterStockByDate(today);
+    }
+    
     async function syncMasterStockToSheet() {
+      const today = new Date().toISOString().slice(0,10);
       try {
-        const stock = hitungMasterStock();
-        await gasCall('saveMasterStock', [stock]);
+        const stock = hitungMasterStockByDate(today);
+        masterStockHistory[today] = stock;
+        saveLocalData();
+        await gasCall('saveMasterStock', [{ date: today, stock }]);
       } catch(e) {
         console.warn('Gagal sinkron master stock ke sheet:', e);
       }
     }
 
-    // ========== PRODUK ==========
+    // ========== PRODUK - ORIGINAL ==========
     function loadProduk() {
       document.getElementById('contentArea').innerHTML = `<div class="card"><div class="flex-between mb-2"><div class="card-title" style="margin-bottom:0"><i class="fas fa-cubes"></i> Master Produk</div><button class="btn btn-primary btn-sm" onclick="openProdukForm(-1)">+ Tambah</button></div><div class="table-wrap"><table><thead><tr><th>SKU</th><th>Nama</th><th>Harga Jual</th><th>Harga Modal</th><th>Stok Awal</th><th>Barcode</th><th>Aksi</th></tr></thead><tbody id="produkTbody"></tbody></table></div></div><div class="modal-overlay" id="produkModal"><div class="modal"><div class="modal-header"><h2 id="produkModalTitle">Tambah Produk</h2><button class="modal-close" onclick="closeProdukForm()">✕</button></div><div class="modal-body"><input type="hidden" id="editProdIdx" value="-1"><div class="form-group"><label>SKU</label><input id="prodSku" class="form-control"></div><div class="form-group"><label>Barcode</label><div class="flex-row"><input id="prodBarcode" class="form-control" style="flex:1"><button class="btn btn-scan btn-sm" onclick="openScanner('produk')">📷 Scan</button></div></div><div class="form-group"><label>Nama</label><input id="prodNama" class="form-control"></div><div class="flex-row"><div class="form-group col-1"><label>Harga Jual</label><input type="number" id="prodJual" value="0"></div><div class="form-group col-1"><label>Harga Modal</label><input type="number" id="prodModal" value="0"></div></div><div class="form-group"><label>Stok Awal</label><input type="number" id="prodStok" value="0"></div></div><div class="modal-footer"><button class="btn btn-secondary" onclick="closeProdukForm()">Batal</button><button class="btn btn-primary" onclick="saveProduk()">💾 Simpan</button></div></div></div>`;
       renderProdukList();
@@ -1375,13 +1495,13 @@
       closeProdukForm();
       renderProdukList();
       Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Produk disimpan' });
-      syncMasterStockToSheet(); // update master stock jika produk berubah
+      syncMasterStockToSheet();
     }
     function deleteProduk(idx) {
       Swal.fire({ title:'Hapus?', text:'Hapus '+products[idx].nama+'?', icon:'warning', showCancelButton:true }).then(r => { if (r.isConfirmed) { products.splice(idx,1); saveLocalData(); renderProdukList(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Produk dihapus' }); syncMasterStockToSheet(); } });
     }
 
-    // ========== PELANGGAN ==========
+    // ========== PELANGGAN - ORIGINAL ==========
     function loadPelanggan() {
       document.getElementById('contentArea').innerHTML = `<div class="card"><div class="flex-between mb-2"><div class="card-title" style="margin-bottom:0"><i class="fas fa-address-book"></i> Daftar Pelanggan</div><button class="btn btn-primary btn-sm" onclick="addPelanggan()">+ Tambah</button></div><div class="table-wrap"><table><thead><tr><th>#</th><th>Nama</th><th>Aksi</th></tr></thead><tbody id="pelangganTbody"></tbody></table></div></div>`;
       renderPelangganList();
@@ -1399,7 +1519,7 @@
       Swal.fire({ title:'Hapus?', text:'Hapus '+allCustomers[idx]+'?', icon:'warning', showCancelButton:true }).then(r => { if (r.isConfirmed) { allCustomers.splice(idx,1); pelanggan = allCustomers.slice(); saveLocalData(); renderPelangganList(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Pelanggan dihapus' }); } });
     }
 
-    // ========== PENGATURAN ==========
+    // ========== PENGATURAN - ORIGINAL ==========
     function loadPengaturan() {
       document.getElementById('contentArea').innerHTML = `<div class="card"><div class="card-title"><i class="fas fa-cog"></i> Pengaturan</div>
       <div class="section-title">🏢 Info Toko</div>
@@ -1505,18 +1625,18 @@
       });
     }
 
-    // ========== HELPERS ==========
+    // ========== HELPERS - ORIGINAL ==========
     function fmtRp(n) { return 'Rp\u00a0' + Number(n||0).toLocaleString('id-ID'); }
     function fmtDate(s) { if (!s) return '-'; const p = String(s).substring(0,10).split('-'); if (p.length<3) return s; const m=['','Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des']; return p[2]+' '+m[parseInt(p[1])]+' '+p[0]; }
     function genId() { const d = new Date(), pp = n => String(n).padStart(2,'0'); return 'TRX-'+d.getFullYear()+pp(d.getMonth()+1)+pp(d.getDate())+'-'+Math.random().toString(36).slice(2,6).toUpperCase(); }
     function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-    // PWA Install
+    // PWA Install - ORIGINAL
     let deferredPrompt;
     window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredPrompt = e; document.getElementById('installBtn').style.display = 'block'; });
     function installApp() { if (deferredPrompt) { deferredPrompt.prompt(); deferredPrompt.userChoice.then(r => { if (r.outcome === 'accepted') console.log('Installed'); deferredPrompt = null; document.getElementById('installBtn').style.display = 'none'; }); } else { Swal.fire('Info','Klik menu browser > Add to Home Screen','info'); } }
 
-    // Service worker
+    // Service worker - ORIGINAL
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         const swCode = `const CACHE_NAME='tirta-v2';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(['/'])))});self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)))});`;
@@ -1525,7 +1645,7 @@
       });
     }
 
-    // Init
+    // Init - ORIGINAL
     loadLocalData();
     const savedUser = localStorage.getItem('tirtaUser');
     if (savedUser) { try { currentUser = JSON.parse(savedUser); showMainApp(); } catch(e) { localStorage.removeItem('tirtaUser'); } }
