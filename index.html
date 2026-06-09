@@ -172,40 +172,36 @@
     }
 
     async function syncFromGAS() {
-      try {
-        const [prod, cust, trx, set, users] = await Promise.all([
-          gasCall('getProducts', []), gasCall('getCustomers', []),
-          gasCall('getTrxList', []), gasCall('getSettings', []), gasCall('getUsers', [])
-        ]);
-        if (Array.isArray(prod)) products = prod;
-        if (Array.isArray(cust)) { allCustomers = cust; pelanggan = cust.slice(); }
-        if (Array.isArray(trx)) {
-          const localMap = new Map(allTrxList.map(t => [t.id, t]));
-          allTrxList = trx.map(t => {
-            const existing = localMap.get(t.id);
-            return existing && Array.isArray(existing.items) ? { ...t, items: existing.items } : t;
-          });
-          // ✅ Urutkan dari terbaru (tanggal + ID menurun)
-          allTrxList.sort((a, b) => (b.tgl || '').localeCompare(a.tgl || '') || (b.id || '').localeCompare(a.id || ''));
-        }
-        if (set && typeof set === 'object') {
-          settings.namaToko = set.storeName || settings.namaToko;
-          settings.alamat = set.address || settings.alamat;
-          settings.tagline = set.tagline || settings.tagline;
-          settings.bottomLine = set.footer || settings.bottomLine;
-          settings.telepon = set.phone || settings.telepon;
-          settings.bank1 = set.bank1 || settings.bank1;
-          settings.bank2 = set.bank2 || settings.bank2;
-          settings.salesList = Array.isArray(set.salesList) ? set.salesList : [];
-        }
-        if (Array.isArray(users)) allUsers = users;
-        saveLocalData();
-        if (currentPage === 'dashboard' || currentPage === 'transaksi' || currentPage === 'produk' || currentPage === 'gudang') renderContent();
-        Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, icon: 'success', title: 'Data disinkronkan' });
-      } catch (e) {
-        Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, icon: 'error', title: 'Gagal sinkron: ' + e.message });
-      }
+  try {
+    const [prod, cust, trx, set, users] = await Promise.all([
+      gasCall('getProducts', []), gasCall('getCustomers', []),
+      gasCall('getTrxList', []), gasCall('getSettings', []), gasCall('getUsers', [])
+    ]);
+    if (Array.isArray(prod)) products = prod;
+    if (Array.isArray(cust)) { allCustomers = cust; pelanggan = cust.slice(); }
+    if (Array.isArray(trx)) {
+      // Karena server sekarang mengirim items, kita gunakan itu.
+      // Urutkan dari terbaru.
+      allTrxList = trx.sort((a, b) => (b.tgl || '').localeCompare(a.tgl || '') || (b.id || '').localeCompare(a.id || ''));
     }
+    if (set && typeof set === 'object') {
+      settings.namaToko = set.storeName || settings.namaToko;
+      settings.alamat = set.address || settings.alamat;
+      settings.tagline = set.tagline || settings.tagline;
+      settings.bottomLine = set.footer || settings.bottomLine;
+      settings.telepon = set.phone || settings.telepon;
+      settings.bank1 = set.bank1 || settings.bank1;
+      settings.bank2 = set.bank2 || settings.bank2;
+      settings.salesList = Array.isArray(set.salesList) ? set.salesList : [];
+    }
+    if (Array.isArray(users)) allUsers = users;
+    saveLocalData();
+    if (currentPage === 'dashboard' || currentPage === 'transaksi' || currentPage === 'produk' || currentPage === 'gudang') renderContent();
+    Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, icon: 'success', title: 'Data disinkronkan' });
+  } catch (e) {
+    Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, icon: 'error', title: 'Gagal sinkron: ' + e.message });
+  }
+}
 
     function doLogin() { const u = document.getElementById('loginUser').value.trim(), p = document.getElementById('loginPass').value.trim(); if (!u || !p) return Swal.fire('Error','Isi username & password','error'); const f = allUsers.find(x => x.name === u && x.password === p); if (f) { currentUser = { name: f.name, role: f.role }; localStorage.setItem('tirtaUser', JSON.stringify(currentUser)); showMainApp(); } else Swal.fire('Error','Username/password salah!','error'); }
     document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !document.getElementById('loginPage').classList.contains('hidden')) doLogin(); });
