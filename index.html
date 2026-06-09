@@ -173,16 +173,38 @@
 
     async function syncFromGAS() {
       try {
-        const [prod, cust, trx, set, users] = await Promise.all([ gasCall('getProducts', []), gasCall('getCustomers', []), gasCall('getTrxList', []), gasCall('getSettings', []), gasCall('getUsers', []) ]);
+        const [prod, cust, trx, set, users] = await Promise.all([
+          gasCall('getProducts', []), gasCall('getCustomers', []),
+          gasCall('getTrxList', []), gasCall('getSettings', []), gasCall('getUsers', [])
+        ]);
         if (Array.isArray(prod)) products = prod;
         if (Array.isArray(cust)) { allCustomers = cust; pelanggan = cust.slice(); }
-        if (Array.isArray(trx)) allTrxList = trx;
-        if (set && typeof set === 'object') { settings.namaToko = set.storeName || settings.namaToko; settings.alamat = set.address || settings.alamat; settings.tagline = set.tagline || settings.tagline; settings.bottomLine = set.footer || settings.bottomLine; settings.telepon = set.phone || settings.telepon; settings.bank1 = set.bank1 || settings.bank1; settings.bank2 = set.bank2 || settings.bank2; settings.salesList = Array.isArray(set.salesList) ? set.salesList : []; }
+        if (Array.isArray(trx)) {
+          const localMap = new Map(allTrxList.map(t => [t.id, t]));
+          allTrxList = trx.map(t => {
+            const existing = localMap.get(t.id);
+            return existing && Array.isArray(existing.items) ? { ...t, items: existing.items } : t;
+          });
+          // ✅ Urutkan dari terbaru (tanggal + ID menurun)
+          allTrxList.sort((a, b) => (b.tgl || '').localeCompare(a.tgl || '') || (b.id || '').localeCompare(a.id || ''));
+        }
+        if (set && typeof set === 'object') {
+          settings.namaToko = set.storeName || settings.namaToko;
+          settings.alamat = set.address || settings.alamat;
+          settings.tagline = set.tagline || settings.tagline;
+          settings.bottomLine = set.footer || settings.bottomLine;
+          settings.telepon = set.phone || settings.telepon;
+          settings.bank1 = set.bank1 || settings.bank1;
+          settings.bank2 = set.bank2 || settings.bank2;
+          settings.salesList = Array.isArray(set.salesList) ? set.salesList : [];
+        }
         if (Array.isArray(users)) allUsers = users;
         saveLocalData();
-        if (currentPage === 'dashboard' || currentPage === 'transaksi' || currentPage === 'produk') renderContent();
+        if (currentPage === 'dashboard' || currentPage === 'transaksi' || currentPage === 'produk' || currentPage === 'gudang') renderContent();
         Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, icon: 'success', title: 'Data disinkronkan' });
-      } catch (e) { Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, icon: 'error', title: 'Gagal sinkron: ' + e.message }); }
+      } catch (e) {
+        Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, icon: 'error', title: 'Gagal sinkron: ' + e.message });
+      }
     }
 
     function doLogin() { const u = document.getElementById('loginUser').value.trim(), p = document.getElementById('loginPass').value.trim(); if (!u || !p) return Swal.fire('Error','Isi username & password','error'); const f = allUsers.find(x => x.name === u && x.password === p); if (f) { currentUser = { name: f.name, role: f.role }; localStorage.setItem('tirtaUser', JSON.stringify(currentUser)); showMainApp(); } else Swal.fire('Error','Username/password salah!','error'); }
@@ -213,17 +235,19 @@
     function navigateTo(p) { currentPage = p; renderMenuTabs(); renderContent(); }
     function renderContent() { switch (currentPage) { case 'dashboard': loadDashboard(); break; case 'penjualan': loadPenjualan(); break; case 'transaksi': loadTransaksi(); break; case 'rekap': loadRekap(); break; case 'rekapinput': loadRekapInput(); break; case 'setoran': loadSetoran(); break; case 'inputbarang': loadInputBarang(); break; case 'gudang': loadGudang(); break; case 'produk': loadProduk(); break; case 'pelanggan': loadPelanggan(); break; case 'pengaturan': loadPengaturan(); break; } }
 
-    // ========== DASHBOARD (ASLI - TIDAK DIUBAH) ==========
+    // ========== DASHBOARD (HANYA TRANSAKSI HARI INI) ==========
     function loadDashboard() {
-      const cod = allTrxList.filter(t=>t.status==='cod').reduce((s,t)=>s+(t.nett||0),0);
-      const transfer = allTrxList.filter(t=>t.status==='transfer').reduce((s,t)=>s+(t.nett||0),0);
-      const qris = allTrxList.filter(t=>t.status==='qris').reduce((s,t)=>s+(t.nett||0),0);
-      const belum = allTrxList.filter(t=>t.status==='belumTransfer').reduce((s,t)=>s+(t.nett||0),0);
+      const today = new Date().toISOString().slice(0,10);
+      const todayTx = allTrxList.filter(t => (t.tgl||'').substring(0,10) === today);
+      const cod = todayTx.filter(t=>t.status==='cod').reduce((s,t)=>s+(t.nett||0),0);
+      const transfer = todayTx.filter(t=>t.status==='transfer').reduce((s,t)=>s+(t.nett||0),0);
+      const qris = todayTx.filter(t=>t.status==='qris').reduce((s,t)=>s+(t.nett||0),0);
+      const belum = todayTx.filter(t=>t.status==='belumTransfer').reduce((s,t)=>s+(t.nett||0),0);
       const total = cod+transfer+qris+belum;
-      let h = `<div class="stat-grid-mobile mb-2"><div class="stat-card"><div class="stat-icon">🧾</div><div class="stat-label">Semua</div><div class="stat-value">${fmtRp(total)}</div><div class="stat-count">${allTrxList.length} trx</div></div><div class="stat-card"><div class="stat-icon">🤝</div><div class="stat-label">COD</div><div class="stat-value">${fmtRp(cod)}</div><div class="stat-count">${allTrxList.filter(t=>t.status==='cod').length} trx</div></div><div class="stat-card"><div class="stat-icon">🏦</div><div class="stat-label">Transfer</div><div class="stat-value">${fmtRp(transfer)}</div><div class="stat-count">${allTrxList.filter(t=>t.status==='transfer').length} trx</div></div><div class="stat-card"><div class="stat-icon">📱</div><div class="stat-label">QRIS</div><div class="stat-value">${fmtRp(qris)}</div><div class="stat-count">${allTrxList.filter(t=>t.status==='qris').length} trx</div></div><div class="stat-card"><div class="stat-icon">⏳</div><div class="stat-label">Belum</div><div class="stat-value">${fmtRp(belum)}</div><div class="stat-count">${allTrxList.filter(t=>t.status==='belumTransfer').length} trx</div></div></div>`;
-      const recent = allTrxList.slice(0,10);
-      h += `<div class="card" style="padding:0;overflow:hidden"><div style="padding:14px 18px;border-bottom:1px solid var(--border);font-size:14px;font-weight:800">🕓 10 Transaksi Terakhir</div><div class="table-wrap"><table><thead><tr><th>ID</th><th>Tgl</th><th>Customer</th><th>Sales</th><th>Nett</th></tr></thead><tbody>`;
-      if (!recent.length) h += '<tr><td colspan="5" class="text-center text-sm" style="padding:32px">Belum ada transaksi</td></tr>';
+      let h = `<div class="stat-grid-mobile mb-2"><div class="stat-card"><div class="stat-icon">🧾</div><div class="stat-label">Semua</div><div class="stat-value">${fmtRp(total)}</div><div class="stat-count">${todayTx.length} trx</div></div><div class="stat-card"><div class="stat-icon">🤝</div><div class="stat-label">COD</div><div class="stat-value">${fmtRp(cod)}</div><div class="stat-count">${todayTx.filter(t=>t.status==='cod').length} trx</div></div><div class="stat-card"><div class="stat-icon">🏦</div><div class="stat-label">Transfer</div><div class="stat-value">${fmtRp(transfer)}</div><div class="stat-count">${todayTx.filter(t=>t.status==='transfer').length} trx</div></div><div class="stat-card"><div class="stat-icon">📱</div><div class="stat-label">QRIS</div><div class="stat-value">${fmtRp(qris)}</div><div class="stat-count">${todayTx.filter(t=>t.status==='qris').length} trx</div></div><div class="stat-card"><div class="stat-icon">⏳</div><div class="stat-label">Belum</div><div class="stat-value">${fmtRp(belum)}</div><div class="stat-count">${todayTx.filter(t=>t.status==='belumTransfer').length} trx</div></div></div>`;
+      const recent = todayTx.slice(0,10);
+      h += `<div class="card" style="padding:0;overflow:hidden"><div style="padding:14px 18px;border-bottom:1px solid var(--border);font-size:14px;font-weight:800">🕓 10 Transaksi Terakhir (Hari Ini)</div><div class="table-wrap"><table><thead><tr><th>ID</th><th>Tgl</th><th>Customer</th><th>Sales</th><th>Nett</th></tr></thead><tbody>`;
+      if (!recent.length) h += '<tr><td colspan="5" class="text-center text-sm" style="padding:32px">Belum ada transaksi hari ini</td></tr>';
       else recent.forEach(t => { h += `<tr><td style="color:var(--biru);font-weight:700;font-size:11px;font-family:var(--mono)">${esc(t.id)}</td><td>${fmtDate(t.tgl)}</td><td>${esc(t.customer||'-')}</td><td>${esc(t.sales||'-')}</td><td class="fw-bold" style="font-family:var(--mono);font-size:12px;color:var(--biru)">${fmtRp(t.nett)}</td></tr>`; });
       h += '</tbody></table></div></div>';
       document.getElementById('contentArea').innerHTML = h;
@@ -469,13 +493,10 @@
       if (!driver) return Swal.fire('Error','Driver wajib dipilih!','error');
       if (!rit) return Swal.fire('Error','Rit wajib diisi!','error');
       if (!status) return Swal.fire('Error','Status wajib dipilih!','error');
-      // Validasi setiap item harus memilih SKU
       const itemRows = document.querySelectorAll('#inputItemsContainer .cart-item-row');
       for (let row of itemRows) {
         const sel = row.querySelector('select');
-        if (!sel || !sel.value) {
-          return Swal.fire('Error','Semua item harus dipilih produknya (SKU)!','error');
-        }
+        if (!sel || !sel.value) return Swal.fire('Error','Semua item harus dipilih produknya (SKU)!','error');
       }
       const items = getInputItems(); 
       if (!items.length) return Swal.fire('Error','Minimal satu item harus diisi','error'); 
@@ -491,7 +512,7 @@
     function renderStockHistory() { const el = document.getElementById('stkHistory'); if (!el) return; if (!stockInHistory.length) { el.innerHTML = '<p class="text-sm text-center">Memuat data...</p>'; return; } el.innerHTML = `<div class="table-wrap"><table><thead><tr><th>ID</th><th>Tanggal</th><th>SKU</th><th>Nama</th><th>Qty</th><th>Harga Modal</th><th>Disc</th><th>Net Modal</th><th>Driver</th><th>Rit</th><th>Status</th><th>CreatedAt</th></tr></thead><tbody>${stockInHistory.slice(0,30).map(s => { const disc = s.disc || 0; const netModal = (s.hargaModal - disc) * s.qty; return `<tr><td style="font-family:var(--mono);font-size:10px">${esc(s.id)}</td><td>${s.date || (s.createdAt ? s.createdAt.substring(0,10) : '-')}</td><td>${esc(s.sku)}</td><td>${esc(s.nama||'')}</td><td>${s.qty}</td><td>${fmtRp(s.hargaModal)}</td><td>${fmtRp(disc)}</td><td style="font-weight:700;color:var(--biru)">${fmtRp(netModal)}</td><td>${esc(s.driver||'-')}</td><td>${esc(s.rit||'-')}</td><td><span class="status-badge status-${s.status}">${s.status}</span></td><td style="font-size:10px">${s.createdAt ? s.createdAt.substring(0,19).replace('T',' ') : (s.date||'')}</td></tr>`; }).join('')}</tbody></table></div>`; }
     async function syncStockHistoryFromGAS() { try { const data = await gasCall('getInputBarangHistory', []); if (Array.isArray(data) && data.length > 0) { stockInHistory = data; saveLocalData(); if (document.getElementById('stkHistory')) renderStockHistory(); } } catch(e) { console.warn('Gagal ambil riwayat input barang:', e); } }
 
-    // ========== GUDANG ==========
+    // ========== GUDANG (PERHITUNGAN STOK BENAR DENGAN ITEMS YANG TERJAGA) ==========
     async function loadGudang() { const today = new Date().toISOString().slice(0,10); document.getElementById('contentArea').innerHTML = `<div class="card"><div class="flex-row mb-2"><div class="form-group col-1"><label>Tanggal Stock</label><input type="date" id="gudangTgl" value="${today}"></div><button class="btn btn-primary" onclick="loadGudangByDate()" style="height:44px;align-self:flex-end">📊 Tampilkan</button><button class="btn btn-success" onclick="initNewDayStock()" style="height:44px;align-self:flex-end">🔄 Hari Baru</button></div></div><div id="gudangContent"><div class="loading">Memuat master stock...</div></div>`; loadGudangByDate(); }
     function loadGudangByDate() { const tgl = document.getElementById('gudangTgl')?.value || new Date().toISOString().slice(0,10); document.getElementById('gudangContent').innerHTML = '<div class="loading">Memuat master stock...</div>'; let stockData = masterStockHistory[tgl]; if (!stockData || stockData.length === 0) { stockData = hitungMasterStockByDate(tgl); masterStockHistory[tgl] = stockData; saveLocalData(); } renderMasterStockFromData(stockData, tgl); try { gasCall('getMasterStockByDate', [tgl]).then(data => { if (Array.isArray(data) && data.length > 0) { masterStockHistory[tgl] = data; saveLocalData(); renderMasterStockFromData(data, tgl); } }); } catch(e) {} }
     function initNewDayStock() { Swal.fire({ title: 'Inisialisasi Hari Baru?', text: 'Stok akhir kemarin akan jadi stok awal hari ini.', icon: 'question', showCancelButton: true }).then(result => { if (result.isConfirmed) { const today = new Date().toISOString().slice(0,10); const yesterday = getYesterdayDate(today); let yesterdayStock = masterStockHistory[yesterday] || hitungMasterStockByDate(yesterday); const newStock = yesterdayStock.map(item => ({ sku: item.sku, nama: item.nama, stokAwal: item.stokAkhir || 0, masuk: 0, keluar: 0, stokAkhir: item.stokAkhir || 0 })); masterStockHistory[today] = newStock; saveLocalData(); gasCall('saveMasterStock', [{ date: today, stock: newStock }]); renderMasterStockFromData(newStock, today); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, icon: 'success', title: 'Stok hari baru siap' }); } }); }
