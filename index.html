@@ -797,20 +797,22 @@
     }
 
     function loadGudangByDate() {
-      try {
-        const tgl = document.getElementById('gudangTgl')?.value || new Date().toISOString().slice(0,10);
-        document.getElementById('gudangContent').innerHTML = '<div class="loading">Menghitung stok...</div>';
+  const tgl = document.getElementById('gudangTgl')?.value || new Date().toISOString().slice(0,10);
+  const content = document.getElementById('gudangContent');
+  content.innerHTML = '<div class="loading">Mengambil data dari Google Sheets...</div>';
 
-        const stockData = hitungMasterStockByDate(tgl);
-        masterStockHistory[tgl] = stockData;
-        saveLocalData();
-
-        renderMasterStockFromData(stockData, tgl);
-      } catch (e) {
-        document.getElementById('gudangContent').innerHTML = 
-          `<div class="card"><p class="text-center text-sm" style="color:var(--merah)">Gagal: ${esc(e.message)}</p></div>`;
+  gasCall('getMasterStockByDate', [tgl])
+    .then(data => {
+      if (Array.isArray(data) && data.length > 0) {
+        renderMasterStockFromData(data, tgl);
+      } else {
+        content.innerHTML = '<div class="card"><p class="text-center text-sm">Belum ada data stok di Google Sheets. Klik <b>Tarik Data</b> untuk sinkronisasi.</p></div>';
       }
-    }
+    })
+    .catch(err => {
+      content.innerHTML = `<div class="card"><p class="text-center text-sm" style="color:var(--merah)">Gagal mengambil data: ${esc(err.message)}</p></div>`;
+    });
+}
 
     function initNewDayStock() {
       Swal.fire({
