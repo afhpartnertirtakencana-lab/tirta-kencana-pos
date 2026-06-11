@@ -784,17 +784,27 @@
     }
 
     async function syncAndLoadGudang() {
-      const content = document.getElementById('gudangContent');
-      if (content) content.innerHTML = '<div class="loading">Menyinkronkan data...</div>';
-      try {
-        await syncFromGAS();
-        loadGudangByDate();
-        Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, icon: 'success', title: 'Data ditarik & stok dihitung' });
-      } catch (e) {
-        loadGudangByDate();
-        Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, icon: 'error', title: 'Gagal sinkron, pakai data lokal' });
-      }
-    }
+  const content = document.getElementById('gudangContent');
+  if (content) content.innerHTML = '<div class="loading">Menyinkronkan data dan menghitung stok...</div>';
+  try {
+    // Tarik semua data terbaru dari GAS
+    await syncFromGAS();
+    // Hitung ulang stok lokal
+    const tgl = document.getElementById('gudangTgl')?.value || new Date().toISOString().slice(0,10);
+    const stockData = hitungMasterStockByDate(tgl);
+    masterStockHistory[tgl] = stockData;
+    saveLocalData();
+    // Kirim hasil stok ke Google Sheets (MasterStock)
+    await gasCall('saveMasterStock', [{ date: tgl, stock: stockData }]);
+    // Tampilkan stok dari data lokal (segar)
+    renderMasterStockFromData(stockData, tgl);
+    Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, icon: 'success', title: 'Stok tersimpan & ditampilkan' });
+  } catch (e) {
+    // Jika gagal, tetap tampilkan stok dari data lokal
+    loadGudangByDate();
+    Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, icon: 'error', title: 'Gagal sinkron penuh, memakai data lokal' });
+  }
+}
 
     function loadGudangByDate() {
   const tgl = document.getElementById('gudangTgl')?.value || new Date().toISOString().slice(0,10);
