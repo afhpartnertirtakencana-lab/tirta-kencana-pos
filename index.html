@@ -281,13 +281,7 @@
           gasCall('getProducts', []), gasCall('getCustomers', []),
           gasCall('getTrxList', []), gasCall('getSettings', []), gasCall('getUsers', [])
         ]);
-        if (Array.isArray(prod)) {
-  const localMap = new Map(products.map(p => [p.sku, p]));
-  products = prod.map(p => {
-    const old = localMap.get(p.sku);
-    return { ...p, stokAwal: (old && old.stokAwal !== undefined) ? old.stokAwal : (p.stokAwal || 0) };
-  });
-}
+        if (Array.isArray(prod)) products = prod;
         if (Array.isArray(cust)) { allCustomers = cust; pelanggan = cust.slice(); }
         if (Array.isArray(trx)) {
           const localMap = new Map(allTrxList.map(t => [t.id, t]));
@@ -356,7 +350,8 @@
       if (settings.alamat) document.getElementById('headerAlamat').textContent = settings.alamat;
       if (_logoUrl) document.getElementById('logoImg').src = _logoUrl;
       initDarkMode(); renderMenuTabs();
-      // try { await syncFromGAS(); } catch(e) {}
+      // ⚡ OTOMATIS SINKRONISASI SETIAP LOGIN AGAR PRODUK & DATA SIAP
+      try { await syncFromGAS(); } catch(e) {}
       navigateTo('dashboard');
     }
 
@@ -694,7 +689,16 @@
       renderTrxTable(filtered);
     }
     function renderTrxTable(filtered = allTrxList) { const tb = document.getElementById('trxTbody'); if (!tb) return; if (!filtered.length) { tb.innerHTML = '<tr><td colspan="9" class="text-center text-sm" style="padding:32px">Tidak ada transaksi</td></tr>'; return; } tb.innerHTML = filtered.map(t => `<tr><td style="font-family:var(--mono);font-size:11px;color:var(--biru);font-weight:700">${esc(t.id)}</td><td>${fmtDate(t.tgl)}</td><td>${esc(t.customer||'-')}</td><td>${esc(t.sales||'-')}</td><td style="font-family:var(--mono);font-size:12px">${fmtRp(t.gross)}</td><td style="color:var(--merah);font-family:var(--mono);font-size:12px">${fmtRp(t.diskon)}</td><td class="fw-bold" style="font-family:var(--mono);font-size:12px;color:var(--biru)">${fmtRp(t.nett)}</td><td><select class="form-control" style="font-size:0.65rem;padding:2px 4px;min-width:80px" onchange="updateTrxStatus('${esc(t.id).replace(/'/g,"\\'")}', this.value)"><option value="cod" ${t.status==='cod'?'selected':''}>COD</option><option value="transfer" ${t.status==='transfer'?'selected':''}>Transfer</option><option value="qris" ${t.status==='qris'?'selected':''}>QRIS</option><option value="belumTransfer" ${t.status==='belumTransfer'?'selected':''}>Belum</option></select></td><td style="display:flex;gap:3px"><button class="btn btn-sm btn-primary" onclick="openStrukById('${esc(t.id).replace(/'/g,"\\'")}')">🧾</button><button class="btn btn-sm btn-danger" onclick="deleteTrx('${esc(t.id).replace(/'/g,"\\'")}')">🗑</button></td></tr>`).join(''); }
-    async function updateTrxStatus(id, newStatus) { const trx = allTrxList.find(t => t.id === id); if (trx) { trx.status = newStatus; saveLocalData(); try { await gasCall('updateStatus', [id, newStatus]); } catch(e) { console.warn('Gagal update status di GAS:', e); } Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Status diperbarui' }); } }
+    async function updateTrxStatus(id, newStatus) {
+      const trx = allTrxList.find(t => t.id === id);
+      if (trx) {
+        trx.status = newStatus;
+        saveLocalData();
+        try { await gasCall('updateStatus', [id, newStatus]); } catch(e) { console.warn('Gagal update status di GAS:', e); }
+        Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Status diperbarui' });
+        filterTrx();
+      }
+    }
     async function deleteTrx(id) { const confirm = await Swal.fire({ title:'Hapus?', text:'Hapus transaksi '+id+'?', icon:'warning', showCancelButton:true }); if (confirm.isConfirmed) { allTrxList = allTrxList.filter(t => t.id !== id); saveLocalData(); try { await gasCall('deleteTrx', [id]); } catch(e) { console.warn('Gagal hapus di GAS:', e); } filterTrx(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Transaksi dihapus' }); syncMasterStockToSheet(); } }
     function openStrukById(id) { const trx = allTrxList.find(t => t.id === id); if (!trx) return Swal.fire('Error','Transaksi tidak ditemukan','error'); _strKData = { trx, items: trx.items || [] }; showStrukModal(); }
 
@@ -766,7 +770,7 @@
     function renderStockHistory() { const el = document.getElementById('stkHistory'); if (!el) return; if (!stockInHistory.length) { el.innerHTML = '<p class="text-sm text-center">Memuat data...</p>'; return; } el.innerHTML = `<div class="table-wrap"><table><thead><tr><th>ID</th><th>Tanggal</th><th>SKU</th><th>Nama</th><th>Qty</th><th>Harga Modal</th><th>Disc</th><th>Net Modal</th><th>Driver</th><th>Rit</th><th>Status</th><th>CreatedAt</th></tr></thead><tbody>${stockInHistory.slice(0,30).map(s => { const disc = s.disc || 0; const netModal = (s.hargaModal - disc) * s.qty; return `<tr><td style="font-family:var(--mono);font-size:10px">${esc(s.id)}</td><td>${s.date || (s.createdAt ? s.createdAt.substring(0,10) : '-')}</td><td>${esc(s.sku)}</td><td>${esc(s.nama||'')}</td><td>${s.qty}</td><td>${fmtRp(s.hargaModal)}</td><td>${fmtRp(disc)}</td><td style="font-weight:700;color:var(--biru)">${fmtRp(netModal)}</td><td>${esc(s.driver||'-')}</td><td>${esc(s.rit||'-')}</td><td><span class="status-badge status-${s.status}">${s.status}</span></td><td style="font-size:10px">${s.createdAt ? s.createdAt.substring(0,19).replace('T',' ') : (s.date||'')}</td></tr>`; }).join('')}</tbody></table></div>`; }
     async function syncStockHistoryFromGAS() { try { const data = await gasCall('getInputBarangHistory', []); if (Array.isArray(data) && data.length > 0) { stockInHistory = data; saveLocalData(); if (document.getElementById('stkHistory')) renderStockHistory(); } } catch(e) { console.warn('Gagal ambil riwayat input barang:', e); } }
 
-    // ========== GUDANG (DENGAN TOMBOL TARIK DATA) ==========
+    // ========== GUDANG ==========
     async function loadGudang() {
       const today = new Date().toISOString().slice(0,10);
       document.getElementById('contentArea').innerHTML = `
@@ -783,46 +787,34 @@
       loadGudangByDate();
     }
 
-    async function syncAndLoadGudang() {
-  const content = document.getElementById('gudangContent');
-  if (content) content.innerHTML = '<div class="loading">Menyinkronkan data dan menghitung stok...</div>';
-  try {
-    // Tarik semua data terbaru dari GAS
-    await syncFromGAS();
-    // Hitung ulang stok lokal
-    const tgl = document.getElementById('gudangTgl')?.value || new Date().toISOString().slice(0,10);
-    const stockData = hitungMasterStockByDate(tgl);
-    masterStockHistory[tgl] = stockData;
-    saveLocalData();
-    // Kirim hasil stok ke Google Sheets (MasterStock)
-    await gasCall('saveMasterStock', [{ date: tgl, stock: stockData }]);
-    // Tampilkan stok dari data lokal (segar)
-    renderMasterStockFromData(stockData, tgl);
-    Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, icon: 'success', title: 'Stok tersimpan & ditampilkan' });
-  } catch (e) {
-    // Jika gagal, tetap tampilkan stok dari data lokal
-    loadGudangByDate();
-    Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, icon: 'error', title: 'Gagal sinkron penuh, memakai data lokal' });
-  }
-}
-
     function loadGudangByDate() {
-  const tgl = document.getElementById('gudangTgl')?.value || new Date().toISOString().slice(0,10);
-  const content = document.getElementById('gudangContent');
-  content.innerHTML = '<div class="loading">Mengambil data dari Google Sheets...</div>';
+      try {
+        const tgl = document.getElementById('gudangTgl')?.value || new Date().toISOString().slice(0,10);
+        document.getElementById('gudangContent').innerHTML = '<div class="loading">Menghitung stok...</div>';
 
-  gasCall('getMasterStockByDate', [tgl])
-    .then(data => {
-      if (Array.isArray(data) && data.length > 0) {
-        renderMasterStockFromData(data, tgl);
-      } else {
-        content.innerHTML = '<div class="card"><p class="text-center text-sm">Belum ada data stok di Google Sheets. Klik <b>Tarik Data</b> untuk sinkronisasi.</p></div>';
+        const stockData = hitungMasterStockByDate(tgl);
+        masterStockHistory[tgl] = stockData;
+        saveLocalData();
+
+        renderMasterStockFromData(stockData, tgl);
+      } catch (e) {
+        document.getElementById('gudangContent').innerHTML = 
+          `<div class="card"><p class="text-center text-sm" style="color:var(--merah)">Gagal: ${esc(e.message)}</p></div>`;
       }
-    })
-    .catch(err => {
-      content.innerHTML = `<div class="card"><p class="text-center text-sm" style="color:var(--merah)">Gagal mengambil data: ${esc(err.message)}</p></div>`;
-    });
-}
+    }
+
+    async function syncAndLoadGudang() {
+      const content = document.getElementById('gudangContent');
+      if (content) content.innerHTML = '<div class="loading">Menyinkronkan data...</div>';
+      try {
+        await syncFromGAS();
+        loadGudangByDate();
+        Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, icon: 'success', title: 'Stok dihitung ulang' });
+      } catch (e) {
+        loadGudangByDate();
+        Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, icon: 'error', title: 'Gagal sinkron, pakai data lokal' });
+      }
+    }
 
     function initNewDayStock() {
       Swal.fire({
