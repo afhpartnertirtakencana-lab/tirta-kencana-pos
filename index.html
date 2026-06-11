@@ -281,7 +281,13 @@
           gasCall('getProducts', []), gasCall('getCustomers', []),
           gasCall('getTrxList', []), gasCall('getSettings', []), gasCall('getUsers', [])
         ]);
-        if (Array.isArray(prod)) products = prod;
+        if (Array.isArray(prod)) {
+  const localMap = new Map(products.map(p => [p.sku, p]));
+  products = prod.map(p => {
+    const old = localMap.get(p.sku);
+    return { ...p, stokAwal: (old && old.stokAwal !== undefined) ? old.stokAwal : (p.stokAwal || 0) };
+  });
+}
         if (Array.isArray(cust)) { allCustomers = cust; pelanggan = cust.slice(); }
         if (Array.isArray(trx)) {
           const localMap = new Map(allTrxList.map(t => [t.id, t]));
