@@ -878,18 +878,18 @@
         const disc = s.disc || 0;
         const netModal = (s.hargaModal - disc) * s.qty;
         return `<tr>
-          <td style="font-family:var(--mono);font-size:10px">${esc(s.id||'')}</div>
-          <td style="white-space:nowrap">${s.date || (s.createdAt ? s.createdAt.substring(0,10) : '-')}</div>
-          <td style="font-family:var(--mono);font-size:11px">${esc(s.sku)}</div>
-          <td>${esc(s.nama||'')}</div>
-          <td><input type="number" min="1" value="${s.qty}" style="width:60px;padding:2px 4px;font-size:11px;border:1px solid var(--border);border-radius:6px" onchange="editStockQty('${esc(s.id).replace(/'/g,"\\'")}',this.value)"></div>
-          <td>${fmtRp(disc)}</div>
-          <td>${fmtRp(s.hargaModal)}</div>
-          <td style="font-weight:700;color:var(--biru)">${fmtRp(netModal)}</div>
-          <td>${esc(s.driver||'-')}</div>
-          <td>${esc(s.rit||'-')}</div>
-          <td><select style="font-size:0.65rem;padding:2px 4px;border:1px solid var(--border);border-radius:6px;background:var(--surface)" onchange="editStockStatus('${esc(s.id).replace(/'/g,"\\'")}',this.value)"><option value="kiriman" ${s.status==='kiriman'?'selected':''}>Kiriman</option><option value="titipan" ${s.status==='titipan'?'selected':''}>Titipan</option></select></div>
-          <td><button class="btn btn-danger btn-sm" onclick="deleteStockIn('${esc(s.id).replace(/'/g,"\\'")}')">🗑</button></div>
+          <td style="font-family:var(--mono);font-size:10px">${esc(s.id||'')}</td>
+          <td style="white-space:nowrap">${s.date || (s.createdAt ? (s.createdAt.length > 10 ? new Date(s.createdAt).toISOString().substring(0,10) : s.createdAt.substring(0,10)) : '-')}</td>
+          <td style="font-family:var(--mono);font-size:11px">${esc(s.sku)}</td>
+          <td>${esc(s.nama||'')}</td>
+          <td><input type="number" min="1" value="${s.qty}" style="width:60px;padding:2px 4px;font-size:11px;border:1px solid var(--border);border-radius:6px" onchange="editStockQty('${esc(s.id).replace(/'/g,"\\'")}',this.value)"></td>
+          <td>${fmtRp(disc)}</td>
+          <td>${fmtRp(s.hargaModal)}</td>
+          <td style="font-weight:700;color:var(--biru)">${fmtRp(netModal)}</td>
+          <td>${esc(s.driver||'-')}</td>
+          <td>${esc(s.rit||'-')}</td>
+          <td><select style="font-size:0.65rem;padding:2px 4px;border:1px solid var(--border);border-radius:6px;background:var(--surface)" onchange="editStockStatus('${esc(s.id).replace(/'/g,"\\'")}',this.value)"><option value="kiriman" ${s.status==='kiriman'?'selected':''}>Kiriman</option><option value="titipan" ${s.status==='titipan'?'selected':''}>Titipan</option></select></td>
+          <td><button class="btn btn-danger btn-sm" onclick="deleteStockIn('${esc(s.id).replace(/'/g,"\\'")}')">🗑</button></td>
         </tr>`;
       }).join('');
       return `<div class="card mt-2"><div class="card-title"><i class="fas fa-clipboard-list"></i> Detail Input Barang</div><div class="table-wrap"><table><thead><tr><th>ID</th><th>Tanggal</th><th>SKU</th><th>Nama</th><th>Qty</th><th>Disc</th><th>Harga Modal</th><th>Net Modal</th><th>Driver</th><th>Rit</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${rows}</tbody></tr></div></div>`;
@@ -940,7 +940,30 @@
       loadInputBarang(); syncMasterStockToSheet(); 
     }
 
-    function renderStockHistory() { const el = document.getElementById('stkHistory'); if (!el) return; if (!stockInHistory.length) { el.innerHTML = '<p class="text-sm text-center">Memuat data...</p>'; return; } const rows = stockInHistory.slice(0,50).map(s => { const disc = s.disc || 0; const netModal = (s.hargaModal - disc) * s.qty; return `<tr><td style="font-family:var(--mono);font-size:10px">${esc(s.id||'')}</td><td style="white-space:nowrap">${s.date || (s.createdAt ? s.createdAt.substring(0,10) : '-')}</td><td style="font-family:var(--mono);font-size:11px">${esc(s.sku)}</td><td>${esc(s.nama||'')}</td><td><input type="number" min="1" value="${s.qty}" style="width:60px;padding:2px 4px;font-size:11px;border:1px solid var(--border);border-radius:6px" onchange="editStockQty('${esc(s.id).replace(/'/g,"\\'")}',this.value)"></td><td>${fmtRp(disc)}</td><td>${fmtRp(s.hargaModal)}</td><td style="font-weight:700;color:var(--biru)">${fmtRp(netModal)}</td><td>${esc(s.driver||'-')}</td><td>${esc(s.rit||'-')}</td><td><select style="font-size:0.65rem;padding:2px 4px;border:1px solid var(--border);border-radius:6px;background:var(--surface)" onchange="editStockStatus('${esc(s.id).replace(/'/g,"\\'")}',this.value)"><option value="kiriman" ${s.status==='kiriman'?'selected':''}>Kiriman</option><option value="titipan" ${s.status==='titipan'?'selected':''}>Titipan</option></select></td><td><button class="btn btn-danger btn-sm" onclick="deleteStockIn('${esc(s.id).replace(/'/g,"\\'")}')">🗑</button></td></tr>`; }).join(''); el.innerHTML = `<div class="table-wrap"><table><thead><tr><th>ID</th><th>Tanggal</th><th>SKU</th><th>Nama</th><th>Qty</th><th>Disc</th><th>Harga Modal</th><th>Net Modal</th><th>Driver</th><th>Rit</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${rows}</tbody></table></div>`; }
+    function renderStockHistory() {
+      const el = document.getElementById('stkHistory');
+      if (!el) return;
+      if (!stockInHistory.length) { el.innerHTML = '<p class="text-sm text-center">Memuat data...</p>'; return; }
+      let rows = stockInHistory.slice(0,50).map(s => {
+        const disc = s.disc || 0;
+        const netModal = (s.hargaModal - disc) * s.qty;
+        return `<tr>
+          <td style="font-family:var(--mono);font-size:10px">${esc(s.id||'')}</td>
+          <td style="white-space:nowrap">${s.date || (s.createdAt ? (s.createdAt.length > 10 ? new Date(s.createdAt).toISOString().substring(0,10) : s.createdAt.substring(0,10)) : '-')}</td>
+          <td style="font-family:var(--mono);font-size:11px">${esc(s.sku)}</td>
+          <td>${esc(s.nama||'')}</td>
+          <td><input type="number" min="1" value="${s.qty}" style="width:60px;padding:2px 4px;font-size:11px;border:1px solid var(--border);border-radius:6px" onchange="editStockQty('${esc(s.id).replace(/'/g,"\\'")}',this.value)"></td>
+          <td>${fmtRp(disc)}</td>
+          <td>${fmtRp(s.hargaModal)}</td>
+          <td style="font-weight:700;color:var(--biru)">${fmtRp(netModal)}</td>
+          <td>${esc(s.driver||'-')}</td>
+          <td>${esc(s.rit||'-')}</td>
+          <td><select style="font-size:0.65rem;padding:2px 4px;border:1px solid var(--border);border-radius:6px;background:var(--surface)" onchange="editStockStatus('${esc(s.id).replace(/'/g,"\\'")}',this.value)"><option value="kiriman" ${s.status==='kiriman'?'selected':''}>Kiriman</option><option value="titipan" ${s.status==='titipan'?'selected':''}>Titipan</option></select></td>
+          <td><button class="btn btn-danger btn-sm" onclick="deleteStockIn('${esc(s.id).replace(/'/g,"\\'")}')">🗑</button></td>
+        </tr>`;
+      }).join('');
+      el.innerHTML = `<div class="table-wrap"><table><thead><tr><th>ID</th><th>Tanggal</th><th>SKU</th><th>Nama</th><th>Qty</th><th>Disc</th><th>Harga Modal</th><th>Net Modal</th><th>Driver</th><th>Rit</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    }
     
     function editStockQty(id, newQty) {
       const idx = stockInHistory.findIndex(s => s.id === id);
