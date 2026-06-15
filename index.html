@@ -918,25 +918,76 @@
     }
 
     let _stockBarangAll = [];
+    let _sbSelectedSkus = new Set();
+    function toggleSbSkuDropdown() {
+      const dd = document.getElementById('sbSkuDropdown');
+      if (dd) dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+    }
+    function updateSbSkuLabel() {
+      const lbl = document.getElementById('sbSkuLabel');
+      if (!lbl) return;
+      if (_sbSelectedSkus.size === 0) lbl.textContent = 'Semua SKU';
+      else if (_sbSelectedSkus.size === 1) lbl.textContent = [..._sbSelectedSkus][0];
+      else lbl.textContent = _sbSelectedSkus.size + ' SKU dipilih';
+    }
+    function toggleSbSku(sku) {
+      if (_sbSelectedSkus.has(sku)) _sbSelectedSkus.delete(sku);
+      else _sbSelectedSkus.add(sku);
+      updateSbSkuLabel();
+    }
+    function selectAllSbSku() {
+      const chks = document.querySelectorAll('#sbSkuDropdown input[type=checkbox]');
+      chks.forEach(c => { _sbSelectedSkus.add(c.value); c.checked = true; });
+      updateSbSkuLabel();
+    }
+    function clearAllSbSku() {
+      _sbSelectedSkus.clear();
+      const chks = document.querySelectorAll('#sbSkuDropdown input[type=checkbox]');
+      chks.forEach(c => { c.checked = false; });
+      updateSbSkuLabel();
+    }
     async function loadStockBarang() {
       const today = new Date().toISOString().slice(0,10);
+      _sbSelectedSkus = new Set();
       document.getElementById('contentArea').innerHTML = `
         <div class="card">
           <div class="card-title"><i class="fas fa-warehouse"></i> Stock Barang</div>
           <div class="flex-row mb-2" style="gap:8px;flex-wrap:wrap;align-items:flex-end">
             <div class="form-group col-1" style="margin:0"><label>Tanggal</label><input type="date" id="sbTgl" value="${today}"></div>
-            <div class="form-group col-1" style="margin:0"><label>SKU</label><select id="sbSku"><option value="">Semua SKU</option></select></div>
-            <button class="btn btn-primary" onclick="doStockBarang()" style="height:44px;align-self:flex-end">📊 Tampilkan</button>
+            <div class="form-group col-1" style="margin:0;position:relative">
+              <label>SKU</label>
+              <div id="sbSkuBtn" onclick="toggleSbSkuDropdown()" style="cursor:pointer;padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:0.8rem;display:flex;justify-content:space-between;align-items:center;gap:6px;user-select:none;">
+                <span id="sbSkuLabel">Semua SKU</span><i class="fas fa-chevron-down" style="font-size:0.65rem;color:var(--text3)"></i>
+              </div>
+              <div id="sbSkuDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:200;background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-md);max-height:220px;overflow-y:auto;padding:6px 0;">
+                <div style="display:flex;gap:4px;padding:4px 8px 6px;border-bottom:1px solid var(--border);">
+                  <button onclick="selectAllSbSku()" class="btn btn-sm btn-outline" style="flex:1;font-size:0.65rem;padding:4px 6px;">Semua</button>
+                  <button onclick="clearAllSbSku()" class="btn btn-sm btn-ghost" style="flex:1;font-size:0.65rem;padding:4px 6px;">Reset</button>
+                </div>
+                <div id="sbSkuCheckList" style="padding:4px 0;"></div>
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="toggleSbSkuDropdown();doStockBarang()" style="height:44px;align-self:flex-end">📊 Tampilkan</button>
           </div>
         </div>
         <div id="sbContent"><div class="text-center text-sm" style="padding:40px">Memuat data...</div></div>`;
+      document.addEventListener('click', function _sbOutside(e) {
+        const dd = document.getElementById('sbSkuDropdown');
+        const btn = document.getElementById('sbSkuBtn');
+        if (dd && btn && !dd.contains(e.target) && !btn.contains(e.target)) { dd.style.display = 'none'; }
+      }, { capture: true });
       try {
         const data = await gasCall('getStockBarang', []);
         if (Array.isArray(data)) {
           _stockBarangAll = data;
           const skus = [...new Set(data.map(d => d.sku).filter(Boolean))].sort();
-          const sel = document.getElementById('sbSku');
-          if (sel) { skus.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; sel.appendChild(o); }); }
+          const cl = document.getElementById('sbSkuCheckList');
+          if (cl) {
+            cl.innerHTML = skus.map(s => `
+              <label style="display:flex;align-items:center;gap:8px;padding:6px 12px;cursor:pointer;font-size:0.78rem;font-weight:500;color:var(--text);" onmouseover="this.style.background='var(--biru-muda)'" onmouseout="this.style.background=''">
+                <input type="checkbox" value="${s}" onchange="toggleSbSku(this.value)" style="width:auto;accent-color:var(--biru);cursor:pointer;"> ${s}
+              </label>`).join('');
+          }
         }
         doStockBarang();
       } catch(e) {
@@ -945,11 +996,12 @@
       }
     }
     function doStockBarang() {
+      const dd = document.getElementById('sbSkuDropdown');
+      if (dd) dd.style.display = 'none';
       const tgl = (document.getElementById('sbTgl')||{}).value || '';
-      const sku = (document.getElementById('sbSku')||{}).value || '';
       let filtered = _stockBarangAll;
       if (tgl) filtered = filtered.filter(d => (d.date||'').substring(0,10) === tgl);
-      if (sku) filtered = filtered.filter(d => d.sku === sku);
+      if (_sbSelectedSkus.size > 0) filtered = filtered.filter(d => _sbSelectedSkus.has(d.sku));
       const el = document.getElementById('sbContent');
       if (!el) return;
       if (!filtered.length) { el.innerHTML = '<div class="card"><p class="text-center text-sm">Tidak ada data untuk filter ini.</p></div>'; return; }
