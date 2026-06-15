@@ -475,6 +475,7 @@
              <button class="tab ${currentPage==='rekapinput'?'active':''}" onclick="navigateTo('rekapinput')"><i class="fas fa-boxes"></i> Rekap Input</button>
              <button class="tab ${currentPage==='setoran'?'active':''}" onclick="navigateTo('setoran')"><i class="fas fa-money-bill-wave"></i> Setoran</button>
              <button class="tab ${currentPage==='inputbarang'?'active':''}" onclick="navigateTo('inputbarang')"><i class="fas fa-boxes"></i> Input</button>
+             <button class="tab ${currentPage==='stockbarang'?'active':''}" onclick="navigateTo('stockbarang')"><i class="fas fa-warehouse"></i> Stock</button>
              <button class="tab ${currentPage==='produk'?'active':''}" onclick="navigateTo('produk')"><i class="fas fa-cubes"></i> Produk</button>
              <button class="tab ${currentPage==='pelanggan'?'active':''}" onclick="navigateTo('pelanggan')"><i class="fas fa-address-book"></i> Pelanggan</button>
              <button class="tab ${currentPage==='pengaturan'?'active':''}" onclick="navigateTo('pengaturan')"><i class="fas fa-cog"></i> Atur</button>`;
@@ -494,7 +495,7 @@
       document.getElementById('menuTabs').innerHTML = h;
     }
     function navigateTo(p) { currentPage = p; renderMenuTabs(); renderContent(); }
-    function renderContent() { switch (currentPage) { case 'dashboard': loadDashboard(); break; case 'penjualan': loadPenjualan(); break; case 'transaksi': loadTransaksi(); break; case 'rekap': loadRekap(); break; case 'rekapinput': loadRekapInput(); break; case 'setoran': loadSetoran(); break; case 'inputbarang': loadInputBarang(); break; case 'produk': loadProduk(); break; case 'pelanggan': loadPelanggan(); break; case 'pengaturan': loadPengaturan(); break; case 'pengaturanUser': loadPengaturanUser(); break; } }
+    function renderContent() { switch (currentPage) { case 'dashboard': loadDashboard(); break; case 'penjualan': loadPenjualan(); break; case 'transaksi': loadTransaksi(); break; case 'rekap': loadRekap(); break; case 'rekapinput': loadRekapInput(); break; case 'setoran': loadSetoran(); break; case 'inputbarang': loadInputBarang(); break; case 'stockbarang': loadStockBarang(); break; case 'produk': loadProduk(); break; case 'pelanggan': loadPelanggan(); break; case 'pengaturan': loadPengaturan(); break; case 'pengaturanUser': loadPengaturanUser(); break; } }
 
     // ========== DASHBOARD (MENU UTAMA) ==========
     function loadDashboard() {
@@ -569,6 +570,7 @@
         h += `<div class="menu-grid">`;
         h += menuItem('inputbarang', 'Input', 'fa-boxes');
         h += menuItem('rekapinput', 'Rekap Input', 'fa-clipboard-list');
+        h += menuItem('stockbarang', 'Stock Barang', 'fa-warehouse');
         h += `</div>`;
       } else if (role === 'sales') {
         h += `<div class="menu-row-title">💼 Sales</div>`;
@@ -911,10 +913,72 @@
         <div id="inputItemsContainer"></div>
         <div class="total-box"><div class="flex-between"><span>Total Qty</span><span id="inpTotalQty">0</span></div><div class="flex-between"><span>Gross Modal</span><span id="inpGrossModal" style="font-family:var(--mono)">Rp 0</span></div><div class="flex-between"><span>Total Disc</span><span id="inpTotalDisc" style="font-family:var(--mono);color:var(--merah)">Rp 0</span></div><div class="flex-between" style="font-size:1.1rem;font-weight:800"><span>TOTAL MODAL BERSIH</span><span id="inpNetModal" style="font-family:var(--mono);color:var(--biru)">Rp 0</span></div></div>
         <button class="btn btn-primary btn-block" onclick="saveStockIn()">💾 Simpan Input Barang</button></div>
-        <div class="card"><div class="card-title"><i class="fas fa-history"></i> Riwayat Barang Masuk</div><div id="stkHistory"></div></div>`; 
-      addItemInputRow(); renderStockHistory(); syncStockHistoryFromGAS(); 
+        `; 
+      addItemInputRow(); 
     }
 
+    let _stockBarangAll = [];
+    async function loadStockBarang() {
+      const today = new Date().toISOString().slice(0,10);
+      document.getElementById('contentArea').innerHTML = `
+        <div class="card">
+          <div class="card-title"><i class="fas fa-warehouse"></i> Stock Barang</div>
+          <div class="flex-row mb-2" style="gap:8px;flex-wrap:wrap;align-items:flex-end">
+            <div class="form-group col-1" style="margin:0"><label>Tanggal</label><input type="date" id="sbTgl" value="${today}"></div>
+            <div class="form-group col-1" style="margin:0"><label>SKU</label><select id="sbSku"><option value="">Semua SKU</option></select></div>
+            <button class="btn btn-primary" onclick="doStockBarang()" style="height:44px;align-self:flex-end">📊 Tampilkan</button>
+          </div>
+        </div>
+        <div id="sbContent"><div class="text-center text-sm" style="padding:40px">Memuat data...</div></div>`;
+      try {
+        const data = await gasCall('getStockBarang', []);
+        if (Array.isArray(data)) {
+          _stockBarangAll = data;
+          const skus = [...new Set(data.map(d => d.sku).filter(Boolean))].sort();
+          const sel = document.getElementById('sbSku');
+          if (sel) { skus.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; sel.appendChild(o); }); }
+        }
+        doStockBarang();
+      } catch(e) {
+        const el = document.getElementById('sbContent');
+        if (el) el.innerHTML = `<div class="card"><p class="text-center text-sm" style="color:var(--merah)">Gagal memuat data: ${e.message}</p></div>`;
+      }
+    }
+    function doStockBarang() {
+      const tgl = (document.getElementById('sbTgl')||{}).value || '';
+      const sku = (document.getElementById('sbSku')||{}).value || '';
+      let filtered = _stockBarangAll;
+      if (tgl) filtered = filtered.filter(d => (d.date||'').substring(0,10) === tgl);
+      if (sku) filtered = filtered.filter(d => d.sku === sku);
+      const el = document.getElementById('sbContent');
+      if (!el) return;
+      if (!filtered.length) { el.innerHTML = '<div class="card"><p class="text-center text-sm">Tidak ada data untuk filter ini.</p></div>'; return; }
+      const totalAwal = filtered.reduce((s,d)=>s+d.stokAwal,0);
+      const totalMasuk = filtered.reduce((s,d)=>s+d.masuk,0);
+      const totalKeluar = filtered.reduce((s,d)=>s+d.keluar,0);
+      const totalAkhir = filtered.reduce((s,d)=>s+d.stokAkhir,0);
+      let rows = filtered.map(d => `<tr>
+        <td style="white-space:nowrap">${esc(d.date||'-')}</td>
+        <td style="font-family:var(--mono);font-size:11px">${esc(d.sku||'-')}</td>
+        <td>${esc(d.nama||'-')}</td>
+        <td style="text-align:right">${d.stokAwal}</td>
+        <td style="text-align:right;color:var(--biru);font-weight:700">${d.masuk}</td>
+        <td style="text-align:right;color:var(--merah)">${d.keluar}</td>
+        <td style="text-align:right;font-weight:800;color:var(--hijau,#16a34a)">${d.stokAkhir}</td>
+      </tr>`).join('');
+      el.innerHTML = `<div class="card">
+        <div class="total-box" style="margin-bottom:12px">
+          <div class="flex-between"><span>Total Stok Awal</span><span style="font-family:var(--mono)">${totalAwal}</span></div>
+          <div class="flex-between"><span>Total Masuk</span><span style="font-family:var(--mono);color:var(--biru);font-weight:700">${totalMasuk}</span></div>
+          <div class="flex-between"><span>Total Keluar</span><span style="font-family:var(--mono);color:var(--merah)">${totalKeluar}</span></div>
+          <div class="flex-between" style="font-size:1.1rem;font-weight:800"><span>Total Stok Akhir</span><span style="font-family:var(--mono);color:var(--hijau,#16a34a)">${totalAkhir}</span></div>
+        </div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Tanggal</th><th>SKU</th><th>Nama</th><th>Stok Awal</th><th>Masuk</th><th>Keluar</th><th>Stok Akhir</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table></div>
+      </div>`;
+    }
     function addItemInputRow(skuVal) { let pOpts = '<option value="">-- pilih --</option>'; products.forEach(p => { pOpts += `<option value="${p.sku}">${p.sku} - ${p.nama}</option>`; }); const div = document.createElement('div'); div.className = 'cart-item-row'; div.innerHTML = `<select class="cart-item-select" style="flex:2;min-width:100px" onchange="isiModalInputRow(this)">${pOpts}</select><input class="cart-qty" type="number" min="1" value="1" style="width:50px" oninput="recalcInputTotals()"><input class="cart-disc" type="number" min="0" value="0" placeholder="Harga Modal" readonly style="width:70px;background:var(--biru-muda)"><input class="cart-disc" type="number" min="0" value="0" placeholder="Disc" style="width:55px" oninput="recalcInputTotals()"><button class="btn btn-danger btn-sm" onclick="this.parentElement.remove();recalcInputTotals()">✕</button>`; document.getElementById('inputItemsContainer').appendChild(div); if (skuVal) { const sel = div.querySelector('select'); sel.value = skuVal; isiModalInputRow(sel); } recalcInputTotals(); }
     function isiModalInputRow(sel) { const sku = sel.value; const p = products.find(x => x.sku === sku); const row = sel.closest('.cart-item-row'); if (!row) return; const inputs = row.querySelectorAll('input'); inputs[1].value = p ? (p.modal || 0) : 0; recalcInputTotals(); }
     function recalcInputTotals() { const rows = document.querySelectorAll('#inputItemsContainer .cart-item-row'); let tq=0,gm=0,td=0; rows.forEach(row => { const inputs = row.querySelectorAll('input'); const q = parseInt(inputs[0].value)||0, h = parseFloat(inputs[1].value)||0, d = parseFloat(inputs[2].value)||0; tq+=q; gm+=q*h; td+=q*d; }); document.getElementById('inpTotalQty').textContent=tq; document.getElementById('inpGrossModal').textContent=fmtRp(gm); document.getElementById('inpTotalDisc').textContent=fmtRp(td); document.getElementById('inpNetModal').textContent=fmtRp(gm-td); }
