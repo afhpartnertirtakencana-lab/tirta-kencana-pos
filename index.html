@@ -1002,6 +1002,14 @@
       let filtered = _stockBarangAll;
       if (tgl) filtered = filtered.filter(d => (d.date||'').substring(0,10) === tgl);
       if (_sbSelectedSkus.size > 0) filtered = filtered.filter(d => _sbSelectedSkus.has(d.sku));
+      // Koreksi field masuk dari stockInHistory lokal (kiriman + titipan)
+      filtered = filtered.map(d => {
+        const localMasuk = stockInHistory
+          .filter(s => (s.date||s.tgl||'').substring(0,10) === (d.date||'').substring(0,10) && s.sku === d.sku && (s.status||'').toLowerCase() === 'kiriman')
+          .reduce((sum, s) => sum + (s.qty||0), 0);
+        const masuk = localMasuk > 0 ? localMasuk : (d.masuk||0);
+        return { ...d, masuk, stokAkhir: (d.stokAwal||0) + masuk - (d.keluar||0) };
+      });
       const el = document.getElementById('sbContent');
       if (!el) return;
       if (!filtered.length) { el.innerHTML = '<div class="card"><p class="text-center text-sm">Tidak ada data untuk filter ini.</p></div>'; return; }
