@@ -1243,6 +1243,7 @@
               </div>
             </div>
             <button class="btn btn-primary" onclick="toggleSbSkuDropdown();doStockBarang()" style="height:44px;align-self:flex-end">📊 Tampilkan</button>
+            <button class="btn btn-warning" onclick="rolloverStokAwal()" style="height:44px;align-self:flex-end" title="Jadikan stok akhir kemarin sebagai stok awal hari ini">🔄 Rollover Stok</button>
           </div>
         </div>
         <div id="sbContent"><div class="text-center text-sm" style="padding:40px">Memuat data...</div></div>`;
@@ -1314,6 +1315,68 @@
         </table></div>
       </div>`;
     }
+    async function rolloverStokAwal() {
+      const today = localDateStr();
+      // Hitung kemarin (lokal)
+      const _kemarin = new Date(); _kemarin.setDate(_kemarin.getDate() - 1);
+      const kemarin = localDateStr(_kemarin);
+
+      // Cek apakah data hari ini sudah ada di GAS
+      const dataHariIni = _stockBarangAll.filter(d => (d.date||'').substring(0,10) === today);
+      if (dataHariIni.length > 0) {
+        const konfirm = await Swal.fire({ title: 'Data hari ini sudah ada', text: `Stock tanggal ${today} sudah ada (${dataHariIni.length} SKU). Tetap lakukan rollover dan timpa stok awal hari ini?`, icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya, timpa', cancelButtonText: 'Batal' });
+        if (!konfirm.isConfirmed) return;
+      }
+
+      // Ambil data kemarin dari _stockBarangAll
+      const dataKemarin = _stockBarangAll.filter(d => (d.date||'').substring(0,10) === kemarin);
+      if (!dataKemarin.length) {
+        return Swal.fire('Tidak ada data', `Tidak ada data stock untuk tanggal kemarin (${kemarin}). Pastikan data kemarin sudah ada di sistem.`, 'warning');
+      }
+
+      // Hitung stok akhir kemarin (dengan koreksi dari stockInHistory lokal)
+      const rolloverData = dataKemarin.map(d => {
+        const localMasuk = stockInHistory
+          .filter(s => (s.date||s.tgl||'').substring(0,10) === kemarin && s.sku === d.sku && (s.status||'').toLowerCase() === 'kiriman')
+          .reduce((sum, s) => sum + (s.qty||0), 0);
+        const masuk = localMasuk > 0 ? localMasuk : (d.masuk||0);
+        const stokAkhirKemarin = (d.stokAwal||0) + masuk - (d.keluar||0);
+        return { date: today, sku: d.sku, nama: d.nama, stokAwal: stokAkhirKemarin, masuk: 0, keluar: 0 };
+      });
+
+      // Preview ke user
+      const previewRows = rolloverData.map(r => `<tr><td style="font-family:var(--mono);font-size:11px">${esc(r.sku)}</td><td>${esc(r.nama)}</td><td style="text-align:right;font-weight:700;color:var(--biru)">${r.stokAwal}</td></tr>`).join('');
+      const konfirmFinal = await Swal.fire({
+        title: `🔄 Rollover Stok ke ${today}`,
+        html: `<p style="font-size:13px;margin-bottom:10px">Stok akhir <b>${kemarin}</b> → Stok awal <b>${today}</b></p><div style="max-height:250px;overflow-y:auto"><table style="width:100%;font-size:12px;border-collapse:collapse"><thead><tr><th style="text-align:left;padding:4px 8px;background:#EAF4FD;color:#1A6DB5">SKU</th><th style="text-align:left;padding:4px 8px;background:#EAF4FD;color:#1A6DB5">Nama</th><th style="text-align:right;padding:4px 8px;background:#EAF4FD;color:#1A6DB5">Stok Awal Baru</th></tr></thead><tbody>${previewRows}</tbody></table></div>`,
+        icon: 'question', showCancelButton: true, confirmButtonText: '✅ Simpan Rollover', cancelButtonText: 'Batal', width: '500px'
+      });
+      if (!konfirmFinal.isConfirmed) return;
+
+      Swal.fire({ title: 'Menyimpan...', text: 'Mengirim data rollover ke server...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      let berhasil = 0, gagal = 0;
+      for (const r of rolloverData) {
+        try {
+          await gasCall('updateStockAwal', [r]);
+          berhasil++;
+        } catch(e) {
+          console.warn('Gagal rollover SKU', r.sku, e);
+          gagal++;
+        }
+      }
+      Swal.close();
+      if (berhasil > 0) {
+        Swal.fire({ icon: gagal > 0 ? 'warning' : 'success', title: 'Rollover Selesai', text: `${berhasil} SKU berhasil${gagal > 0 ? ', '+gagal+' SKU gagal' : ''}.` });
+        // Reload data stock
+        try {
+          const data = await gasCall('getStockBarang', []);
+          if (Array.isArray(data)) { _stockBarangAll = data; doStockBarang(); }
+        } catch(e) { console.warn('Gagal reload stock:', e); }
+      } else {
+        Swal.fire({ icon: 'error', title: 'Gagal', text: 'Semua SKU gagal di-rollover. Periksa fungsi updateStockAwal di GAS.' });
+      }
+    }
+
     function addItemInputRow(skuVal) { let pOpts = '<option value="">-- pilih --</option>'; products.forEach(p => { pOpts += `<option value="${p.sku}">${p.sku} - ${p.nama}</option>`; }); const div = document.createElement('div'); div.className = 'cart-item-row'; div.innerHTML = `<select class="cart-item-select" style="flex:2;min-width:100px" onchange="isiModalInputRow(this)">${pOpts}</select><input class="cart-qty" type="number" min="1" value="1" style="width:50px" oninput="recalcInputTotals()"><input class="cart-disc" type="number" min="0" value="0" placeholder="Harga Modal" readonly style="width:70px;background:var(--biru-muda)"><input class="cart-disc" type="number" min="0" value="0" placeholder="Disc" style="width:55px" oninput="recalcInputTotals()"><button class="btn btn-danger btn-sm" onclick="this.parentElement.remove();recalcInputTotals()">✕</button>`; document.getElementById('inputItemsContainer').appendChild(div); if (skuVal) { const sel = div.querySelector('select'); sel.value = skuVal; isiModalInputRow(sel); } recalcInputTotals(); }
     function isiModalInputRow(sel) { const sku = sel.value; const p = products.find(x => x.sku === sku); const row = sel.closest('.cart-item-row'); if (!row) return; const inputs = row.querySelectorAll('input'); inputs[1].value = p ? (p.modal || 0) : 0; recalcInputTotals(); }
     function recalcInputTotals() { const rows = document.querySelectorAll('#inputItemsContainer .cart-item-row'); let tq=0,gm=0,td=0; rows.forEach(row => { const inputs = row.querySelectorAll('input'); const q = parseInt(inputs[0].value)||0, h = parseFloat(inputs[1].value)||0, d = parseFloat(inputs[2].value)||0; tq+=q; gm+=q*h; td+=q*d; }); document.getElementById('inpTotalQty').textContent=tq; document.getElementById('inpGrossModal').textContent=fmtRp(gm); document.getElementById('inpTotalDisc').textContent=fmtRp(td); document.getElementById('inpNetModal').textContent=fmtRp(gm-td); }
