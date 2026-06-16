@@ -499,7 +499,7 @@
 
     // ========== DASHBOARD (MENU UTAMA) ==========
     function loadDashboard() {
-      const today = new Date().toISOString().slice(0,10);
+      const _dn = new Date(); const today = _dn.getFullYear()+'-'+String(_dn.getMonth()+1).padStart(2,'0')+'-'+String(_dn.getDate()).padStart(2,'0');
       const role = currentUser?.role;
       let h = '';
 
@@ -621,7 +621,7 @@
         <div class="total-box"><div class="flex-between"><span>Gross</span><span id="sumGross" style="font-family:var(--mono)">Rp 0</span></div><div class="flex-between"><span>Diskon</span><span id="sumDisc" style="font-family:var(--mono);color:var(--merah)">Rp 0</span></div><div class="flex-between" style="font-size:1.1rem;font-weight:800"><span>TOTAL NETT</span><span id="sumNett" style="font-family:var(--mono);color:var(--biru)">Rp 0</span></div></div>
         <div style="display:flex;gap:8px"><button class="btn btn-secondary" style="flex:1" onclick="resetTrx()">Reset</button><button class="btn btn-primary" style="flex:2" id="btnSubmitTrx" onclick="submitTrx()">💾 Simpan & Struk</button></div></div>`;
       _itemIdx = 0;
-      document.getElementById('trxId').value = genId(); document.getElementById('trxTgl').value = new Date().toISOString().slice(0,10);
+      document.getElementById('trxId').value = genId(); document.getElementById('trxTgl').value = localDateStr();
       document.getElementById('trxCust').value = ''; document.getElementById('trxDiscGlobal').value = '0'; document.getElementById('trxStatus').value = '';
       document.getElementById('itemsContainer').innerHTML = ''; addItemRow();
     }
@@ -729,7 +729,7 @@
           </div>
         </div>
         <div id="setoranContent"><div class="text-center text-sm" style="padding:40px">Pilih tanggal & sales lalu klik Tampilkan</div></div>`;
-      document.getElementById('setorTgl').value = new Date().toISOString().slice(0,10); 
+      document.getElementById('setorTgl').value = localDateStr(); 
     }
 
     function doSetoran() { 
@@ -778,7 +778,7 @@
     // ========== RIWAYAT SETORAN ==========
     let _currentSetoranHistory = [];
     function showSetoranHistoryModal() {
-      document.getElementById('setoranHistoryTgl').value = new Date().toISOString().slice(0,10);
+      document.getElementById('setoranHistoryTgl').value = localDateStr();
       document.getElementById('setoranHistoryContent').innerHTML = '';
       document.getElementById('setoranHistoryModal').classList.add('show');
     }
@@ -861,11 +861,286 @@
     function useScanResult() { if (!_scanResult) return; const code = _scanResult; closeScanner(); setTimeout(() => { if (_scannerMode === 'trx') { const p = products.find(x => String(x.barcode||x.sku).toLowerCase() === String(code).toLowerCase()); if (p) addItemRow(p.sku); else Swal.fire('Info','Produk dengan kode '+code+' tidak ditemukan','info'); } }, 200); }
 
     // ========== REKAP ==========
-    function loadRekap() { let sOpts = '<option value="">Semua Sales</option>'; (settings.salesList||[]).forEach(s => { sOpts += `<option value="${esc(s)}">${esc(s)}</option>`; }); document.getElementById('contentArea').innerHTML = `<div class="card"><div class="flex-row mb-2"><div class="form-group col-1"><label>Tanggal</label><input type="date" id="rekapTgl"></div><div class="form-group col-1"><label>Sales</label><select id="rekapSales">${sOpts}</select></div><button class="btn btn-primary" onclick="doRekap()" style="height:44px;align-self:flex-end">📊 Tampilkan</button></div></div><div id="rekapContent"><div class="text-center text-sm" style="padding:40px">Pilih filter lalu klik Tampilkan</div></div>`; document.getElementById('rekapTgl').value = new Date().toISOString().slice(0,10); }
-    function doRekap() { const tgl = document.getElementById('rekapTgl').value; const salesFilter = document.getElementById('rekapSales').value; if (!tgl) return Swal.fire('Error','Pilih tanggal!','error'); let filtered = allTrxList.filter(t => (t.tgl||'').substring(0,10) === tgl); if (salesFilter) filtered = filtered.filter(t => (t.sales||'').toLowerCase().trim() === salesFilter.toLowerCase().trim()); const total = filtered.reduce((s,t)=>s+(t.nett||0),0); const groups = { cod:[], transfer:[], belumtransfer:[], qris:[] }; filtered.forEach(t => { const ns = (t.status||'').toLowerCase().replace(/\s/g,''); if (groups[ns]) groups[ns].push(t); }); let h = `<div class="card"><div class="flex-between"><div><strong>📋 Rekap: ${salesFilter||'Semua'}</strong><br><span class="text-sm">${fmtDate(tgl)}</span></div><div style="font-size:1.2rem;font-weight:800;color:var(--biru)">Total: ${fmtRp(total)}</div></div></div>`; ['cod','transfer','qris','belumtransfer'].forEach(key => { const items = groups[key]||[]; const sub = items.reduce((s,t)=>s+(t.nett||0),0); h += `<div class="card"><div class="flex-between mb-2"><strong>${key==='cod'?'COD':key==='transfer'?'Transfer':key==='qris'?'QRIS':'Belum Transfer'}</strong><span style="font-weight:800;color:var(--biru)">${fmtRp(sub)}</span></div>`; if (items.length) { h += '<div class="table-wrap"><table><thead><tr><th>Customer</th><th>Nett</th></tr></thead><tbody>'; items.forEach(t => { h += `<tr><td>${esc(t.customer||'-')}</td><td style="font-family:var(--mono);font-weight:700">${fmtRp(t.nett)}</td></tr>`; }); h += '</tbody></table></div>'; } else h += '<p class="text-sm text-center">Tidak ada</p>'; h += '</div>'; }); const allItems = []; filtered.forEach(trx => { (trx.items||[]).forEach(it => { allItems.push({ customer: trx.customer, sales: trx.sales, sku: it.sku, nama: it.nama||'', qty: it.qty||0, harga: it.harga||0, disc: it.discRpPer||0, modal: it.modal||0, nettPer: it.nettPer || ((it.harga||0)-(it.discRpPer||0)) }); }); }); if (allItems.length === 0) { document.getElementById('rekapContent').innerHTML = h; return; } const salesMap = new Map(); allItems.forEach(item => { const s = item.sales || 'Tanpa Sales'; if (!salesMap.has(s)) salesMap.set(s, []); salesMap.get(s).push(item); }); salesMap.forEach((items, salesName) => { const agg = {}; items.forEach(item => { const key = `${item.customer}|${item.sku}`; if (!agg[key]) agg[key] = { customer: item.customer, sku: item.sku, totalQty: 0 }; agg[key].totalQty += item.qty; }); const rows = Object.values(agg).sort((a,b) => a.customer.localeCompare(b.customer) || a.sku.localeCompare(b.sku)); h += `<div class="card"><div class="card-title"><i class="fas fa-user"></i> Rekap Sales: ${esc(salesName)}</div>`; if (rows.length) { h += '<div class="table-wrap"><table><thead><tr><th>Customer</th><th>SKU</th><th>Qty</th></tr></thead><tbody>'; rows.forEach(r => { h += `<tr><td>${esc(r.customer)}</td><td>${esc(r.sku)}</td><td>${r.totalQty}</td></tr>`; }); h += '</tbody></table></div>'; } else h += '<p class="text-sm text-center">Tidak ada item</p>'; h += '</div>'; }); const skuMap = new Map(); allItems.forEach(item => { if (!skuMap.has(item.sku)) skuMap.set(item.sku, []); skuMap.get(item.sku).push(item); }); h += `<div class="card"><div class="card-title"><i class="fas fa-cube"></i> REKAP PER SKU</div>`; let skuContent = ''; Array.from(skuMap.keys()).sort().forEach(sku => { const items = skuMap.get(sku); const custAgg = {}; items.forEach(item => { if (!custAgg[item.customer]) custAgg[item.customer] = { customer: item.customer, qty: 0 }; custAgg[item.customer].qty += item.qty; }); const custRows = Object.values(custAgg).sort((a,b) => a.customer.localeCompare(b.customer)); const totalQty = custRows.reduce((sum,r) => sum + r.qty, 0); skuContent += `<tr><td colspan="3" style="background:var(--biru-muda);font-weight:700;font-size:0.75rem">${esc(sku)}</td></tr>`; custRows.forEach(r => { skuContent += `<tr><td></td><td>${esc(r.customer)}</td><td>${r.qty}</td></tr>`; }); skuContent += `<tr><td colspan="2" style="text-align:right;font-weight:700;">${esc(sku)} Total</td><td style="font-weight:700;">${totalQty}</td></tr>`; }); if (skuContent) h += '<div class="table-wrap"><table><thead><tr><th></th><th>Customer</th><th>Qty</th></tr></thead><tbody>' + skuContent + '</tbody></table></div>'; else h += '<p class="text-sm text-center">Tidak ada data</p>'; h += '</div>'; document.getElementById('rekapContent').innerHTML = h; }
+    let _rekapJenis = 'penjualan_per_sales';
+    function loadRekap() {
+      let sOpts = '<option value="">Semua Sales</option>';
+      (settings.salesList||[]).forEach(s => { sOpts += `<option value="${esc(s)}">${esc(s)}</option>`; });
+      const jenisOpts = [
+        { val:'penjualan_per_sales',  label:'Penjualan per Sales' },
+        { val:'rekap_per_sku',        label:'Rekap per SKU' },
+        { val:'rekap_per_customer',   label:'Rekap per Customer' },
+        { val:'rekap_per_qty',        label:'Rekap per Qty' },
+        { val:'rekap_sales_qty',      label:'Rekap Sales Qty' },
+        { val:'cod',                  label:'COD' },
+        { val:'transfer',             label:'Transfer' },
+        { val:'qris',                 label:'QRIS' },
+        { val:'belum_transfer',       label:'Belum Transfer' },
+        { val:'laporan_per_sales',    label:'Laporan per Sales' },
+      ].map(o => `<option value="${o.val}" ${_rekapJenis===o.val?'selected':''}>${o.label}</option>`).join('');
+      document.getElementById('contentArea').innerHTML = `
+        <div class="card">
+          <div class="card-title"><i class="fas fa-chart-bar"></i> Laporan</div>
+          <div class="form-group"><label>Jenis Laporan</label>
+            <select id="rekapJenis" onchange="_rekapJenis=this.value">${jenisOpts}</select>
+          </div>
+          <div class="flex-row" style="flex-wrap:wrap;gap:8px;">
+            <div class="form-group col-1" style="margin:0"><label>Tanggal</label><input type="date" id="rekapTgl"></div>
+            <div class="form-group col-1" style="margin:0"><label>Sales</label><select id="rekapSales">${sOpts}</select></div>
+            <button class="btn btn-primary" onclick="doRekap()" style="height:44px;align-self:flex-end">📊 Tampilkan</button>
+          </div>
+        </div>
+        <div id="rekapContent"><div class="text-center text-sm" style="padding:40px">Pilih laporan &amp; filter lalu klik Tampilkan</div></div>`;
+      document.getElementById('rekapTgl').value = localDateStr();
+      document.getElementById('rekapJenis').value = _rekapJenis;
+    }
+
+    async function doRekap() {
+      const tgl = document.getElementById('rekapTgl').value;
+      const salesFilter = document.getElementById('rekapSales').value;
+      const jenis = document.getElementById('rekapJenis').value;
+      _rekapJenis = jenis;
+      if (!tgl) return Swal.fire('Error','Pilih tanggal!','error');
+
+      let filtered = allTrxList.filter(t => (t.tgl||'').substring(0,10) === tgl);
+      if (salesFilter) filtered = filtered.filter(t => (t.sales||'').toLowerCase().trim() === salesFilter.toLowerCase().trim());
+
+      if (!filtered.length) {
+        document.getElementById('rekapContent').innerHTML = '<div class="card"><p class="text-center text-sm">Tidak ada transaksi pada tanggal ini</p></div>';
+        return;
+      }
+
+      // Laporan yang butuh items: fetch getTrxDetail per transaksi jika items belum ada
+      const jenisButuhItems = ['penjualan_per_sales','rekap_per_sku','rekap_per_customer','rekap_per_qty','rekap_sales_qty'];
+      const adaItems = filtered.some(t => Array.isArray(t.items) && t.items.length > 0);
+
+      if (jenisButuhItems.includes(jenis) && !adaItems) {
+        document.getElementById('rekapContent').innerHTML = `<div class="loading">Mengambil detail item (0/${filtered.length})...</div>`;
+        try {
+          // Fetch detail satu per satu (paralel tapi dibatasi agar tidak overload)
+          const batchSize = 5;
+          for (let i = 0; i < filtered.length; i += batchSize) {
+            const batch = filtered.slice(i, i + batchSize);
+            const el = document.getElementById('rekapContent');
+            if (el) el.innerHTML = `<div class="loading">Mengambil detail item (${Math.min(i+batchSize, filtered.length)}/${filtered.length})...</div>`;
+            await Promise.all(batch.map(async trx => {
+              if (Array.isArray(trx.items) && trx.items.length > 0) return;
+              try {
+                const detail = await gasCall('getTrxDetail', [trx.id]);
+                if (detail && Array.isArray(detail.items) && detail.items.length > 0) {
+                  const idx = allTrxList.findIndex(t => t.id === trx.id);
+                  if (idx >= 0) allTrxList[idx].items = detail.items;
+                  trx.items = detail.items;
+                }
+              } catch(e) { console.warn('Gagal ambil detail', trx.id, e); }
+            }));
+          }
+          saveLocalData();
+          // Re-filter setelah merge items
+          filtered = allTrxList.filter(t => (t.tgl||'').substring(0,10) === tgl);
+          if (salesFilter) filtered = filtered.filter(t => (t.sales||'').toLowerCase().trim() === salesFilter.toLowerCase().trim());
+        } catch(e) {
+          document.getElementById('rekapContent').innerHTML = `<div class="card"><p class="text-center text-sm" style="color:var(--merah)">Gagal mengambil detail item: ${esc(e.message)}</p></div>`;
+          return;
+        }
+      }
+
+      // Kumpulkan semua items dari filtered
+      const allItems = [];
+      filtered.forEach(trx => {
+        (trx.items||[]).forEach(it => {
+          const nettPer = it.nettPer !== undefined ? it.nettPer : ((it.harga||0)-(it.discRpPer||0));
+          const profit = (nettPer - (it.modal||0)) * (it.qty||0);
+          allItems.push({ customer: trx.customer, sales: trx.sales||'', sku: it.sku||'', nama: it.nama||'', qty: it.qty||0, harga: it.harga||0, discRpPer: it.discRpPer||0, modal: it.modal||0, nettPer, subtotal: nettPer*(it.qty||0), profit, status: trx.status||'' });
+        });
+      });
+
+      let h = '';
+      const labelFilter = `<span class="text-sm" style="color:var(--text2)">${fmtDate(tgl)}${salesFilter?' · '+salesFilter:' · Semua Sales'}</span>`;
+
+      if (jenis === 'penjualan_per_sales') {
+        // Penjualan per Sales → Customer | SKU | Total
+        const salesMap = new Map();
+        // Jika masih tidak ada items, fallback ke header (customer+nett per sales)
+        if (allItems.length === 0) {
+          filtered.forEach(trx => {
+            const s = trx.sales||'Tanpa Sales';
+            if (!salesMap.has(s)) salesMap.set(s, []);
+            salesMap.get(s).push({ customer: trx.customer, sku: '-', subtotal: trx.nett||0 });
+          });
+        } else {
+          allItems.forEach(item => {
+            const s = item.sales || 'Tanpa Sales';
+            if (!salesMap.has(s)) salesMap.set(s, []);
+            salesMap.get(s).push(item);
+          });
+        }
+        if (!salesMap.size) { h = '<div class="card"><p class="text-center text-sm">Tidak ada data</p></div>'; }
+        else {
+          salesMap.forEach((items, salesName) => {
+            const total = items.reduce((s,it)=>s+it.subtotal,0);
+            h += `<div class="card"><div class="card-title"><i class="fas fa-user-tie"></i> ${esc(salesName)}</div>${labelFilter}<div class="flex-between" style="margin-top:6px;margin-bottom:8px;font-weight:800;color:var(--biru)"><span>Total</span><span style="font-family:var(--mono)">${fmtRp(total)}</span></div>`;
+            h += '<div class="table-wrap"><table><thead><tr><th>Customer</th><th>SKU</th><th style="text-align:right">Total</th></tr></thead><tbody>';
+            items.forEach(it => { h += `<tr><td>${esc(it.customer)}</td><td style="font-family:var(--mono);font-size:0.65rem">${esc(it.sku)}</td><td style="font-family:var(--mono);font-weight:700;text-align:right">${fmtRp(it.subtotal)}</td></tr>`; });
+            h += '</tbody></table></div></div>';
+          });
+        }
+
+      } else if (jenis === 'rekap_per_sku') {
+        // REKAP PER SKU → SKU | Customer | qty
+        const skuMap = new Map();
+        allItems.forEach(item => {
+          if (!skuMap.has(item.sku)) skuMap.set(item.sku, []);
+          skuMap.get(item.sku).push(item);
+        });
+        h = `<div class="card"><div class="card-title"><i class="fas fa-cube"></i> Rekap per SKU</div>${labelFilter}`;
+        if (!skuMap.size) { h += '<p class="text-center text-sm">Tidak ada detail item tersedia</p></div>'; }
+        else {
+          h += '<div class="table-wrap"><table><thead><tr><th>SKU</th><th>Customer</th><th style="text-align:right">Qty</th></tr></thead><tbody>';
+          Array.from(skuMap.keys()).sort().forEach(sku => {
+            const items = skuMap.get(sku);
+            const custAgg = {};
+            items.forEach(it => { if (!custAgg[it.customer]) custAgg[it.customer]=0; custAgg[it.customer]+=it.qty; });
+            const totalQty = Object.values(custAgg).reduce((s,v)=>s+v,0);
+            h += `<tr style="background:var(--biru-muda)"><td colspan="2" style="font-weight:700;font-size:0.75rem">${esc(sku)}</td><td style="font-weight:800;text-align:right;color:var(--biru)">${totalQty}</td></tr>`;
+            Object.entries(custAgg).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([cust,qty]) => {
+              h += `<tr><td></td><td>${esc(cust)}</td><td style="text-align:right">${qty}</td></tr>`;
+            });
+          });
+          h += '</tbody></table></div></div>';
+        }
+
+      } else if (jenis === 'rekap_per_customer') {
+        // REKAP PER CUSTOMER → Customer | SKU | qty | total
+        // Jika tidak ada items, fallback ke header
+        let h2 = `<div class="card"><div class="card-title"><i class="fas fa-users"></i> Rekap per Customer</div>${labelFilter}`;
+        if (allItems.length === 0) {
+          const custAgg = {};
+          filtered.forEach(t => { if (!custAgg[t.customer]) custAgg[t.customer]=0; custAgg[t.customer]+=(t.nett||0); });
+          h2 += '<div class="table-wrap"><table><thead><tr><th>Customer</th><th style="text-align:right">Total</th></tr></thead><tbody>';
+          Object.entries(custAgg).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([cust,tot]) => {
+            h2 += `<tr><td>${esc(cust)}</td><td style="text-align:right;font-family:var(--mono);font-weight:700">${fmtRp(tot)}</td></tr>`;
+          });
+          h2 += '</tbody></table></div></div>';
+        } else {
+          const custMap = new Map();
+          allItems.forEach(item => {
+            if (!custMap.has(item.customer)) custMap.set(item.customer, []);
+            custMap.get(item.customer).push(item);
+          });
+          if (!custMap.size) { h2 += '<p class="text-center text-sm">Tidak ada data</p></div>'; }
+          else {
+            h2 += '<div class="table-wrap"><table><thead><tr><th>Customer</th><th>SKU</th><th style="text-align:right">Qty</th><th style="text-align:right">Total</th></tr></thead><tbody>';
+            Array.from(custMap.keys()).sort().forEach(cust => {
+              const items = custMap.get(cust);
+              const skuAgg = {};
+              items.forEach(it => { if (!skuAgg[it.sku]) skuAgg[it.sku]={qty:0,total:0}; skuAgg[it.sku].qty+=it.qty; skuAgg[it.sku].total+=it.subtotal; });
+              const grandTotal = Object.values(skuAgg).reduce((s,v)=>s+v.total,0);
+              const grandQty = Object.values(skuAgg).reduce((s,v)=>s+v.qty,0);
+              h2 += `<tr style="background:var(--biru-muda)"><td colspan="2" style="font-weight:700;font-size:0.75rem">${esc(cust)}</td><td style="font-weight:800;text-align:right;color:var(--biru)">${grandQty}</td><td style="font-weight:800;text-align:right;color:var(--biru);font-family:var(--mono)">${fmtRp(grandTotal)}</td></tr>`;
+              Object.entries(skuAgg).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([sku,v]) => {
+                h2 += `<tr><td></td><td style="font-family:var(--mono);font-size:0.65rem">${esc(sku)}</td><td style="text-align:right">${v.qty}</td><td style="text-align:right;font-family:var(--mono)">${fmtRp(v.total)}</td></tr>`;
+              });
+            });
+            h2 += '</tbody></table></div></div>';
+          }
+        }
+        h = h2;
+
+      } else if (jenis === 'rekap_per_qty') {
+        // REKAP PER QTY → Customer | SKU | qty (diurutkan qty terbesar)
+        const agg = {};
+        allItems.forEach(it => {
+          const key = `${it.customer}|${it.sku}`;
+          if (!agg[key]) agg[key]={customer:it.customer,sku:it.sku,qty:0};
+          agg[key].qty+=it.qty;
+        });
+        const rows = Object.values(agg).sort((a,b)=>b.qty-a.qty||a.customer.localeCompare(b.customer));
+        h = `<div class="card"><div class="card-title"><i class="fas fa-sort-amount-down"></i> Rekap per Qty</div>${labelFilter}`;
+        if (!rows.length) { h += '<p class="text-center text-sm">Tidak ada detail item tersedia</p></div>'; }
+        else {
+          h += '<div class="table-wrap"><table><thead><tr><th>Customer</th><th>SKU</th><th style="text-align:right">Qty</th></tr></thead><tbody>';
+          rows.forEach(r => { h += `<tr><td>${esc(r.customer)}</td><td style="font-family:var(--mono);font-size:0.65rem">${esc(r.sku)}</td><td style="text-align:right;font-weight:700">${r.qty}</td></tr>`; });
+          h += '</tbody></table></div></div>';
+        }
+
+      } else if (jenis === 'rekap_sales_qty') {
+        // REKAP SALES QTY → Sales | SKU | qty
+        const salesSkuAgg = {};
+        allItems.forEach(it => {
+          const s = it.sales||'Tanpa Sales';
+          const key = `${s}|${it.sku}`;
+          if (!salesSkuAgg[key]) salesSkuAgg[key]={sales:s,sku:it.sku,qty:0};
+          salesSkuAgg[key].qty+=it.qty;
+        });
+        const rows = Object.values(salesSkuAgg).sort((a,b)=>a.sales.localeCompare(b.sales)||a.sku.localeCompare(b.sku));
+        h = `<div class="card"><div class="card-title"><i class="fas fa-user-tag"></i> Rekap Sales Qty</div>${labelFilter}`;
+        if (!rows.length) { h += '<p class="text-center text-sm">Tidak ada detail item tersedia</p></div>'; }
+        else {
+          const salesList = [...new Set(rows.map(r=>r.sales))];
+          salesList.forEach(s => {
+            const sRows = rows.filter(r=>r.sales===s);
+            const totalQty = sRows.reduce((sum,r)=>sum+r.qty,0);
+            h += `<div style="background:var(--biru-muda);padding:6px 10px;border-radius:8px;font-weight:700;font-size:0.78rem;color:var(--biru);margin-bottom:4px;display:flex;justify-content:space-between"><span>👤 ${esc(s)}</span><span>Total: ${totalQty}</span></div>`;
+          });
+          h += '<div class="table-wrap" style="margin-top:8px"><table><thead><tr><th>Sales</th><th>SKU</th><th style="text-align:right">Qty</th></tr></thead><tbody>';
+          rows.forEach(r => { h += `<tr><td>${esc(r.sales)}</td><td style="font-family:var(--mono);font-size:0.65rem">${esc(r.sku)}</td><td style="text-align:right;font-weight:700">${r.qty}</td></tr>`; });
+          h += '</tbody></table></div></div>';
+        }
+
+      } else if (jenis === 'cod' || jenis === 'transfer' || jenis === 'qris' || jenis === 'belum_transfer') {
+        // COD / Transfer / QRIS / Belum Transfer → Customer | Total (dari header, selalu ada)
+        const statusKey = jenis === 'belum_transfer' ? 'belumTransfer' : jenis;
+        const statusLabel = jenis==='cod'?'COD':jenis==='transfer'?'Transfer':jenis==='qris'?'QRIS':'Belum Transfer';
+        const statusFiltered = filtered.filter(t => (t.status||'').toLowerCase().replace(/\s/g,'') === statusKey.toLowerCase().replace(/\s/g,''));
+        const custAgg = {};
+        statusFiltered.forEach(t => {
+          if (!custAgg[t.customer]) custAgg[t.customer]=0;
+          custAgg[t.customer]+=(t.nett||0);
+        });
+        const total = statusFiltered.reduce((s,t)=>s+(t.nett||0),0);
+        const rows = Object.entries(custAgg).sort((a,b)=>a[0].localeCompare(b[0]));
+        h = `<div class="card"><div class="card-title"><i class="fas fa-money-bill-wave"></i> ${statusLabel}</div>${labelFilter}<div class="flex-between" style="margin-top:6px;margin-bottom:8px;font-weight:800;color:var(--biru)"><span>Total</span><span style="font-family:var(--mono)">${fmtRp(total)}</span></div>`;
+        if (!rows.length) { h += '<p class="text-center text-sm">Tidak ada transaksi ' + statusLabel + '</p></div>'; }
+        else {
+          h += '<div class="table-wrap"><table><thead><tr><th>Customer</th><th style="text-align:right">Total</th></tr></thead><tbody>';
+          rows.forEach(([cust,tot]) => { h += `<tr><td>${esc(cust)}</td><td style="text-align:right;font-family:var(--mono);font-weight:700">${fmtRp(tot)}</td></tr>`; });
+          h += '</tbody></table></div></div>';
+        }
+
+      } else if (jenis === 'laporan_per_sales') {
+        // LAPORAN PER SALES → Sales | SUM of total | SUM of profit (total dari header, profit dari items jika ada)
+        const salesAgg = {};
+        filtered.forEach(trx => {
+          const s = trx.sales||'Tanpa Sales';
+          if (!salesAgg[s]) salesAgg[s]={sales:s,total:0,profit:0};
+          salesAgg[s].total+=(trx.nett||0);
+          (trx.items||[]).forEach(it => {
+            const nettPer = it.nettPer !== undefined ? it.nettPer : ((it.harga||0)-(it.discRpPer||0));
+            salesAgg[s].profit += (nettPer-(it.modal||0))*(it.qty||0);
+          });
+        });
+        const rows = Object.values(salesAgg).sort((a,b)=>a.sales.localeCompare(b.sales));
+        const grandTotal = rows.reduce((s,r)=>s+r.total,0);
+        const grandProfit = rows.reduce((s,r)=>s+r.profit,0);
+        const hasProfit = rows.some(r=>r.profit!==0);
+        h = `<div class="card"><div class="card-title"><i class="fas fa-chart-line"></i> Laporan per Sales</div>${labelFilter}<div class="flex-row" style="gap:8px;margin-top:8px;margin-bottom:8px">
+          <div class="summary-box"><div style="font-size:0.65rem;color:var(--text2);font-weight:600">TOTAL PENJUALAN</div><div style="font-family:var(--mono);font-weight:800;font-size:0.9rem;color:var(--biru)">${fmtRp(grandTotal)}</div></div>
+          <div class="summary-box" style="background:var(--kuning-muda)"><div style="font-size:0.65rem;color:var(--text2);font-weight:600">TOTAL PROFIT</div><div style="font-family:var(--mono);font-weight:800;font-size:0.9rem;color:var(--hijau)">${hasProfit?fmtRp(grandProfit):'—'}</div></div>
+        </div>`;
+        if (!rows.length) { h += '<p class="text-center text-sm">Tidak ada data</p></div>'; }
+        else {
+          h += '<div class="table-wrap"><table><thead><tr><th>Sales</th><th style="text-align:right">Total</th><th style="text-align:right">Profit</th></tr></thead><tbody>';
+          rows.forEach(r => { h += `<tr><td style="font-weight:600">${esc(r.sales)}</td><td style="text-align:right;font-family:var(--mono);font-weight:700;color:var(--biru)">${fmtRp(r.total)}</td><td style="text-align:right;font-family:var(--mono);font-weight:700;color:var(--hijau)">${hasProfit?fmtRp(r.profit):'—'}</td></tr>`; });
+          h += `<tr style="background:var(--biru-muda);font-weight:800"><td>TOTAL</td><td style="text-align:right;font-family:var(--mono);color:var(--biru)">${fmtRp(grandTotal)}</td><td style="text-align:right;font-family:var(--mono);color:var(--hijau)">${hasProfit?fmtRp(grandProfit):'—'}</td></tr>`;
+          h += '</tbody></table></div></div>';
+        }
+      }
+
+      document.getElementById('rekapContent').innerHTML = h || '<div class="card"><p class="text-center text-sm">Tidak ada data</p></div>';
+    }
 
     // ========== REKAP INPUT (dengan tabel detail bisa edit qty & status) ==========
-    async function loadRekapInput() { const today = new Date().toISOString().slice(0,10); document.getElementById('contentArea').innerHTML = `<div class="card"><div class="flex-row mb-2"><div class="form-group col-1"><label>Tanggal</label><input type="date" id="rekapInputTgl" value="${today}"></div><button class="btn btn-primary" onclick="doRekapInput()" style="height:44px;align-self:flex-end">📊 Tampilkan</button></div></div><div id="rekapInputContent"><div class="text-center text-sm" style="padding:40px">Pilih tanggal lalu klik Tampilkan</div></div>`; await syncStockHistoryFromGAS(); doRekapInput(); }
+    async function loadRekapInput() { const today = localDateStr(); document.getElementById('contentArea').innerHTML = `<div class="card"><div class="flex-row mb-2"><div class="form-group col-1"><label>Tanggal</label><input type="date" id="rekapInputTgl" value="${today}"></div><button class="btn btn-primary" onclick="doRekapInput()" style="height:44px;align-self:flex-end">📊 Tampilkan</button></div></div><div id="rekapInputContent"><div class="text-center text-sm" style="padding:40px">Pilih tanggal lalu klik Tampilkan</div></div>`; await syncStockHistoryFromGAS(); doRekapInput(); }
     function doRekapInput() { const tgl = document.getElementById('rekapInputTgl').value; if (!tgl) return Swal.fire('Error','Pilih tanggal','error'); const filtered = stockInHistory.filter(s => (s.date||s.tgl||'').substring(0,10) === tgl); const data = hitungRekapLokal(filtered); renderRekapInput(data); // tambahkan tabel detail dengan fitur edit
       document.getElementById('rekapInputContent').innerHTML += buildStockDetailTableEditable(filtered);
     }
@@ -947,7 +1222,7 @@
       updateSbSkuLabel();
     }
     async function loadStockBarang() {
-      const today = new Date().toISOString().slice(0,10);
+      const today = localDateStr();
       _sbSelectedSkus = new Set();
       document.getElementById('contentArea').innerHTML = `
         <div class="card">
@@ -1055,7 +1330,7 @@
       }
       const items = getInputItems(); 
       if (!items.length) return Swal.fire('Error','Minimal satu item harus diisi','error'); 
-      const now = new Date(), date = now.toISOString().slice(0,10), createdAt = now.toISOString().slice(0,19).replace('T',' '); 
+      const now = new Date(), date = localDateStr(now), createdAt = localDateStr(now)+' '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0'); 
       const entries = items.map((it, idx) => ({ id: inpId + '-' + (idx+1), groupId: inpId, sku: it.sku, nama: it.nama, qty: it.qty, hargaModal: it.hargaModal, disc: it.disc, netModal: it.netModal, driver, rit, status, date, createdAt })); 
       entries.forEach(e => stockInHistory.unshift(e)); 
       saveLocalData(); 
@@ -1319,6 +1594,7 @@
     function fmtDate(s) { if (!s) return '-'; const p = String(s).substring(0,10).split('-'); if (p.length<3) return s; const m=['','Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des']; return p[2]+' '+m[parseInt(p[1])]+' '+p[0]; }
     function genId() { const d = new Date(), pp = n => String(n).padStart(2,'0'); return 'TRX-'+d.getFullYear()+pp(d.getMonth()+1)+pp(d.getDate())+'-'+Math.random().toString(36).slice(2,6).toUpperCase(); }
     function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function localDateStr(d) { const dt = d||new Date(); return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0'); }
 
     // PWA
     let deferredPrompt;
