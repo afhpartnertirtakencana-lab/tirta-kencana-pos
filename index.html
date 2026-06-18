@@ -346,10 +346,10 @@
       if (el) el.textContent = '🔄 Sync...';
       _syncCountdown = 30;
       try {
-        const [prod, cust, trx, set, users, stockIn] = await Promise.all([
+        const [prod, cust, trx, set, users, stockIn, gasDrivers] = await Promise.all([
           gasCall('getProducts', []), gasCall('getCustomers', []),
           gasCall('getTrxList', []), gasCall('getSettings', []), gasCall('getUsers', []),
-          gasCall('getInputBarangHistory', [])
+          gasCall('getInputBarangHistory', []), gasCall('getDrivers', [])
         ]);
         if (Array.isArray(prod)) products = prod;
         if (Array.isArray(cust)) { allCustomers = cust; pelanggan = cust.slice(); }
@@ -393,8 +393,13 @@
           { name:'zehpudin', role:'driver', password:'1234' }
         ];
         _syncBuiltin.forEach(mu => { if (!allUsers.find(u => u.name === mu.name)) allUsers.push(mu); });
-        const driverNames = allUsers.filter(u => u.role === 'driver').map(u => u.name);
-        if (driverNames.length > 0) drivers = driverNames;
+        // Ambil drivers dari sheet Driver (prioritas) atau fallback dari allUsers
+        if (Array.isArray(gasDrivers) && gasDrivers.length > 0) {
+          drivers = gasDrivers;
+        } else {
+          const driverNames = allUsers.filter(u => u.role === 'driver').map(u => u.name);
+          if (driverNames.length > 0) drivers = driverNames;
+        }
         saveLocalData();
         if (currentPage === 'dashboard' || currentPage === 'transaksi' || currentPage === 'produk' || currentPage === 'gudang') renderContent();
       } catch (e) {
