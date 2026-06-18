@@ -225,7 +225,7 @@
       <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
         <button class="btn-install" id="installBtn" onclick="installApp()" title="Install App">📲</button>
         <button class="btn-darkmode" onclick="toggleDarkMode()" title="Dark Mode">🌙</button>
-        <span id="syncStatus" style="font-size:0.6rem;color:var(--text3);padding:2px 6px;background:var(--biru-muda);border-radius:8px">Manual</span><button class="btn-refresh" onclick="syncFromGAS()" title="Sinkron Manual">🔄</button>
+        <span id="syncStatus" style="font-size:0.6rem;color:var(--text3);padding:2px 6px;background:var(--biru-muda);border-radius:8px">Manual</span><button class="btn-refresh" onclick="_nextSyncTime=Date.now()+AUTO_SYNC_INTERVAL;syncFromGAS()" title="Sinkron Manual">🔄</button>
         <button class="btn-logout" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i></button>
       </div>
     </div>
@@ -408,7 +408,39 @@
       }
       const el2 = document.getElementById('syncStatus');
       if (el2) el2.textContent = '✅ Sync';
-      setTimeout(()=>{ const e3=document.getElementById('syncStatus'); if(e3)e3.textContent='Manual'; }, 2000);
+      setTimeout(()=>{ const e3=document.getElementById('syncStatus'); if(e3) updateSyncStatus(); }, 2000);
+    }
+
+    // ── AUTO SYNC 30 MENIT ──
+    let _autoSyncTimer = null;
+    const AUTO_SYNC_INTERVAL = 30 * 60 * 1000; // 30 menit
+    let _nextSyncTime = null;
+
+    function updateSyncStatus() {
+      const el = document.getElementById('syncStatus');
+      if (!el || !_nextSyncTime) return;
+      const diff = Math.max(0, Math.round((_nextSyncTime - Date.now()) / 60000));
+      el.textContent = diff <= 0 ? '🔄 Syncing...' : `⏱ ${diff}m`;
+    }
+
+    function startAutoSync() {
+      if (_autoSyncTimer) clearInterval(_autoSyncTimer);
+      _nextSyncTime = Date.now() + AUTO_SYNC_INTERVAL;
+      updateSyncStatus();
+      // Update countdown tiap 1 menit
+      _autoSyncTimer = setInterval(async () => {
+        if (Date.now() >= _nextSyncTime) {
+          _nextSyncTime = Date.now() + AUTO_SYNC_INTERVAL;
+          try { await syncFromGAS(); } catch(e) { console.warn('Auto sync gagal:', e); }
+        }
+        updateSyncStatus();
+      }, 60000);
+    }
+
+    function stopAutoSync() {
+      if (_autoSyncTimer) { clearInterval(_autoSyncTimer); _autoSyncTimer = null; }
+      const el = document.getElementById('syncStatus');
+      if (el) el.textContent = 'Manual';
     }
 
     function doLogin() { 
@@ -446,7 +478,7 @@
       } else Swal.fire('Error','Username/password salah!','error'); 
     }
     document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !document.getElementById('loginPage').classList.contains('hidden')) doLogin(); });
-    function doLogout() { localStorage.removeItem('tirtaUser'); currentUser = null; document.getElementById('loginPage').classList.remove('hidden'); document.getElementById('mainApp').classList.add('hidden'); }
+    function doLogout() { stopAutoSync(); localStorage.removeItem('tirtaUser'); currentUser = null; document.getElementById('loginPage').classList.remove('hidden'); document.getElementById('mainApp').classList.add('hidden'); }
 
     async function showMainApp() {
       document.getElementById('loginPage').classList.add('hidden'); document.getElementById('mainApp').classList.remove('hidden');
@@ -458,6 +490,7 @@
       initDarkMode(); renderMenuTabs();
       // Sync sekali saat login
       try { await syncFromGAS(); } catch(e) {}
+      startAutoSync();
       navigateTo('dashboard');
     }
 
@@ -621,9 +654,9 @@
         <div class="card" style="margin-top:8px;padding:10px 14px;background:var(--biru-muda)">
           <div style="font-size:0.72rem;font-weight:700;color:var(--biru);margin-bottom:8px;letter-spacing:.5px">➕ BIAYA TAMBAHAN</div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
-            <button type="button" class="btn btn-sm btn-outline" style="font-size:0.65rem;padding:3px 8px" onclick="setBiayaTambahan('ongkir',10000)">🚚 Ongkir</button>
-            <button type="button" class="btn btn-sm btn-outline" style="font-size:0.65rem;padding:3px 8px" onclick="setBiayaTambahan('tips',5000)">💰 Tips</button>
-            <button type="button" class="btn btn-sm btn-outline" style="font-size:0.65rem;padding:3px 8px" onclick="setBiayaTambahan('parkir',7000)">🅿️ Parkir</button>
+            <button type="button" class="btn btn-sm btn-outline" style="font-size:0.65rem;padding:3px 8px" onclick="setBiayaTambahan('ongkir',5000)">🚚 Ongkir</button>
+            <button type="button" class="btn btn-sm btn-outline" style="font-size:0.65rem;padding:3px 8px" onclick="setBiayaTambahan('tips',2000)">💰 Tips</button>
+            <button type="button" class="btn btn-sm btn-outline" style="font-size:0.65rem;padding:3px 8px" onclick="setBiayaTambahan('parkir',2000)">🅿️ Parkir</button>
             <button type="button" class="btn btn-sm btn-ghost" style="font-size:0.65rem;padding:3px 8px" onclick="setBiayaTambahan('',0)">✕ Kosong</button>
           </div>
           <div style="display:flex;gap:8px;align-items:center">
@@ -1608,12 +1641,12 @@
     function addSalesName() { const v = document.getElementById('newSalesName').value.trim(); if (!v) return; if (!settings.salesList) settings.salesList = []; if (!settings.salesList.includes(v)) settings.salesList.push(v); document.getElementById('newSalesName').value = ''; renderSalesTags(); }
     function removeSalesName(i) { settings.salesList.splice(i,1); renderSalesTags(); }
     function renderDriverTags() { const el = document.getElementById('driverTagList'); if (!el) return; el.innerHTML = drivers.length ? drivers.map((d,i) => `<span class="tag">${esc(d)} <button class="tag-remove" onclick="removeDriver(${i})">✕</button></span>`).join('') : '<span style="color:var(--text3);font-size:13px">Belum ada driver</span>'; }
-    function addDriverName() { const v = document.getElementById('newDriverName').value.trim(); if (!v) return; if (!drivers.includes(v)) drivers.push(v); document.getElementById('newDriverName').value = ''; renderDriverTags(); }
-    function removeDriver(i) { drivers.splice(i,1); renderDriverTags(); }
+    function addDriverName() { const v = document.getElementById('newDriverName').value.trim(); if (!v) return; if (!drivers.includes(v)) { drivers.push(v); saveLocalData(); gasCall('saveDrivers', [drivers.map(String)]).catch(e => console.warn('Gagal sync driver:', e)); } document.getElementById('newDriverName').value = ''; renderDriverTags(); }
+    function removeDriver(i) { drivers.splice(i,1); saveLocalData(); gasCall('saveDrivers', [drivers.map(String)]).catch(e => console.warn('Gagal sync driver:', e)); renderDriverTags(); }
     function renderUserList() { const el = document.getElementById('userList'); if (!el) return; el.innerHTML = allUsers.length ? allUsers.map((u,i) => `<div class="flex-between mb-1" style="padding:4px 0;border-bottom:1px solid var(--border)"><span><b>${esc(u.name)}</b> (${u.role})</span><button class="btn btn-sm btn-danger" onclick="deleteUser(${i})">🗑</button></div>`).join('') : '<p class="text-sm text-center">Belum ada user</p>'; }
-    function addUser() { const name = document.getElementById('newUserName').value.trim(), role = document.getElementById('newUserRole').value, pass = document.getElementById('newUserPass').value.trim(); if (!name || !pass) return Swal.fire('Error','Nama dan password wajib diisi','error'); if (allUsers.find(u => u.name === name)) return Swal.fire('Error','Nama sudah ada','error'); allUsers.push({ name, role, password: pass }); saveLocalData(); try { gasCall('saveUser', [{ name, role, password: pass }]); } catch(e) {} document.getElementById('newUserName').value = ''; document.getElementById('newUserPass').value = ''; renderUserList(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'User ditambahkan' }); }
-    function deleteUser(i) { Swal.fire({ title:'Hapus user?', text:'Hapus '+allUsers[i].name+'?', icon:'warning', showCancelButton:true }).then(r => { if (r.isConfirmed) { allUsers.splice(i,1); saveLocalData(); renderUserList(); try { gasCall('deleteUser', [allUsers[i].name]); } catch(e) {} Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'User dihapus' }); } }); }
-    function savePengaturan() { settings.namaToko = document.getElementById('setNamaToko').value.trim(); settings.tagline = document.getElementById('setTagline').value.trim(); settings.alamat = document.getElementById('setAlamat').value.trim(); settings.telepon = document.getElementById('setTelepon').value.trim(); settings.bottomLine = document.getElementById('setFooter').value.trim(); settings.bank1 = { nama: document.getElementById('setB1Nama').value.trim(), norek: document.getElementById('setB1Norek').value.trim(), penerima: document.getElementById('setB1Penerima').value.trim() }; settings.bank2 = { nama: document.getElementById('setB2Nama').value.trim(), norek: document.getElementById('setB2Norek').value.trim(), penerima: document.getElementById('setB2Penerima').value.trim() }; document.getElementById('headerAlamat').textContent = settings.alamat; saveLocalData(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Pengaturan disimpan' }); }
+    function addUser() { const name = document.getElementById('newUserName').value.trim(), role = document.getElementById('newUserRole').value, pass = document.getElementById('newUserPass').value.trim(); if (!name || !pass) return Swal.fire('Error','Nama dan password wajib diisi','error'); if (allUsers.find(u => u.name === name)) return Swal.fire('Error','Nama sudah ada','error'); allUsers.push({ name, role, password: pass }); saveLocalData(); gasCall('saveUser', [{ name, role, password: pass }]).catch(e => console.warn('Gagal sync user ke GAS:', e)); document.getElementById('newUserName').value = ''; document.getElementById('newUserPass').value = ''; renderUserList(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'User ditambahkan' }); }
+    function deleteUser(i) { Swal.fire({ title:'Hapus user?', text:'Hapus '+allUsers[i].name+'?', icon:'warning', showCancelButton:true }).then(r => { if (r.isConfirmed) { const deletedName = allUsers[i].name; allUsers.splice(i,1); saveLocalData(); renderUserList(); gasCall('deleteUser', [deletedName]).catch(e => console.warn('Gagal hapus user GAS:', e)); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'User dihapus' }); } }); }
+    function savePengaturan() { settings.namaToko = document.getElementById('setNamaToko').value.trim(); settings.tagline = document.getElementById('setTagline').value.trim(); settings.alamat = document.getElementById('setAlamat').value.trim(); settings.telepon = document.getElementById('setTelepon').value.trim(); settings.bottomLine = document.getElementById('setFooter').value.trim(); settings.bank1 = { nama: document.getElementById('setB1Nama').value.trim(), norek: document.getElementById('setB1Norek').value.trim(), penerima: document.getElementById('setB1Penerima').value.trim() }; settings.bank2 = { nama: document.getElementById('setB2Nama').value.trim(), norek: document.getElementById('setB2Norek').value.trim(), penerima: document.getElementById('setB2Penerima').value.trim() }; document.getElementById('headerAlamat').textContent = settings.alamat; saveLocalData(); gasCall('saveSettings', [{ storeName: settings.namaToko||settings.storeName, tagline: settings.tagline, address: settings.alamat||settings.address, phone: settings.telepon||settings.phone, footer: settings.bottomLine||settings.footer, salesList: settings.salesList||[], bank1: settings.bank1, bank2: settings.bank2 }]).catch(e => console.warn('Gagal sync settings:', e)); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Pengaturan disimpan' }); }
     function backupData() { saveLocalData(); const blob = new Blob([localStorage.getItem('tirtaFullData')], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'tirta-backup-'+new Date().toISOString().slice(0,10)+'.json'; a.click(); }
     function restoreData() { Swal.fire({ title:'Restore Data', text:'Pilih file backup JSON', icon:'warning', showCancelButton:true }).then(r => { if (r.isConfirmed) { const input = document.createElement('input'); input.type='file'; input.accept='.json'; input.onchange = e => { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = ev => { try { const data = JSON.parse(ev.target.result); localStorage.setItem('tirtaFullData', JSON.stringify(data)); loadLocalData(); Swal.fire('Sukses','Data direstore! Refresh halaman.','success'); } catch(err) { Swal.fire('Error','File tidak valid','error'); } }; reader.readAsText(file); }; input.click(); } }); }
 
@@ -1662,9 +1695,9 @@
 
     function uploadSalesLogo(e) { uploadLogo(e); }
     function uploadSalesQris(e) { uploadQris(e); }
-    function addDriverUser() { const v = document.getElementById('newDriverUser').value.trim(); if (!v) return; if (!drivers.includes(v)) { drivers.push(v); saveLocalData(); renderDriverUserTags(); } document.getElementById('newDriverUser').value = ''; Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:1500, icon:'success', title:'Driver ditambahkan' }); }
+    function addDriverUser() { const v = document.getElementById('newDriverUser').value.trim(); if (!v) return; if (!drivers.includes(v)) { drivers.push(v); saveLocalData(); gasCall('saveDrivers', [drivers.map(String)]).catch(e => console.warn('Gagal sync driver:', e)); renderDriverUserTags(); } document.getElementById('newDriverUser').value = ''; Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:1500, icon:'success', title:'Driver ditambahkan' }); }
     function renderDriverUserTags() { const el = document.getElementById('driverUserTagList'); if (!el) return; el.innerHTML = drivers.length ? drivers.map((d,i) => `<span class="tag">${esc(d)} <button class="tag-remove" onclick="removeDriverUser(${i})">✕</button></span>`).join('') : '<span style="color:var(--text3);font-size:13px">Belum ada driver</span>'; }
-    function removeDriverUser(i) { drivers.splice(i,1); saveLocalData(); renderDriverUserTags(); }
+    function removeDriverUser(i) { drivers.splice(i,1); saveLocalData(); gasCall('saveDrivers', [drivers.map(String)]).catch(e => console.warn('Gagal sync driver:', e)); renderDriverUserTags(); }
     function saveUserGasUrl() { const v = document.getElementById('userGasUrl')?.value.trim(); if (!v || !v.startsWith('https://')) return Swal.fire('Error','URL tidak valid!','error'); localStorage.setItem('tirtaGasUrl', v); GAS_URL = v; Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:2000, icon:'success', title:'URL GAS disimpan!' }); }
     async function testUserGasConnection() { Swal.fire({ title:'Testing...', text:'Menghubungi GAS server...', allowOutsideClick:false, didOpen:()=>Swal.showLoading() }); try { await gasCall('getSettings', []); Swal.fire({ icon:'success', title:'Koneksi OK!', text:'GAS server berhasil dihubungi.' }); } catch(e) { Swal.fire({ icon:'error', title:'Gagal!', text:e.message }); } }
 
