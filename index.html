@@ -349,7 +349,7 @@
       { name:'padong', role:'driver', password:'1234'   },
       { name:'said',   role:'driver', password:'1234'   },
       { name:'dedi',   role:'driver', password:'1234'   },
-      { name:'zehpudin', role:'driver', password:'1234'   }
+      { name:'tirta', role:'admin', password:'020730' }
     ];
     let _logoUrl = localStorage.getItem('tirtaLogo') || EMBEDDED_LOGO; // [UPDATED] fallback ke logo tertanam, mekanisme sama seperti _qrisUrl
     let _qrisUrl = '';
@@ -551,7 +551,7 @@
           { name:'padong', role:'driver', password:'1234'   },
           { name:'said',   role:'driver', password:'1234'   },
           { name:'dedi',   role:'driver', password:'1234'   },
-          { name:'zehpudin', role:'driver', password:'1234' }
+          { name:'tirta', role:'admin', password:'020730' }
         ];
         _syncBuiltin.forEach(mu => { if (!allUsers.find(u => u.name === mu.name)) allUsers.push(mu); });
         // Ambil drivers dari sheet Driver (prioritas) atau fallback dari allUsers
@@ -623,7 +623,7 @@
           { name:'padong',   role:'driver', password:'1234'   },
           { name:'said',     role:'driver', password:'1234'   },
           { name:'dedi',     role:'driver', password:'1234'   },
-          { name:'zehpudin', role:'driver', password:'1234'   }
+          { name:'tirta', role:'admin', password:'020730' }
         ];
       }
       const _builtinUsers = [
@@ -634,7 +634,7 @@
         { name:'padong', role:'driver', password:'1234'   },
         { name:'said',   role:'driver', password:'1234'   },
         { name:'dedi',   role:'driver', password:'1234'   },
-        { name:'zehpudin', role:'driver', password:'1234' }
+        { name:'tirta', role:'admin', password:'020730' }
       ];
       _builtinUsers.forEach(mu => { if (!allUsers.find(u => u.name === mu.name)) allUsers.push(mu); });
       const f = allUsers.find(x => x.name === u && x.password === p); 
@@ -2752,7 +2752,7 @@ console.log("Service Worker dimatikan untuk debugging cache.");
         { name:'padong', role:'driver', password:'1234'   },
         { name:'said',   role:'driver', password:'1234'   },
         { name:'dedi',   role:'driver', password:'1234'   },
-        { name:'zehpudin', role:'driver', password:'1234' }
+        { name:'tirta', role:'admin', password:'020730' }
       ];
       saveLocalData();
     }
