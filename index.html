@@ -319,6 +319,20 @@
         };
         script.async = true;
         script.src = url;
+        // [NEW] Deteksi gagal load lebih cepat (URL salah/tidak bisa diakses/network error) tanpa menunggu 20 detik
+        script.onerror = () => {
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          if (script.parentNode) script.parentNode.removeChild(script);
+          delete window[cb];
+          if (retry > 0) {
+            console.warn(`GAS gagal dimuat (kemungkinan URL salah/tidak bisa diakses), retry ${retry}...`);
+            gasCall(fn, args, retry - 1).then(resolve).catch(reject);
+          } else {
+            reject(new Error('GAS gagal dimuat. Kemungkinan URL Web App salah, deployment tidak aktif, atau tidak ada koneksi internet. Cek URL: ' + getGasUrl()));
+          }
+        };
         document.head.appendChild(script);
       });
     }
@@ -1193,8 +1207,17 @@
         <td id="rs_totalDisp_${i}" style="text-align:right;font-weight:700;color:var(--biru)">${fmtRp(s.total)}</td>
         <td>${inp('setor', s.setor)}</td>
         <td id="rs_selisihDisp_${i}" style="text-align:right;font-weight:700">${fmtRp(s.selisih)}</td>
-        <td><button class="btn btn-sm btn-primary" onclick="saveRekapSetoranRow(${i})">💾 Simpan</button></td>
+        <td><button class="btn btn-sm btn-primary" onclick="saveRekapSetoranRow(${i})">💾 Simpan</button> <button class="btn btn-sm btn-outline" onclick="cetakRekapSetoranRow(${i})">🖨️ Cetak</button></td>
       </tr>`;
+    }
+
+    // [NEW] Cetak struk setoran dari baris Rekap Setoran, memakai modal struk yang SAMA persis dengan menu Setoran
+    // (Print / Download PNG / WhatsApp) — tidak membuat tampilan/struk baru, hanya memanggil ulang infrastruktur yang sudah ada.
+    function cetakRekapSetoranRow(i) {
+      const s = setoranHistory[i];
+      if (!s) return;
+      _lastSetoranPayload = s;
+      showSetoranStrukModal(s);
     }
 
     function calcRekapSetoranRow(i) {
