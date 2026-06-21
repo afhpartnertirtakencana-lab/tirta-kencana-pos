@@ -204,6 +204,45 @@
   </style>
 </head>
 <body>
+  <!-- ========== SPLASH SCREEN PWA (BARU) ========== -->
+  <!-- Tampilan awal saat app dibuka, sebelum login/main app muncul. Murni tambahan visual, tidak menyentuh logika lain. -->
+  <div id="pwaSplash" style="position:fixed;inset:0;z-index:99999;background:#1A6DB5;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:48px 24px 36px;transition:opacity 0.5s ease, visibility 0.5s ease;">
+    <div></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:18px;margin-top:10vh">
+      <div style="width:110px;height:110px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(0,0,0,0.25);overflow:hidden">
+        <img src="https://www.image2url.com/r2/default/images/1781919958885-4a0fd859-0e6f-4e9f-9370-702fbf72864f.jpg" alt="Tirta Kencana" style="width:84px;height:84px;object-fit:contain;border-radius:50%">
+      </div>
+      <div style="text-align:center;font-weight:800;font-size:1rem;letter-spacing:0.5px;line-height:1.6">
+        <div style="color:#fff">DO GOOD</div>
+        <div style="color:#9FD3F2">AND</div>
+        <div><span style="color:#fff">GOOD </span><span style="color:#3DDC97">WILL </span><span style="color:#FF8A65">COME </span><span style="color:#fff">TO YOU</span></div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:14px;width:100%">
+      <div style="font-size:1.3rem;font-weight:800;letter-spacing:0.5px"><span style="color:#fff">TIRTA </span><span style="color:#FFD700">KENCANA</span></div>
+      <div style="width:120px;height:3px;border-radius:3px;background:rgba(255,255,255,0.25);overflow:hidden">
+        <div style="width:40%;height:100%;background:#FFD700;border-radius:3px;animation:pwaSplashBar 1.2s ease-in-out infinite;"></div>
+      </div>
+    </div>
+  </div>
+  <style>
+    @keyframes pwaSplashBar { 0%{ transform:translateX(-100%); } 100%{ transform:translateX(350%); } }
+  </style>
+  <script>
+    // Sembunyikan splash setelah app siap (atau maksimal 2.2 detik), lalu hapus dari DOM
+    (function() {
+      function hidePwaSplash() {
+        var el = document.getElementById('pwaSplash');
+        if (!el) return;
+        el.style.opacity = '0';
+        el.style.visibility = 'hidden';
+        setTimeout(function() { if (el.parentNode) el.parentNode.removeChild(el); }, 550);
+      }
+      setTimeout(hidePwaSplash, 2200);
+      window.addEventListener('load', function() { setTimeout(hidePwaSplash, 900); });
+    })();
+  </script>
+
   <div id="loginPage" class="login-container">
     <div class="login-card">
       <div class="brand" style="margin-bottom:10px;"><span style="color:#1A6DB5;">Tirta</span><span style="color:#F4B400;">Kencana</span></div>
