@@ -19,7 +19,7 @@
   <style>
     /* === SEMUA CSS SAMA SEPERTI SEBELUMNYA === */
     :root {
-      --biru: #1A6DB5; --biru2: #2B8FDE; --kuning: #F4B400;
+      --biru: #1A6DB5; --biru2: #2B8FDE; --kuning: #FFD700;
       --biru-muda: #EAF4FD; --kuning-muda: #FFF8E1;
       --bg: #F4F7FB; --bg2: #EAF0F8; --card: #FFFFFF; --surface: #FFFFFF;
       --surface2: #F8FAFD; --border: #DDE6F0;
@@ -219,7 +219,7 @@
       <div class="brand"><span class="tirta">Tirta</span><span class="kencana">Kencana</span></div>
       <div class="tagline">DO GOOD AND GOOD WILL COME TO YOU</div>
       <div class="alamat" id="headerAlamat">WTC Mangga 2 Lt UG A/53</div>
-      <div class="logo-header" onclick="document.getElementById('logoFileInput').click()"><img id="logoImg" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGZpbGw9IiMxQTZEQjUiIGN4PSI1MCIgY3k9IjUwIiByPSI0OCIvPjxjaXJjbGUgZmlsbD0id2hpdGUiIGN4PSI1MCIgY3k9IjUwIiByPSI0MiIvPjxjaXJjbGUgZmlsbD0iI0Y0QjQwMCIgY3g9IjUwIiBjeT0iNTAiIHI9IjM4Ii8+PGNpcmNsZSBmaWxsPSJ3aGl0ZSIgY3g9IjUwIiBjeT0iNTAiIHI9IjM0Ii8+PHRleHQgeD0iNTAiIHk9IjQwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjMUE2REI1IiBmb250LXNpemU9IjEyIiBmb250LXdlaWdodD0iYm9sZCIgZm9udC1mYW1pbHk9IkFyaWFsIj5USVJUQTwvdGV4dD48dGV4dCB4PSI1MCIgeT0iNTgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNGNEI0MDAiIGZvbnQtc2l6ZT0iMTIiIGZvbnQtd2VpZ2h0PSJib2xkIiBmb250LWZhbWlseT0iQXJpYWwiPktFTkNBTkE8L3RleHQ+PC9zdmc+" alt="Logo"></div>
+      <div class="logo-header" onclick="document.getElementById('logoFileInput').click()"><img id="logoImg" src="https://www.image2url.com/r2/default/images/1781919958885-4a0fd859-0e6f-4e9f-9370-702fbf72864f.jpg" alt="Logo"></div>
       <input type="file" id="logoFileInput" accept="image/*" style="display:none" onchange="uploadLogo(event)">
     </div>
     <div class="nav-bar">
@@ -245,7 +245,8 @@
     // ==================== KONSTANTA DAN GLOBAL ====================
     const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbwdPgjTCISgyyaT8DSfPs14jUNCb8rSjzX7W8MoVHq_pbkdoNAMD-3lgBBJI-L57NWkSQ/exec';
     let GAS_URL = localStorage.getItem('tirtaGasUrl') || DEFAULT_GAS_URL;
-    const EMBEDDED_QRIS = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMDAsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wAARCAODA48DASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD9U6KKKAKuof8AHuv/AF1j/wDQ1q1VXUP+Pdf+usf/AKGtWqACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiikoAN1IfyrA8L+ONI8Xrdf2ZdLM1rM0Eq9GVh1GK3+aUWpK6LnCVOXLNWY6iiimQFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFAFTUmC2yk9POi/wDRi0+FTK3mt0PRfSmamoW1UHkedF/6MWrQAUYHSgBaKKKACiiigCrqH/Huv/XWP/0NatVV1D/j3X/rrH/6GtWqACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigApG5Uj2paKAPgHxZqXiv8AZ3+Ml7qADm1vbl5gvPkzKf619nfDX4maR8UPD8eqaVNuU8PE33kPoRXz9+1T4otLPx1p+h6/bef4evrM/vlX57eYN99T9K8S8NeJPEH7Pvi6C9s7hrvRrs7kMbcrmI/X2avD9r9VquO8T9Wnl0c+y+nV5eWsl/o+yqj+59FFVdW/wCPdf8ArrH/AOhrVqgAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigApOaWk/jA9TQB+aH7bfwF+Lnxv8Ajtovifwzpx1TRbfT/scdtbyBZ45A7HJPsa8G+Kn7IH7R/wARtWtbnVfDSXxt4/LUfaF4HX1r+nf/AIROx3bvOVf+2lH/AAidj/z1X/v6K8d5fScnKpG7Z+nR4wx8IQpUZ8sYqySSSS8ktEfiB/wTL/Zu8c/BX4zahqvjLTH0uCbS5YUlZw27cQcYr9dwMdKPtFj4eP2iW+tY+32f71H/AAiVh/z1X/v5WlGgsPC0EcuPzGrmdZVcRJtjelFFFehY8QKKKKACiiigAooooAKKKKAKupf8e6f9dov/Ri1aqrqX/Hun/XaL/0YtWqACiiigCrqH/Huv/XWP/0NatVWv/8AUD/rrH/6GtWaACiiigAooooAKKKKACiiigAooooA+fP27vhH8Q/jh8F9N8P/Du1N/rMWrpO6pMsW1BE4PJ+teEfshfsT/ta/s4eKdUvvDnii103S7yJVmhfUVkJOc5A2g19p/tB/wDJoHjT/sDzf+i6+b/+CTnPwo+Jv/YVi/8AQjQBW/4g/wD2lP8Aoctu/wC/qUf8Qf8A+0p/0OW3f9/Uo/4g/wD2lP8Aoctv+/qUf8Qf/wC0p/0OW3f9/UoAq+If+CPHx/1/TI7O++I8N5GkpkUT6iU2nAxj92a4r/hyD8fP+ii2f/g4b/4jX78UUAfhR8UP+CPnxq8ZfC/UvCum+PtO0dLr7K39oJfu77YXV+mz1XFfUf7JX/BOrUv2WvAfiTRh4utvEWtarbpFFc3PmLHFjnhcHJ/GvtKigD8tP+CDn/ACBPix/2Fov/AECv1Lr8tP8Agg5/0BPix/2Fov8A0Cv1LoA/nH/ar/5Pb+IP/Yfl/wDRhr9Xv+CQH/JK/iV/2Frf/wBANflD+1X/AMnt/EH/ALD8v/ow1+r3/BIH/klXxK/7C1v/AOgGgD9EKKKKACiiigAooooAKKKKACiiigAr8tP8Agod/yfB+yb/2EoP/AEoWv1Lr8tP+Ch3/ACfB+yb/ANhKD/0oWgD1j/gq/wCJfG3g79mC+1HwjqEml363sETzxYJ8s7sjJB7gV+Zv/BOTxz44139ufwhYazruo6haRC9E1vPMWVwYmODz61+9nxi+COgfHjwiPC/iqS8fSTOs7x2s4iYlAQOcH17V8qfC3/gnN8LPhB8U7Dx54evtY/tzT1lWBrm5VlwylTwB6GgD62+JPgfxF4y+F/irQfD95b6drOo2MlvbT3S7kjLDGSK/F/wCFP/BMj9pH4c/HfwZr+q+LrNtJsdXgkuraC7kOEVhgKCOST0Fftp8Vfi14S+Cnhee/8Uar9iMkZMFqo3z3Df3I1Hc1+eGn/wDBXOw/4WVdNqXgqSx8LR3JW0tYpTLcJCDxvOMbvXFAH7IAYFLXgX/DRHhH/hnMfGXbcfg8WxvG+zjzNu7b93pzmve9PvYtT0+2vbZi1vcRLLGxGCVYAg/mKALNFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAcx8UfGkvw98A6vrsMYknghKQq3Te3yqT+JpPgv4QfwL8N9H0yV99ysXm3Dnq0rnc5/NjU3xY8C2/xH8D6hoNwxTz1DRyDqjr8yn8xVTwZ4sOp+HbTSL3dbeINNQW15aMfn3LwHDd1YcgiuKv8eux24N/uZ06sOeG6/wAzuaKSlrU4QooooAKKKKACiiigAooooAKKKKAKupf8e6f9dov/Ri1aqrqX/Hun/XaL/0YtWqACiim75sUAI6iorkTy4+PvHpQBVvpDIqhPuiSPJ/wCBD/Cr9UriLybRBnnzYwT/AMDWrtABRRRQAUUUUAFFFFABRRRQAUUUUAcb8YvhnB8YPhhq/g+5ufsQ1JYgZ9u7ZskVs4/Csn4F/CGz+B/wsi8F6dd/b4YLiWX7Rs2bt7Zxj869CoAKKKKACiiigAooooAKKKKACiiigAr8tP+Ch3/J8H7Jv/YSh/wDSha/Uuvy0/wCCh3/J8H7Jv/YSh/8AShaAP1Looor4k/aE/wCCiPgr9n34uz+BfEdhqCzQWUdw9xCysrFiwxxQBN+3D8bvFXwE+B8uveDZUj1OS7SEzSpscIRkkGvzT/YI/bU+Iniz9qfR/C/iXXJtU0rXYbiK4juOVUqhYOvbBBr9T/2u/hZpPx++A+s+FNYuI7Kzni/tBLichVheKPcCT2wRX5V/sJfB7wl4p/bV0iC71qy13TNFe8a1u7B98LusTKMMOoBJoA/Vv4j/Cnw18WfDn9j+I7X7RbKd0Mina8Lex7V578Hf2SPB/wg8VXmvaV9q1HUpIHt4JLo/JCCRkqB6+tfRFI7rGhZjgdSTxQB+O/wDwUz8Y/E/4X/tSWH/CG6tqdnYtpUMyQwSssYYs4zjt0Fd9/wAEgNY8YeIPix8S77xVd3l+W06MZunLkyeb/FntX69XU1vNZM87Rm2ZMliQVI/Fa+TPgP8Asl/D/wCBPiLXNb8HxypdaookuJpJS+4DJAx2HNAH1KowKWkpaACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKbKu9CvY8GlooA5fw5pZv7W4s9VAvr3TZTatdyE5lQYMW72KFR+FaCaTYosciygBHfyl/xqebwp4fubiSaXQ7B5ZTukZrdSWPqc1N/wjOi/9Aax/wDAZP8ACueUJOV0dMKkIxs0Q/2TZf8APpB/37X/AAo/smy/59IP+/a/4VP/AMIzov8A0BrH/wABk/wo/wCEZ0X/AKA1j/4DJ/hU8k+zL54dkRf2TYj/AJdIP+/S/wCFH9k2X/PpB/37X/Cp/wDhGdF/6A1j/wCAyf4Uf8Ixov8A0BrH/wABk/wo5J9mHPDsiL+ybL/n0g/79r/hR/ZNl/z6Qf8Aftf8Kn/4RnRf+gNY/wDgMn+FH/CM6L/0BrH/AMBk/wAKOSfZhzw7Ii/smy/59IP+/a/4Uf2TZf8APpB/37X/AAqf/hGdF/6A1j/4DJ/hR/wjOi/9Aax/8Bk/wo5J9mHPDsiL+ybL/n0g/wC/a/4Uf2TZf8+kH/ftf8Kn/wCEZ0X/AKA1j/4DJ/hR/wAIzov/AEBrH/wGT/Cjkn2Yc8OyIhZWg/5YQn/tmv8AhR9ls/8Anyi/79r/AIVP/wAIzov/AEBrH/wGT/CoL/wdod7GUn0Wxcf9e6/4Uezn2Yc0O6H/ZbP/AJ8ov+/a/wCFH2Wz/wCfKL/v2v8AhS+KPhH4U8N6ZFeWmjWlvPvCh0j6g1sWXhqw/syIbACygjjrUqFS/LcNSp7NVOTlKO7TdmZw0uyb/nzt/8Av2v+FSLplt/zwg/79r/hWj/wjOi/9Aax/wDAZP8ACj/hGdF/6A1j/wCAyf4Vp7OfZj5od0UP7Jsv+fSD/v2v+FH9k2X/AD6Qf9+1/wAKv/8ACM6L/wBAax/8Bk/wo/4RnRf+gNY/+Ayf4Uezn2Yc0OyKP9k2X/PpB/37X/Cj+ybL/n0g/wC/a/4Vf/4RnRf+gNY/+Ayf4Uf8Izov/QGsf/AZP8KPZz7MOaHZFH+ybL/n0g/79r/hR/ZNl/z6Qf8Aftf8Kv8A/CM6L/0BrH/wGT/Cj/hGdF/6A1j/AOAyf4Uezn2Yc0OyKP8AZNl/z6Qf9+1/wo/smy/59IP+/a/4Vf8A+EZ0X/oDWP8A4DJ/hR/wjOi/9Aax/wDAZP8ACj2c+zDmh2RR/smy/wCfSD/v2v8AhR/ZNl/z6Qf9+1/wq/8A8Izov/QGsf8AwGT/AAo/4RnRf+gNY/8AgMn+FKcZU4OUnZBGSnLlSuyn/ZNl/wA+kH/ftf8ACj+ybL/n0g/79r/hV/8A4RnRf+gNY/8AgMn+FH/CM6L/ANAax/8AAZP8K5/ax7mnJJdCh/ZNl/z6Qf8Aftf8KP7Jsv8An0g/79r/AIVf/wCEZ0X/AKA1j/4DJ/hR/wAIzov/AEBrH/wGT/Cj2se4cku39eRnvpKtC6JDEGIIyFBx+dWlXaqjPQCp/wDhGdF/6A1j/wCAyf4Uf8Izov8A0BrH/wABk/wrOVSnZXZajJ7Ihoqb/hGdF/6A1j/4DJ/hR/wjOi/9Aax/8Bk/wqfax7j9nPsQ0VYj0TS4mDJp1mpHpAuf0qT+x7H/nzg/wC/a/4Ue1j3D2cuw7zI1T52VQBnJIFczf8Ai+1s7xo0dT0z+8FWLjSLRdOuj5ahvKbHArzaxhSS8lLqG+fgGsK2ISlZI0p0m4ts3L/xlaWqCQyKoH+2DWX/wALR0/Od6/+Pio9VtoFsyAi5+UdBXIDT7Xb/qh9a5pYySdrGqw9+p6U/wAaPsh2mWJ1HVQ3NSv8bEKaZJDEmJZdrkvyF9q8Y1/TIk8l0Xad2OKsNbGP+z1AxtbOPxrL61PuaLDw7H0Jqfx8OhaVYpBAlxdNlXLHhV7n61Dp/x6vLhYmltY2hkco2OGTHUN/UV4R4nUvJFjPEXGK3PDkijwzYJ0xg/rWscVJ6XL+rR30Pqm2+PWgLp4ml8xZ+nyjIzW0nx58OSQvLJcvHGnJ3oBivmSWFZPNBXI7CqOpwK+mz8AFVzW31mXYhYen2Puv4cfEnTfiR4fj1PS3MkP3SHGCp9K6+vyy+Hfi6+8L30RtLya2iDZkiVzsf8K+/Ph1qD6t4O06eRi7tECzN3Nejhq/tlZ7nPXpqB0tFFFdxzhRRRQAUUUUAFFFFABRRRQBV1L/j3T/rtF/6MWrVVdS/490/67Rf+jFq1QAUh4Vj6CnV4n8Xv2v/Bvwa+Jml+CNa0y/m1DUYY5kngKhR+8CEdeeDQBrDxtqd08r6dpk93CkjofLA3fKxH6VveBvF58Z+F49RMJhk3Mk0B6o6kqR+YrzXwR8XfEHhn9pHW/h34g0n7PoN7pX9oWN2g3Zz94HPrivG/g/+3ro/w08FeJtP1Xw/rWtTyaxdTWsumwF1MZkYjP1oA++vEXnz6NLFbwPcySgxiNMEkMMdjVD4X6lqulSS6Nq6XOLfHkzXMTRySj+8u7sDXz78Pf+CgfhPx18UNA8I2Pifw/4VvNVsVnSbW74RLI5YgohJ+bj1r3L4h+N/FvhywWbwnoOn+I7xSQq3OpCIIOmWwpoA9borxHSP2g/+ER+DFt4x+LGnQ+EppNQTT1sLeX7TncdpJPXjPb1rL+Mn7XE/w6vItD8K+Er7xv4h2+bItq6xQxIf4mZuwHNAH0VRXjXwM/ax8J/Gy4n0u1WfR/EVsP9I0m+ykiHvtJ+8PeiL9rPwNqHxqj+GunahLfa1L9pSN7eFjDC8Kb2Dv2OM4oA9lorwT4j/tp+A/hb41k8K+J7i5sNRVTIG+zuQVAySCBxXZfC39pzwF8ZjCvhvXoJtQdSTZsSsx9RjvigD1CiuY1v4n+H/AA9rVvpF/rNnaalOB5VtJIod8+grpqACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAr5q/bT/Z+1T4zafpOreGkDeIdDlM0Kr/AK2WM8Ffx619K0UAea/s6+OJvHvw7tZ79j/atp/o95G3DCRTjkemMfjXpdeB+HmPh/8Abe8X6aP9TrGnxXwH+0oUf1r3wHIpS3QtmtgooprEhSQMn0pAPooooAKKKKACkpaSgBCAaCnFQaxqiaNpV1fTA+XAheuD+APxrsfHt14hY7FtbK4+zW6jq8vOM/T1TLWSSLhK8lGmrtnu1FKKK1MwooooAKKKKACiiigAooooAKKKKAKupf8e6f9dov/Ri1aqrqX/Hun/XaL/0YtWqACiiigD5U/wCCjnwS8WfFz4a6I3hbTjqt3p+omZrZJAjBTGwyCcVwv7A37CfxL+Bnxo1Pxh4s0r7DZvpUtsgSZXJdpEYdD6Ka+qPj98b9P8A2efhjeeNNUsZtRtLd1jaC3YBmLEAcn61h/AD9pPTP2hfAF14n0nTbrTbW3uzaGG8YFidqtng+tAFvxr+zf4G+IfxUTx94g0RL/WLW3Edr5zEojKco4XpuHrUNt+zB4F0j486X8U9P0hYfElvGYJQvEflsCrHHruNb/AMVP2jfBvwg+Htt4y1y9EWgXZQQzRguzF+RwOe1SfB79oHwV8c9KvL3wfrKahBZyCOZcbWUnoCDQAlp8EPB+n/Gab4nQaUi+J5oPJNyGPVgQxI9TnrXh/wDwUE8US+EfCfhK7tdRsNOC3cjEXkvlleBjrXhf/BUL/goB8YP2ZviJ4V0X4fnTlj1m0kneS9thLh1YDHI461+ZPxd/bR+Mf7SVsumeOfEMNzpscnmLBaQiIE9twHNAH3h+zn+2V8KtT+N3hvwzB4s0jUNevJZQsVnKHbCqSxPAwAOTX0PrXxY8WeP/iXrfhT4dWNlPo+kYjvtT1PcySXA5aGNRwSp4ya+f/wBkr/gnt8N/Gv7MOi+J/FFhPH4w1yGWSXULaUoy4dl24B7AD8a+W/gL4y+K37HP7VGufDm7ubrU/D97eNp1yobasih8xzqP++fyoA/SvxN+yXq3xL1aW8+Jvj7VvFFuH3Jo8eLezQdtqj7341r+E/gZ4S+F/id0+H3w4tZtRslD/atPjWNVU9fnyMiut8LfFHwx4z8U654d0nVoLzVtG2DUIIjnyWb7ufwrN+IvxV8NfCXT4L3xJqtvptvO+2ITNgu3oKAPBf+CgPxZ+J3wz8F2GofDvRG17UrqXyXthC0vkqR95iv3R9a+Tf2Jv2pfD+j/tG6L4U+LlxAvjbUJpYHvLttt1ukUqEBOAVHYCv1I0rVrPW9NgvtPuY7yynTfFPCwZWHqCK8U+Mn7F/wl+Omqwa54n8PwtrNswdNSg/dzq3qWHWgDyP8A4KZ/AXxR8Y/AWiDwjp76rfaddtJJbQuA5QoRxmuV/wCCcX7FfiD9n/UL/wAYeMVls9bvoTbQaWSG8hSclnb+92wK++tD0m30TR7LTbONUtbWJYY1UYAVRgVfoA+Uv2hG/aC1r4haUPBXh3TbvwkHX7RdyzDeF3DdgE9ccV9WqSVAOc+9LRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAfPP7YGrW3ww8EeJfiDYr5mumxW0t5s/6+A7pG+qhWFL8Mv2zfA3hH4caTd+J9RvfF3iG8hWWW30vSmdYWIyV34wQOMnNSeHfGfxK+MfjvWtW8S6X4c0rwKJ3tba31GNpZyVOCzpkYOeRX1NpfgPw7pFolnZ6PY28C9I4oFAH6UAbGj6vBrWmW2oWrFrW5QSRk9wfSr9JGgRQqgKoGAAMUuB6UAeNftU+KtRs/D+k+F9FnNtq/iG/jsoZR1iQnLOPwFdDpXwj8K+GvhxceENH01LDTpLZ4ZPL+9JuHzMzdST60nxP+Eej/ABT/ALGGrz3Uf9lT/aofs0pQk9Oa6/TtPh0rT7azgUiGCMRqC2TgDua5owbm5PZnW8RTjShRivfi7p9iivhDRUgVBploFUYA8kU1PCmiqpUaVZge0C/4VrUVpZHO3d3ZQ/4RrRv+gVZf+A6/wCFH/CNaN/0CrL/AMB1/wAKv0UgMf8A4RrRv+gVZf8AgOv+FcJ8f7KBPhfqwit44mPl/cQDP7wV6lXE/H//AJJfqn++n/ocdZ1XalJ+RdPWpFeaPM/F9pBDYIY4lVvMTkD/AHhWhp9pCYl3RIT6laPE/wDx7j/fT/0IU/Tf9Wv+9/jXBb33c6/sozNZtIV1GEbFHzoOn1pNTtIIb+2RI1VWJ3ADj7pq1q//H/F/tr/WjU/+P+z/AN/19jVfZJ+0Zckb/ASRc/8A+z3+lfTOi6tqVh8HrS8sbn7PIsSmM/LzjA/jBHSvmqfHk4/2m/pX0R4s4/Z+tf8Ar3T/ANCFdGG3Zz4r4UZPhj4y+ItSgY6hJYzrH96URhCPcYrD8S/EHV9Zu7eOV1FvHNIfLCBRnaM8j61m+Ef+Qbc/wDXP+tc/qn/AB+W/wD10b/0EVnUxFZv4jajhqC3j+Z7d4N8fajp9wjzMrYcYA4r6Y0fUU1jRob1VKiVc7TXxtpPEsP/A6+yvh//wAipaf7n9a7svqyqSak9jjx1KNKKcVub1FFFe6fOhRRRQAUUUUAFFFFABRRRQBU1L/j3T/rtF/6MWrVVdS/490/67Rf+jFq1QAV8M/8FTvgPrXxe0/wzrHh+xuNRudJMweG1iZ3bdtIwADX3NRQB+Yfw3+JP7YXhLwdpmjaN4Cu59L0+BIbedtI0+RwmCcsXJJP1pvxG8Y/tg/FfQk0fVPhW0SxyGQTQaVZwy5IxxIpyK/TyigD8TfE/wM/bc+IekNo3iPwXe3+mMwY28lna4yOh+6K+gP2ZP2SPiN+yd+zb4z1nWtIfUfiFrm2SysbJhNdRRomUjG3I5J5xX7C0UAfzbyfBX9raWZpJfhzrzO53MTactfuB+yF4F8SfDj9mfwFoHjCxk0/WtPsQlzbS/fVyxJBr3uigD5p/aR/4KKfCf9m/wAYzeEPFUuqDWIYUmkFpbF02sMjmsj9n/8A4KF/CT9pTxWmgeELrULrUjC0+yazZBtXr1r3n40fC3wn8VNG/s/xn4f/AOEvsVYtFbyPsEbHglvUV6x4V0fS9I0q3h0fTbbS7Dy1MUFlGsSICARtA6GgD8r/wBvP/gpRrv7KXxYvPA2n+ELfWPKt0uBdS3jJndngAfrX2V+xP8Atjab+2L8PbrxVZ6PJoqWl0bWS3MwcM20NnoOua+N/2hv+Cf+tfH79ufVPG/iHWLqPwdoqWxtIUk4n2L/q1+uK+ovhJ+yL4b/Zr/Zi1nSfhqj2XifUpGmaSWQlrhgMAZPTgCgD4s/wCCiX/BQfXv2e/2gta+Hvh/w/DqqWVnDL9tmkZQ0knOPpXqH/BOT/goF4h/ae8VT+C/FOgQ6Ve2Vobkz2ztyNwHWvHP2rP+Ce3xw+O/7RevePNV8LhLrU40jSI3qcbVx9K+jP8AgnP/AME/PiB+zt8S28ZeOrSKwzp5t1t4J1d3JYEnjpyKAP0JooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAqK4m+z28k2M7FJxUteLftD/ABj1j4Z+HrKy8P+HrrxBq+rTeVCIIjIsYH8T4BOKANj9nvwFrSXurfEbxkqJ4p1wFLa0Ug/YbXPyR/jjP417tXkXgX9n/wH4Y8CabpNxpkOr3EUKma6vU3tI55Y89Oa9dAwAKAForB8ceMLHwD4W1HX9RJFpYxGRgv3mOcBR7k4FfPHwD/a+8Y/tCfEr+xoPDmmeHvB0CPNdyJOWuFAB2p6hjQB3f7Q+q6toviDwR4j0u1ku5tL1QsUiGSQ8e3IHvivctL1GDWNNtr61Yvb3Eayxk9wRxU88Ed1C8Mqh45FKsp7g18/a3rWvfs+axYaLJY3PiPwdPJ5Om3NogabTu2yQdduO9AH0LRXP8AgnxrpfjjSxeaZP5yqdjqfvI3cEV0FABRRRQAUUUUAFFFFABRRRQAUUUUAVdS/490/67Rf+jFq1VXUv+PdP+u0X/oxatUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABXz/APtCfBDXPi54j0Ix2OvWUFgsh+06TqRhUh8cHmvoCigDgvg58Nbn4ZeFE0q61jVNYcOW/0+7abYP9nNeDV8oftM/8FP/AAT8EPipqnghvDGp6zeaeQJJ7eVVVmKggqcHjBFP/Yc/4KmX37SHxfk8D61oFvpttPbSSWtwkjFlZcYznvzQB+mlFfM3xg/bD8c6J48m8HfDn4YyeMvEUMfnT3VxOIrW3B6Bmx1rN+AH7a/xC8XfHFfAfxW8BWXg+6uI5ZLG5sZzLDOU/hzwRntQB9iUV8s/tR/8ABQHwr+zL4/07wjq3h/Vta1G+tVuY3sOEwW24/GvG/gf/AMFidC+IfxS0rwZqvgO+0GS/uVtUvHn3KjN0JHpQB+h9FeMftN/tXeHP2V7LSLnxTpl9fR6s7Rw/YwCQy9+TXjHwp/4K8fCj4t+PdI8I6fpuq2t9qUgit3nQBTn1oA+96KSloAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACvH/iD8BL34s/FDw5qOua5IvhbQ2E39lW/wDrJZQ2RvPavYKKACiiigDmvHXjC38B+Gb/AFm9VpIrVNwjTq5PAGfqa+S/A+k+JPgr4x1r4i+NrS+1z+15P+JFpNiyvDbWY+6NvUYr7Mmt4rmNoplSRGGGVhkGqkOiafBbi2SxgFuvSMxjA/CgD5w+GvxO17xr+03Lqlxod/ovhY6Q0LRX6ENLcEnDIDjivpKqek6Fp2iySvY2MFo0v31gjC7voKvUAVtU0y31nT7izukDwToUceor5ouLO7+FfxN0Xw9NfTXnhTXVm/syS6Ys9rMi52BjyVOK+na898ffBbwt8QvEWl654h09NRu9MDeQspyoyck470AcJ8OtG0/wAU/HfxN4k0e+kXSYbKPT7yKKQiOaZvvMwBHPFevf8ACQ239w/rWNo3g7RdBuZptP063tJJwBIYkA3Y6VvfaI/UCgCP+0YvX9aP7Ri9f1o+0R+oFH2iP1AoAj/ALRi9f1o/tGL1/WvA/23P2htB/ZM+GVv441rRLjXrG4ulszBasAwZhnPI9q6P9kn9o/w7+1X8Krbxh4ct5rK2lme3aC44ZHXsfyoA9i/tGL1/Wj+0YvX9a8L+Efx71nxl+0V8RvAGoaRZ2uneGY4ZYb2JyzTb1yQa9s+0R+oFAEf9oxev60f2jF6/rR9oj9QKPtEfqBQBH/aMXr+tH9oxev60faI/UCj7RH6gUAfI/wDwUK0O98Y/CxvD2k20l9qkzyC3tYCC8mFPTmvLP+CeP7DfxB/Zy+Jt14j8ZaJ/Y8EmmvBGhuElLEkEfdNfpm0yN1YflR5yf3h+VAD6KKKACiiigAooooAKKKKACiiigCpqX/Hun/XaL/0YtWqq6l/x7p/12i/9GLVqgAooooAKKKKAKuof8e6/9dY//Q1q1VXUP+Pdf+usf/oa1aoAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAr5G/ar/AOCeWh/tKfGW28fat4h1DT57aBYRBaquOARn3zX1zRQB8zfAv9hPwD+z98Qz4v0u71PUdVWFoY3vWUqN3fGKpftP/APBPjwh+1J8S7Pxhrup6hbXNpYizSO22gFdxbJ59zX1bRQB+YP8Aw8g1r9hf4pW3gHxV4bvPGOgackMUN/aSbrlo8/8ALXJ6gD0r1b4+/wDBQjxh4k1fT/AH7PPw+1jWvE2pRpcR6tqluy29nEwyGZiR+Ar7S1bw/put6fPp97ZQXtnONssFwgZHHoQetc94M+FPhHwFp82n+G/D+laBbTtuuI7C2SISn1bHWgD8+fCP7B/x6/aC8c6Z42/aG8dD+z7SUTQaLaTAiRl6b1GAv6V+oWg6NbeH9HtNNs4xHa2kSxRqB0AHWr1FABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFAFXUv+PdP+u0X/oxatVV1L/j3T/rtF/6MWrVABRRRQAUUUUAZ18hi2AD5Gkj/D5h/8AWrRqJ8LcKWP3gVH4ZqagAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACis3xB4k0rwrpj6hq+oW+mWSMFa4upAiA+gJp1r4p0W+03+0LfVbObT+fnWdSn+NAGpRXBf8AC+vhx/0O+h/+B0f+NH/C+vhx/wBDvof/AIHR/wCNAHeUVwvxR+M3hj4SeB7jxZ4ovP7P0W1cI9z5ZbDE4HA560ngP4seD/iRbRyeHdesdTEgBHkTAk5oA6yiiigAooooAKK5aP4neEptBvtbXxHpv9k2LOt1eLcKY4mQ4YFuhwa6kEEAg5BoAWiiigAooooAKK5bU/iv4Q0fVk0zUPEmn2mozS+THaTThHMn91c9a6mgAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiis/xB4k0rwnpj6hq+oW+mWSMFa4uZAiAnoMmgDQorjv+F9fDj/od9D/APA6P/Gj/hfXw4/6HfQ//A6P/GgDuK5vUPiV4U0jWzpd/wCJdNs9SAX/AEaW5UOQTgHHeqP/AAvr4cf9Dvof/gdH/jXyf+3b4U0z446RqelfCTxN4F8Ua4kK7rK71nzGmRhnCOmB9KAPqD/hfXw4/wCh30P/AMDk/wAaf/wvr4cf9Dvof/gdH/jX5GfsZfsM+O9b/afm0r4reD7nQtM0q3ecPc3MkkMpYbVXahweuea/Uv/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0Adt/wAL6+HH/Q76H/4HR/40f8L6+HH/AEO+h/8AgdH/AI1xP/CqvAX/AEI2gf8Agui/+Jo/4VV4C/6EbQP/AAXRf/E0Adt/wvr4cf8AQ76H/wCB0f8AjR/wvr4cf9Dvof8A4HR/41xP/CqvAX/QjaB/4Lov/iaP+FVeAv8AoRtA/wDBdF/8TQB23/C+vhx/0O+h/wDgdH/jR/wvr4cf9Dvof/gdH/jXE/8ACqvAX/QjaB/4Lov/AImj/hVXgL/oRtA/8F0X/wATQB23/C+vhx/0O+h/+B0f+NH/AAvr4cf9Dvof/gdH/jXE/wDCqvAX/QjaB/4Lov8A4mj/AIVV4C/6EbQP/BdF/wDE0AdsWWMZYhV9TwKbur4v/wCCmej614z1D4K+HPDN9MZdR8V28H2aKQlZG3J8pHfNfW/gjSr3QfCWlaZqU73N/a26RzSytlnYDkmgDe3UlFJ060ALRRWZ4g8Q6b4Z01tQ1a+ttOsVZUa4uZBGgJOBkmgDToqrYaha6pYw3lnPHdWkyB45YWDK6nqCD0q1QAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFAH//Z";
+    const EMBEDDED_LOGO = "https://www.image2url.com/r2/default/images/1781919958885-4a0fd859-0e6f-4e9f-9370-702fbf72864f.jpg"; // [NEW] Logo Tirta Kencana 200x200, tertanam agar langsung muncul tanpa upload manual
+    const EMBEDDED_QRIS = "https://www.image2url.com/r2/default/images/1781920179544-5e92dd0f-d0fa-482c-afc2-88259a5d3000.jpg"; // [UPDATED] QRIS asli, tertanam agar langsung muncul tanpa upload manual
     function getGasUrl() { return localStorage.getItem('tirtaGasUrl') || DEFAULT_GAS_URL; }
 
     // [FIX] gasCall dengan retry dan timeout diperpanjang
@@ -297,13 +298,118 @@
       { name:'dedi',   role:'driver', password:'1234'   },
       { name:'zehpudin', role:'driver', password:'1234'   }
     ];
-    let _logoUrl = localStorage.getItem('tirtaLogo') || '';
+    let _logoUrl = localStorage.getItem('tirtaLogo') || EMBEDDED_LOGO; // [UPDATED] fallback ke logo tertanam, mekanisme sama seperti _qrisUrl
     let _qrisUrl = '';
     let _scannerMode = null, _scanTargetIdx = null, _scanResult = '', _scanStream = null, _scanTimer = null, _scannerActive = false;
     let _strKData = null, _lastSetoranPayload = null;
     let masterStockHistory = {};
 
     function saveLocalData() { localStorage.setItem('tirtaFullData', JSON.stringify({ products, pelanggan, allTrxList, allCustomers, stockInHistory, setoranHistory, drivers, settings, allUsers, masterStockHistory })); }
+    
+    // [FIX] Fungsi syncMasterStockToSheet yang sebelumnya tidak terdefinisi
+    async function syncMasterStockToSheet() {
+      try {
+        await gasCall('syncMasterStockToSheet', [masterStockHistory]);
+        console.log('Master stock synced successfully');
+      } catch(e) {
+        console.warn('Gagal sync master stock:', e);
+      }
+    }
+    
+    // [NEW] Fungsi untuk refresh data dari server dengan retry
+    async function refreshDataFromServer(showToast = true) {
+      try {
+        if (showToast) {
+          Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1000, icon: 'info', title: 'Mengambil data terbaru...' });
+        }
+        const data = await gasCall('getAllData', []);
+        if (data) {
+          products = data.products || [];
+          pelanggan = data.pelanggan || [];
+          allTrxList = data.allTrxList || [];
+          allCustomers = data.allCustomers || [];
+          stockInHistory = data.stockInHistory || [];
+          setoranHistory = data.setoranHistory || [];
+          drivers = data.drivers || ['oji','padong','said','dedi','zehpudin'];
+          settings = { ...settings, ...(data.settings || {}) };
+          allUsers = data.allUsers || [];
+          masterStockHistory = data.masterStockHistory || {};
+          saveLocalData();
+          if (showToast) {
+            Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Data diperbarui' });
+          }
+          return true;
+        }
+      } catch(e) {
+        console.warn('Gagal refresh dari server:', e);
+        if (showToast) {
+          Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, icon: 'warning', title: 'Gagal ambil data server, menggunakan data lokal' });
+        }
+        return false;
+      }
+    }
+    
+    // [NEW] Auto-sync interval yang lebih cepat (15 detik)
+    let _syncInterval = null;
+    function startAutoSync(intervalSeconds = 15) {
+      if (_syncInterval) clearInterval(_syncInterval);
+      _syncInterval = setInterval(async () => {
+        await refreshDataFromServer(false);
+      }, intervalSeconds * 1000);
+    }
+    
+    // [NEW] Pull-to-refresh handler
+    let _pullStartY = 0, _pullCurrentY = 0, _pulling = false;
+    function initPullToRefresh() {
+      const content = document.querySelector('.content-area');
+      if (!content) return;
+      content.addEventListener('touchstart', e => {
+        if (content.scrollTop === 0) {
+          _pullStartY = e.touches[0].clientY;
+          _pulling = true;
+        }
+      }, { passive: true });
+      content.addEventListener('touchmove', e => {
+        if (!_pulling) return;
+        _pullCurrentY = e.touches[0].clientY;
+        const diff = _pullCurrentY - _pullStartY;
+        if (diff > 0 && diff < 150) {
+          e.preventDefault();
+          let indicator = document.getElementById('pull-indicator');
+          if (!indicator) {
+            indicator = document.createElement('div');
+            indicator.id = 'pull-indicator';
+            indicator.style.cssText = 'text-align:center;padding:10px;color:var(--biru);font-size:12px;font-weight:600;';
+            indicator.innerHTML = '<i class="fas fa-arrow-down"></i> Tarik untuk refresh';
+            content.insertBefore(indicator, content.firstChild);
+          }
+          indicator.innerHTML = diff > 80 ? '<i class="fas fa-check"></i> Lepas untuk refresh' : '<i class="fas fa-arrow-down"></i> Tarik untuk refresh';
+        }
+      }, { passive: false });
+      content.addEventListener('touchend', async () => {
+        if (!_pulling) return;
+        _pulling = false;
+        const diff = _pullCurrentY - _pullStartY;
+        let indicator = document.getElementById('pull-indicator');
+        if (indicator) {
+          indicator.remove();
+          indicator = null;
+        }
+        if (diff > 80) {
+          await refreshDataFromServer(true);
+          if (currentPage === 'rekap') loadRekap();
+          else if (currentPage === 'dashboard') loadDashboard();
+          else if (currentPage === 'penjualan') loadPenjualan();
+          else if (currentPage === 'transaksi') loadTransaksi();
+          else if (currentPage === 'stockbarang') loadStockBarang();
+          else if (currentPage === 'produk') loadProduk();
+          else if (currentPage === 'pelanggan') loadPelanggan();
+          else if (currentPage === 'piutang') loadPiutang();
+        }
+        _pullStartY = 0;
+        _pullCurrentY = 0;
+      });
+    }
     function loadLocalData() {
       const s = localStorage.getItem('tirtaFullData');
       if (s) { try { const d = JSON.parse(s); products = d.products || []; pelanggan = d.pelanggan || []; allTrxList = d.allTrxList || []; allCustomers = d.allCustomers || []; stockInHistory = d.stockInHistory || []; setoranHistory = d.setoranHistory || []; drivers = d.drivers || ['oji','padong','said','dedi','zehpudin']; settings = { ...settings, ...(d.settings || {}) }; allUsers = d.allUsers || []; masterStockHistory = d.masterStockHistory || {}; } catch(e) {} }
@@ -332,7 +438,7 @@
         { name:'zehpudin', role:'driver', password:'1234' }
       ];
       _masterUsers.forEach(mu => { if (!allUsers.find(u => u.name === mu.name)) allUsers.push(mu); });
-      _logoUrl = localStorage.getItem('tirtaLogo') || '';
+      _logoUrl = localStorage.getItem('tirtaLogo') || EMBEDDED_LOGO; // [UPDATED] fallback ke logo tertanam
       _qrisUrl = settings.qris || localStorage.getItem('sp_qris') || EMBEDDED_QRIS;
     }
 
@@ -418,9 +524,9 @@
       setTimeout(()=>{ const e3=document.getElementById('syncStatus'); if(e3) updateSyncStatus(); }, 2000);
     }
 
-    // ── AUTO SYNC 30 MENIT ──
+    // ── AUTO SYNC 5 MENIT ──
     let _autoSyncTimer = null;
-    const AUTO_SYNC_INTERVAL = 30 * 60 * 1000; // 30 menit
+    const AUTO_SYNC_INTERVAL = 5 * 60 * 1000; // 5 menit
     let _nextSyncTime = null;
 
     function updateSyncStatus() {
@@ -446,6 +552,7 @@
 
     function stopAutoSync() {
       if (_autoSyncTimer) { clearInterval(_autoSyncTimer); _autoSyncTimer = null; }
+      if (_syncInterval) { clearInterval(_syncInterval); _syncInterval = null; }
       const el = document.getElementById('syncStatus');
       if (el) el.textContent = 'Manual';
     }
@@ -497,7 +604,9 @@
       initDarkMode(); renderMenuTabs();
       // Sync sekali saat login
       try { await syncFromGAS(); } catch(e) {}
-      startAutoSync();
+      try { await syncSetoranHistoryFromGAS(); } catch(e) {} // [NEW] pastikan riwayat setoran juga dari Google Sheets saat login/refresh
+      startAutoSync(15); // Auto-sync setiap 15 detik
+      initPullToRefresh(); // Aktifkan pull-to-refresh
       navigateTo('dashboard');
     }
 
@@ -514,6 +623,7 @@
              <button class="tab ${currentPage==='rekap'?'active':''}" onclick="navigateTo('rekap')"><i class="fas fa-chart-bar"></i> Rekap</button>
              <button class="tab ${currentPage==='rekapinput'?'active':''}" onclick="navigateTo('rekapinput')"><i class="fas fa-boxes"></i> Rekap Input</button>
              <button class="tab ${currentPage==='setoran'?'active':''}" onclick="navigateTo('setoran')"><i class="fas fa-money-bill-wave"></i> Setoran</button>
+             <button class="tab ${currentPage==='rekapsetoran'?'active':''}" onclick="navigateTo('rekapsetoran')"><i class="fas fa-table"></i> Rekap Setoran</button>
              <button class="tab ${currentPage==='inputbarang'?'active':''}" onclick="navigateTo('inputbarang')"><i class="fas fa-boxes"></i> Input</button>
              <button class="tab ${currentPage==='stockbarang'?'active':''}" onclick="navigateTo('stockbarang')"><i class="fas fa-warehouse"></i> Stock</button>
              <button class="tab ${currentPage==='produk'?'active':''}" onclick="navigateTo('produk')"><i class="fas fa-cubes"></i> Produk</button>
@@ -527,6 +637,7 @@
              <button class="tab ${currentPage==='transaksi'?'active':''}" onclick="navigateTo('transaksi')"><i class="fas fa-list"></i> Transaksi</button>
              <button class="tab ${currentPage==='rekap'?'active':''}" onclick="navigateTo('rekap')"><i class="fas fa-chart-bar"></i> Rekap</button>
              <button class="tab ${currentPage==='setoran'?'active':''}" onclick="navigateTo('setoran')"><i class="fas fa-money-bill-wave"></i> Setoran</button>
+             <button class="tab ${currentPage==='rekapsetoran'?'active':''}" onclick="navigateTo('rekapsetoran')"><i class="fas fa-table"></i> Rekap Setoran</button>
              <button class="tab ${currentPage==='pengaturanUser'?'active':''}" onclick="navigateTo('pengaturanUser')"><i class="fas fa-cog"></i> Atur</button>`;
       } else if (r === 'driver') {
         h = `<button class="tab ${currentPage==='dashboard'?'active':''}" onclick="navigateTo('dashboard')"><i class="fas fa-chart-pie"></i> Dashboard</button>
@@ -537,13 +648,18 @@
       document.getElementById('menuTabs').innerHTML = h;
     }
     function navigateTo(p) { currentPage = p; renderMenuTabs(); renderContent(); }
-    function renderContent() { switch (currentPage) { case 'dashboard': loadDashboard(); break; case 'penjualan': loadPenjualan(); break; case 'transaksi': loadTransaksi(); break; case 'rekap': loadRekap(); break; case 'rekapinput': loadRekapInput(); break; case 'setoran': loadSetoran(); break; case 'inputbarang': loadInputBarang(); break; case 'stockbarang': loadStockBarang(); break; case 'produk': loadProduk(); break; case 'pelanggan': loadPelanggan(); break; case 'pengaturan': loadPengaturan(); break; case 'pengaturanUser': loadPengaturanUser(); break; case 'grafik': loadGrafik(); break; case 'piutang': loadPiutang(); break; } }
+    function renderContent() { switch (currentPage) { case 'dashboard': loadDashboard(); break; case 'penjualan': loadPenjualan(); break; case 'transaksi': loadTransaksi(); break; case 'rekap': loadRekap(); break; case 'rekapinput': loadRekapInput(); break; case 'setoran': loadSetoran(); break; case 'rekapsetoran': loadRekapSetoran(); break; case 'inputbarang': loadInputBarang(); break; case 'stockbarang': loadStockBarang(); break; case 'produk': loadProduk(); break; case 'pelanggan': loadPelanggan(); break; case 'pengaturan': loadPengaturan(); break; case 'pengaturanUser': loadPengaturanUser(); break; case 'grafik': loadGrafik(); break; case 'piutang': loadPiutang(); break; } }
 
     // ========== DASHBOARD (MENU UTAMA) ==========
     function loadDashboard() {
       const _dn = new Date(); const today = _dn.getFullYear()+'-'+String(_dn.getMonth()+1).padStart(2,'0')+'-'+String(_dn.getDate()).padStart(2,'0');
       const role = currentUser?.role;
       let h = '';
+
+      // [NEW] Cek stok rendah HANYA untuk produk tertentu
+      const lowStockProductNames = ['Aqua 1500 ml', 'Aqua 200 ml', 'Aqua Cube', 'Aqua 330 ml', 'Aqua 600 ml', 'Aqua Galon 19L', 'Vit 1500 ml', 'Vit 200 ml', 'Vit 220 ml ( moksa )', 'Vit 330 ml', 'Vit 550 ml', 'Vit Galon 19 L'];
+      const lowStockProducts = products.filter(p => lowStockProductNames.includes(p.nama) && (p.stokAwal || 0) < 5);
+      const hasLowStock = lowStockProducts.length > 0;
 
       if (role === 'driver') {
         const myStock = stockInHistory.filter(s => 
@@ -559,6 +675,7 @@
         const totalKeseluruhan = totalKiriman + totalTitipan;
 
         h = `
+          ${hasLowStock ? `<div class="card" style="background:#FEF3C7;border-color:#F59E0B;"><div class="card-title" style="color:#92400E;"><i class="fas fa-exclamation-triangle"></i> Stok Rendah (${lowStockProducts.length} produk)</div><div class="tag-list">${lowStockProducts.slice(0,5).map(p => `<span class="tag" style="background:#FFF8E1;color:#92400E;">${esc(p.nama)}: ${p.stokAwal}</span>`).join('')}</div></div>` : ''}
           <div class="summary-shape">
             <div class="summary-title">🚚 Input Hari Ini - ${esc(currentUser.name)}</div>
             <div class="summary-items" style="grid-template-columns:1fr 1fr;">
@@ -576,6 +693,7 @@
         const belum = todayTx.filter(t=>t.status==='belumTransfer').reduce((s,t)=>s+(t.nett||0),0);
         const total = cod+transfer+qris+belum;
         h = `
+          ${hasLowStock ? `<div class="card" style="background:#FEF3C7;border-color:#F59E0B;"><div class="card-title" style="color:#92400E;"><i class="fas fa-exclamation-triangle"></i> Stok Rendah (${lowStockProducts.length} produk)</div><div class="tag-list">${lowStockProducts.slice(0,5).map(p => `<span class="tag" style="background:#FFF8E1;color:#92400E;">${esc(p.nama)}: ${p.stokAwal}</span>`).join('')}</div></div>` : ''}
           <div class="summary-shape">
             <div class="summary-title">💰 Total Penjualan Hari Ini</div>
             <div class="summary-items">
@@ -588,6 +706,22 @@
           </div>
         `;
       }
+
+      // [NEW] Quick Actions
+      h += `<div style="font-weight:700;font-size:0.9rem;color:var(--biru);margin:16px 0 12px 0;">⚡ Quick Actions</div>`;
+      h += `<div class="menu-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px;">`;
+      if (role === 'admin' || role === 'sales') {
+        h += `<div class="action-card" onclick="navigateTo('penjualan');document.getElementById('trxCustomer').focus();" style="padding:12px 8px;"><i class="fas fa-cash-register" style="font-size:20px;color:var(--biru);"></i><div style="font-size:11px;font-weight:600;margin-top:6px;">Jual Cepat</div></div>`;
+        h += `<div class="action-card" onclick="openScanner('trx');" style="padding:12px 8px;"><i class="fas fa-barcode" style="font-size:20px;color:var(--teal);"></i><div style="font-size:11px;font-weight:600;margin-top:6px;">Scan</div></div>`;
+      }
+      if (role === 'admin') {
+        h += `<div class="action-card" onclick="navigateTo('produk');openProdukForm(-1);" style="padding:12px 8px;"><i class="fas fa-plus-circle" style="font-size:20px;color:var(--hijau);"></i><div style="font-size:11px;font-weight:600;margin-top:6px;">+ Produk</div></div>`;
+        h += `<div class="action-card" onclick="navigateTo('inputbarang');" style="padding:12px 8px;"><i class="fas fa-boxes" style="font-size:20px;color:var(--kuning);"></i><div style="font-size:11px;font-weight:600;margin-top:6px;">Input</div></div>`;
+      } else if (role === 'driver') {
+        h += `<div class="action-card" onclick="navigateTo('inputbarang');" style="padding:12px 8px;"><i class="fas fa-boxes" style="font-size:20px;color:var(--kuning);"></i><div style="font-size:11px;font-weight:600;margin-top:6px;">Input</div></div>`;
+        h += `<div class="action-card" onclick="openScanner('stock');" style="padding:12px 8px;"><i class="fas fa-barcode" style="font-size:20px;color:var(--teal);"></i><div style="font-size:11px;font-weight:600;margin-top:6px;">Scan</div></div>`;
+      }
+      h += `</div>`;
 
       h += `<div style="font-weight:700;font-size:0.9rem;color:var(--biru);margin-bottom:12px;">📌 Menu Utama</div>`;
 
@@ -648,15 +782,18 @@
 
     // ========== PENJUALAN (sama seperti sebelumnya) ==========
     let _itemIdx = 0;
+    let _currentTrxId = ''; // Untuk menyimpan ID transaksi saat ini (untuk upload foto)
     function loadPenjualan() {
       let datalistOptions = products.map(p => `<option value="${p.sku}">${p.nama}</option>`).join('');
       let cDatalist = allCustomers.map(c => `<option value="${esc(c)}">`).join('');
       let sOpts = '<option value="">Pilih Sales</option>';
       (settings.salesList||[]).forEach(s => { sOpts += `<option value="${esc(s)}">${esc(s)}</option>`; });
+      const trxIdVal = genId();
+      _currentTrxId = trxIdVal;
       document.getElementById('contentArea').innerHTML = `
         <datalist id="productDatalist">${datalistOptions}</datalist>
         <div class="card"><div class="card-title"><i class="fas fa-cash-register"></i> Buat Invoice</div>
-        <div class="form-group"><label>ID Transaksi</label><input id="trxId" readonly style="font-family:var(--mono)"></div>
+        <div class="form-group"><label>ID Transaksi</label><input id="trxId" readonly style="font-family:var(--mono)" value="${trxIdVal}"></div>
         <div class="flex-row"><div class="form-group col-1"><label>Tanggal</label><input type="date" id="trxTgl"></div><div class="form-group col-1"><label>Pelanggan *</label><input id="trxCust" placeholder="Nama pelanggan" list="custDatalist" autocomplete="off"><datalist id="custDatalist">${cDatalist}</datalist></div></div>
         <div class="flex-row"><div class="form-group col-1"><label>Sales *</label><select id="trxSales">${sOpts}</select></div><div class="form-group col-1"><label>Status</label><select id="trxStatus"><option value="">-- Pilih --</option><option value="belumTransfer">Belum Transfer</option><option value="cod">COD</option><option value="transfer">Transfer</option><option value="qris">QRIS</option></select></div></div>
         <div class="form-group"><label>Diskon Global (Rp)</label><input type="number" id="trxDiscGlobal" value="0" min="0" oninput="recalcTotals()"></div>
@@ -676,9 +813,20 @@
           </div>
         </div>
         <div class="total-box"><div class="flex-between"><span>Gross</span><span id="sumGross" style="font-family:var(--mono)">Rp 0</span></div><div class="flex-between"><span>Diskon</span><span id="sumDisc" style="font-family:var(--mono);color:var(--merah)">Rp 0</span></div><div class="flex-between" id="sumBiayaRow" style="display:none"><span id="sumBiayaLabel">Biaya Tambahan</span><span id="sumBiaya" style="font-family:var(--mono);color:var(--hijau)">Rp 0</span></div><div class="flex-between" style="font-size:1.1rem;font-weight:800"><span>TOTAL NETT</span><span id="sumNett" style="font-family:var(--mono);color:var(--biru)">Rp 0</span></div></div>
+        <div class="card" style="margin-top:8px;padding:12px 14px;background:var(--surface2);border:1px solid var(--border)">
+          <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:8px">📸 FOTO KIRIMAN (Opsional)</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <label style="cursor:pointer;display:flex;align-items:center;gap:6px;background:var(--biru-muda);color:var(--biru);padding:8px 14px;border-radius:10px;font-size:0.75rem;font-weight:700;transition:0.2s" onmouseover="this.style.background='rgba(26,109,181,0.15)'" onmouseout="this.style.background='var(--biru-muda)'">
+              <i class="fas fa-camera"></i> Upload Foto Kiriman
+              <input type="file" accept="image/*" capture="environment" style="display:none" onchange="uploadFotoKiriman(this)">
+            </label>
+            <button class="btn btn-sm btn-ghost" style="font-size:0.7rem" onclick="showFotoBukti(_currentTrxId,'Foto Kiriman '+_currentTrxId)">🖼 Lihat Foto</button>
+            <span id="fotoKirimanStatus" style="font-size:0.7rem;color:var(--text3);margin-left:auto"></span>
+          </div>
+        </div>
         <div style="display:flex;gap:8px"><button class="btn btn-secondary" style="flex:1" onclick="resetTrx()">Reset</button><button class="btn btn-primary" style="flex:2" id="btnSubmitTrx" onclick="submitTrx()">💾 Simpan & Struk</button></div></div>`;
       _itemIdx = 0;
-      document.getElementById('trxId').value = genId(); document.getElementById('trxTgl').value = localDateStr();
+      document.getElementById('trxTgl').value = localDateStr();
       document.getElementById('trxCust').value = ''; document.getElementById('trxDiscGlobal').value = '0'; document.getElementById('trxStatus').value = '';
       document.getElementById('itemsContainer').innerHTML = ''; addItemRow();
       const _bk = document.getElementById('biayaKet'); if (_bk) _bk.value = '';
@@ -786,42 +934,76 @@
             <div class="form-group col-1"><label>Sales</label><select id="setorSales">${sOpts}</select></div>
             <button class="btn btn-primary" onclick="doSetoran()" style="height:44px;align-self:flex-end">💰 Tampilkan</button>
             <button class="btn btn-outline" onclick="showSetoranHistoryModal()" style="height:44px;align-self:flex-end"><i class="fas fa-history"></i> Riwayat</button>
+            <button class="btn btn-outline" onclick="showSetoranEditLog()" style="height:44px;align-self:flex-end"><i class="fas fa-clipboard-list"></i> Log Edit</button>
           </div>
         </div>
         <div id="setoranContent"><div class="text-center text-sm" style="padding:40px">Pilih tanggal & sales lalu klik Tampilkan</div></div>`;
       document.getElementById('setorTgl').value = localDateStr(); 
     }
 
-    function doSetoran() { 
+    async function doSetoran() { 
       const tgl = document.getElementById('setorTgl').value; const sales = document.getElementById('setorSales').value; 
       if (!tgl || !sales) return Swal.fire('Error','Pilih tanggal & sales!','error'); 
       const filtered = allTrxList.filter(t => (t.tgl||'').substring(0,10) === tgl && (t.sales||'').toLowerCase().trim() === sales.toLowerCase().trim()); 
       const grand = filtered.filter(t=>t.status==='cod').reduce((s,t)=>s+(t.nett||0),0); 
+      // [NEW] Sync riwayat setoran dari Google Sheets dulu, lalu cek apakah tgl & sales ini sudah pernah disimpan
+      document.getElementById('setoranContent').innerHTML = '<div class="text-center text-sm" style="padding:30px">Mengambil data dari Google Sheets...</div>';
+      try { await syncSetoranHistoryFromGAS(); } catch(e) {}
+      const existingIdx = setoranHistory.findIndex(s => (s.tgl||'').substring(0,10) === tgl && (s.sales||'').toLowerCase().trim() === sales.toLowerCase().trim());
+      const ex = existingIdx >= 0 ? normalizeSetoranRecord(setoranHistory[existingIdx]) : null;
       document.getElementById('setoranContent').innerHTML = 
         `<div class="card"><div class="flex-between mb-2"><div><strong>💰 Setoran: ${esc(sales)}</strong><br><span class="text-sm">${fmtDate(tgl)}</span></div><div style="font-size:1.2rem;font-weight:800;color:var(--biru)">Grand Total COD: ${fmtRp(grand)}</div></div>
+        ${ex ? '<div style="background:#FFF7E6;border:1px solid #FFE2A8;border-radius:8px;padding:8px 12px;font-size:12px;color:#92660A;margin-bottom:10px"><i class="fas fa-info-circle"></i> Setoran tanggal & sales ini sudah tersimpan di Google Sheets. Data di bawah dimuat otomatis — klik Simpan untuk update.</div>' : ''}
         <input type="hidden" id="stGrand" value="${grand}">
-        <div class="form-group"><label>🍽️ Uang Makan</label><input type="number" id="stMakan" value="0" min="0" oninput="calcSetoran()"></div>
-        <div class="form-group"><label>🎁 Tips</label><input type="number" id="stTips" value="0" min="0" oninput="calcSetoran()"></div>
-        <div class="form-group"><label>🅿️ Parkir</label><input type="number" id="stParkir" value="0" min="0" oninput="calcSetoran()"></div>
-        <div class="form-group"><label>⛽ Bensin</label><input type="number" id="stBensin" value="0" min="0" oninput="calcSetoran()"></div>
-        <div class="form-group"><label>💳 Flazz</label><input type="number" id="stFlazz" value="0" min="0" oninput="calcSetoran()"></div>
-        <div class="form-group"><label>🏦 Transfer</label><input type="number" id="stTransfer" value="0" min="0" oninput="calcSetoran()"></div>
-        <div class="form-group"><label>💵 Cicilan</label><input type="number" id="stCicilan" value="0" min="0" oninput="calcSetoran()"></div>
-        <div class="form-group"><label>📄 Tagihan</label><input type="number" id="stTagihan" value="0" min="0" oninput="calcSetoran()"></div>
-        <div class="flex-row"><div class="form-group col-2"><label>Keterangan 1</label><input id="stKet1" placeholder="contoh: Bonus" oninput="calcSetoran()"></div><div class="form-group col-1"><label>Jumlah 1</label><input type="number" id="stJml1" value="0" min="0" oninput="calcSetoran()"></div></div>
-        <div class="flex-row"><div class="form-group col-2"><label>Keterangan 2</label><input id="stKet2" placeholder="contoh: Lain-lain" oninput="calcSetoran()"></div><div class="form-group col-1"><label>Jumlah 2</label><input type="number" id="stJml2" value="0" min="0" oninput="calcSetoran()"></div></div>
+        <div class="form-group"><label>🍽️ Uang Makan</label><input type="number" id="stMakan" value="${ex?ex.makan:0}" min="0" oninput="calcSetoran()"></div>
+        <div class="form-group"><label>🎁 Tips</label><input type="number" id="stTips" value="${ex?ex.tips:0}" min="0" oninput="calcSetoran()"></div>
+        <div class="form-group"><label>🅿️ Parkir</label><input type="number" id="stParkir" value="${ex?ex.parkir:0}" min="0" oninput="calcSetoran()"></div>
+        <div class="form-group"><label>⛽ Bensin</label><input type="number" id="stBensin" value="${ex?ex.bensin:0}" min="0" oninput="calcSetoran()"></div>
+        <div class="form-group"><label>💳 Flazz</label><input type="number" id="stFlazz" value="${ex?ex.flazz:0}" min="0" oninput="calcSetoran()"></div>
+        <div class="form-group"><label>🏦 Transfer</label><input type="number" id="stTransfer" value="${ex?ex.transfer:0}" min="0" oninput="calcSetoran()"></div>
+        <div class="form-group"><label>💵 Cicilan</label><input type="number" id="stCicilan" value="${ex?ex.cicilan:0}" min="0" oninput="calcSetoran()"></div>
+        <div class="form-group"><label>📄 Tagihan</label><input type="number" id="stTagihan" value="${ex?ex.tagihan:0}" min="0" oninput="calcSetoran()"></div>
+        <div class="flex-row"><div class="form-group col-2"><label>Keterangan 1</label><input id="stKet1" placeholder="contoh: Bonus" value="${ex?esc(ex.ket1):''}" oninput="calcSetoran()"></div><div class="form-group col-1"><label>Jumlah 1</label><input type="number" id="stJml1" value="${ex?ex.jml1:0}" min="0" oninput="calcSetoran()"></div></div>
+        <div class="flex-row"><div class="form-group col-2"><label>Keterangan 2</label><input id="stKet2" placeholder="contoh: Lain-lain" value="${ex?esc(ex.ket2):''}" oninput="calcSetoran()"></div><div class="form-group col-1"><label>Jumlah 2</label><input type="number" id="stJml2" value="${ex?ex.jml2:0}" min="0" oninput="calcSetoran()"></div></div>
         <div class="total-box"><div class="flex-between"><span>TOTAL</span><span id="stTotal">Rp 0</span></div></div>
-        <div class="form-group"><label>✅ SETOR</label><input type="number" id="stSetor" value="0" min="0" oninput="calcSetoran()"></div>
+        <div class="form-group"><label>✅ SETOR</label><input type="number" id="stSetor" value="${ex?ex.setor:0}" min="0" oninput="calcSetoran()"></div>
         <div class="total-box danger"><div class="flex-between"><span>SELISIH</span><span id="stSelisih">Rp 0</span></div></div>
         <button class="btn btn-primary btn-block mt-2" onclick="saveSetoran()">💾 Simpan Setoran</button></div>`; 
       calcSetoran(); 
+      // [NEW] Jika data sudah ada di Sheets, masuk mode edit agar tombol Simpan mengupdate, bukan menduplikasi
+      if (ex) {
+        window._editingSetoranIndex = existingIdx;
+        window._editingSetoranBefore = JSON.parse(JSON.stringify(ex));
+      } else {
+        window._editingSetoranIndex = undefined;
+        window._editingSetoranBefore = undefined;
+      }
     }
 
     function calcSetoran() { const gv = id => parseFloat(document.getElementById(id)?.value)||0; const grand = gv('stGrand'); const pengeluaran = gv('stMakan')+gv('stTips')+gv('stParkir')+gv('stBensin')+gv('stFlazz')+gv('stTransfer')+gv('stJml1')+gv('stJml2'); const total = grand + gv('stTagihan') + gv('stCicilan') - pengeluaran; document.getElementById('stTotal').textContent = fmtRp(total); document.getElementById('stSelisih').textContent = fmtRp(total - gv('stSetor')); }
 
     async function saveSetoran() { 
       const payload = { tgl: document.getElementById('setorTgl').value, sales: document.getElementById('setorSales').value, grandTotal: parseFloat(document.getElementById('stGrand')?.value)||0, makan: parseFloat(document.getElementById('stMakan')?.value)||0, tips: parseFloat(document.getElementById('stTips')?.value)||0, parkir: parseFloat(document.getElementById('stParkir')?.value)||0, bensin: parseFloat(document.getElementById('stBensin')?.value)||0, flazz: parseFloat(document.getElementById('stFlazz')?.value)||0, transfer: parseFloat(document.getElementById('stTransfer')?.value)||0, cicilan: parseFloat(document.getElementById('stCicilan')?.value)||0, tagihan: parseFloat(document.getElementById('stTagihan')?.value)||0, ket1: document.getElementById('stKet1')?.value.trim() || '', jml1: parseFloat(document.getElementById('stJml1')?.value)||0, ket2: document.getElementById('stKet2')?.value.trim() || '', jml2: parseFloat(document.getElementById('stJml2')?.value)||0, total: parseFloat(document.getElementById('stTotal')?.textContent.replace(/[^0-9]/g,''))||0, setor: parseFloat(document.getElementById('stSetor')?.value)||0, selisih: parseFloat(document.getElementById('stSelisih')?.textContent.replace(/[^0-9]/g,''))||0 }; 
-      try { await gasCall('saveSetoran', [payload]); setoranHistory.unshift(payload); saveLocalData(); _lastSetoranPayload = payload; showSetoranStrukModal(payload); } catch(e) { Swal.fire('Error',e.message,'error'); } 
+      try { 
+        if (window._editingSetoranIndex !== undefined) {
+          // Mode edit: update data yang sudah ada
+          setoranHistory[window._editingSetoranIndex] = payload;
+          // [NEW] Catat log edit setoran
+          loadSetoranEditLog();
+          _setoranEditLog.push({ waktu: localDateStr()+' '+new Date().toTimeString().slice(0,8), editor: currentUser?.name||'?', sales: payload.sales, tgl: payload.tgl, before: window._editingSetoranBefore || {}, after: payload });
+          saveSetoranEditLog();
+          window._editingSetoranIndex = undefined;
+          window._editingSetoranBefore = undefined;
+          Swal.fire({icon:'success',title:'Berhasil',text:'Data setoran berhasil diupdate'});
+        } else {
+          // Mode baru: tambah data baru
+          setoranHistory.unshift(payload);
+          _lastSetoranPayload = payload;
+          showSetoranStrukModal(payload);
+        }
+        await gasCall('saveSetoran', [payload]); 
+        saveLocalData(); 
+      } catch(e) { Swal.fire('Error',e.message,'error'); } 
     }
 
     function buildSetoranStrukHTML(payload) { const now = new Date(); const timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0'); const logoHtml = _logoUrl ? `<img src="${_logoUrl}" style="width:48px;height:48px;border-radius:10px;object-fit:contain;background:#fff;padding:3px;flex-shrink:0;border:1.5px solid rgba(255,255,255,.4)">` : '<div style="width:48px;height:48px;border-radius:10px;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🏪</div>'; return `<div id="setoran-root" style="width:360px;background:#fff;border-radius:16px;overflow:hidden;font-family:'DM Sans',sans-serif;box-shadow:0 8px 32px rgba(29,111,164,.18)"><div style="background:linear-gradient(135deg,#1A6DB5,#2B8FDE);padding:18px 18px 14px;display:flex;align-items:center;gap:12px">${logoHtml}<div><div style="font-size:15px;font-weight:800;color:#fff;letter-spacing:-.3px">${esc(settings.namaToko||'Tirta Kencana')}</div>${settings.tagline?`<div style="font-size:11px;color:rgba(255,255,255,.75);margin-top:1px">${esc(settings.tagline)}</div>`:''}${settings.alamat?`<div style="font-size:10px;color:rgba(255,255,255,.6);margin-top:2px">${esc(settings.alamat)}</div>`:''}</div></div><div style="background:#EBF4FB;padding:10px 18px;display:flex;justify-content:space-between;align-items:center;font-size:11px"><div><div style="color:#7BAAC4;font-weight:700;text-transform:uppercase;letter-spacing:.8px;font-size:9px">Setoran Sales</div><div style="font-weight:700;color:#1D6FA4;font-size:13px">${esc(payload.sales)}</div></div><div style="text-align:right"><div style="color:#7BAAC4;font-weight:700;text-transform:uppercase;letter-spacing:.8px;font-size:9px">Tanggal · Waktu</div><div style="font-weight:600;color:#0D2B3E;font-size:11px">${fmtDate(payload.tgl)} · ${timeStr}</div></div></div><div style="padding:14px 18px"><table style="width:100%;border-collapse:collapse;margin-bottom:12px"><tr><td style="padding:6px 0;font-size:12px;color:#4A6882">Grand Total COD</div><td style="text-align:right;font-weight:600;font-size:12px;color:#0D2B3E">${fmtRp(payload.grandTotal)}</div></tr><tr><td style="padding:6px 0;font-size:12px;color:#4A6882">Tagihan</div><td style="text-align:right;font-weight:600;font-size:12px;color:#0D2B3E">${fmtRp(payload.tagihan)}</div></tr><tr><td style="padding:6px 0;font-size:12px;color:#4A6882">Cicilan</div><td style="text-align:right;font-weight:600;font-size:12px;color:#16A34A">${fmtRp(payload.cicilan)}</div></tr><tr style="border-bottom:1px dashed #C5DFF0"><td colspan="2" style="padding:6px 0;font-size:10px;font-weight:700;color:#7BAAC4">Pengeluaran</div></tr><tr><td style="padding:6px 0;font-size:12px;color:#4A6882">Makan</div><td style="text-align:right;font-size:12px;color:#DC2626">-${fmtRp(payload.makan)}</div></tr><tr><td style="padding:6px 0;font-size:12px;color:#4A6882">Tips</div><td style="text-align:right;font-size:12px;color:#DC2626">-${fmtRp(payload.tips)}</div></tr><tr><td style="padding:6px 0;font-size:12px;color:#4A6882">Parkir</div><td style="text-align:right;font-size:12px;color:#DC2626">-${fmtRp(payload.parkir)}</div></tr><tr><td style="padding:6px 0;font-size:12px;color:#4A6882">Bensin</div><td style="text-align:right;font-size:12px;color:#DC2626">-${fmtRp(payload.bensin)}</div></tr><tr><td style="padding:6px 0;font-size:12px;color:#4A6882">Flazz</div><td style="text-align:right;font-size:12px;color:#DC2626">-${fmtRp(payload.flazz)}</div></tr><tr><td style="padding:6px 0;font-size:12px;color:#4A6882">Transfer</div><td style="text-align:right;font-size:12px;color:#DC2626">-${fmtRp(payload.transfer)}</div></tr>${payload.ket1?`<tr><td style="padding:6px 0;font-size:12px;color:#4A6882">${esc(payload.ket1)}</div><td style="text-align:right;font-size:12px;color:#DC2626">-${fmtRp(payload.jml1)}</div></tr>`:''}${payload.ket2?`<tr><td style="padding:6px 0;font-size:12px;color:#4A6882">${esc(payload.ket2)}</div><td style="text-align:right;font-size:12px;color:#DC2626">-${fmtRp(payload.jml2)}</div></td>`:''}</table><div style="border-top:1.5px dashed #C5DFF0;padding-top:10px;display:flex;justify-content:space-between;font-size:13px;font-weight:800;color:#0D2B3E"><span>TOTAL SETORAN</span><span style="color:#1A6DB5">${fmtRp(payload.total)}</span></div><div style="display:flex;justify-content:space-between;font-size:13px;color:#4A6882;margin-top:4px"><span>Setor</span><span style="font-weight:600">${fmtRp(payload.setor)}</span></div><div style="display:flex;justify-content:space-between;font-size:13px;font-weight:800;margin-top:2px;color:${payload.selisih>=0?'#16A34A':'#DC2626'}"><span>SELISIH</span><span>${fmtRp(payload.selisih)}</span></div></div><div style="background:#EBF4FB;padding:12px 18px;text-align:center;font-size:11.5px;color:#3D6880;font-weight:600;border-top:1px dashed #C5DFF0">${esc(settings.bottomLine||'Terima kasih telah berbelanja!')}</div></div>`; }
@@ -837,10 +1019,12 @@
 
     // ========== RIWAYAT SETORAN ==========
     let _currentSetoranHistory = [];
-    function showSetoranHistoryModal() {
+    async function showSetoranHistoryModal() {
       document.getElementById('setoranHistoryTgl').value = localDateStr();
-      document.getElementById('setoranHistoryContent').innerHTML = '';
+      document.getElementById('setoranHistoryContent').innerHTML = '<div class="text-center text-sm" style="padding:20px">Mengambil data dari Google Sheets...</div>';
       document.getElementById('setoranHistoryModal').classList.add('show');
+      await syncSetoranHistoryFromGAS(); // [NEW] pastikan data terbaru dari Sheets, bukan hanya lokal
+      document.getElementById('setoranHistoryContent').innerHTML = '';
     }
     function closeSetoranHistory() { document.getElementById('setoranHistoryModal').classList.remove('show'); }
     function loadSetoranHistory() {
@@ -855,7 +1039,7 @@
         const pengeluaran = (s.makan||0)+(s.tips||0)+(s.parkir||0)+(s.bensin||0)+(s.flazz||0)+(s.transfer||0)+(s.jml1||0)+(s.jml2||0);
         const total = (s.grandTotal||0) + (s.tagihan||0) + (s.cicilan||0) - pengeluaran;
         html += `<div class="card mb-3" style="background:var(--surface2); border-left:4px solid var(--biru)">
-          <div class="flex-between mb-2"><div><strong>${esc(s.sales)}</strong> <span class="text-sm">${fmtDate(s.tgl)}</span></div><button class="btn btn-sm btn-outline" onclick="showSetoranStrukModal(_currentSetoranHistory[${idx}])">🧾 Lihat Struk</button></div>
+          <div class="flex-between mb-2"><div><strong>${esc(s.sales)}</strong> <span class="text-sm">${fmtDate(s.tgl)}</span></div><button class="btn btn-sm btn-outline" onclick="editSetoranFromHistory(${idx})">✏️ Edit</button> <button class="btn btn-sm btn-outline" onclick="showSetoranStrukModal(_currentSetoranHistory[${idx}])">🧾 Lihat Struk</button></div>
           <table style="width:100%; font-size:0.75rem"><tr><td>Grand Total COD</div><td style="text-align:right;">${fmtRp(s.grandTotal||0)}</div></tr><tr><td>Tagihan</div><td style="text-align:right;">${fmtRp(s.tagihan||0)}</div></tr><tr><td>Cicilan</div><td style="text-align:right; color:var(--hijau)">${fmtRp(s.cicilan||0)}</div></tr><tr><td colspan="2" style="font-weight:700; color:var(--biru)">Pengeluaran</div></tr><tr><td style="padding-left:16px;">Makan</div><td style="text-align:right; color:var(--merah)">-${fmtRp(s.makan||0)}</div></tr><tr><td style="padding-left:16px;">Tips</div><td style="text-align:right; color:var(--merah)">-${fmtRp(s.tips||0)}</div></tr><tr><td style="padding-left:16px;">Parkir</div><td style="text-align:right; color:var(--merah)">-${fmtRp(s.parkir||0)}</div></tr><tr><td style="padding-left:16px;">Bensin</div><td style="text-align:right; color:var(--merah)">-${fmtRp(s.bensin||0)}</div></tr><tr><td style="padding-left:16px;">Flazz</div><td style="text-align:right; color:var(--merah)">-${fmtRp(s.flazz||0)}</div></tr><tr><td style="padding-left:16px;">Transfer</div><td style="text-align:right; color:var(--merah)">-${fmtRp(s.transfer||0)}</div></tr>`;
         if (s.ket1) html += `<tr><td style="padding-left:16px;">${esc(s.ket1)}</div><td style="text-align:right; color:var(--merah)">-${fmtRp(s.jml1||0)}</div></tr>`;
         if (s.ket2) html += `<tr><td style="padding-left:16px;">${esc(s.ket2)}</div><td style="text-align:right; color:var(--merah)">-${fmtRp(s.jml2||0)}</div></tr>`;
@@ -863,6 +1047,150 @@
         </div>`;
       });
       container.innerHTML = html;
+    }
+
+    // ========== EDIT SETORAN DARI HISTORY ==========
+    // [FIX] Sebelumnya fungsi ini rusak (tertulis sebagai satu baris komentar tunggal sehingga tidak pernah terdaftar/berfungsi).
+    // Diperbaiki menjadi kode yang valid tanpa mengubah logika aslinya, plus menyimpan data lama untuk keperluan log edit.
+    function editSetoranFromHistory(idx) {
+      const s = _currentSetoranHistory[idx];
+      if (!s) return;
+      document.getElementById('setorTgl').value = s.tgl || '';
+      document.getElementById('setorSales').value = s.sales || '';
+      closeSetoranHistory();
+      doSetoran();
+      setTimeout(() => {
+        document.getElementById('stGrand').value = s.grandTotal || 0;
+        document.getElementById('stMakan').value = s.makan || 0;
+        document.getElementById('stTips').value = s.tips || 0;
+        document.getElementById('stParkir').value = s.parkir || 0;
+        document.getElementById('stBensin').value = s.bensin || 0;
+        document.getElementById('stFlazz').value = s.flazz || 0;
+        document.getElementById('stTransfer').value = s.transfer || 0;
+        document.getElementById('stCicilan').value = s.cicilan || 0;
+        document.getElementById('stTagihan').value = s.tagihan || 0;
+        document.getElementById('stKet1').value = s.ket1 || '';
+        document.getElementById('stJml1').value = s.jml1 || 0;
+        document.getElementById('stKet2').value = s.ket2 || '';
+        document.getElementById('stJml2').value = s.jml2 || 0;
+        document.getElementById('stSetor').value = s.setor || 0;
+        calcSetoran();
+        window._editingSetoranIndex = idx;
+        window._editingSetoranBefore = JSON.parse(JSON.stringify(s)); // [NEW] simpan data lama untuk log edit
+        Swal.fire({title:'Edit Setoran',text:'Silakan edit data, lalu klik Simpan untuk update','icon':'info','confirmButtonText':'OK'});
+      }, 100);
+    }
+
+    // ========== LOG EDIT SETORAN ========== [NEW]
+    let _setoranEditLog = [];
+    function loadSetoranEditLog() {
+      try { _setoranEditLog = JSON.parse(localStorage.getItem('tirtaSetoranEditLog')||'[]'); } catch(e) { _setoranEditLog = []; }
+    }
+    function saveSetoranEditLog() { try { localStorage.setItem('tirtaSetoranEditLog', JSON.stringify(_setoranEditLog.slice(-200))); } catch(e){} }
+    function showSetoranEditLog() {
+      loadSetoranEditLog();
+      if (!_setoranEditLog.length) return Swal.fire('Info','Belum ada riwayat edit setoran','info');
+      const rows = _setoranEditLog.slice().reverse().slice(0,50);
+      const fieldLabel = { grandTotal:'Grand Total', makan:'Makan', tips:'Tips', parkir:'Parkir', bensin:'Bensin', flazz:'Flazz', transfer:'Transfer', cicilan:'Cicilan', tagihan:'Tagihan', ket1:'Ket 1', jml1:'Jml 1', ket2:'Ket 2', jml2:'Jml 2', total:'Total', setor:'Setor', selisih:'Selisih' };
+      const html = `<div style="max-height:400px;overflow-y:auto;font-size:12px">
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr style="background:#EAF4FD"><th style="padding:4px 8px;text-align:left">Waktu</th><th style="text-align:left">Editor</th><th style="text-align:left">Sales / Tgl</th><th style="text-align:left">Perubahan</th></tr></thead>
+          <tbody>${rows.map(log => {
+            const before = log.before||{}, after = log.after||{};
+            const diffHtml = Object.keys(fieldLabel).filter(k => (before[k]||0) !== (after[k]||0) || (before[k]||'') !== (after[k]||'')).map(k => `<b>${fieldLabel[k]}</b>: ${esc(String(before[k]??'-'))} → ${esc(String(after[k]??'-'))}`).join('<br>') || '<i>Tidak ada perubahan nilai</i>';
+            return `<tr style="border-bottom:1px solid #eee"><td style="padding:4px 8px;white-space:nowrap">${esc(log.waktu)}</td><td>${esc(log.editor)}</td><td>${esc(log.sales)} · ${fmtDate(log.tgl)}</td><td style="font-size:11px">${diffHtml}</td></tr>`;
+          }).join('')}</tbody>
+        </table></div>`;
+      Swal.fire({ title:'📋 Riwayat Edit Setoran', html, width:'700px', showConfirmButton:false, showCloseButton:true });
+    }
+
+    // ========== REKAP SETORAN (Menu Baru) ========== [NEW]
+    // Menampilkan SEMUA data setoran (sync dari Google Sheets) dalam satu tabel.
+    // Semua kolom bisa diedit langsung kecuali Grand Total COD, Total, dan Selisih (readonly/auto-hitung).
+    async function loadRekapSetoran() {
+      document.getElementById('contentArea').innerHTML = '<div class="text-center text-sm" style="padding:40px">Mengambil data setoran dari Google Sheets...</div>';
+      try { await syncSetoranHistoryFromGAS(); } catch(e) {}
+      renderRekapSetoranTable();
+    }
+
+    function renderRekapSetoranTable() {
+      const rows = setoranHistory.slice().sort((a,b) => (b.tgl||'').localeCompare(a.tgl||''));
+      document.getElementById('contentArea').innerHTML = `
+        <div class="card" style="padding:0;overflow:hidden">
+          <div style="padding:12px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;border-bottom:1px solid var(--border)">
+            <strong>📊 Rekap Setoran (${rows.length} data)</strong>
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-sm btn-outline" onclick="loadRekapSetoran()"><i class="fas fa-sync"></i> Refresh dari Sheets</button>
+              <button class="btn btn-sm btn-ghost" onclick="showSetoranEditLog()"><i class="fas fa-clipboard-list"></i> Log Edit</button>
+            </div>
+          </div>
+          <div class="table-wrap"><table style="font-size:11px;white-space:nowrap">
+            <thead><tr>
+              <th>Tgl</th><th>Sales</th><th>Grand COD</th><th>Uang Makan</th><th>Tips</th><th>Parkir</th><th>Bensin</th><th>Flazz</th><th>Transfer</th><th>Cicilan</th><th>Tagihan</th><th>Ket 1</th><th>Jml 1</th><th>Ket 2</th><th>Jml 2</th><th>Total</th><th>Setor</th><th>Selisih</th><th>Aksi</th>
+            </tr></thead>
+            <tbody id="rekapSetoranTbody">${rows.length ? rows.map((s,i) => renderRekapSetoranRow(s,i)).join('') : '<tr><td colspan="19" class="text-center text-sm" style="padding:20px">Belum ada data setoran. Klik "Refresh dari Sheets" atau simpan setoran baru lewat menu Setoran.</td></tr>'}</tbody>
+          </table></div>
+        </div>`;
+      rows.forEach((s,i) => calcRekapSetoranRow(i));
+    }
+
+    function renderRekapSetoranRow(s, i) {
+      const inp = (field, val, width) => `<input type="number" id="rs_${field}_${i}" value="${val||0}" min="0" oninput="calcRekapSetoranRow(${i})" style="width:${width||'68px'};font-size:11px;padding:3px 4px;border:1px solid #d9d9d9;border-radius:5px">`;
+      const txt = (field, val, width) => `<input type="text" id="rs_${field}_${i}" value="${esc(val||'')}" oninput="calcRekapSetoranRow(${i})" style="width:${width||'80px'};font-size:11px;padding:3px 4px;border:1px solid #d9d9d9;border-radius:5px">`;
+      return `<tr data-idx="${i}">
+        <td>${fmtDate(s.tgl)}</td>
+        <td><b>${esc(s.sales)}</b></td>
+        <td id="rs_grandDisp_${i}" style="text-align:right;font-weight:600">${fmtRp(s.grandTotal)}</td>
+        <td>${inp('makan', s.makan)}</td>
+        <td>${inp('tips', s.tips)}</td>
+        <td>${inp('parkir', s.parkir)}</td>
+        <td>${inp('bensin', s.bensin)}</td>
+        <td>${inp('flazz', s.flazz)}</td>
+        <td>${inp('transfer', s.transfer)}</td>
+        <td>${inp('cicilan', s.cicilan)}</td>
+        <td>${inp('tagihan', s.tagihan)}</td>
+        <td>${txt('ket1', s.ket1)}</td>
+        <td>${inp('jml1', s.jml1)}</td>
+        <td>${txt('ket2', s.ket2)}</td>
+        <td>${inp('jml2', s.jml2)}</td>
+        <td id="rs_totalDisp_${i}" style="text-align:right;font-weight:700;color:var(--biru)">${fmtRp(s.total)}</td>
+        <td>${inp('setor', s.setor)}</td>
+        <td id="rs_selisihDisp_${i}" style="text-align:right;font-weight:700">${fmtRp(s.selisih)}</td>
+        <td><button class="btn btn-sm btn-primary" onclick="saveRekapSetoranRow(${i})">💾 Simpan</button></td>
+      </tr>`;
+    }
+
+    function calcRekapSetoranRow(i) {
+      const gv = f => parseFloat(document.getElementById('rs_'+f+'_'+i)?.value) || 0;
+      const grand = (setoranHistory[i] && setoranHistory[i].grandTotal) || 0;
+      const pengeluaran = gv('makan')+gv('tips')+gv('parkir')+gv('bensin')+gv('flazz')+gv('transfer')+gv('jml1')+gv('jml2');
+      const total = grand + gv('tagihan') + gv('cicilan') - pengeluaran;
+      const selisih = total - gv('setor');
+      const totalEl = document.getElementById('rs_totalDisp_'+i); if (totalEl) totalEl.textContent = fmtRp(total);
+      const selisihEl = document.getElementById('rs_selisihDisp_'+i); if (selisihEl) { selisihEl.textContent = fmtRp(selisih); selisihEl.style.color = selisih>=0 ? '#16A34A' : '#DC2626'; }
+    }
+
+    async function saveRekapSetoranRow(i) {
+      const s = setoranHistory[i];
+      if (!s) return;
+      const gv = f => parseFloat(document.getElementById('rs_'+f+'_'+i)?.value) || 0;
+      const tv = f => (document.getElementById('rs_'+f+'_'+i)?.value || '').trim();
+      const before = JSON.parse(JSON.stringify(s));
+      const grand = s.grandTotal||0;
+      const makan=gv('makan'), tips=gv('tips'), parkir=gv('parkir'), bensin=gv('bensin'), flazz=gv('flazz'), transfer=gv('transfer'), cicilan=gv('cicilan'), tagihan=gv('tagihan'), ket1=tv('ket1'), jml1=gv('jml1'), ket2=tv('ket2'), jml2=gv('jml2'), setor=gv('setor');
+      const pengeluaran = makan+tips+parkir+bensin+flazz+transfer+jml1+jml2;
+      const total = grand + tagihan + cicilan - pengeluaran;
+      const selisih = total - setor;
+      const after = { tgl:s.tgl, sales:s.sales, grandTotal:grand, makan, tips, parkir, bensin, flazz, transfer, cicilan, tagihan, ket1, jml1, ket2, jml2, total, setor, selisih };
+      setoranHistory[i] = after;
+      saveLocalData();
+      // Log edit
+      loadSetoranEditLog();
+      _setoranEditLog.push({ waktu: localDateStr()+' '+new Date().toTimeString().slice(0,8), editor: currentUser?.name||'?', sales: after.sales, tgl: after.tgl, before, after });
+      saveSetoranEditLog();
+      // Sync ke Google Sheets (best-effort, tidak mengganggu data lokal bila gagal)
+      try { await gasCall('saveSetoran',[after]); } catch(e) { console.warn('Gagal sync setoran ke GAS:', e); }
+      Swal.fire({toast:true, position:'top-end', showConfirmButton:false, timer:1500, icon:'success', title:'Setoran diupdate'});
     }
 
     // ========== TRANSAKSI ==========
@@ -1215,6 +1543,14 @@
     function editTrx(id) {
       const trx = allTrxList.find(t=>t.id===id);
       if (!trx) return;
+      const items = trx.items || [];
+      // [NEW] Baris editable untuk SKU & Qty setiap item dalam transaksi
+      let prodOpts = products.map(p => `<option value="${esc(p.sku)}">${esc(p.sku)} - ${esc(p.nama)}</option>`).join('');
+      let itemsHtml = items.length ? items.map((it,i) => `
+          <div style="display:flex;gap:4px;margin:4px 0;align-items:center">
+            <select id="editItemSku${i}" style="flex:2;font-size:12px;height:34px;border:1px solid #d9d9d9;border-radius:6px;padding:0 6px">${prodOpts.replace(`value="${esc(it.sku)}"`, `value="${esc(it.sku)}" selected`)}</select>
+            <input id="editItemQty${i}" type="number" min="1" value="${it.qty||1}" style="width:64px;font-size:12px;height:34px;border:1px solid #d9d9d9;border-radius:6px;padding:0 6px">
+          </div>`).join('') : '<div style="font-size:12px;color:#999">Tidak ada item</div>';
       Swal.fire({
         title: '✏️ Edit Transaksi',
         html: `<div style="text-align:left">
@@ -1231,29 +1567,58 @@
           </select>
           <label style="font-size:12px;font-weight:600">Nett (Rp)</label>
           <input id="editNett" type="number" class="swal2-input" value="${trx.nett||0}">
+          <label style="font-size:12px;font-weight:600;margin-top:6px;display:block">Item Transaksi (SKU & Qty bisa diedit)</label>
+          <div id="editItemsWrap" style="max-height:220px;overflow:auto;border:1px solid #eee;border-radius:8px;padding:6px;margin-top:4px">${itemsHtml}</div>
         </div>`,
         showCancelButton: true, confirmButtonText: '💾 Simpan', cancelButtonText: 'Batal',
-        preConfirm: () => ({
-          customer: document.getElementById('editCust').value.trim(),
-          sales: document.getElementById('editSales').value.trim(),
-          status: document.getElementById('editStatus').value,
-          nett: parseFloat(document.getElementById('editNett').value)||0
-        })
+        preConfirm: () => {
+          const newItems = items.map((it,i) => {
+            const sel = document.getElementById('editItemSku'+i);
+            const qtyEl = document.getElementById('editItemQty'+i);
+            const sku = sel ? sel.value : it.sku;
+            const qty = Math.max(1, parseInt(qtyEl?.value)||it.qty||1);
+            const skuChanged = sku !== it.sku;
+            const p = products.find(x => x.sku === sku);
+            const harga = skuChanged ? (p ? (p.jual||p.harga||0) : it.harga) : it.harga;
+            const discRpPer = skuChanged ? 0 : (it.discRpPer||0);
+            const modal = skuChanged ? (p ? (p.modal||0) : it.modal) : it.modal;
+            const nama = skuChanged ? (p ? p.nama : it.nama) : it.nama;
+            const nettPer = harga - discRpPer;
+            return { sku, nama, qty, harga, discRpPer, modal, nettPer, subtotal: nettPer * qty };
+          });
+          return {
+            customer: document.getElementById('editCust').value.trim(),
+            sales: document.getElementById('editSales').value.trim(),
+            status: document.getElementById('editStatus').value,
+            nett: parseFloat(document.getElementById('editNett').value)||0,
+            items: newItems
+          };
+        }
       }).then(async r => {
         if (!r.isConfirmed) return;
-        const before = { customer:trx.customer, sales:trx.sales, status:trx.status, nett:trx.nett };
+        const before = { customer:trx.customer, sales:trx.sales, status:trx.status, nett:trx.nett, items:JSON.parse(JSON.stringify(items)) };
         const after = r.value;
+        // [NEW] Hitung ulang gross & diskon dari item yang baru, tapi pertahankan porsi diskon global (manual) yang sudah ada sebelumnya
+        const oldGross = items.reduce((s,it)=>s+(it.harga||0)*(it.qty||0),0);
+        const oldItemDisc = items.reduce((s,it)=>s+(it.discRpPer||0)*(it.qty||0),0);
+        const globalDiscPortion = Math.max(0,(trx.diskon||0) - oldItemDisc);
+        const newGross = after.items.reduce((s,it)=>s+(it.harga||0)*(it.qty||0),0);
+        const newItemDisc = after.items.reduce((s,it)=>s+(it.discRpPer||0)*(it.qty||0),0);
+        const newDiskon = newItemDisc + globalDiscPortion;
         // Update lokal
         const idx = allTrxList.findIndex(t=>t.id===id);
-        if (idx>=0) { allTrxList[idx] = {...allTrxList[idx], ...after}; saveLocalData(); }
-        // Log edit
+        if (idx>=0) { allTrxList[idx] = {...allTrxList[idx], customer:after.customer, sales:after.sales, status:after.status, nett:after.nett, items:after.items, gross:newGross, diskon:newDiskon }; saveLocalData(); }
+        // Log edit (termasuk perubahan item SKU/Qty)
         loadEditLog();
-        _editLog.push({ id, waktu: localDateStr()+' '+new Date().toTimeString().slice(0,8), editor: currentUser?.name||'?', before, after });
+        _editLog.push({ id, waktu: localDateStr()+' '+new Date().toTimeString().slice(0,8), editor: currentUser?.name||'?', before, after: { customer:after.customer, sales:after.sales, status:after.status, nett:after.nett, items:after.items } });
         saveEditLog();
         // Sync status ke GAS
         try { await gasCall('updateStatus',[id, after.status]); } catch(e){ console.warn(e); }
+        // [NEW] Sync seluruh transaksi (termasuk item) ke GAS bila endpoint tersedia
+        try { await gasCall('saveTrx',[allTrxList[idx]]); } catch(e){ console.warn('Gagal sync item trx ke GAS:', e); }
         Swal.fire({toast:true,position:'top-end',showConfirmButton:false,timer:1500,icon:'success',title:'Transaksi diupdate'});
         loadTransaksi();
+        syncMasterStockToSheet();
       });
     }
 
@@ -1261,30 +1626,117 @@
       loadEditLog();
       if (!_editLog.length) return Swal.fire('Info','Belum ada riwayat edit','info');
       const rows = _editLog.slice().reverse().slice(0,50);
+      const fieldLabel = { customer:'Customer', sales:'Sales', status:'Status', nett:'Nett' };
       const html = `<div style="max-height:400px;overflow-y:auto;font-size:12px">
         <table style="width:100%;border-collapse:collapse">
           <thead><tr style="background:#EAF4FD"><th style="padding:4px 8px;text-align:left">Waktu</th><th style="text-align:left">Editor</th><th style="text-align:left">ID</th><th style="text-align:left">Perubahan</th></tr></thead>
-          <tbody>${rows.map(log=>`<tr style="border-bottom:1px solid #eee"><td style="padding:4px 8px;white-space:nowrap">${log.waktu}</td><td>${esc(log.editor)}</td><td style="font-family:monospace;font-size:11px">${esc(log.id)}</td><td style="font-size:11px">${Object.keys(log.after).filter(k=>log.before[k]!==log.after[k]).map(k=>`<b>${k}</b>: ${esc(String(log.before[k]))} → ${esc(String(log.after[k]))}`).join('<br>')}</td></tr>`).join('')}</tbody>
+          <tbody>${rows.map(log=>{
+            const before = log.before||{}, after = log.after||{};
+            let diffParts = Object.keys(fieldLabel).filter(k=>before[k]!==after[k]).map(k=>`<b>${fieldLabel[k]}</b>: ${esc(String(before[k]))} → ${esc(String(after[k]))}`);
+            // [NEW] Tampilkan perubahan SKU/Qty per item secara ringkas, bukan dump object mentah
+            const bItems = before.items||[], aItems = after.items||[];
+            aItems.forEach((it,i) => {
+              const bi = bItems[i];
+              if (bi && (bi.sku !== it.sku || bi.qty !== it.qty)) {
+                diffParts.push(`<b>Item #${i+1}</b>: ${esc(bi.sku)} (qty ${bi.qty}) → ${esc(it.sku)} (qty ${it.qty})`);
+              }
+            });
+            if (!diffParts.length) diffParts.push('<i>Tidak ada perubahan nilai</i>');
+            return `<tr style="border-bottom:1px solid #eee"><td style="padding:4px 8px;white-space:nowrap">${log.waktu}</td><td>${esc(log.editor)}</td><td style="font-family:monospace;font-size:11px">${esc(log.id)}</td><td style="font-size:11px">${diffParts.join('<br>')}</td></tr>`;
+          }).join('')}</tbody>
         </table></div>`;
       Swal.fire({ title:'📋 Riwayat Edit', html, width:'700px', showConfirmButton:false, showCloseButton:true });
     }
 
     // ========== FOTO BUKTI ==========
+    // Fungsi untuk mengkompres gambar
+    async function kompresGambar(file, maxSizeKB = 1800) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+            
+            // Resize jika terlalu besar (max 1920px)
+            const maxDim = 1920;
+            if (width > maxDim || height > maxDim) {
+              if (width > height) {
+                height = Math.round(height * maxDim / width);
+                width = maxDim;
+              } else {
+                width = Math.round(width * maxDim / height);
+                height = maxDim;
+              }
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Kompres dengan quality bertahap
+            let quality = 0.9;
+            let dataUrl = canvas.toDataURL('image/jpeg', quality);
+            
+            // Jika masih terlalu besar, turunkan quality
+            while (dataUrl.length > maxSizeKB * 1024 && quality > 0.3) {
+              quality -= 0.1;
+              dataUrl = canvas.toDataURL('image/jpeg', quality);
+            }
+            
+            resolve(dataUrl);
+          };
+          img.onerror = reject;
+          img.src = e.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
     async function uploadFotoBukti(refId, jenis, inputEl) {
       const file = inputEl.files[0];
       if (!file) return;
-      const maxSize = 2 * 1024 * 1024; // 2MB
-      if (file.size > maxSize) return Swal.fire('Error','Foto maksimal 2MB. Gunakan foto yang lebih kecil.','error');
-
-      Swal.fire({ title:'Mengupload foto...', allowOutsideClick:false, didOpen:()=>Swal.showLoading() });
+      
+      Swal.fire({ title:'Memproses foto...', allowOutsideClick:false, didOpen:()=>Swal.showLoading() });
+      
       try {
-        const base64 = await new Promise((res,rej) => {
-          const reader = new FileReader();
-          reader.onload = e => res(e.target.result.split(',')[1]);
-          reader.onerror = rej;
-          reader.readAsDataURL(file);
-        });
-        const result = await gasCall('uploadFoto', [{ base64, mimeType: file.type, nama: refId, refId, jenis, uploader: currentUser?.name||'' }]);
+        let base64Data;
+        const originalSizeKB = Math.round(file.size/1024);
+        const maxSize = 1.8 * 1024 * 1024; // 1.8MB untuk buffer aman
+        
+        // Selalu kompres untuk memastikan ukuran aman
+        base64Data = await kompresGambar(file, 1500); // Target 1.5MB setelah kompresi
+        const base64Only = base64Data.split(',')[1];
+        
+        // Cek ukuran setelah kompresi
+        const sizeAfterCompressKB = Math.round((base64Only.length * 3/4) / 1024);
+        
+        if (sizeAfterCompressKB > 1800) {
+          // Jika masih terlalu besar, kompres lagi dengan target lebih kecil
+          base64Data = await kompresGambar(file, 1000);
+          base64Data = base64Data.split(',')[1];
+        } else {
+          base64Data = base64Only;
+        }
+        
+        // Konversi dataURL ke blob untuk mendapatkan mime type
+        const response = await fetch('data:image/jpeg;base64,' + base64Data);
+        const blob = await response.blob();
+        
+        if (originalSizeKB > 1800) {
+          Swal.fire({
+            icon: 'info',
+            title: 'Foto Dikompres',
+            text: `Foto asli ${originalSizeKB}KB (${sizeAfterCompressKB}KB setelah kompres)`,
+            timer: 2500
+          });
+        }
+        
+        const result = await gasCall('uploadFoto', [{ base64: base64Data, mimeType: 'image/jpeg', nama: refId, refId, jenis, uploader: currentUser?.name||'' }]);
         Swal.close();
         if (result && result.viewUrl) {
           Swal.fire({ icon:'success', title:'Foto berhasil diupload!', html:`<a href="${esc(result.viewUrl)}" target="_blank" style="color:var(--biru);font-weight:700">🔗 Lihat di Google Drive</a>`, confirmButtonText:'OK' });
@@ -1298,6 +1750,24 @@
       } catch(e) {
         Swal.close();
         Swal.fire('Error','Gagal upload foto: '+e.message,'error');
+      }
+    }
+
+    // Fungsi khusus untuk upload foto kiriman transaksi
+    async function uploadFotoKiriman(inputEl) {
+      if (!_currentTrxId) return Swal.fire('Error', 'ID Transaksi belum tersedia', 'error');
+      await uploadFotoBukti(_currentTrxId, 'foto_kiriman', inputEl);
+      // Update status setelah upload
+      const fotoKey = 'foto_'+_currentTrxId;
+      let fotoList = []; try { fotoList=JSON.parse(localStorage.getItem(fotoKey)||'[]'); } catch(e){}
+      const statusEl = document.getElementById('fotoKirimanStatus');
+      if (statusEl) {
+        if (fotoList.length > 0) {
+          statusEl.textContent = `✓ ${fotoList.length} foto terupload`;
+          statusEl.style.color = 'var(--hijau)';
+        } else {
+          statusEl.textContent = '';
+        }
       }
     }
 
@@ -1374,6 +1844,14 @@
       _rekapJenis = jenis;
       if (!tgl) return Swal.fire('Error','Pilih tanggal!','error');
 
+      // [FIX] Selalu ambil data terbaru dari Google Sheets sebelum rekap
+      document.getElementById('rekapContent').innerHTML = '<div class="loading">Mengambil data dari server...</div>';
+      try {
+        await loadTrxFromGAS();
+      } catch(e) {
+        console.warn('Gagal load dari GAS, pakai data lokal:', e);
+      }
+
       let filtered = allTrxList.filter(t => (t.tgl||'').substring(0,10) === tgl);
       if (salesFilter) filtered = filtered.filter(t => (t.sales||'').toLowerCase().trim() === salesFilter.toLowerCase().trim());
 
@@ -1389,13 +1867,13 @@
       if (jenisButuhItems.includes(jenis) && !adaItems) {
         document.getElementById('rekapContent').innerHTML = `<div class="loading">Mengambil detail item (0/${filtered.length})...</div>`;
         try {
-          // Fetch detail satu per satu (paralel tapi dibatasi agar tidak overload)
-          const batchSize = 5;
+          // [FIX] Fetch detail dengan batch lebih besar (50 instead of 15) untuk mempercepat
+          const batchSize = 50;
           for (let i = 0; i < filtered.length; i += batchSize) {
             const batch = filtered.slice(i, i + batchSize);
             const el = document.getElementById('rekapContent');
             if (el) el.innerHTML = `<div class="loading">Mengambil detail item (${Math.min(i+batchSize, filtered.length)}/${filtered.length})...</div>`;
-            await Promise.all(batch.map(async trx => {
+            await Promise.allSettled(batch.map(async trx => {
               if (Array.isArray(trx.items) && trx.items.length > 0) return;
               try {
                 const detail = await gasCall('getTrxDetail', [trx.id]);
@@ -1562,9 +2040,16 @@
 
       } else if (jenis === 'cod' || jenis === 'transfer' || jenis === 'qris' || jenis === 'belum_transfer') {
         // COD / Transfer / QRIS / Belum Transfer → Customer | Total (dari header, selalu ada)
-        const statusKey = jenis === 'belum_transfer' ? 'belumTransfer' : jenis;
+        // [FIX] Gunakan paymentMethod dan statusBayar yang benar
+        const statusFiltered = filtered.filter(t => {
+          const pm = (t.paymentMethod||'').toLowerCase().trim();
+          const sb = (t.statusBayar||'Lunas').toLowerCase().trim();
+          if (jenis === 'cod') return pm === 'cod';
+          if (jenis === 'transfer' || jenis === 'qris') return (pm === 'transfer' || pm === 'qris') && (sb === 'lunas' || sb === 'paid');
+          if (jenis === 'belum_transfer') return (sb !== 'lunas' && sb !== 'paid') || pm === '';
+          return false;
+        });
         const statusLabel = jenis==='cod'?'COD':jenis==='transfer'?'Transfer':jenis==='qris'?'QRIS':'Belum Transfer';
-        const statusFiltered = filtered.filter(t => (t.status||'').toLowerCase().replace(/\s/g,'') === statusKey.toLowerCase().replace(/\s/g,''));
         const custAgg = {};
         statusFiltered.forEach(t => {
           if (!custAgg[t.customer]) custAgg[t.customer]=0;
@@ -1652,11 +2137,23 @@
       let dOpts = '<option value="">Pilih Driver</option>'; 
       drivers.forEach(d => { dOpts += `<option>${d}</option>`; }); 
       const inpId = 'INP-' + Date.now().toString(36).toUpperCase(); 
+      _currentTrxId = inpId;
       document.getElementById('contentArea').innerHTML = 
         `<div class="card"><div class="card-title"><i class="fas fa-boxes"></i> Input Barang Masuk</div>
         <div class="form-group"><label>ID Input</label><input id="inpId" readonly value="${inpId}" style="font-family:var(--mono)"></div>
         <div class="flex-row"><div class="form-group col-1"><label>Driver *</label><select id="inpDriver">${dOpts}</select></div><div class="form-group col-1"><label>Rit *</label><input id="inpRit" placeholder="Rit"></div></div>
         <div class="form-group"><label>Status *</label><select id="inpStatus"><option value="">-- Pilih Status --</option><option value="kiriman">Kiriman</option><option value="titipan">Titipan</option></select></div>
+        <div class="card" style="margin:8px 0;padding:12px 14px;background:var(--surface2);border:1px solid var(--border)">
+          <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:8px">📸 FOTO KIRIMAN (Opsional)</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <label style="cursor:pointer;display:flex;align-items:center;gap:6px;background:var(--biru-muda);color:var(--biru);padding:8px 14px;border-radius:10px;font-size:0.75rem;font-weight:700;transition:0.2s" onmouseover="this.style.background='rgba(26,109,181,0.15)'" onmouseout="this.style.background='var(--biru-muda)'">
+              <i class="fas fa-camera"></i> Upload Foto Kiriman
+              <input type="file" accept="image/*" capture="environment" style="display:none" onchange="uploadFotoKiriman(this)">
+            </label>
+            <button class="btn btn-sm btn-ghost" style="font-size:0.7rem" onclick="showFotoBukti(_currentTrxId,'Foto Kiriman '+_currentTrxId)">🖼 Lihat Foto</button>
+            <span id="fotoKirimanStatus" style="font-size:0.7rem;color:var(--text3);margin-left:auto"></span>
+          </div>
+        </div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><strong>📦 Item</strong><button class="btn btn-outline btn-sm" onclick="addItemInputRow()">+ Item</button></div>
         <div id="inputItemsContainer"></div>
         <div class="total-box"><div class="flex-between"><span>Total Qty</span><span id="inpTotalQty">0</span></div><div class="flex-between"><span>Gross Modal</span><span id="inpGrossModal" style="font-family:var(--mono)">Rp 0</span></div><div class="flex-between"><span>Total Disc</span><span id="inpTotalDisc" style="font-family:var(--mono);color:var(--merah)">Rp 0</span></div><div class="flex-between" style="font-size:1.1rem;font-weight:800"><span>TOTAL MODAL BERSIH</span><span id="inpNetModal" style="font-family:var(--mono);color:var(--biru)">Rp 0</span></div></div>
@@ -1919,6 +2416,36 @@
       }
     }
     async function syncStockHistoryFromGAS() { try { const data = await gasCall('getInputBarangHistory', []); if (Array.isArray(data) && data.length > 0) { stockInHistory = data; saveLocalData(); if (document.getElementById('stkHistory')) renderStockHistory(); } } catch(e) { console.warn('Gagal ambil riwayat input barang:', e); } }
+    // [NEW] Sync riwayat setoran dari Google Sheets secara independen (tidak ikut Promise.all utama agar tidak mengganggu sync lain bila endpoint belum tersedia di backend)
+    // [NEW] Normalisasi record setoran dari Google Sheets: kolom sheet memakai nama berbeda
+    // (UangMak, Ekstra1Li, Ekstra1, Ekstra2Li, Ekstra2, CicilanHu, GrandTot, dst.) dari field internal aplikasi.
+    // Fungsi ini mencocokkan beberapa kemungkinan nama kolom tanpa mengubah struktur data internal yang sudah berjalan.
+    function normalizeSetoranRecord(raw) {
+      if (!raw || typeof raw !== 'object') return raw;
+      const g = (...keys) => { for (const k of keys) { if (raw[k] !== undefined && raw[k] !== null && raw[k] !== '') return raw[k]; } return undefined; };
+      const num = v => parseFloat(v) || 0;
+      return {
+        tgl: g('tgl','Tanggal','tanggal') || '',
+        sales: g('sales','Sales') || '',
+        grandTotal: num(g('grandTotal','GrandTot','grandTot')),
+        makan: num(g('makan','UangMak','UangMakan','uangMakan')),
+        tips: num(g('tips','Tips')),
+        parkir: num(g('parkir','Parkir')),
+        bensin: num(g('bensin','Bensin')),
+        flazz: num(g('flazz','Flazz')),
+        transfer: num(g('transfer','Transfer')),
+        cicilan: num(g('cicilan','CicilanHu','Cicilan')),
+        tagihan: num(g('tagihan','Tagihan')),
+        ket1: g('ket1','Ekstra1Li','Ekstra1Ket') || '',
+        jml1: num(g('jml1','Ekstra1')),
+        ket2: g('ket2','Ekstra2Li','Ekstra2Ket') || '',
+        jml2: num(g('jml2','Ekstra2')),
+        total: num(g('total','Total')),
+        setor: num(g('setor','Setor')),
+        selisih: num(g('selisih','Selisih'))
+      };
+    }
+    async function syncSetoranHistoryFromGAS() { try { const data = await gasCall('getSetoranHistory', []); if (Array.isArray(data) && data.length > 0) { setoranHistory = data.map(normalizeSetoranRecord); saveLocalData(); } } catch(e) { console.warn('Gagal ambil riwayat setoran dari GAS:', e); } }
 
     // ========== GUDANG & LAPORAN TELAH DIHAPUS ==========
     // (fungsi-fungsi terkait gudang dan laporan tidak ada lagi)
@@ -2136,8 +2663,19 @@
     let deferredPrompt;
     window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredPrompt = e; document.getElementById('installBtn').style.display = 'block'; });
     function installApp() { if (deferredPrompt) { deferredPrompt.prompt(); deferredPrompt.userChoice.then(r => { if (r.outcome === 'accepted') console.log('Installed'); deferredPrompt = null; document.getElementById('installBtn').style.display = 'none'; }); } else { Swal.fire('Info','Klik menu browser > Add to Home Screen','info'); } }
-    if ('serviceWorker' in navigator) { window.addEventListener('load', () => { const swCode = `const CACHE_NAME='tirta-v2';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(['/'])))});self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)))});`; const blob = new Blob([swCode], {type:'application/javascript'}); navigator.serviceWorker.register(URL.createObjectURL(blob)); }); }
-
+    // Service Worker dinonaktifkan sementara untuk memperbaiki masalah cache
+/*
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js')
+    .then(function(registration) {
+      console.log('SW registered');
+    })
+    .catch(function(error) {
+      console.log('SW registration failed', error);
+    });
+}
+*/
+console.log("Service Worker dimatikan untuk debugging cache.");
     // Inisialisasi URL default jika kosong
     if (!localStorage.getItem('tirtaGasUrl')) {
       localStorage.setItem('tirtaGasUrl', DEFAULT_GAS_URL);
