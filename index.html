@@ -714,7 +714,6 @@
         const totalKeseluruhan = totalKiriman + totalTitipan;
 
         h = `
-          ${hasLowStock ? `<div class="card" style="background:#FEF3C7;border-color:#F59E0B;"><div class="card-title" style="color:#92400E;"><i class="fas fa-exclamation-triangle"></i> Stok Rendah (${lowStockProducts.length} produk)</div><div class="tag-list">${lowStockProducts.slice(0,5).map(p => `<span class="tag" style="background:#FFF8E1;color:#92400E;">${esc(p.nama)}: ${p.stokAwal}</span>`).join('')}</div></div>` : ''}
           <div class="summary-shape">
             <div class="summary-title">🚚 Input Hari Ini - ${esc(currentUser.name)}</div>
             <div class="summary-items" style="grid-template-columns:1fr 1fr;">
@@ -732,7 +731,6 @@
         const belum = todayTx.filter(t=>t.status==='belumTransfer').reduce((s,t)=>s+(t.nett||0),0);
         const total = cod+transfer+qris+belum;
         h = `
-          ${hasLowStock ? `<div class="card" style="background:#FEF3C7;border-color:#F59E0B;"><div class="card-title" style="color:#92400E;"><i class="fas fa-exclamation-triangle"></i> Stok Rendah (${lowStockProducts.length} produk)</div><div class="tag-list">${lowStockProducts.slice(0,5).map(p => `<span class="tag" style="background:#FFF8E1;color:#92400E;">${esc(p.nama)}: ${p.stokAwal}</span>`).join('')}</div></div>` : ''}
           <div class="summary-shape">
             <div class="summary-title">💰 Total Penjualan Hari Ini</div>
             <div class="summary-items">
