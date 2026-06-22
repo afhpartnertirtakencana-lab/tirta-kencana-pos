@@ -2117,13 +2117,15 @@
 
       } else if (jenis === 'cod' || jenis === 'transfer' || jenis === 'qris' || jenis === 'belum_transfer') {
         // COD / Transfer / QRIS / Belum Transfer → Customer | Total (dari header, selalu ada)
-        // [FIX] Gunakan paymentMethod dan statusBayar yang benar
+        // [FIX] Sebelumnya memakai field paymentMethod/statusBayar yang TIDAK PERNAH ADA di objek transaksi
+        // (field yang benar & dipakai konsisten di seluruh aplikasi adalah t.status: 'cod'/'transfer'/'qris'/'belumTransfer'),
+        // sehingga COD & Transfer selalu kosong dan Belum Transfer malah menampilkan SEMUA transaksi.
         const statusFiltered = filtered.filter(t => {
-          const pm = (t.paymentMethod||'').toLowerCase().trim();
-          const sb = (t.statusBayar||'Lunas').toLowerCase().trim();
-          if (jenis === 'cod') return pm === 'cod';
-          if (jenis === 'transfer' || jenis === 'qris') return (pm === 'transfer' || pm === 'qris') && (sb === 'lunas' || sb === 'paid');
-          if (jenis === 'belum_transfer') return (sb !== 'lunas' && sb !== 'paid') || pm === '';
+          const st = (t.status||'belumTransfer').toLowerCase().trim();
+          if (jenis === 'cod') return st === 'cod';
+          if (jenis === 'transfer') return st === 'transfer';
+          if (jenis === 'qris') return st === 'qris';
+          if (jenis === 'belum_transfer') return st === 'belumtransfer' || st === '';
           return false;
         });
         const statusLabel = jenis==='cod'?'COD':jenis==='transfer'?'Transfer':jenis==='qris'?'QRIS':'Belum Transfer';
