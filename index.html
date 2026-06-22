@@ -1181,25 +1181,52 @@
       renderRekapSetoranTable();
     }
 
+    let _rsFilterSales = ''; // [NEW] filter sales aktif di navbar Rekap Setoran ('' = Semua)
+
     function renderRekapSetoranTable() {
-      const rows = setoranHistory.slice().sort((a,b) => (b.tgl||'').localeCompare(a.tgl||''));
+      // [FIX] Sebelumnya kode mengurutkan data lalu memakai index HASIL URUT untuk membaca
+      // setoranHistory[i] di calcRekapSetoranRow/saveRekapSetoranRow/cetakRekapSetoranRow.
+      // Karena urutan setelah di-sort berbeda dari urutan asli array setoranHistory (dari Google
+      // Sheets), baris yang tampil bisa "tertukar" sumber datanya — inilah sebab Total milik
+      // Hasan/Ujang (atau sales lain) bisa tampil salah/tertukar. Perbaikannya: simpan index ASLI
+      // setoranHistory di setiap baris (idx), dan selalu pakai idx asli itu untuk render/kalkulasi/
+      // simpan/cetak — bukan posisi setelah sort/filter. Rumus & fungsi kalkulasi tidak diubah sama sekali.
+      let rowsWithIdx = setoranHistory.map((s, idx) => ({ s, idx }));
+      if (_rsFilterSales) rowsWithIdx = rowsWithIdx.filter(r => (r.s.sales||'').toLowerCase().trim() === _rsFilterSales.toLowerCase().trim());
+      rowsWithIdx.sort((a,b) => (b.s.tgl||'').localeCompare(a.s.tgl||''));
+
+      // [NEW] Navbar filter sales di bawah header, bisa digeser kiri-kanan (memakai class .menu-tabs/.tab yang sudah ada)
+      const salesSet = [];
+      setoranHistory.forEach(s => { const nm = (s.sales||'').trim(); if (nm && !salesSet.find(x => x.toLowerCase() === nm.toLowerCase())) salesSet.push(nm); });
+      const rsNavHtml = `<div class="menu-tabs" style="border-bottom:1px solid var(--border);background:transparent">
+          <button class="tab ${!_rsFilterSales?'active':''}" onclick="filterRekapSetoranBySales('')"><i class="fas fa-layer-group"></i> Semua</button>
+          ${salesSet.map(nm => `<button class="tab ${_rsFilterSales.toLowerCase()===nm.toLowerCase()?'active':''}" onclick="filterRekapSetoranBySales('${esc(nm).replace(/'/g,"\\'")}')"><i class="fas fa-user"></i> ${esc(nm)}</button>`).join('')}
+        </div>`;
+
       document.getElementById('contentArea').innerHTML = `
         <div class="card" style="padding:0;overflow:hidden">
           <div style="padding:12px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;border-bottom:1px solid var(--border)">
-            <strong>📊 Rekap Setoran (${rows.length} data)</strong>
+            <strong>📊 Rekap Setoran (${rowsWithIdx.length} data)</strong>
             <div style="display:flex;gap:6px">
               <button class="btn btn-sm btn-outline" onclick="loadRekapSetoran()"><i class="fas fa-sync"></i> Refresh dari Sheets</button>
               <button class="btn btn-sm btn-ghost" onclick="showSetoranEditLog()"><i class="fas fa-clipboard-list"></i> Log Edit</button>
             </div>
           </div>
+          ${rsNavHtml}
           <div class="table-wrap"><table style="font-size:11px;white-space:nowrap">
             <thead><tr>
               <th>Tgl</th><th>Sales</th><th>Grand COD</th><th>Uang Makan</th><th>Tips</th><th>Parkir</th><th>Bensin</th><th>Flazz</th><th>Transfer</th><th>Cicilan</th><th>Tagihan</th><th>Ket 1</th><th>Jml 1</th><th>Ket 2</th><th>Jml 2</th><th>Total</th><th>Setor</th><th>Selisih</th><th>Aksi</th>
             </tr></thead>
-            <tbody id="rekapSetoranTbody">${rows.length ? rows.map((s,i) => renderRekapSetoranRow(s,i)).join('') : '<tr><td colspan="19" class="text-center text-sm" style="padding:20px">Belum ada data setoran. Klik "Refresh dari Sheets" atau simpan setoran baru lewat menu Setoran.</td></tr>'}</tbody>
+            <tbody id="rekapSetoranTbody">${rowsWithIdx.length ? rowsWithIdx.map(r => renderRekapSetoranRow(r.s, r.idx)).join('') : '<tr><td colspan="19" class="text-center text-sm" style="padding:20px">Belum ada data setoran. Klik "Refresh dari Sheets" atau simpan setoran baru lewat menu Setoran.</td></tr>'}</tbody>
           </table></div>
         </div>`;
-      rows.forEach((s,i) => calcRekapSetoranRow(i));
+      rowsWithIdx.forEach(r => calcRekapSetoranRow(r.idx));
+    }
+
+    // [NEW] Dipanggil saat tombol sales di navbar Rekap Setoran ditekan
+    function filterRekapSetoranBySales(sales) {
+      _rsFilterSales = sales;
+      renderRekapSetoranTable();
     }
 
     function renderRekapSetoranRow(s, i) {
