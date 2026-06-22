@@ -1938,7 +1938,7 @@
       }
 
       // Laporan yang butuh items: fetch getTrxDetail per transaksi jika items belum ada
-      const jenisButuhItems = ['penjualan_per_sales','rekap_per_sku','rekap_per_customer','rekap_per_qty','rekap_sales_qty'];
+      const jenisButuhItems = ['penjualan_per_sales','rekap_per_sku','rekap_per_customer','rekap_per_qty','rekap_sales_qty','laporan_per_sales']; // [FIX] laporan_per_sales butuh items untuk hitung profit, sebelumnya tidak ada di daftar ini sehingga profit selalu salah/kosong
       const adaItems = filtered.some(t => Array.isArray(t.items) && t.items.length > 0);
 
       if (jenisButuhItems.includes(jenis) && !adaItems) {
