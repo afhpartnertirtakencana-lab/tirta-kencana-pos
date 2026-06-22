@@ -68,6 +68,21 @@
     .total-box { background:var(--kuning-muda); padding:10px 14px; border-radius:12px; margin:8px 0; text-align:right; font-weight:700; font-size:1.1rem; color:var(--biru); } .total-box.danger{background:#FEE2E2;color:var(--merah);}
     .status-badge { padding:3px 8px; border-radius:10px; font-size:0.6rem; font-weight:600; display:inline-block; } .status-cod{background:#FEF3C7;color:#92400E;} .status-transfer{background:#DBEAFE;color:#1E40AF;} .status-qris{background:#EDE9FE;color:#5B21B6;} .status-belumbayar{background:#FEE2E2;color:#991B1B;} .status-kiriman{background:#E0E7FF;color:#3730A3;} .status-titipan{background:#FCE7F3;color:#9D174D;}
     table { width:100%; border-collapse:collapse; font-size:0.7rem; } th,td { padding:6px 8px; text-align:left; border-bottom:1px solid var(--border); } th{background:var(--biru-muda);color:var(--biru);font-weight:700;font-size:0.65rem;}
+    /* [NEW] Tulisan & angka detail sedikit lebih besar dan tebal khusus di menu: Transaksi, Rekap, Rekap Input, Rekap Setoran, Stock, Piutang */
+    body[data-page="transaksi"] table td, body[data-page="transaksi"] table th,
+    body[data-page="rekap"] table td, body[data-page="rekap"] table th,
+    body[data-page="rekapinput"] table td, body[data-page="rekapinput"] table th,
+    body[data-page="rekapsetoran"] table td, body[data-page="rekapsetoran"] table th,
+    body[data-page="stockbarang"] table td, body[data-page="stockbarang"] table th,
+    body[data-page="piutang"] table td, body[data-page="piutang"] table th {
+      font-size:0.82rem; font-weight:600;
+    }
+    body[data-page="transaksi"] table th, body[data-page="rekap"] table th,
+    body[data-page="rekapinput"] table th, body[data-page="rekapsetoran"] table th,
+    body[data-page="stockbarang"] table th, body[data-page="piutang"] table th {
+      font-weight:800;
+    }
+    body[data-page="rekapsetoran"] table input { font-size:0.82rem !important; font-weight:600; }
     .table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
     .bottom-bar { text-align:center; font-size:0.65rem; color:var(--text2); padding:10px; border-top:1px solid var(--border); background:var(--surface2); }
     .hidden { display:none!important; } .mb-2{margin-bottom:8px;} .mt-2{margin-top:8px;} .text-sm{font-size:0.7rem;} .text-center{text-align:center;}
@@ -349,7 +364,7 @@
       { name:'padong', role:'driver', password:'1234'   },
       { name:'said',   role:'driver', password:'1234'   },
       { name:'dedi',   role:'driver', password:'1234'   },
-      { name:'tirta', role:'admin', password:'020730' }
+      { name:'zehpudin', role:'driver', password:'1234'   }
     ];
     let _logoUrl = localStorage.getItem('tirtaLogo') || EMBEDDED_LOGO; // [UPDATED] fallback ke logo tertanam, mekanisme sama seperti _qrisUrl
     let _qrisUrl = '';
@@ -551,7 +566,7 @@
           { name:'padong', role:'driver', password:'1234'   },
           { name:'said',   role:'driver', password:'1234'   },
           { name:'dedi',   role:'driver', password:'1234'   },
-          { name:'tirta', role:'admin', password:'020730' }
+          { name:'zehpudin', role:'driver', password:'1234' }
         ];
         _syncBuiltin.forEach(mu => { if (!allUsers.find(u => u.name === mu.name)) allUsers.push(mu); });
         // Ambil drivers dari sheet Driver (prioritas) atau fallback dari allUsers
@@ -623,7 +638,7 @@
           { name:'padong',   role:'driver', password:'1234'   },
           { name:'said',     role:'driver', password:'1234'   },
           { name:'dedi',     role:'driver', password:'1234'   },
-          { name:'tirta', role:'admin', password:'020730' }
+          { name:'zehpudin', role:'driver', password:'1234'   }
         ];
       }
       const _builtinUsers = [
@@ -634,7 +649,7 @@
         { name:'padong', role:'driver', password:'1234'   },
         { name:'said',   role:'driver', password:'1234'   },
         { name:'dedi',   role:'driver', password:'1234'   },
-        { name:'tirta', role:'admin', password:'020730' }
+        { name:'zehpudin', role:'driver', password:'1234' }
       ];
       _builtinUsers.forEach(mu => { if (!allUsers.find(u => u.name === mu.name)) allUsers.push(mu); });
       const f = allUsers.find(x => x.name === u && x.password === p); 
@@ -700,7 +715,7 @@
       }
       document.getElementById('menuTabs').innerHTML = h;
     }
-    function navigateTo(p) { currentPage = p; renderMenuTabs(); renderContent(); }
+    function navigateTo(p) { currentPage = p; document.body.setAttribute('data-page', p); renderMenuTabs(); renderContent(); }
     function renderContent() { switch (currentPage) { case 'dashboard': loadDashboard(); break; case 'penjualan': loadPenjualan(); break; case 'transaksi': loadTransaksi(); break; case 'rekap': loadRekap(); break; case 'rekapinput': loadRekapInput(); break; case 'setoran': loadSetoran(); break; case 'rekapsetoran': loadRekapSetoran(); break; case 'inputbarang': loadInputBarang(); break; case 'stockbarang': loadStockBarang(); break; case 'produk': loadProduk(); break; case 'pelanggan': loadPelanggan(); break; case 'pengaturan': loadPengaturan(); break; case 'pengaturanUser': loadPengaturanUser(); break; case 'grafik': loadGrafik(); break; case 'piutang': loadPiutang(); break; } }
 
     // ========== DASHBOARD (MENU UTAMA) ==========
@@ -2752,7 +2767,7 @@ console.log("Service Worker dimatikan untuk debugging cache.");
         { name:'padong', role:'driver', password:'1234'   },
         { name:'said',   role:'driver', password:'1234'   },
         { name:'dedi',   role:'driver', password:'1234'   },
-        { name:'tirta', role:'admin', password:'020730' }
+        { name:'zehpudin', role:'driver', password:'1234' }
       ];
       saveLocalData();
     }
