@@ -1922,9 +1922,12 @@
       if (!tgl) return Swal.fire('Error','Pilih tanggal!','error');
 
       // [FIX] Selalu ambil data terbaru dari Google Sheets sebelum rekap
+      // [FIX] loadTrxFromGAS tidak pernah didefinisikan (ReferenceError selalu terjadi, silently caught),
+      // sehingga rekap selalu memakai allTrxList lama di memori/localStorage, tidak pernah ter-refresh dari server.
+      // Diganti ke syncFromGAS() yang sudah ada dan benar (sama seperti dipakai untuk sync data lain).
       document.getElementById('rekapContent').innerHTML = '<div class="loading">Mengambil data dari server...</div>';
       try {
-        await loadTrxFromGAS();
+        await syncFromGAS();
       } catch(e) {
         console.warn('Gagal load dari GAS, pakai data lokal:', e);
       }
@@ -1939,7 +1942,12 @@
 
       // Laporan yang butuh items: fetch getTrxDetail per transaksi jika items belum ada
       const jenisButuhItems = ['penjualan_per_sales','rekap_per_sku','rekap_per_customer','rekap_per_qty','rekap_sales_qty','laporan_per_sales']; // [FIX] laporan_per_sales butuh items untuk hitung profit, sebelumnya tidak ada di daftar ini sehingga profit selalu salah/kosong
-      const adaItems = filtered.some(t => Array.isArray(t.items) && t.items.length > 0);
+      // [FIX] Sebelumnya pakai .some() — kalau ADA SATU SAJA transaksi yang sudah punya cache item lokal,
+      // seluruh proses ambil detail dari Sheets di-skip total, padahal transaksi LAIN yang belum punya item tetap kosong.
+      // Itu sebabnya di browser biasa (ada cache lama di localStorage) datanya salah/tidak lengkap,
+      // sementara di Incognito (tidak ada cache sama sekali) datanya selalu benar karena terpaksa fetch ulang semua.
+      // Sekarang pakai .every(): proses fetch hanya di-skip kalau SEMUA transaksi sudah punya item.
+      const adaItems = filtered.every(t => Array.isArray(t.items) && t.items.length > 0);
 
       if (jenisButuhItems.includes(jenis) && !adaItems) {
         document.getElementById('rekapContent').innerHTML = `<div class="loading">Mengambil detail item (0/${filtered.length})...</div>`;
