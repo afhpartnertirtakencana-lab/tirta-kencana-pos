@@ -1933,7 +1933,8 @@
       const renderFotoModal = (list) => {
         const html = list.length
           ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;max-height:400px;overflow-y:auto;padding:4px">
-              ${list.map(f=>`<div style="border-radius:10px;overflow:hidden;border:1px solid var(--border);background:var(--surface)">
+              ${list.map(f=>`<div style="border-radius:10px;overflow:hidden;border:1px solid var(--border);background:var(--surface);position:relative">
+                <button onclick="hapusFotoBukti('${esc(refId).replace(/'/g,"\\'")}','${esc(f.viewUrl||'').replace(/'/g,"\\'")}','${esc(judulEl).replace(/'/g,"\\'")}')" title="Hapus foto" style="position:absolute;top:4px;right:4px;z-index:2;background:#DC2626;color:#fff;border:none;border-radius:50%;width:22px;height:22px;font-size:12px;line-height:22px;cursor:pointer">✕</button>
                 <a href="${esc(f.viewUrl)}" target="_blank"><img src="${esc(f.thumbUrl||f.viewUrl)}" style="width:100%;height:120px;object-fit:cover;display:block" onerror="this.src='https://via.placeholder.com/140x120?text=Foto'"></a>
                 <div style="padding:6px;font-size:0.65rem;color:var(--text2)">${esc(f.jenis||'')} · ${esc(f.waktu||'')}</div>
                 <div style="padding:0 6px 6px;font-size:0.65rem;color:var(--text3)">${esc(f.uploader||'')}</div>
@@ -1945,6 +1946,31 @@
       renderFotoModal(fotoList);
       // Background fetch dari GAS
       gasCall('getFotoList',[refId]).then(list=>{ if(list&&list.length>list.length) renderFotoModal(list); }).catch(()=>{});
+    }
+
+    // [NEW] Hapus foto bukti: hapus dari daftar lokal (localStorage) dan coba hapus file fisiknya di
+    // Google Drive lewat GAS (fn 'deleteFoto'). Kalau backend GAS belum punya fungsi 'deleteFoto',
+    // foto tetap terhapus dari daftar di web (tidak akan tampil lagi), hanya filenya saja yang
+    // mungkin masih tersisa di Drive sampai fungsi 'deleteFoto' ditambahkan di backend.
+    async function hapusFotoBukti(refId, viewUrl, judulEl) {
+      const confirm = await Swal.fire({ title:'Hapus foto ini?', icon:'warning', showCancelButton:true, confirmButtonText:'Ya, hapus', cancelButtonText:'Batal', confirmButtonColor:'#DC2626' });
+      if (!confirm.isConfirmed) return;
+      const fotoKey = 'foto_'+refId;
+      let fotoList = []; try { fotoList=JSON.parse(localStorage.getItem(fotoKey)||'[]'); } catch(e){}
+      fotoList = fotoList.filter(f => f.viewUrl !== viewUrl);
+      localStorage.setItem(fotoKey, JSON.stringify(fotoList));
+      // Coba hapus file fisik di Drive juga (butuh fungsi 'deleteFoto' di GAS, lihat catatan di atas)
+      const m = (viewUrl||'').match(/\/d\/([a-zA-Z0-9_-]+)/) || (viewUrl||'').match(/id=([a-zA-Z0-9_-]+)/);
+      const fileId = m ? m[1] : '';
+      if (fileId) { try { await gasUploadFoto('deleteFoto', [{ fileId, refId }]); } catch(e) { console.warn('deleteFoto di GAS belum tersedia/gagal:', e.message); } }
+      Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:1500, icon:'success', title:'Foto dihapus' });
+      // Update status foto kiriman kalau yang dihapus terkait transaksi yang sedang dibuka
+      const statusEl = document.getElementById('fotoKirimanStatus');
+      if (statusEl && refId === _currentTrxId) {
+        statusEl.textContent = fotoList.length > 0 ? `✓ ${fotoList.length} foto terupload` : '';
+        statusEl.style.color = 'var(--hijau)';
+      }
+      showFotoBukti(refId, judulEl);
     }
 
     function fotoInputHtml(refId, jenis) {
