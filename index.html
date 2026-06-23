@@ -403,6 +403,20 @@
         console.warn('Gagal sync master stock:', e);
       }
     }
+
+    // [NEW] Sinkronisasi data produk ke Google Sheets via GAS (fn 'saveProducts').
+    // Sebelumnya saveProduk()/deleteProduk() salah memanggil syncMasterStockToSheet() (fungsi untuk
+    // Master Stock, bukan produk), sehingga perubahan/hapus produk di menu Produk tidak pernah
+    // benar-benar terkirim ke Sheets — hanya tersimpan di localStorage browser.
+    async function syncProductsToSheet() {
+      try {
+        await gasCall('saveProducts', [products]);
+        console.log('Products synced successfully');
+      } catch(e) {
+        console.warn('Gagal sync produk ke Sheets:', e);
+        Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:2000, icon:'warning', title:'Tersimpan lokal, gagal sync ke Sheets' });
+      }
+    }
     
     // [NEW] Fungsi untuk refresh data dari server dengan retry
     async function refreshDataFromServer(showToast = true) {
@@ -2718,8 +2732,8 @@
     }
     function openProdukForm(idx) { document.getElementById('editProdIdx').value = idx; if (idx >= 0 && products[idx]) { const p = products[idx]; document.getElementById('produkModalTitle').textContent = 'Edit Produk'; document.getElementById('prodSku').value = p.sku||''; document.getElementById('prodBarcode').value = p.barcode||''; document.getElementById('prodNama').value = p.nama||''; document.getElementById('prodJual').value = p.jual||p.harga||0; document.getElementById('prodModal').value = p.modal||0; document.getElementById('prodStok').value = p.stokAwal||0; } else { document.getElementById('produkModalTitle').textContent = 'Tambah Produk'; ['prodSku','prodBarcode','prodNama'].forEach(id => document.getElementById(id).value = ''); document.getElementById('prodJual').value = '0'; document.getElementById('prodModal').value = '0'; document.getElementById('prodStok').value = '0'; } document.getElementById('produkModal').classList.add('show'); }
     function closeProdukForm() { document.getElementById('produkModal').classList.remove('show'); }
-    function saveProduk() { const sku = document.getElementById('prodSku').value.trim(), nama = document.getElementById('prodNama').value.trim(); if (!sku || !nama) return Swal.fire('Error','SKU dan Nama wajib diisi','error'); const obj = { sku, barcode: document.getElementById('prodBarcode').value.trim(), nama, jual: parseFloat(document.getElementById('prodJual').value)||0, harga: parseFloat(document.getElementById('prodJual').value)||0, modal: parseFloat(document.getElementById('prodModal').value)||0, stokAwal: parseInt(document.getElementById('prodStok').value)||0 }; const idx = parseInt(document.getElementById('editProdIdx').value); if (idx >= 0 && products[idx]) products[idx] = obj; else products.push(obj); saveLocalData(); closeProdukForm(); renderProdukList(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Produk disimpan' }); syncMasterStockToSheet(); }
-    function deleteProduk(idx) { Swal.fire({ title:'Hapus?', text:'Hapus '+products[idx].nama+'?', icon:'warning', showCancelButton:true }).then(r => { if (r.isConfirmed) { products.splice(idx,1); saveLocalData(); renderProdukList(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Produk dihapus' }); syncMasterStockToSheet(); } }); }
+    function saveProduk() { const sku = document.getElementById('prodSku').value.trim(), nama = document.getElementById('prodNama').value.trim(); if (!sku || !nama) return Swal.fire('Error','SKU dan Nama wajib diisi','error'); const obj = { sku, barcode: document.getElementById('prodBarcode').value.trim(), nama, jual: parseFloat(document.getElementById('prodJual').value)||0, harga: parseFloat(document.getElementById('prodJual').value)||0, modal: parseFloat(document.getElementById('prodModal').value)||0, stokAwal: parseInt(document.getElementById('prodStok').value)||0 }; const idx = parseInt(document.getElementById('editProdIdx').value); if (idx >= 0 && products[idx]) products[idx] = obj; else products.push(obj); saveLocalData(); closeProdukForm(); renderProdukList(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Produk disimpan' }); syncProductsToSheet(); }
+    function deleteProduk(idx) { Swal.fire({ title:'Hapus?', text:'Hapus '+products[idx].nama+'?', icon:'warning', showCancelButton:true }).then(r => { if (r.isConfirmed) { products.splice(idx,1); saveLocalData(); renderProdukList(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Produk dihapus' }); syncProductsToSheet(); } }); }
 
     // ========== PELANGGAN ==========
     function loadPelanggan() { document.getElementById('contentArea').innerHTML = `<div class="card"><div class="flex-between mb-2"><div class="card-title"><i class="fas fa-address-book"></i> Daftar Pelanggan</div><button class="btn btn-primary btn-sm" onclick="addPelanggan()">+ Tambah</button></div><div class="table-wrap"><table><thead><tr><th>#</th><th>Nama</th><th>Aksi</th></tr></thead><tbody id="pelangganTbody"></tbody></table></div></div>`; renderPelangganList(); }
