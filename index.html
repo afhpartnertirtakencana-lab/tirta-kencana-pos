@@ -352,6 +352,26 @@
       });
     }
 
+    // [NEW] Khusus untuk kirim foto (base64 besar). gasCall (JSONP/GET) tidak dipakai di sini karena
+    // data foto dimasukkan ke query string URL, dan base64 foto (ratusan KB - 1.5MB) jauh melebihi batas
+    // panjang URL yang diizinkan browser/server (hanya beberapa KB) -> <script> gagal load -> muncul
+    // error "GAS gagal dimuat". Fungsi ini mengirim lewat fetch POST (body request, bukan URL) supaya
+    // tidak kena limit tersebut. Memakai Content-Type text/plain agar tidak memicu CORS preflight
+    // (teknik standar untuk POST ke GAS Web App). Endpoint dan parameter (fn/args) sama seperti gasCall,
+    // tinggal pastikan GAS punya fungsi doPost yang meneruskan ke router yang sama dengan doGet.
+    async function gasUploadFoto(fn, args = []) {
+      const resp = await fetch(getGasUrl(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ fn, args })
+      });
+      if (!resp.ok) throw new Error('GAS gagal merespon (HTTP ' + resp.status + ').');
+      const r = await resp.json();
+      if (r && r.ok) return r.data;
+      throw new Error((r && r.error) || 'GAS error: tidak ada respon valid');
+    }
+
+
     let currentUser = null, currentPage = 'dashboard';
     let products = [], pelanggan = [], allTrxList = [], allCustomers = [], stockInHistory = [], setoranHistory = [];
     let drivers = ['oji','padong','said','dedi','zehpudin'];
@@ -1871,7 +1891,7 @@
           });
         }
         
-        const result = await gasCall('uploadFoto', [{ base64: base64Data, mimeType: 'image/jpeg', nama: refId, refId, jenis, uploader: currentUser?.name||'' }]);
+        const result = await gasUploadFoto('uploadFoto', [{ base64: base64Data, mimeType: 'image/jpeg', nama: refId, refId, jenis, uploader: currentUser?.name||'' }]);
         Swal.close();
         if (result && result.viewUrl) {
           Swal.fire({ icon:'success', title:'Foto berhasil diupload!', html:`<a href="${esc(result.viewUrl)}" target="_blank" style="color:var(--biru);font-weight:700">🔗 Lihat di Google Drive</a>`, confirmButtonText:'OK' });
