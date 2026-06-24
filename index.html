@@ -919,8 +919,12 @@
           <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:8px">📸 FOTO KIRIMAN (Opsional)</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
             <label style="cursor:pointer;display:flex;align-items:center;gap:6px;background:var(--biru-muda);color:var(--biru);padding:8px 14px;border-radius:10px;font-size:0.75rem;font-weight:700;transition:0.2s" onmouseover="this.style.background='rgba(26,109,181,0.15)'" onmouseout="this.style.background='var(--biru-muda)'">
-              <i class="fas fa-camera"></i> Upload Foto Kiriman
+              <i class="fas fa-camera"></i> Kamera
               <input type="file" accept="image/*" capture="environment" style="display:none" onchange="uploadFotoKiriman(this)">
+            </label>
+            <label style="cursor:pointer;display:flex;align-items:center;gap:6px;background:var(--biru-muda);color:var(--biru);padding:8px 14px;border-radius:10px;font-size:0.75rem;font-weight:700;transition:0.2s" onmouseover="this.style.background='rgba(26,109,181,0.15)'" onmouseout="this.style.background='var(--biru-muda)'">
+              <i class="fas fa-images"></i> Galeri
+              <input type="file" accept="image/*" style="display:none" onchange="uploadFotoKiriman(this)">
             </label>
             <button class="btn btn-sm btn-ghost" style="font-size:0.7rem" onclick="showFotoBukti(_currentTrxId,'Foto Kiriman '+_currentTrxId)">🖼 Lihat Foto</button>
             <span id="fotoKirimanStatus" style="font-size:0.7rem;color:var(--text3);margin-left:auto"></span>
@@ -2352,8 +2356,12 @@
           <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:8px">📸 FOTO KIRIMAN (Opsional)</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
             <label style="cursor:pointer;display:flex;align-items:center;gap:6px;background:var(--biru-muda);color:var(--biru);padding:8px 14px;border-radius:10px;font-size:0.75rem;font-weight:700;transition:0.2s" onmouseover="this.style.background='rgba(26,109,181,0.15)'" onmouseout="this.style.background='var(--biru-muda)'">
-              <i class="fas fa-camera"></i> Upload Foto Kiriman
+              <i class="fas fa-camera"></i> Kamera
               <input type="file" accept="image/*" capture="environment" style="display:none" onchange="uploadFotoKiriman(this)">
+            </label>
+            <label style="cursor:pointer;display:flex;align-items:center;gap:6px;background:var(--biru-muda);color:var(--biru);padding:8px 14px;border-radius:10px;font-size:0.75rem;font-weight:700;transition:0.2s" onmouseover="this.style.background='rgba(26,109,181,0.15)'" onmouseout="this.style.background='var(--biru-muda)'">
+              <i class="fas fa-images"></i> Galeri
+              <input type="file" accept="image/*" style="display:none" onchange="uploadFotoKiriman(this)">
             </label>
             <button class="btn btn-sm btn-ghost" style="font-size:0.7rem" onclick="showFotoBukti(_currentTrxId,'Foto Kiriman '+_currentTrxId)">🖼 Lihat Foto</button>
             <span id="fotoKirimanStatus" style="font-size:0.7rem;color:var(--text3);margin-left:auto"></span>
@@ -2419,6 +2427,7 @@
             </div>
             <button class="btn btn-primary" onclick="toggleSbSkuDropdown();doStockBarang()" style="height:44px;align-self:flex-end">📊 Tampilkan</button>
             <button class="btn btn-warning" onclick="rolloverStokAwal()" style="height:44px;align-self:flex-end" title="Jadikan stok akhir kemarin sebagai stok awal hari ini">🔄 Rollover Stok</button>
+            <button class="btn btn-outline" onclick="syncStockBarangToSheet()" style="height:44px;align-self:flex-end" title="Kirim ulang data Masuk/Keluar/Stok Akhir versi web (yang sudah benar) ke Google Sheets MasterStock">☁️ Sinkronkan ke Sheets</button>
           </div>
         </div>
         <div id="sbContent"><div class="text-center text-sm" style="padding:40px">Memuat data...</div></div>`;
@@ -2490,6 +2499,40 @@
         </table></div>
       </div>`;
     }
+    // [NEW] Selama ini fungsi GAS 'saveMasterStock' tidak pernah dipanggil dari web, jadi data Masuk/
+    // Keluar/Stok Akhir di Sheet MasterStock tidak pernah ikut ter-update walau web sudah menghitung
+    // dengan benar (web mengoreksi "Masuk" memakai stockInHistory, filter status 'kiriman' saja,
+    // 'titipan' tidak dihitung sebagai stok masuk). Fungsi ini mengirim ulang data versi web (yang
+    // sudah benar) ke Sheets, dikelompokkan per tanggal sesuai format yang diminta saveMasterStock.
+    // Tidak mengubah logic koreksi kiriman/titipan yang sudah ada di doStockBarang().
+    async function syncStockBarangToSheet() {
+      if (!_stockBarangAll || !_stockBarangAll.length) return Swal.fire('Info','Belum ada data Stock Barang yang dimuat.','info');
+      const corrected = _stockBarangAll.map(d => {
+        const localMasuk = stockInHistory
+          .filter(s => (s.date||s.tgl||'').substring(0,10) === (d.date||'').substring(0,10) && s.sku === d.sku && (s.status||'').toLowerCase() === 'kiriman')
+          .reduce((sum, s) => sum + (s.qty||0), 0);
+        const masuk = localMasuk > 0 ? localMasuk : (d.masuk||0);
+        return { ...d, masuk, stokAkhir: (d.stokAwal||0) + masuk - (d.keluar||0) };
+      });
+      const byDate = {};
+      corrected.forEach(d => { const tgl = (d.date||'').substring(0,10); if (!tgl) return; if (!byDate[tgl]) byDate[tgl] = []; byDate[tgl].push(d); });
+      const dates = Object.keys(byDate);
+      if (!dates.length) return Swal.fire('Info','Tidak ada data dengan tanggal valid untuk disinkronkan.','info');
+      Swal.fire({ title:'Menyinkronkan...', html:'Mengirim data ke Google Sheets, mohon tunggu.', allowOutsideClick:false, didOpen:()=>Swal.showLoading() });
+      let okCount = 0, failCount = 0;
+      for (const tgl of dates) {
+        try {
+          await gasCall('saveMasterStock', [{ date: tgl, stock: byDate[tgl] }]);
+          okCount++;
+        } catch(e) {
+          failCount++;
+          console.warn('Gagal sync MasterStock tanggal '+tgl+':', e);
+        }
+      }
+      Swal.fire({ icon: failCount ? 'warning' : 'success', title: failCount ? 'Sebagian gagal' : 'Sinkronisasi berhasil', text: `${okCount} tanggal berhasil${failCount ? ', ' + failCount + ' tanggal gagal' : ''}.` });
+      loadStockBarang();
+    }
+
     async function rolloverStokAwal() {
       const today = localDateStr();
       // Hitung kemarin (lokal)
