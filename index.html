@@ -2483,11 +2483,16 @@
       if (tgl) filtered = filtered.filter(d => (d.date||'').substring(0,10) === tgl);
       if (_sbSelectedSkus.size > 0) filtered = filtered.filter(d => _sbSelectedSkus.has(d.sku));
       // Koreksi field masuk dari stockInHistory lokal (kiriman + titipan)
+      // [FIX] Sebelumnya: "masuk = localMasuk>0 ? localMasuk : d.masuk" -> kalau hari itu SKU tertentu
+      // CUMA ada entri 'titipan' (tanpa 'kiriman' sama sekali), localMasuk hasilnya 0 (BENAR, titipan
+      // memang tidak dihitung), tapi karena 0 dianggap "kosong" kode malah jatuh ke fallback d.masuk
+      // (angka lama dari Sheets yang salah/ketinggalan jaman, dari sebelum aturan kiriman-saja ada).
+      // Perbaikan: fallback ke d.masuk HANYA kalau memang tidak ada record lokal sama sekali (kiriman
+      // ATAU titipan) untuk tanggal+SKU itu -> berarti data lokal belum sinkron, baru percaya ke GAS.
       filtered = filtered.map(d => {
-        const localMasuk = stockInHistory
-          .filter(s => (s.date||s.tgl||'').substring(0,10) === (d.date||'').substring(0,10) && s.sku === d.sku && (s.status||'').toLowerCase() === 'kiriman')
-          .reduce((sum, s) => sum + (s.qty||0), 0);
-        const masuk = localMasuk > 0 ? localMasuk : (d.masuk||0);
+        const recordsForDate = stockInHistory.filter(s => (s.date||s.tgl||'').substring(0,10) === (d.date||'').substring(0,10) && s.sku === d.sku);
+        const localMasuk = recordsForDate.filter(s => (s.status||'').toLowerCase() === 'kiriman').reduce((sum, s) => sum + (s.qty||0), 0);
+        const masuk = recordsForDate.length > 0 ? localMasuk : (d.masuk||0);
         return { ...d, masuk, stokAkhir: (d.stokAwal||0) + masuk - (d.keluar||0) };
       });
       const el = document.getElementById('sbContent');
@@ -2528,10 +2533,9 @@
     async function syncStockBarangToSheet() {
       if (!_stockBarangAll || !_stockBarangAll.length) return Swal.fire('Info','Belum ada data Stock Barang yang dimuat.','info');
       const corrected = _stockBarangAll.map(d => {
-        const localMasuk = stockInHistory
-          .filter(s => (s.date||s.tgl||'').substring(0,10) === (d.date||'').substring(0,10) && s.sku === d.sku && (s.status||'').toLowerCase() === 'kiriman')
-          .reduce((sum, s) => sum + (s.qty||0), 0);
-        const masuk = localMasuk > 0 ? localMasuk : (d.masuk||0);
+        const recordsForDate = stockInHistory.filter(s => (s.date||s.tgl||'').substring(0,10) === (d.date||'').substring(0,10) && s.sku === d.sku);
+        const localMasuk = recordsForDate.filter(s => (s.status||'').toLowerCase() === 'kiriman').reduce((sum, s) => sum + (s.qty||0), 0);
+        const masuk = recordsForDate.length > 0 ? localMasuk : (d.masuk||0);
         return { ...d, masuk, stokAkhir: (d.stokAwal||0) + masuk - (d.keluar||0) };
       });
       const byDate = {};
@@ -2574,10 +2578,9 @@
 
       // Hitung stok akhir kemarin (dengan koreksi dari stockInHistory lokal)
       const rolloverData = dataKemarin.map(d => {
-        const localMasuk = stockInHistory
-          .filter(s => (s.date||s.tgl||'').substring(0,10) === kemarin && s.sku === d.sku && (s.status||'').toLowerCase() === 'kiriman')
-          .reduce((sum, s) => sum + (s.qty||0), 0);
-        const masuk = localMasuk > 0 ? localMasuk : (d.masuk||0);
+        const recordsForDate = stockInHistory.filter(s => (s.date||s.tgl||'').substring(0,10) === kemarin && s.sku === d.sku);
+        const localMasuk = recordsForDate.filter(s => (s.status||'').toLowerCase() === 'kiriman').reduce((sum, s) => sum + (s.qty||0), 0);
+        const masuk = recordsForDate.length > 0 ? localMasuk : (d.masuk||0);
         const stokAkhirKemarin = (d.stokAwal||0) + masuk - (d.keluar||0);
         return { date: today, sku: d.sku, nama: d.nama, stokAwal: stokAkhirKemarin, masuk: 0, keluar: 0 };
       });
