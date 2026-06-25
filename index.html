@@ -2543,17 +2543,18 @@
       const dates = Object.keys(byDate);
       if (!dates.length) return Swal.fire('Info','Tidak ada data dengan tanggal valid untuk disinkronkan.','info');
       Swal.fire({ title:'Menyinkronkan...', html:'Mengirim data ke Google Sheets, mohon tunggu.', allowOutsideClick:false, didOpen:()=>Swal.showLoading() });
-      let okCount = 0, failCount = 0;
+      let okCount = 0, failCount = 0, errMsgs = [];
       for (const tgl of dates) {
         try {
-          await gasCall('saveMasterStock', [{ date: tgl, stock: byDate[tgl] }]);
+          await gasUploadFoto('saveMasterStock', [{ date: tgl, stock: byDate[tgl] }]);
           okCount++;
         } catch(e) {
           failCount++;
+          errMsgs.push(tgl + ': ' + e.message);
           console.warn('Gagal sync MasterStock tanggal '+tgl+':', e);
         }
       }
-      Swal.fire({ icon: failCount ? 'warning' : 'success', title: failCount ? 'Sebagian gagal' : 'Sinkronisasi berhasil', text: `${okCount} tanggal berhasil${failCount ? ', ' + failCount + ' tanggal gagal' : ''}.` });
+      Swal.fire({ icon: failCount ? 'warning' : 'success', title: failCount ? 'Sebagian gagal' : 'Sinkronisasi berhasil', html: `${okCount} tanggal berhasil${failCount ? ', ' + failCount + ' tanggal gagal' : ''}.${errMsgs.length ? '<div style="margin-top:10px;text-align:left;font-size:11px;color:#DC2626;background:#FEF2F2;padding:8px;border-radius:8px;max-height:150px;overflow-y:auto">'+errMsgs.map(esc).join('<br>')+'</div>' : ''}` });
       loadStockBarang();
     }
 
