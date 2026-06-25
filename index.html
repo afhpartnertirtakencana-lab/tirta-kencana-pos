@@ -2475,7 +2475,49 @@
         if (el) el.innerHTML = `<div class="card"><p class="text-center text-sm" style="color:var(--merah)">Gagal memuat data: ${e.message}</p></div>`;
       }
     }
-    function doStockBarang() {
+    // [FIX] "Keluar" di menu Stock Barang selalu tampil 0 karena field d.keluar cuma dibaca mentah
+    // dari getStockBarang (Sheet MasterStock), dan tidak pernah ada penulis yang mengisi nilai itu di
+    // Sheet. Sesuai arahan: Keluar = total qty terjual per SKU per tanggal dari transaksi penjualan
+    // (allTrxList), bukan dari Sheet. Sama seperti koreksi "masuk" yang sudah ada dari stockInHistory.
+    // Transaksi kadang belum punya .items di memori (hanya ke-cache kalau Rekap sudah pernah dibuka
+    // untuk tanggal itu), jadi perlu fetch getTrxDetail dulu untuk transaksi yang relevan, memakai
+    // pola batching yang sama dengan doRekap().
+    async function ensureTrxItemsForDates(dates) {
+      const dateSet = new Set(dates);
+      const relevan = allTrxList.filter(t => dateSet.has((t.tgl||'').substring(0,10)));
+      const sudahLengkap = relevan.every(t => Array.isArray(t.items) && t.items.length > 0);
+      if (sudahLengkap) return;
+      const batchSize = 50;
+      for (let i = 0; i < relevan.length; i += batchSize) {
+        const batch = relevan.slice(i, i + batchSize);
+        await Promise.allSettled(batch.map(async trx => {
+          if (Array.isArray(trx.items) && trx.items.length > 0) return;
+          try {
+            const detail = await gasCall('getTrxDetail', [trx.id]);
+            if (detail && Array.isArray(detail.items) && detail.items.length > 0) {
+              const idx = allTrxList.findIndex(t => t.id === trx.id);
+              if (idx >= 0) allTrxList[idx].items = detail.items;
+              trx.items = detail.items;
+            }
+          } catch(e) { console.warn('Gagal ambil detail', trx.id, e); }
+        }));
+      }
+      saveLocalData();
+    }
+    // Hitung total qty terjual per tanggal+SKU dari allTrxList (untuk field Keluar).
+    function buildKeluarMapFromTrx(dates) {
+      const dateSet = new Set(dates);
+      const map = new Map();
+      allTrxList.filter(t => dateSet.has((t.tgl||'').substring(0,10))).forEach(trx => {
+        const tgl = (trx.tgl||'').substring(0,10);
+        (trx.items||[]).forEach(it => {
+          const key = tgl + '|' + (it.sku||'');
+          map.set(key, (map.get(key)||0) + (it.qty||0));
+        });
+      });
+      return map;
+    }
+    async function doStockBarang() {
       const dd = document.getElementById('sbSkuDropdown');
       if (dd) dd.style.display = 'none';
       const tgl = (document.getElementById('sbTgl')||{}).value || '';
@@ -2489,11 +2531,15 @@
       // (angka lama dari Sheets yang salah/ketinggalan jaman, dari sebelum aturan kiriman-saja ada).
       // Perbaikan: fallback ke d.masuk HANYA kalau memang tidak ada record lokal sama sekali (kiriman
       // ATAU titipan) untuk tanggal+SKU itu -> berarti data lokal belum sinkron, baru percaya ke GAS.
+      const tanggalRelevan = [...new Set(filtered.map(d => (d.date||'').substring(0,10)).filter(Boolean))];
+      await ensureTrxItemsForDates(tanggalRelevan);
+      const keluarMap = buildKeluarMapFromTrx(tanggalRelevan);
       filtered = filtered.map(d => {
         const recordsForDate = stockInHistory.filter(s => (s.date||s.tgl||'').substring(0,10) === (d.date||'').substring(0,10) && s.sku === d.sku);
         const localMasuk = recordsForDate.filter(s => (s.status||'').toLowerCase() === 'kiriman').reduce((sum, s) => sum + (s.qty||0), 0);
         const masuk = recordsForDate.length > 0 ? localMasuk : (d.masuk||0);
-        return { ...d, masuk, stokAkhir: (d.stokAwal||0) + masuk - (d.keluar||0) };
+        const keluar = keluarMap.get((d.date||'').substring(0,10) + '|' + d.sku) || 0;
+        return { ...d, masuk, keluar, stokAkhir: (d.stokAwal||0) + masuk - keluar };
       });
       const el = document.getElementById('sbContent');
       if (!el) return;
@@ -2532,11 +2578,18 @@
     // Tidak mengubah logic koreksi kiriman/titipan yang sudah ada di doStockBarang().
     async function syncStockBarangToSheet() {
       if (!_stockBarangAll || !_stockBarangAll.length) return Swal.fire('Info','Belum ada data Stock Barang yang dimuat.','info');
+      // [FIX] Sama seperti doStockBarang(): keluar harus dihitung dari transaksi penjualan (allTrxList),
+      // bukan dipakai mentah dari d.keluar (yang selalu 0 di Sheets), supaya yang disinkronkan ke
+      // Sheets juga benar, bukan ikut menimpa dengan 0.
+      const tanggalRelevan = [...new Set(_stockBarangAll.map(d => (d.date||'').substring(0,10)).filter(Boolean))];
+      await ensureTrxItemsForDates(tanggalRelevan);
+      const keluarMap = buildKeluarMapFromTrx(tanggalRelevan);
       const corrected = _stockBarangAll.map(d => {
         const recordsForDate = stockInHistory.filter(s => (s.date||s.tgl||'').substring(0,10) === (d.date||'').substring(0,10) && s.sku === d.sku);
         const localMasuk = recordsForDate.filter(s => (s.status||'').toLowerCase() === 'kiriman').reduce((sum, s) => sum + (s.qty||0), 0);
         const masuk = recordsForDate.length > 0 ? localMasuk : (d.masuk||0);
-        return { ...d, masuk, stokAkhir: (d.stokAwal||0) + masuk - (d.keluar||0) };
+        const keluar = keluarMap.get((d.date||'').substring(0,10) + '|' + d.sku) || 0;
+        return { ...d, masuk, keluar, stokAkhir: (d.stokAwal||0) + masuk - keluar };
       });
       const byDate = {};
       corrected.forEach(d => { const tgl = (d.date||'').substring(0,10); if (!tgl) return; if (!byDate[tgl]) byDate[tgl] = []; byDate[tgl].push(d); });
