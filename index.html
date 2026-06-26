@@ -105,6 +105,18 @@
       #itemsContainer .cart-disc[data-field="harga"] { flex:1 1 0; width:auto!important; min-width:110px; }
       #itemsContainer .cart-disc[data-field="disc"] { flex:1 1 0; width:auto!important; min-width:100px; }
     }
+    /* [NEW] Khusus tampilan web/tablet (>=768px): perbesar kolom Produk(SKU-Nama), Harga Modal, Qty, Disc
+       di menu Input Barang (#inputItemsContainer). Hanya CSS, tidak menyentuh #itemsContainer (menu Jual)
+       ataupun logic/struktur HTML/JS yang sudah ada. Catatan: di menu ini SKU & Nama menyatu dalam satu
+       <select> (tidak ada kolom SKU terpisah), jadi diperbesar agar nama produk tetap terbaca jelas.
+       Harga Modal & Disc sama-sama pakai class .cart-disc tanpa data-field, dibedakan lewat atribut
+       [readonly] (hanya dimiliki input Harga Modal). */
+    @media(min-width:768px) {
+      #inputItemsContainer .cart-item-select { flex:2 1 0; min-width:200px; }
+      #inputItemsContainer .cart-qty { flex:0 0 80px; width:80px!important; }
+      #inputItemsContainer .cart-disc[readonly] { flex:1 1 0; width:auto!important; min-width:110px; }
+      #inputItemsContainer .cart-disc:not([readonly]) { flex:1 1 0; width:auto!important; min-width:100px; }
+    }
     .scanner-video-wrap { position:relative; width:100%; max-width:400px; margin:0 auto; border-radius:12px; overflow:hidden; background:#000; } .scanner-video-wrap video{width:100%;height:auto;display:block;}
     .barcode-thumb { width:64px; height:42px; object-fit:contain; border-radius:6px; border:1px solid var(--border); cursor:pointer; background:#fff; padding:3px; }
     .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:18px; } @media(max-width:768px){.grid-2{grid-template-columns:1fr;}}
