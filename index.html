@@ -95,6 +95,16 @@
     .action-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:12px 0; } .action-card{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:18px 8px;border-radius:var(--radius);cursor:pointer;border:1.5px solid var(--border);background:var(--bg2);transition:all 0.2s;text-align:center;} .action-card:hover{border-color:var(--biru);background:rgba(26,109,181,0.06);}
     .cart-item-row { display:flex; align-items:center; gap:6px; margin-bottom:8px; padding:8px; background:var(--biru-muda); border-radius:10px; flex-wrap:wrap; }
     .cart-item-select { flex:2; min-width:120px; font-size:0.7rem; padding:6px 8px; } .cart-qty{width:55px!important;} .cart-disc{width:70px!important;}
+    /* [NEW] Khusus tampilan web/tablet (>=768px): perbesar kolom Nama, Harga, Qty, Disc dan perkecil kolom SKU
+       di menu Jual (#itemsContainer). Hanya CSS, tidak menyentuh #inputItemsContainer (menu Input Barang)
+       ataupun logic/struktur HTML/JS yang sudah ada. */
+    @media(min-width:768px) {
+      #itemsContainer .cart-item-select[data-field="sku"] { flex:0 0 90px; min-width:90px; max-width:90px; }
+      #itemsContainer .cart-nama { flex:2 1 0; width:auto!important; min-width:160px; }
+      #itemsContainer .cart-qty { flex:0 0 80px; width:80px!important; }
+      #itemsContainer .cart-disc[data-field="harga"] { flex:1 1 0; width:auto!important; min-width:110px; }
+      #itemsContainer .cart-disc[data-field="disc"] { flex:1 1 0; width:auto!important; min-width:100px; }
+    }
     .scanner-video-wrap { position:relative; width:100%; max-width:400px; margin:0 auto; border-radius:12px; overflow:hidden; background:#000; } .scanner-video-wrap video{width:100%;height:auto;display:block;}
     .barcode-thumb { width:64px; height:42px; object-fit:contain; border-radius:6px; border:1px solid var(--border); cursor:pointer; background:#fff; padding:3px; }
     .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:18px; } @media(max-width:768px){.grid-2{grid-template-columns:1fr;}}
