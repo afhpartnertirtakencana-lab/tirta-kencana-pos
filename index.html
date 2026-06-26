@@ -2631,11 +2631,17 @@
       }
 
       // Hitung stok akhir kemarin (dengan koreksi dari stockInHistory lokal)
+      // [FIX] Sebelumnya pakai d.keluar||0 mentah dari Sheets (selalu 0, sama seperti bug di
+      // doStockBarang() yang sudah diperbaiki). Sekarang pakai keluar dari transaksi penjualan
+      // (allTrxList) lewat helper yang sama: ensureTrxItemsForDates() + buildKeluarMapFromTrx().
+      await ensureTrxItemsForDates([kemarin]);
+      const keluarMapKemarin = buildKeluarMapFromTrx([kemarin]);
       const rolloverData = dataKemarin.map(d => {
         const recordsForDate = stockInHistory.filter(s => (s.date||s.tgl||'').substring(0,10) === kemarin && s.sku === d.sku);
         const localMasuk = recordsForDate.filter(s => (s.status||'').toLowerCase() === 'kiriman').reduce((sum, s) => sum + (s.qty||0), 0);
         const masuk = recordsForDate.length > 0 ? localMasuk : (d.masuk||0);
-        const stokAkhirKemarin = (d.stokAwal||0) + masuk - (d.keluar||0);
+        const keluarKemarin = keluarMapKemarin.get(kemarin + '|' + d.sku) || 0;
+        const stokAkhirKemarin = (d.stokAwal||0) + masuk - keluarKemarin;
         return { date: today, sku: d.sku, nama: d.nama, stokAwal: stokAkhirKemarin, masuk: 0, keluar: 0 };
       });
 
