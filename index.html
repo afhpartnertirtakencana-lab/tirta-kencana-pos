@@ -754,6 +754,7 @@
              <button class="tab ${currentPage==='pelanggan'?'active':''}" onclick="navigateTo('pelanggan')"><i class="fas fa-address-book"></i> Pelanggan</button>
              <button class="tab ${currentPage==='pengaturan'?'active':''}" onclick="navigateTo('grafik')"><i class="fas fa-chart-line"></i> Grafik</button>
              <button class="tab ${currentPage==='piutang'?'active':''}" onclick="navigateTo('piutang')"><i class="fas fa-file-invoice-dollar"></i> Piutang</button>
+             <button class="tab ${currentPage==='laporanbulanan'?'active':''}" onclick="navigateTo('laporanbulanan')"><i class="fas fa-calendar-alt"></i> Laporan Bulanan</button>
              <button class="tab ${currentPage==='pengaturan'?'active':''}" onclick="navigateTo('pengaturan')"><i class="fas fa-cog"></i> Atur</button>`;
       } else if (r === 'sales') {
         h = `<button class="tab ${currentPage==='dashboard'?'active':''}" onclick="navigateTo('dashboard')"><i class="fas fa-chart-pie"></i> Dashboard</button>
@@ -772,7 +773,7 @@
       document.getElementById('menuTabs').innerHTML = h;
     }
     function navigateTo(p) { currentPage = p; document.body.setAttribute('data-page', p); renderMenuTabs(); renderContent(); }
-    function renderContent() { switch (currentPage) { case 'dashboard': loadDashboard(); break; case 'penjualan': loadPenjualan(); break; case 'transaksi': loadTransaksi(); break; case 'rekap': loadRekap(); break; case 'rekapinput': loadRekapInput(); break; case 'setoran': loadSetoran(); break; case 'rekapsetoran': loadRekapSetoran(); break; case 'inputbarang': loadInputBarang(); break; case 'stockbarang': loadStockBarang(); break; case 'produk': loadProduk(); break; case 'pelanggan': loadPelanggan(); break; case 'pengaturan': loadPengaturan(); break; case 'pengaturanUser': loadPengaturanUser(); break; case 'grafik': loadGrafik(); break; case 'piutang': loadPiutang(); break; } }
+    function renderContent() { switch (currentPage) { case 'dashboard': loadDashboard(); break; case 'penjualan': loadPenjualan(); break; case 'transaksi': loadTransaksi(); break; case 'rekap': loadRekap(); break; case 'rekapinput': loadRekapInput(); break; case 'setoran': loadSetoran(); break; case 'rekapsetoran': loadRekapSetoran(); break; case 'inputbarang': loadInputBarang(); break; case 'stockbarang': loadStockBarang(); break; case 'produk': loadProduk(); break; case 'pelanggan': loadPelanggan(); break; case 'pengaturan': loadPengaturan(); break; case 'pengaturanUser': loadPengaturanUser(); break; case 'grafik': loadGrafik(); break; case 'piutang': loadPiutang(); break; case 'laporanbulanan': loadLaporanBulanan(); break; } }
 
     // ========== DASHBOARD (MENU UTAMA) ==========
     function loadDashboard() {
@@ -1726,6 +1727,168 @@
       const ws=XLSX.utils.aoa_to_sheet(rows);
       const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Piutang');
       XLSX.writeFile(wb,`piutang-${today}.xlsx`);
+    }
+
+    // ========== LAPORAN BULANAN (Menu Baru) ========== [NEW]
+    // Menampilkan gabungan data Jual/Transaksi, Input Barang, dan Setoran untuk satu bulan
+    // yang dipilih (read-only, murni tampilan), dengan export Excel 3-sheet, dan tombol
+    // hapus data bulanan. Tidak mengubah satu pun fungsi/variabel yang sudah ada — modul ini
+    // hanya MEMBACA allTrxList/stockInHistory/setoranHistory yang sudah ada, dan untuk hapus
+    // memakai gasCall('deleteTrx', ...) & gasCall('deleteInputBarang', ...) yang SUDAH ADA dan
+    // sudah dipakai di tempat lain (lihat deleteTrx() dan deleteStockIn() di file ini).
+    // CATATAN PENTING: GAS belum punya fungsi deleteSetoran, jadi data Setoran TIDAK dihapus
+    // oleh tombol hapus bulanan ini — hanya ditampilkan untuk keperluan laporan/export.
+    let _lapBulananYM = ''; // format 'YYYY-MM', bulan yang sedang dipilih
+
+    function loadLaporanBulanan() {
+      const now = new Date();
+      const defaultYM = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+      _lapBulananYM = _lapBulananYM || defaultYM;
+      let sOpts = '<option value="">Semua Sales</option>';
+      (settings.salesList||[]).forEach(s => { sOpts += `<option value="${esc(s)}">${esc(s)}</option>`; });
+      document.getElementById('contentArea').innerHTML = `
+        <div class="card">
+          <div class="card-title"><i class="fas fa-calendar-alt"></i> Laporan Bulanan</div>
+          <div class="flex-row" style="gap:8px;flex-wrap:wrap">
+            <div class="form-group col-1" style="margin:0"><label>Bulan</label><input type="month" id="lapBulananBulan" value="${_lapBulananYM}"></div>
+            <div class="form-group col-1" style="margin:0"><label>Sales (khusus Transaksi &amp; Setoran)</label><select id="lapBulananSales">${sOpts}</select></div>
+            <button class="btn btn-primary" onclick="tampilkanLaporanBulanan()" style="height:44px;align-self:flex-end">📊 Tampilkan</button>
+            <button class="btn btn-outline" onclick="exportLaporanBulananExcel()" style="height:44px;align-self:flex-end">📥 Export Excel</button>
+            <div class="form-group col-1" style="margin:0"><label>Hapus Apa?</label><select id="lapBulananHapusTarget"><option value="transaksi">Transaksi / Jual</option><option value="input">Input Barang</option><option value="keduanya">Transaksi/Jual + Input Barang</option></select></div>
+            <button class="btn btn-danger" onclick="hapusDataBulanan()" style="height:44px;align-self:flex-end"><i class="fas fa-trash"></i> Hapus</button>
+          </div>
+          <div style="background:#FFF7E6;border:1px solid #FFE2A8;border-radius:8px;padding:8px 12px;font-size:11px;color:#92660A;margin-top:10px">
+            <i class="fas fa-info-circle"></i> Pilih dulu data yang mau dihapus di dropdown "Hapus Apa?" (Transaksi/Jual, Input Barang, atau keduanya), lalu klik Hapus. Data yang dihapus akan terhapus di aplikasi maupun di Google Sheets. Data <b>Setoran</b> pada bulan tersebut TIDAK ikut terhapus oleh tombol ini sama sekali (fitur hapus Setoran belum tersedia di backend) — Setoran tetap ditampilkan di laporan ini hanya untuk dilihat/diexport.
+          </div>
+        </div>
+        <div id="lapBulananContent"><div class="text-center text-sm" style="padding:40px">Pilih bulan lalu klik Tampilkan</div></div>`;
+      tampilkanLaporanBulanan();
+    }
+
+    function _lapBulananFilterByYM(tglField, ym) {
+      return (item) => (item[tglField]||'').substring(0,7) === ym;
+    }
+
+    function tampilkanLaporanBulanan() {
+      const ymInput = document.getElementById('lapBulananBulan')?.value || _lapBulananYM;
+      _lapBulananYM = ymInput;
+      const salesFilter = document.getElementById('lapBulananSales')?.value || '';
+      if (!_lapBulananYM) return Swal.fire('Error','Pilih bulan!','error');
+
+      let trx = allTrxList.filter(_lapBulananFilterByYM('tgl', _lapBulananYM));
+      if (salesFilter) trx = trx.filter(t => (t.sales||'').toLowerCase().trim() === salesFilter.toLowerCase().trim());
+      trx = trx.slice().sort((a,b) => (a.tgl||'').localeCompare(b.tgl||''));
+
+      let stockIn = stockInHistory.filter(s => ((s.date||s.tgl||'')).substring(0,7) === _lapBulananYM);
+      stockIn = stockIn.slice().sort((a,b) => (a.date||a.tgl||'').localeCompare(b.date||b.tgl||''));
+
+      let setor = setoranHistory.filter(_lapBulananFilterByYM('tgl', _lapBulananYM));
+      if (salesFilter) setor = setor.filter(s => (s.sales||'').toLowerCase().trim() === salesFilter.toLowerCase().trim());
+      setor = setor.slice().sort((a,b) => (a.tgl||'').localeCompare(b.tgl||''));
+
+      const totalNett = trx.reduce((s,t)=>s+(t.nett||0),0);
+      const totalModalIn = stockIn.reduce((s,e)=> s + ((e.hargaModal||0)-(e.disc||0))*(e.qty||0), 0);
+      const totalSetorBersih = setor.reduce((s,p)=>s+(p.setor||0),0);
+
+      let h = `<div class="card">
+        <div class="flex-row" style="gap:8px;flex-wrap:wrap;margin-bottom:8px">
+          <div class="summary-box"><div style="font-size:0.65rem;color:var(--text2);font-weight:600">TOTAL PENJUALAN (NETT)</div><div style="font-family:var(--mono);font-weight:800;font-size:0.9rem;color:var(--biru)">${fmtRp(totalNett)}</div><div class="text-sm" style="margin-top:2px">${trx.length} transaksi</div></div>
+          <div class="summary-box" style="background:var(--kuning-muda)"><div style="font-size:0.65rem;color:var(--text2);font-weight:600">TOTAL MODAL INPUT BARANG</div><div style="font-family:var(--mono);font-weight:800;font-size:0.9rem;color:var(--hijau)">${fmtRp(totalModalIn)}</div><div class="text-sm" style="margin-top:2px">${stockIn.length} entri</div></div>
+          <div class="summary-box"><div style="font-size:0.65rem;color:var(--text2);font-weight:600">TOTAL SETOR (BERSIH)</div><div style="font-family:var(--mono);font-weight:800;font-size:0.9rem;color:var(--biru)">${fmtRp(totalSetorBersih)}</div><div class="text-sm" style="margin-top:2px">${setor.length} setoran</div></div>
+        </div>
+      </div>`;
+
+      h += `<div class="card"><div class="card-title"><i class="fas fa-cash-register"></i> Detail Jual / Transaksi (${trx.length})</div>`;
+      h += trx.length ? `<div class="table-wrap"><table><thead><tr><th>ID</th><th>Tgl</th><th>Customer</th><th>Sales</th><th style="text-align:right">Gross</th><th style="text-align:right">Diskon</th><th style="text-align:right">Nett</th><th>Status</th></tr></thead><tbody>${trx.map(t=>`<tr><td style="font-family:var(--mono);font-size:11px">${esc(t.id)}</td><td>${fmtDate(t.tgl)}</td><td>${esc(t.customer||'-')}</td><td>${esc(t.sales||'-')}</td><td style="text-align:right;font-family:var(--mono)">${fmtRp(t.gross)}</td><td style="text-align:right;font-family:var(--mono);color:var(--merah)">${fmtRp(t.diskon)}</td><td style="text-align:right;font-family:var(--mono);font-weight:700;color:var(--biru)">${fmtRp(t.nett)}</td><td>${esc(t.status||'-')}</td></tr>`).join('')}</tbody></table></div>` : '<p class="text-center text-sm">Tidak ada transaksi pada bulan ini</p>';
+      h += `</div>`;
+
+      h += `<div class="card"><div class="card-title"><i class="fas fa-boxes"></i> Detail Input Barang (${stockIn.length})</div>`;
+      h += stockIn.length ? `<div class="table-wrap"><table><thead><tr><th>ID</th><th>Tgl</th><th>SKU</th><th>Nama</th><th style="text-align:right">Qty</th><th style="text-align:right">Net Modal</th><th>Driver</th><th>Status</th></tr></thead><tbody>${stockIn.map(s=>{const netModal=((s.hargaModal||0)-(s.disc||0))*(s.qty||0);return `<tr><td style="font-family:var(--mono);font-size:11px">${esc(s.id||'')}</td><td>${fmtDate(s.date||s.tgl||'')}</td><td style="font-family:var(--mono);font-size:11px">${esc(s.sku||'')}</td><td>${esc(s.nama||'')}</td><td style="text-align:right">${s.qty||0}</td><td style="text-align:right;font-family:var(--mono);font-weight:700;color:var(--biru)">${fmtRp(netModal)}</td><td>${esc(s.driver||'-')}</td><td>${esc(s.status||'-')}</td></tr>`;}).join('')}</tbody></table></div>` : '<p class="text-center text-sm">Tidak ada input barang pada bulan ini</p>';
+      h += `</div>`;
+
+      h += `<div class="card"><div class="card-title"><i class="fas fa-money-bill-wave"></i> Detail Setoran (${setor.length})</div>`;
+      h += setor.length ? `<div class="table-wrap"><table><thead><tr><th>Tgl</th><th>Sales</th><th style="text-align:right">Grand COD</th><th style="text-align:right">Total</th><th style="text-align:right">Setor</th><th style="text-align:right">Selisih</th></tr></thead><tbody>${setor.map(p=>`<tr><td>${fmtDate(p.tgl)}</td><td>${esc(p.sales||'-')}</td><td style="text-align:right;font-family:var(--mono)">${fmtRp(p.grandTotal)}</td><td style="text-align:right;font-family:var(--mono);font-weight:700;color:var(--biru)">${fmtRp(p.total)}</td><td style="text-align:right;font-family:var(--mono)">${fmtRp(p.setor)}</td><td style="text-align:right;font-family:var(--mono);color:${(p.selisih||0)>=0?'var(--hijau)':'var(--merah)'}">${fmtRp(p.selisih)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="text-center text-sm">Tidak ada setoran pada bulan ini</p>';
+      h += `</div>`;
+
+      document.getElementById('lapBulananContent').innerHTML = h;
+      window._lapBulananData = { trx, stockIn, setor }; // disimpan untuk dipakai export & hapus, tanpa query ulang
+    }
+
+    function exportLaporanBulananExcel() {
+      const data = window._lapBulananData;
+      if (!data) return Swal.fire('Error','Klik Tampilkan dulu sebelum export','error');
+      const wb = XLSX.utils.book_new();
+
+      const trxRows = [['ID','Tanggal','Customer','Sales','Gross','Diskon','Nett','Status'],
+        ...data.trx.map(t=>[t.id,t.tgl,t.customer,t.sales,t.gross,t.diskon,t.nett,t.status])];
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(trxRows), 'Jual-Transaksi');
+
+      const stockRows = [['ID','Tanggal','SKU','Nama','Qty','Disc','Harga Modal','Net Modal','Driver','Rit','Status'],
+        ...data.stockIn.map(s=>{const netModal=((s.hargaModal||0)-(s.disc||0))*(s.qty||0);return [s.id,s.date||s.tgl,s.sku,s.nama,s.qty,s.disc||0,s.hargaModal||0,netModal,s.driver,s.rit,s.status];})];
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(stockRows), 'Input-Barang');
+
+      const setorRows = [['Tanggal','Sales','Grand Total COD','Makan','Tips','Parkir','Bensin','Flazz','Transfer','Cicilan','Tagihan','Total','Setor','Selisih'],
+        ...data.setor.map(p=>[p.tgl,p.sales,p.grandTotal,p.makan,p.tips,p.parkir,p.bensin,p.flazz,p.transfer,p.cicilan,p.tagihan,p.total,p.setor,p.selisih])];
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(setorRows), 'Setoran');
+
+      XLSX.writeFile(wb, `laporan-bulanan-${_lapBulananYM}.xlsx`);
+    }
+
+    async function hapusDataBulanan() {
+      const data = window._lapBulananData;
+      if (!data) return Swal.fire('Error','Klik Tampilkan dulu sebelum hapus','error');
+
+      const target = document.getElementById('lapBulananHapusTarget')?.value || 'transaksi';
+      const prosesTrx = (target === 'transaksi' || target === 'keduanya');
+      const prosesInput = (target === 'input' || target === 'keduanya');
+      const trxToDelete = prosesTrx ? data.trx : [];
+      const stockToDelete = prosesInput ? data.stockIn : [];
+
+      if (!trxToDelete.length && !stockToDelete.length) {
+        const labelKosong = target === 'transaksi' ? 'Transaksi/Jual' : target === 'input' ? 'Input Barang' : 'Transaksi/Jual maupun Input Barang';
+        return Swal.fire('Info', `Tidak ada data ${labelKosong} pada bulan ini untuk dihapus.`, 'info');
+      }
+
+      const bagianHtml = [
+        prosesTrx ? `<b>${trxToDelete.length} transaksi/jual</b>` : null,
+        prosesInput ? `<b>${stockToDelete.length} entri input barang</b>` : null
+      ].filter(Boolean).join(' dan ');
+
+      const konfirm = await Swal.fire({
+        title: `🗑️ Hapus Data Bulan ${_lapBulananYM}?`,
+        html: `Akan menghapus ${bagianHtml} (di aplikasi maupun Google Sheets).<br><br><b style="color:#DC2626">Setoran TIDAK ikut terhapus</b> (${data.setor.length} data setoran bulan ini akan tetap ada).<br><br>Tindakan ini <b>tidak dapat dibatalkan</b>.`,
+        icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya, Hapus', confirmButtonColor: '#DC2626', cancelButtonText: 'Batal'
+      });
+      if (!konfirm.isConfirmed) return;
+
+      Swal.fire({ title:'Menghapus...', html:'Mohon tunggu, sedang menghapus data dari aplikasi dan Google Sheets.', allowOutsideClick:false, didOpen:()=>Swal.showLoading() });
+
+      let trxOk=0, trxFail=0, stockOk=0, stockFail=0;
+      for (const t of trxToDelete) {
+        try { await gasCall('deleteTrx', [t.id]); trxOk++; } catch(e) { console.warn('Gagal hapus trx', t.id, e); trxFail++; }
+      }
+      for (const s of stockToDelete) {
+        try { await gasCall('deleteInputBarang', [s.id]); stockOk++; } catch(e) { console.warn('Gagal hapus input barang', s.id, e); stockFail++; }
+      }
+
+      // Hapus dari state lokal & localStorage (memakai saveLocalData() yang sudah ada, tidak diubah)
+      const trxIds = new Set(trxToDelete.map(t=>t.id));
+      const stockIds = new Set(stockToDelete.map(s=>s.id));
+      if (prosesTrx) allTrxList = allTrxList.filter(t => !trxIds.has(t.id));
+      if (prosesInput) stockInHistory = stockInHistory.filter(s => !stockIds.has(s.id));
+      saveLocalData();
+
+      const ringkasanParts = [
+        prosesTrx ? `Transaksi: ${trxOk} berhasil${trxFail?', '+trxFail+' gagal':''}.` : null,
+        prosesInput ? `Input Barang: ${stockOk} berhasil${stockFail?', '+stockFail+' gagal':''}.` : null
+      ].filter(Boolean).join('<br>');
+
+      Swal.fire({
+        icon: (trxFail+stockFail) ? 'warning' : 'success',
+        title: 'Hapus Selesai',
+        html: `${ringkasanParts}<br>Setoran: tidak diproses (lihat catatan di atas).`
+      });
+      loadLaporanBulanan();
     }
 
     // ========== RIWAYAT EDIT TRANSAKSI ==========
