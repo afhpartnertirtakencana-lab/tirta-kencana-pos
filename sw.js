@@ -14,5 +14,7 @@ self.addEventListener('activate', (event) => {
 // Passthrough sederhana — tidak menyimpan cache apa pun,
 // jadi tidak akan menyebabkan halaman menampilkan versi lama.
 self.addEventListener('fetch', (event) => {
-  event.respondWith(fetch(event.request));
+  event.respondWith(
+    fetch(event.request).catch(() => new Response('', { status: 503, statusText: 'Network error' }))
+  );
 });
