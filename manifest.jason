@@ -1,0 +1,22 @@
+{
+  "name": "Tirta Kencana",
+  "short_name": "Tirta Kencana",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#1A6DB5",
+  "theme_color": "#1A6DB5",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Ccircle fill='%231A6DB5' cx='96' cy='96' r='90'/%3E%3Ccircle fill='white' cx='96' cy='96' r='70'/%3E%3Ctext x='96' y='110' text-anchor='middle' fill='%231A6DB5' font-size='60' font-weight='bold'%3ETK</text%3E%3C/svg%3e",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Ccircle fill='%231A6DB5' cx='96' cy='96' r='90'/%3E%3Ccircle fill='white' cx='96' cy='96' r='70'/%3E%3Ctext x='96' y='110' text-anchor='middle' fill='%231A6DB5' font-size='60' font-weight='bold'%3ETK</text%3E%3C/svg%3e",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
