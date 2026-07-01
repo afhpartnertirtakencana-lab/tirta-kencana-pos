@@ -1220,7 +1220,7 @@
       document.getElementById('menuTabs').innerHTML = h;
     }
     function navigateTo(p) { currentPage = p; document.body.setAttribute('data-page', p); renderMenuTabs(); renderContent(); }
-    function renderContent() { switch (currentPage) { case 'dashboard': loadDashboard(); break; case 'penjualan': loadPenjualan(); break; case 'transaksi': loadTransaksi(); break; case 'rekap': loadRekap(); break; case 'rekapinput': loadRekapInput(); break; case 'setoran': loadSetoran(); break; case 'rekapsetoran': loadRekapSetoran(); break; case 'inputbarang': loadInputBarang(); break; case 'stockbarang': loadStockBarang(); break; case 'produk': loadProduk(); break; case 'pelanggan': loadPelanggan(); break; case 'pengaturan': loadPengaturan(); break; case 'pengaturanUser': loadPengaturanUser(); break; case 'grafik': loadGrafik(); break; case 'piutang': loadPiutang(); break; case 'laporanbulanan': loadLaporanBulanan(); break; } }
+    function renderContent() { switch (currentPage) { case 'dashboard': loadDashboard(); break; case 'penjualan': loadPenjualan(); break; case 'transaksi': loadTransaksi(); break; case 'rekap': loadRekap(); break; case 'rekapinput': loadRekapInput(); break; case 'setoran': loadSetoran(); break; case 'rekapsetoran': loadRekapSetoran(); break; case 'inputbarang': loadInputBarang(); break; case 'stockbarang': loadStockBarang(); break; case 'produk': loadProduk(); break; case 'pelanggan': loadPelanggan(); break; case 'pengaturan': loadPengaturan(); break; case 'pengaturanUser': loadPengaturanUser(); break; case 'grafik': loadGrafik(); break; case 'piutang': loadPiutang(); break; case 'laporanbulanan': loadLaporanBulanan(); break; case 'googlesheets': loadGoogleSheets(); break; } }
 
     // ========== DASHBOARD (MENU UTAMA) ==========
     function loadDashboard() {
@@ -1302,6 +1302,7 @@
         h += menuItem('produk', 'Produk', 'fa-cubes');
         h += menuItem('pelanggan', 'Pelanggan', 'fa-address-book');
         h += menuItem('pengaturan', 'Atur', 'fa-cog');
+        h += menuItem('googlesheets', 'Google Sheets', 'fa-table-cells');
         h += `</div>`;
         
         h += `<div class="menu-row-title">💼 Sales</div>`;
@@ -3614,6 +3615,69 @@
     function removeDriverUser(i) { drivers.splice(i,1); saveLocalData(); gasCall('saveDrivers', [drivers.map(String)]).catch(e => console.warn('Gagal sync driver:', e)); renderDriverUserTags(); }
     function saveUserGasUrl() { const v = document.getElementById('userGasUrl')?.value.trim(); if (!v || !v.startsWith('https://')) return Swal.fire('Error','URL tidak valid!','error'); localStorage.setItem('tirtaGasUrl', v); GAS_URL = v; Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:2000, icon:'success', title:'URL GAS disimpan!' }); }
     async function testUserGasConnection() { Swal.fire({ title:'Testing...', text:'Menghubungi GAS server...', allowOutsideClick:false, didOpen:()=>Swal.showLoading() }); try { await gasCall('getSettings', []); Swal.fire({ icon:'success', title:'Koneksi OK!', text:'GAS server berhasil dihubungi.' }); } catch(e) { Swal.fire({ icon:'error', title:'Gagal!', text:e.message }); } }
+
+    // ================================================================
+    // [NEW] MENU GOOGLE SHEETS — murni tambahan (link buka spreadsheet +
+    // tombol sync). Tidak mengubah fungsi/variabel/logika yang sudah ada;
+    // hanya memanggil fungsi-fungsi gasCall/sync yang sudah berjalan normal.
+    // ================================================================
+    const DEFAULT_SHEET_ID = '12q8SwBtoww9Y9c6EZ46-SNa1q5TKIXnf9g_3wLbsNK4';
+    const DEFAULT_LAPORAN_SHEET_ID = '1Uw3PJ7efRnt2E_ccu9-SvHYbmirx6ZWyHxEDrSSMVYs';
+
+    function loadGoogleSheets() {
+      document.getElementById('contentArea').innerHTML = `
+        <div class="card">
+          <div class="card-title"><i class="fas fa-table-cells"></i> Google Sheets</div>
+          <div class="section-title">📄 Buka Spreadsheet</div>
+          <div class="flex-row mt-2">
+            <button class="btn btn-outline" style="flex:1" onclick="window.open('https://docs.google.com/spreadsheets/d/${DEFAULT_SHEET_ID}/edit','_blank')"><i class="fas fa-database"></i> Buka Google Sheets (Database)</button>
+          </div>
+          <div class="flex-row mt-2">
+            <button class="btn btn-outline" style="flex:1" onclick="window.open('https://docs.google.com/spreadsheets/d/${DEFAULT_LAPORAN_SHEET_ID}/edit','_blank')"><i class="fas fa-chart-bar"></i> Buka Laporan Google Sheets</button>
+          </div>
+          <div class="section-title">🔄 Sinkronisasi</div>
+          <div class="flex-row mt-2">
+            <button class="btn btn-primary" style="flex:1" id="btnSyncToSheets" onclick="syncAllToGAS()"><i class="fas fa-cloud-upload-alt"></i> Sync ke Google Sheets</button>
+          </div>
+          <div class="flex-row mt-2">
+            <button class="btn btn-warning" style="flex:1" id="btnSyncToApp" onclick="syncAppFromGAS()"><i class="fas fa-cloud-download-alt"></i> Sync ke Aplikasi</button>
+          </div>
+          <div class="text-sm mt-2" style="color:var(--text3)">"Sync ke Google Sheets" mengirim data lokal (produk, transaksi, input barang, setoran, driver, pengaturan) ke Spreadsheet. "Sync ke Aplikasi" mengambil data terbaru dari Spreadsheet ke aplikasi ini.</div>
+        </div>`;
+    }
+
+    async function syncAllToGAS() {
+      const btn = document.getElementById('btnSyncToSheets');
+      if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyinkronkan...'; }
+      try {
+        await syncProductsToSheet();
+        await gasCall('saveSettings', [{ storeName: settings.namaToko||settings.storeName, tagline: settings.tagline, address: settings.alamat||settings.address, phone: settings.telepon||settings.phone, footer: settings.bottomLine||settings.footer, salesList: settings.salesList||[], bank1: settings.bank1, bank2: settings.bank2 }]).catch(e => console.warn('Gagal sync settings:', e));
+        await gasCall('saveDrivers', [drivers.map(String)]).catch(e => console.warn('Gagal sync driver:', e));
+        for (const t of allTrxList) { try { await gasCall('saveTrx', [t]); } catch(e) { console.warn('Gagal sync trx ke Sheets:', t.id, e); } }
+        for (const s of stockInHistory) { try { await gasCall('saveInputBarang', [s]); } catch(e) { console.warn('Gagal sync input barang ke Sheets:', s.id, e); } }
+        for (const s of setoranHistory) { try { await gasCall('saveSetoran', [s]); } catch(e) { console.warn('Gagal sync setoran ke Sheets:', e); } }
+        Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, icon: 'success', title: 'Sync ke Google Sheets selesai' });
+      } catch(e) {
+        Swal.fire({ icon:'error', title:'Gagal Sync', text: e.message });
+      } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Sync ke Google Sheets'; }
+      }
+    }
+
+    async function syncAppFromGAS() {
+      const btn = document.getElementById('btnSyncToApp');
+      if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyinkronkan...'; }
+      try {
+        await syncFromGAS();
+        await syncStockHistoryFromGAS();
+        await syncSetoranHistoryFromGAS();
+        Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, icon: 'success', title: 'Sync ke Aplikasi selesai' });
+      } catch(e) {
+        Swal.fire({ icon:'error', title:'Gagal Sync', text: e.message });
+      } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-cloud-download-alt"></i> Sync ke Aplikasi'; }
+      }
+    }
 
     // ========== HELPERS ==========
     function fmtRp(n) { return 'Rp\u00a0' + Number(n||0).toLocaleString('id-ID'); }
