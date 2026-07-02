@@ -176,6 +176,7 @@
       backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
       border-bottom: 1px solid var(--glass-border);
       scrollbar-width: thin; scrollbar-color: rgba(0,168,232,0.4) transparent;
+      -webkit-overflow-scrolling: touch; touch-action: pan-x;
     }
     .menu-tabs::-webkit-scrollbar { height: 4px; }
     .menu-tabs::-webkit-scrollbar-track { background: transparent; }
@@ -398,7 +399,7 @@
       backdrop-filter:blur(6px); border-radius:10px; padding:10px; margin:10px 0; font-size:0.7rem;
     }
     .section-title { font-size:0.7rem; font-weight:700; color:#00D1FF; margin:12px 0 6px 0; padding-bottom:4px; border-bottom:2px solid rgba(0,209,255,0.35); }
-    .sub-tabs { display:flex; overflow-x:auto; gap:4px; margin-bottom:10px; }
+    .sub-tabs { display:flex; overflow-x:auto; gap:4px; margin-bottom:10px; -webkit-overflow-scrolling: touch; touch-action: pan-x; }
     .sub-tab {
       flex:0 0 auto; padding:5px 10px; border-radius:15px;
       border:1px solid var(--glass-border);
