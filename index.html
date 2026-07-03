@@ -718,6 +718,124 @@
         scroll-behavior: auto !important;
       }
     }
+
+    /* ════════════════════════════════════════════════════════════════
+       [NEW] REDESIGN UI — Formula: Modern SaaS UI (60%) + Bento Grid (25%)
+       + Soft UI Shadow (15%). Tema warna: Biru, Putih, Kuning.
+       Ini adalah LAPISAN TAMBAHAN di atas CSS lama (bukan mengganti/
+       menghapusnya) — variabel warna (--bg, --card, --text, dst) yang
+       sudah dipakai di seluruh komponen lewat var(...) di-override di
+       sini, jadi menyebar otomatis ke hampir semua bagian aplikasi
+       tanpa perlu menyentuh HTML/JS sama sekali. Header (identitas
+       brand biru tua + teks putih/kuning) sengaja dipertahankan.
+       ════════════════════════════════════════════════════════════════ */
+    /* [FIX] Semua override tema baru (termasuk variabel warna) HANYA berlaku saat
+       Light Mode diaktifkan, supaya Dark Mode (default) tetap pakai warna teks
+       terang aslinya (--text:#e0f4ff dari :root) dan TIDAK kelihatan hitam lagi
+       di atas latar gelap. */
+    body.light-mode {
+      --biru:#1E63E9; --biru2:#2F80FF; --kuning:#FFC94D;
+      --biru-muda:#EAF2FF; --kuning-muda:#FFF6DE;
+      --bg:#F3F7FD; --bg2:#FFFFFF; --card:#FFFFFF; --surface:#FFFFFF; --surface2:#F8FAFF;
+      --border: rgba(30,99,233,0.12);
+      --shadow: 8px 8px 20px rgba(163,177,198,0.35), -8px -8px 20px rgba(255,255,255,0.85);
+      --shadow-md: 12px 12px 28px rgba(163,177,198,0.38), -12px -12px 28px rgba(255,255,255,0.9);
+      --text:#16213E; --text2:#5B6B8C; --text3:#9FB0CC;
+      --merah:#EF4444; --hijau:#16A34A; --teal:#1E63E9; --warn:#F59E0B;
+      --glass: rgba(30,99,233,0.04); --glass-border: rgba(30,99,233,0.10);
+      --glass-shadow: 8px 8px 24px rgba(163,177,198,0.30), -8px -8px 24px rgba(255,255,255,0.8);
+      --glow: 0 0 0 rgba(0,0,0,0);
+      background: radial-gradient(ellipse at 15% 0%, #EAF2FF 0%, #F6F9FF 45%, #FFFFFF 100%) !important;
+      background-attachment: fixed;
+    }
+    body.light-mode::before { background: radial-gradient(ellipse at 85% 90%, rgba(255,201,77,0.10) 0%, transparent 55%), radial-gradient(ellipse at 0% 100%, rgba(30,99,233,0.06) 0%, transparent 50%) !important; }
+
+    /* — Modern SaaS shell: kartu utama putih bersih, shadow lembut, bukan glass gelap — */
+    body.light-mode .app-container {
+      background: #FFFFFF !important;
+      backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+      border: 1px solid rgba(30,99,233,0.08) !important;
+      box-shadow: 0 20px 60px rgba(30,99,233,0.10), 0 2px 8px rgba(30,99,233,0.06) !important;
+    }
+    body.light-mode .nav-bar { background:#FFFFFF !important; border-bottom:1px solid rgba(30,99,233,0.08) !important; backdrop-filter:none !important; -webkit-backdrop-filter:none !important; }
+    body.light-mode .menu-tabs { background:#F6F9FF !important; backdrop-filter:none !important; -webkit-backdrop-filter:none !important; border-bottom:1px solid rgba(30,99,233,0.08) !important; }
+    body.light-mode .tab { background:#FFFFFF !important; color:var(--text2) !important; border:1px solid rgba(30,99,233,0.10) !important; box-shadow:2px 2px 6px rgba(163,177,198,0.25), -2px -2px 6px rgba(255,255,255,0.9) !important; }
+    body.light-mode .tab:hover { background:#EAF2FF !important; color:var(--biru) !important; }
+    body.light-mode .tab.active { background:linear-gradient(135deg,#1E63E9,#2F80FF) !important; color:#fff !important; border-color:transparent !important; box-shadow:0 4px 14px rgba(30,99,233,0.35) !important; animation:none !important; }
+
+    /* — Soft UI cards (neumorphic-lite: shadow ganda lembut, bukan border tajam) — */
+    body.light-mode .card {
+      background:#FFFFFF !important;
+      border:1px solid rgba(30,99,233,0.06) !important;
+      box-shadow: 6px 6px 16px rgba(163,177,198,0.28), -6px -6px 16px rgba(255,255,255,0.85) !important;
+    }
+    body.light-mode .card:hover { box-shadow: 8px 8px 20px rgba(163,177,198,0.32), -8px -8px 20px rgba(255,255,255,0.9) !important; border-color: rgba(30,99,233,0.14) !important; }
+    body.light-mode .card-title { color:var(--biru) !important; }
+    body.light-mode .card-title i { color:#FFC94D !important; }
+
+    body.light-mode input, body.light-mode select, body.light-mode textarea {
+      background:#F6F9FF !important; color:var(--text) !important;
+      border:1px solid rgba(30,99,233,0.14) !important;
+      box-shadow: inset 2px 2px 6px rgba(163,177,198,0.20), inset -2px -2px 6px rgba(255,255,255,0.7) !important;
+    }
+    body.light-mode input:focus, body.light-mode select:focus, body.light-mode textarea:focus { border-color:#FFC94D !important; box-shadow:0 0 0 3px rgba(255,201,77,0.25) !important; }
+    body.light-mode input[readonly] { background:#EAF2FF !important; color:var(--biru) !important; }
+    body.light-mode select option { background:#fff !important; color:var(--text) !important; }
+
+    body.light-mode th { background:#EAF2FF !important; color:var(--biru) !important; backdrop-filter:none !important; }
+    body.light-mode td { border-bottom-color: rgba(30,99,233,0.08) !important; color:var(--text) !important; }
+    body.light-mode tr:hover td { background:rgba(30,99,233,0.03) !important; }
+
+    body.light-mode .modal { background:#FFFFFF !important; backdrop-filter:none !important; -webkit-backdrop-filter:none !important; box-shadow: 0 24px 60px rgba(30,99,233,0.20) !important; }
+    body.light-mode .modal-header h2 { color:var(--biru) !important; }
+    body.light-mode .bottom-bar { background:#FFFFFF !important; backdrop-filter:none !important; -webkit-backdrop-filter:none !important; border-top:1px solid rgba(30,99,233,0.08) !important; }
+    body.light-mode #syncStatus { background:#EAF2FF !important; color:var(--biru) !important; border-color:rgba(30,99,233,0.15) !important; }
+    body.light-mode .total-box { background:#EAF2FF !important; color:var(--biru) !important; }
+    body.light-mode .loading { color:var(--text2) !important; }
+    body.light-mode .menu-row-title { color:var(--biru) !important; }
+
+    body.light-mode .btn-primary { background:linear-gradient(135deg,#1E63E9,#2F80FF) !important; box-shadow:0 4px 14px rgba(30,99,233,0.30) !important; }
+    body.light-mode .btn-outline { border-color:rgba(30,99,233,0.25) !important; color:var(--biru) !important; }
+    body.light-mode .btn-warning { background:linear-gradient(135deg,#FFC94D,#FFB020) !important; color:#5B3B00 !important; }
+
+    /* — Bento Grid: menu dashboard jadi ubin kotak rounded (bukan lingkaran), rapi ala bento box — */
+    body.light-mode .menu-circle-item:hover { transform: translateY(-3px); }
+    body.light-mode .menu-circle {
+      background:#FFFFFF !important;
+      border-radius:20px !important;
+      border:1px solid rgba(30,99,233,0.08) !important;
+      box-shadow: 5px 5px 14px rgba(163,177,198,0.30), -5px -5px 14px rgba(255,255,255,0.9) !important;
+      backdrop-filter:none !important; -webkit-backdrop-filter:none !important;
+    }
+    body.light-mode .menu-circle::after { box-shadow:none !important; }
+    body.light-mode .menu-circle-item:hover .menu-circle { box-shadow: 7px 7px 18px rgba(163,177,198,0.35), -7px -7px 18px rgba(255,255,255,0.95) !important; border-color: rgba(255,201,77,0.4) !important; }
+    body.light-mode .menu-circle-label { color:var(--text2) !important; }
+    body.light-mode .menu-circle-item:hover .menu-circle-label { color:var(--biru) !important; }
+    body.light-mode .menu-grid .menu-circle-item .menu-circle i { text-shadow:none !important; }
+    /* Palet ikon tetap warna-warni tapi disesuaikan agar kontras di atas putih */
+    body.light-mode .menu-grid .menu-circle-item:nth-child(8n+1) .menu-circle i { color:#1E63E9 !important; }
+    body.light-mode .menu-grid .menu-circle-item:nth-child(8n+2) .menu-circle i { color:#16A34A !important; }
+    body.light-mode .menu-grid .menu-circle-item:nth-child(8n+3) .menu-circle i { color:#FFB020 !important; }
+    body.light-mode .menu-grid .menu-circle-item:nth-child(8n+4) .menu-circle i { color:#8B5CF6 !important; }
+    body.light-mode .menu-grid .menu-circle-item:nth-child(8n+5) .menu-circle i { color:#F43F5E !important; }
+    body.light-mode .menu-grid .menu-circle-item:nth-child(8n+6) .menu-circle i { color:#0D9488 !important; }
+    body.light-mode .menu-grid .menu-circle-item:nth-child(8n+7) .menu-circle i { color:#F97316 !important; }
+    body.light-mode .menu-grid .menu-circle-item:nth-child(8n) .menu-circle i { color:#2F80FF !important; }
+
+    /* — Bento tile untuk quick action cards — */
+    body.light-mode .action-card {
+      background:#FFFFFF !important;
+      border:1px solid rgba(30,99,233,0.08) !important;
+      border-radius:18px !important;
+      box-shadow: 5px 5px 14px rgba(163,177,198,0.28), -5px -5px 14px rgba(255,255,255,0.85) !important;
+      backdrop-filter:none !important; -webkit-backdrop-filter:none !important;
+    }
+    body.light-mode .action-card:hover { box-shadow: 7px 7px 18px rgba(163,177,198,0.32), -7px -7px 18px rgba(255,255,255,0.9) !important; }
+
+    /* — Kotak "Total Penjualan Hari Ini": tetap gradient biru (identitas), aksen kuning tetap — */
+    body.light-mode .summary-shape { box-shadow: 0 10px 28px rgba(30,99,233,0.28) !important; }
+
+    /* — Splash & header tidak diubah (identitas brand: biru tua + putih/kuning tetap) — */
   </style>
 </head>
 <body>
