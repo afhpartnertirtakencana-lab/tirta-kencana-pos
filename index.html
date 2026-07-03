@@ -257,6 +257,9 @@
       font-weight:800;
     }
     body[data-page="rekapsetoran"] table input { font-size:0.82rem !important; font-weight:600; }
+    /* [FIX] Menu Pelanggan: paksa warna teks tabel ikut var(--text) supaya tetap
+       terang & terbaca saat Dark Mode (default), tanpa mengubah rule lain. */
+    body[data-page="pelanggan"] table td, body[data-page="pelanggan"] table th { color:var(--text); }
     .table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
     table { width:100%; border-collapse:collapse; font-size:0.7rem; }
     th,td { padding:6px 8px; text-align:left; border-bottom:1px solid rgba(0,168,232,0.12); }
@@ -1609,6 +1612,7 @@
     function resetTrx() { loadPenjualan(); }
     async function submitTrx() {
       const id = document.getElementById('trxId').value.trim(), tgl = document.getElementById('trxTgl').value, customer = document.getElementById('trxCust').value.trim(), sales = document.getElementById('trxSales').value, status = document.getElementById('trxStatus').value, gDisc = parseFloat(document.getElementById('trxDiscGlobal').value) || 0, items = getItems();
+      if (allTrxList.some(t => t.id === id)) return Swal.fire('Info', 'Transaksi dengan ID '+id+' sudah diinput!', 'info');
       if (!customer) return Swal.fire('Error', 'Nama pelanggan wajib diisi!', 'error');
       if (!sales) return Swal.fire('Error', 'Sales wajib dipilih!', 'error');
       if (!status) return Swal.fire('Error', 'Status transaksi wajib dipilih!', 'error');
@@ -3547,6 +3551,7 @@
     function getInputItems() { const rows = document.querySelectorAll('#inputItemsContainer .cart-item-row'); const items = []; rows.forEach(row => { const sel = row.querySelector('select'); const inputs = row.querySelectorAll('input'); const sku = sel.value; const p = products.find(x => x.sku === sku); if (!sku || !p) return; const qty = parseInt(inputs[0].value)||0, hargaModal = parseFloat(inputs[1].value)||0, disc = parseFloat(inputs[2].value)||0; if (qty > 0) items.push({ sku, nama: p.nama, qty, hargaModal, disc, netModal: (hargaModal - disc) * qty }); }); return items; }
     async function saveStockIn() { 
       const inpId = document.getElementById('inpId').value.trim(), driver = document.getElementById('inpDriver').value, rit = document.getElementById('inpRit').value.trim(), status = document.getElementById('inpStatus').value; 
+      if (stockInHistory.some(e => e.groupId === inpId)) return Swal.fire('Info', 'Input Barang dengan ID '+inpId+' sudah diinput!', 'info');
       if (!driver) return Swal.fire('Error','Driver wajib dipilih!','error');
       if (!rit) return Swal.fire('Error','Rit wajib diisi!','error');
       if (!status) return Swal.fire('Error','Status wajib dipilih!','error');
@@ -3726,7 +3731,7 @@
 
     // ========== PELANGGAN ==========
     function loadPelanggan() { document.getElementById('contentArea').innerHTML = `<div class="card"><div class="flex-between mb-2"><div class="card-title"><i class="fas fa-address-book"></i> Daftar Pelanggan</div><button class="btn btn-primary btn-sm" onclick="addPelanggan()">+ Tambah</button></div><div class="table-wrap"><table><thead><tr><th>#</th><th>Nama</th><th>Aksi</th></tr></thead><tbody id="pelangganTbody"></tbody></table></div></div>`; renderPelangganList(); }
-    function renderPelangganList() { const tb = document.getElementById('pelangganTbody'); if (!tb) return; if (!allCustomers.length) { tb.innerHTML = '<tr><td colspan="3" class="text-center text-sm" style="padding:32px">Belum ada pelanggan</div></tr>'; return; } tb.innerHTML = allCustomers.map((c,i) => `<td>${i+1}</div><td class="fw-bold">${esc(c)}</div><td><button class="btn btn-sm btn-danger" onclick="deletePelanggan(${i})">🗑</button></div></tr>`).join(''); }
+    function renderPelangganList() { const tb = document.getElementById('pelangganTbody'); if (!tb) return; if (!allCustomers.length) { tb.innerHTML = '<tr><td colspan="3" class="text-center text-sm" style="padding:32px">Belum ada pelanggan</div></tr>'; return; } tb.innerHTML = allCustomers.map((c,i) => `<tr><td>${i+1}</td><td class="fw-bold">${esc(c)}</td><td><button class="btn btn-sm btn-danger" onclick="deletePelanggan(${i})">🗑</button></td></tr>`).join(''); }
     function addPelanggan() { Swal.fire({ title:'Tambah Pelanggan', input:'text', inputLabel:'Nama pelanggan', showCancelButton:true }).then(r => { if (r.isConfirmed && r.value) { const name = r.value.trim(); if (!allCustomers.includes(name)) { allCustomers.push(name); pelanggan = allCustomers.slice(); saveLocalData(); renderPelangganList(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Pelanggan ditambahkan' }); } else Swal.fire('Info','Sudah ada','info'); } }); }
     function deletePelanggan(idx) { Swal.fire({ title:'Hapus?', text:'Hapus '+allCustomers[idx]+'?', icon:'warning', showCancelButton:true }).then(r => { if (r.isConfirmed) { allCustomers.splice(idx,1); pelanggan = allCustomers.slice(); saveLocalData(); renderPelangganList(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Pelanggan dihapus' }); } }); }
 
