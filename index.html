@@ -700,6 +700,15 @@
       .card, .menu-circle, .action-card, .tab, .btn {
         transition: background 0.15s linear, border-color 0.15s linear !important;
       }
+      /* [NEW] Matikan animasi berat saat pindah menu di HP agar terasa instan/tidak lag:
+         - .tab.active punya animasi infinite (glowPulse) yang terus jalan tanpa henti
+           dan membebani GPU terus-menerus, bukan cuma saat tap.
+         - .card & .content-area ikut animasi "masuk" (fade/slide) setiap kali menu
+           diganti, karena elemen .card baru selalu dibuat ulang lewat innerHTML.
+         Ini murni mematikan animasi dekoratif, tidak mengubah fungsi/logika apa pun. */
+      .tab.active { animation: none !important; }
+      .card { animation: none !important; }
+      .content-area { animation: none !important; }
     }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
