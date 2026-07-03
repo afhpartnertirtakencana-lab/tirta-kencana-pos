@@ -176,7 +176,6 @@
       backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
       border-bottom: 1px solid var(--glass-border);
       scrollbar-width: thin; scrollbar-color: rgba(0,168,232,0.4) transparent;
-      -webkit-overflow-scrolling: touch; touch-action: pan-x;
     }
     .menu-tabs::-webkit-scrollbar { height: 4px; }
     .menu-tabs::-webkit-scrollbar-track { background: transparent; }
@@ -196,7 +195,7 @@
       color:white; border-color:transparent;
       box-shadow: 0 4px 12px rgba(0,80,158,0.4), var(--glow);
     }
-    .content-area { flex:1; padding:12px; overflow-y:auto; min-height:0; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; }
+    .content-area { flex:1; padding:12px; overflow-y:auto; max-height:calc(100vh - 280px); }
     .card {
       background: rgba(0,30,65,0.55);
       backdrop-filter: blur(16px) saturate(1.3);
@@ -399,7 +398,7 @@
       backdrop-filter:blur(6px); border-radius:10px; padding:10px; margin:10px 0; font-size:0.7rem;
     }
     .section-title { font-size:0.7rem; font-weight:700; color:#00D1FF; margin:12px 0 6px 0; padding-bottom:4px; border-bottom:2px solid rgba(0,209,255,0.35); }
-    .sub-tabs { display:flex; overflow-x:auto; gap:4px; margin-bottom:10px; -webkit-overflow-scrolling: touch; touch-action: pan-x; }
+    .sub-tabs { display:flex; overflow-x:auto; gap:4px; margin-bottom:10px; }
     .sub-tab {
       flex:0 0 auto; padding:5px 10px; border-radius:15px;
       border:1px solid var(--glass-border);
@@ -673,51 +672,6 @@
       background: rgba(255,255,255,0.95) !important;
     }
     .login-card input::placeholder { color:#8fb4cc; }
-
-    /* ================================================================
-       [NEW] MOBILE PERFORMANCE OPTIMIZATION — supaya scroll lebih
-       responsif, smooth, dan ringan di HP dengan spek rendah.
-       backdrop-filter (blur kaca) & text-shadow glow adalah operasi
-       paling berat untuk GPU saat scroll berlangsung; di layar kecil/
-       layar sentuh, efeknya dikurangi drastis tanpa menghapus warna/
-       elemen aslinya. Hanya aktif via media query, tidak menyentuh
-       tampilan desktop maupun aturan CSS yang sudah ada.
-       ================================================================ */
-    @media (max-width: 768px), (pointer: coarse) {
-      .app-container, .header, .nav-bar, .menu-tabs, .card, .modal,
-      .bottom-bar, .login-card, .menu-circle, .action-card, #syncStatus {
-        backdrop-filter: blur(6px) !important;
-        -webkit-backdrop-filter: blur(6px) !important;
-      }
-      .menu-grid .menu-circle-item .menu-circle i,
-      .summary-item i, .card-title i,
-      .kencana, .summary-shape .summary-title {
-        text-shadow: none !important;
-      }
-      .card:hover, .action-card:hover, .menu-circle:hover, .tab:hover {
-        transform: none !important;
-      }
-      .card, .menu-circle, .action-card, .tab, .btn {
-        transition: background 0.15s linear, border-color 0.15s linear !important;
-      }
-      /* [NEW] Matikan animasi berat saat pindah menu di HP agar terasa instan/tidak lag:
-         - .tab.active punya animasi infinite (glowPulse) yang terus jalan tanpa henti
-           dan membebani GPU terus-menerus, bukan cuma saat tap.
-         - .card & .content-area ikut animasi "masuk" (fade/slide) setiap kali menu
-           diganti, karena elemen .card baru selalu dibuat ulang lewat innerHTML.
-         Ini murni mematikan animasi dekoratif, tidak mengubah fungsi/logika apa pun. */
-      .tab.active { animation: none !important; }
-      .card { animation: none !important; }
-      .content-area { animation: none !important; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-        scroll-behavior: auto !important;
-      }
-    }
   </style>
 </head>
 <body>
@@ -1224,7 +1178,6 @@
       try { await syncSetoranHistoryFromGAS(); } catch(e) {} // [NEW] pastikan riwayat setoran juga dari Google Sheets saat login/refresh
       startAutoSync(15); // Auto-sync setiap 15 detik
       initPullToRefresh(); // Aktifkan pull-to-refresh
-      startAutoRolloverScheduler(); // [NEW] Rollover stok otomatis tiap pukul 00:00
       navigateTo('dashboard');
     }
 
@@ -3356,71 +3309,6 @@
       } else {
         Swal.fire({ icon: 'error', title: 'Gagal', text: 'Semua SKU gagal di-rollover. Periksa fungsi updateStockAwal di GAS.' });
       }
-    }
-
-    // ================================================================
-    // [NEW] AUTO ROLLOVER STOK — dijalankan otomatis setiap pukul 00:00,
-    // memakai ulang logika perhitungan yang sama seperti tombol manual
-    // "🔄 Rollover Stok" (rolloverStokAwal), tapi tanpa dialog konfirmasi
-    // (berjalan diam-diam di background). Fungsi rolloverStokAwal() yang
-    // sudah ada TIDAK diubah sama sekali.
-    // ================================================================
-    async function autoRolloverStokAwal() {
-      try {
-        const today = localDateStr();
-        const _kemarin = new Date(); _kemarin.setDate(_kemarin.getDate() - 1);
-        const kemarin = localDateStr(_kemarin);
-
-        // Jangan timpa kalau stok hari ini sudah ada (mis. sudah pernah di-rollover)
-        const dataHariIni = _stockBarangAll.filter(d => (d.date||'').substring(0,10) === today);
-        if (dataHariIni.length > 0) { console.log('[AutoRollover] Stok hari ini sudah ada, dilewati.'); return; }
-
-        const dataKemarin = _stockBarangAll.filter(d => (d.date||'').substring(0,10) === kemarin);
-        if (!dataKemarin.length) { console.log('[AutoRollover] Tidak ada data stok kemarin, dilewati.'); return; }
-
-        await ensureTrxItemsForDates([kemarin]);
-        const keluarMapKemarin = buildKeluarMapFromTrx([kemarin]);
-        const rolloverData = dataKemarin.map(d => {
-          const recordsForDate = stockInHistory.filter(s => (s.date||s.tgl||'').substring(0,10) === kemarin && s.sku === d.sku);
-          const localMasuk = recordsForDate.filter(s => (s.status||'').toLowerCase() === 'kiriman').reduce((sum, s) => sum + (s.qty||0), 0);
-          const masuk = recordsForDate.length > 0 ? localMasuk : (d.masuk||0);
-          const keluarKemarin = keluarMapKemarin.get(kemarin + '|' + d.sku) || 0;
-          const stokAkhirKemarin = (d.stokAwal||0) + masuk - keluarKemarin;
-          return { date: today, sku: d.sku, nama: d.nama, stokAwal: stokAkhirKemarin, masuk: 0, keluar: 0 };
-        });
-
-        let berhasil = 0, gagal = 0;
-        for (const r of rolloverData) {
-          try { await gasCall('updateStockAwal', [r]); berhasil++; }
-          catch(e) { console.warn('[AutoRollover] Gagal rollover SKU', r.sku, e); gagal++; }
-        }
-        console.log(`[AutoRollover] Selesai: ${berhasil} berhasil, ${gagal} gagal.`);
-
-        if (berhasil > 0) {
-          try {
-            const data = await gasCall('getStockBarang', []);
-            if (Array.isArray(data)) { _stockBarangAll = data; if (currentPage === 'stockbarang') doStockBarang(); }
-          } catch(e) { console.warn('[AutoRollover] Gagal reload stock:', e); }
-          if (typeof Swal !== 'undefined') {
-            Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:3000, icon: gagal>0?'warning':'success', title:`Rollover stok otomatis (${today}): ${berhasil} SKU${gagal>0?', '+gagal+' gagal':''}` });
-          }
-        }
-      } catch(e) { console.warn('[AutoRollover] Error:', e); }
-    }
-
-    // Cek tiap 1 menit; jalankan tepat sekali saat jam menunjukkan 00:00 (per hari)
-    function startAutoRolloverScheduler() {
-      const checkAndRun = () => {
-        const now = new Date();
-        const todayStr = localDateStr();
-        const lastRun = localStorage.getItem('tirtaLastAutoRollover');
-        if (now.getHours() === 0 && now.getMinutes() === 0 && lastRun !== todayStr) {
-          localStorage.setItem('tirtaLastAutoRollover', todayStr);
-          autoRolloverStokAwal();
-        }
-      };
-      checkAndRun();
-      setInterval(checkAndRun, 60000);
     }
 
     function addItemInputRow(skuVal) { let pOpts = '<option value="">-- pilih --</option>'; products.forEach(p => { pOpts += `<option value="${p.sku}">${p.sku} - ${p.nama}</option>`; }); const div = document.createElement('div'); div.className = 'cart-item-row'; div.innerHTML = `<select class="cart-item-select" style="flex:2;min-width:100px" onchange="isiModalInputRow(this)">${pOpts}</select><input class="cart-qty" type="number" min="1" value="1" style="width:50px" oninput="recalcInputTotals()"><input class="cart-disc" type="number" min="0" value="0" placeholder="Harga Modal" readonly style="width:70px;background:var(--biru-muda)"><input class="cart-disc" type="number" min="0" value="" placeholder="Disc" style="width:55px" oninput="recalcInputTotals()"><button class="btn btn-danger btn-sm" onclick="this.parentElement.remove();recalcInputTotals()">✕</button>`; document.getElementById('inputItemsContainer').appendChild(div); if (skuVal) { const sel = div.querySelector('select'); sel.value = skuVal; isiModalInputRow(sel); } recalcInputTotals(); }
