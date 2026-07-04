@@ -3760,6 +3760,9 @@
           <div class="section-title">🔗 Google Apps Script URL</div>
           <div class="form-group"><label>URL GAS (Google Apps Script)</label><input id="setGasUrl" placeholder="https://script.google.com/macros/s/..." style="font-size:0.65rem"></div>
           <div class="flex-row"><button class="btn btn-primary" style="flex:1" onclick="saveGasUrl()"><i class="fas fa-link"></i> Simpan URL</button><button class="btn btn-outline btn-sm" onclick="testGasConnection()"><i class="fas fa-plug"></i> Test Koneksi</button></div>
+          <div class="section-title">🗂️ Spreadsheet ID</div>
+          <div class="form-group"><label>SPREADSHEET_ID</label><input id="setSpreadsheetId" placeholder="ID Google Spreadsheet" style="font-size:0.65rem"></div>
+          <div class="flex-row"><button class="btn btn-primary" style="flex:1" onclick="saveSpreadsheetId()"><i class="fas fa-save"></i> Simpan Spreadsheet ID</button></div>
           <div class="section-title">💾 Backup & Restore</div><div class="flex-row"><button class="btn btn-warning" style="flex:1" onclick="backupData()"><i class="fas fa-download"></i> Backup</button><button class="btn btn-danger" style="flex:1" onclick="restoreData()"><i class="fas fa-upload"></i> Restore</button></div>
         </div>`;
       document.getElementById('setNamaToko').value=settings.namaToko||''; document.getElementById('setTagline').value=settings.tagline||''; document.getElementById('setAlamat').value=settings.alamat||''; document.getElementById('setTelepon').value=settings.telepon||''; document.getElementById('setFooter').value=settings.bottomLine||''; document.getElementById('setB1Nama').value=settings.bank1?.nama||''; document.getElementById('setB1Norek').value=settings.bank1?.norek||''; document.getElementById('setB1Penerima').value=settings.bank1?.penerima||''; document.getElementById('setB2Nama').value=settings.bank2?.nama||''; document.getElementById('setB2Norek').value=settings.bank2?.norek||''; document.getElementById('setB2Penerima').value=settings.bank2?.penerima||''; 
@@ -3768,6 +3771,8 @@
       renderSalesTags(); renderDriverTags(); renderUserList();
       const gasUrlEl = document.getElementById('setGasUrl');
       if (gasUrlEl) gasUrlEl.value = localStorage.getItem('tirtaGasUrl') || DEFAULT_GAS_URL;
+      const ssIdEl = document.getElementById('setSpreadsheetId');
+      if (ssIdEl) ssIdEl.value = localStorage.getItem('tirtaSpreadsheetId') || '';
     }
 
     function saveGasUrl() {
@@ -3776,6 +3781,13 @@
       localStorage.setItem('tirtaGasUrl', v);
       GAS_URL = v;
       Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:2000, icon:'success', title:'URL GAS disimpan!' });
+    }
+
+    function saveSpreadsheetId() {
+      const v = document.getElementById('setSpreadsheetId').value.trim();
+      if (!v) return Swal.fire('Error','Spreadsheet ID tidak boleh kosong!','error');
+      localStorage.setItem('tirtaSpreadsheetId', v);
+      Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:2000, icon:'success', title:'Spreadsheet ID disimpan!' });
     }
 
     async function testGasConnection() {
