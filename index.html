@@ -607,6 +607,8 @@
 
     /* ── Tombol toggle mode: warna berubah sesuai mode aktif ── */
     .btn-darkmode.is-light { background: rgba(255,193,7,0.18); color:#b8860b; border-color: rgba(255,193,7,0.4); }
+    /* [NEW] Badge notifikasi di atas ikon lonceng */
+    .notif-badge { position:absolute; top:-4px; right:-4px; background:#EF4444; color:#fff; font-size:9px; font-weight:700; min-width:16px; height:16px; border-radius:8px; align-items:center; justify-content:center; padding:0 3px; line-height:16px; }
 
     /* ================================================================
        [NEW] GLASSMORPHISM + WARNA-WARNI untuk ikon menu dashboard.
@@ -907,6 +909,7 @@
       <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
         <button class="btn-install" id="installBtn" onclick="installApp()" title="Install App">📲</button>
         <button class="btn-darkmode" onclick="toggleDarkMode()" title="Dark Mode">🌙</button>
+        <button class="btn-refresh" onclick="showNotifications()" title="Notifikasi" style="position:relative">🔔<span id="notifBadge" class="notif-badge" style="display:none">0</span></button>
         <span id="syncStatus" style="font-size:0.6rem;color:var(--text3);padding:2px 6px;background:var(--biru-muda);border-radius:8px">Manual</span><button class="btn-refresh" onclick="_nextSyncTime=Date.now()+AUTO_SYNC_INTERVAL;syncFromGAS()" title="Sinkron Manual">🔄</button>
         <button class="btn-logout" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i></button>
       </div>
@@ -1342,7 +1345,7 @@
       if (settings.alamat) document.getElementById('headerAlamat').textContent = settings.alamat;
       const _effectiveLogo = localStorage.getItem('tirtaLogo') || _logoUrl;
       if (_effectiveLogo) { _logoUrl = _effectiveLogo; document.getElementById('logoImg').src = _effectiveLogo; }
-      initDarkMode(); renderMenuTabs();
+      initDarkMode(); loadNotifications(); renderMenuTabs();
       // Sync sekali saat login
       try { await syncFromGAS(); } catch(e) {}
       try { await syncSetoranHistoryFromGAS(); } catch(e) {} // [NEW] pastikan riwayat setoran juga dari Google Sheets saat login/refresh
@@ -1350,6 +1353,38 @@
       initPullToRefresh(); // Aktifkan pull-to-refresh
       startAutoRolloverScheduler(); // [NEW] Rollover stok otomatis tiap pukul 00:00
       navigateTo('dashboard');
+    }
+
+    // [NEW] Sistem Notifikasi Aktivitas (transaksi jual baru, input barang baru, dll)
+    let appNotifications = [];
+    function loadNotifications() { try { appNotifications = JSON.parse(localStorage.getItem('tirtaNotifications') || '[]'); } catch(e) { appNotifications = []; } renderNotifBadge(); }
+    function saveNotifications() { localStorage.setItem('tirtaNotifications', JSON.stringify(appNotifications.slice(0,100))); }
+    function addNotification(icon, title, detail) {
+      appNotifications.unshift({ id: Date.now()+'-'+Math.random().toString(36).slice(2,7), icon, title, detail, time: new Date().toISOString(), read: false });
+      saveNotifications();
+      renderNotifBadge();
+    }
+    function renderNotifBadge() {
+      const b = document.getElementById('notifBadge');
+      if (!b) return;
+      const unread = appNotifications.filter(n => !n.read).length;
+      if (unread > 0) { b.textContent = unread > 99 ? '99+' : unread; b.style.display = 'flex'; } else { b.style.display = 'none'; }
+    }
+    function showNotifications() {
+      let html = '';
+      if (appNotifications.length === 0) {
+        html = '<p class="text-sm text-center">Belum ada notifikasi</p>';
+      } else {
+        html = '<div style="max-height:400px;overflow-y:auto;text-align:left">' + appNotifications.map(n => {
+          const t = new Date(n.time);
+          const timeStr = String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0')+' · '+String(t.getDate()).padStart(2,'0')+'/'+String(t.getMonth()+1).padStart(2,'0');
+          return `<div style="padding:8px 0;border-bottom:1px solid var(--border);${n.read?'opacity:0.6':''}"><div style="font-weight:700;font-size:0.8rem">${n.icon||'🔔'} ${esc(n.title)}</div><div style="font-size:0.72rem;color:var(--text2);margin-top:2px">${esc(n.detail||'')}</div><div style="font-size:0.65rem;color:var(--text3);margin-top:2px">${timeStr}</div></div>`;
+        }).join('') + '</div>';
+      }
+      appNotifications.forEach(n => n.read = true);
+      saveNotifications();
+      Swal.fire({ title: '🔔 Notifikasi', html, width:'420px', confirmButtonText:'Tutup' }).then(() => renderNotifBadge());
+      renderNotifBadge();
     }
 
     function toggleDarkMode() { document.body.classList.toggle('light-mode'); const l = document.body.classList.contains('light-mode'); localStorage.setItem('tirtaDarkMode', l ? '1' : '0'); const b = document.querySelector('.btn-darkmode'); if (b) { b.textContent = l ? '🌙' : '☀️'; b.classList.toggle('is-light', l); b.title = l ? 'Mode Gelap' : 'Mode Terang'; } }
@@ -1438,10 +1473,10 @@
           <div class="summary-shape">
             <div class="summary-title">💰 Total Penjualan Hari Ini</div>
             <div class="summary-items">
-              <div class="summary-item"><i class="fas fa-hand-holding-usd"></i><div><div class="label">COD</div><div class="value">${fmtRp(cod)}</div></div></div>
-              <div class="summary-item"><i class="fas fa-university"></i><div><div class="label">Transfer</div><div class="value">${fmtRp(transfer)}</div></div></div>
-              <div class="summary-item"><i class="fas fa-qrcode"></i><div><div class="label">QRIS</div><div class="value">${fmtRp(qris)}</div></div></div>
-              <div class="summary-item"><i class="fas fa-clock"></i><div><div class="label">Belum Bayar</div><div class="value">${fmtRp(belum)}</div></div></div>
+              <div class="summary-item" style="cursor:pointer" onclick="showDashboardStatusDetail('cod')"><i class="fas fa-hand-holding-usd"></i><div><div class="label">COD</div><div class="value">${fmtRp(cod)}</div></div></div>
+              <div class="summary-item" style="cursor:pointer" onclick="showDashboardStatusDetail('transfer')"><i class="fas fa-university"></i><div><div class="label">Transfer</div><div class="value">${fmtRp(transfer)}</div></div></div>
+              <div class="summary-item" style="cursor:pointer" onclick="showDashboardStatusDetail('qris')"><i class="fas fa-qrcode"></i><div><div class="label">QRIS</div><div class="value">${fmtRp(qris)}</div></div></div>
+              <div class="summary-item" style="cursor:pointer" onclick="showDashboardStatusDetail('belumTransfer')"><i class="fas fa-clock"></i><div><div class="label">Belum Bayar</div><div class="value">${fmtRp(belum)}</div></div></div>
             </div>
             <div style="margin-top:10px;text-align:right;font-weight:800;font-size:1rem;">Total: ${fmtRp(total)}</div>
           </div>
@@ -1513,6 +1548,30 @@
       }
 
       document.getElementById('contentArea').innerHTML = h;
+    }
+
+    // [NEW] Detail per sales & customer saat kotak ringkasan dashboard (COD/Transfer/QRIS/Belum Bayar) diklik.
+    // Data diambil dari allTrxList (sumber yang sama dengan menu Rekap), difilter hari ini + status terkait.
+    function showDashboardStatusDetail(status) {
+      const _dn = new Date(); const today = _dn.getFullYear()+'-'+String(_dn.getMonth()+1).padStart(2,'0')+'-'+String(_dn.getDate()).padStart(2,'0');
+      const todayTx = allTrxList.filter(t => (t.tgl||'').substring(0,10) === today && t.status === status);
+      const labelMap = { cod:'💰 COD', transfer:'🏦 Transfer', qris:'📱 QRIS', belumTransfer:'⏰ Belum Bayar' };
+      const grouped = {};
+      todayTx.forEach(t => { const s = t.sales || '—'; if (!grouped[s]) grouped[s] = []; grouped[s].push(t); });
+      const salesNames = Object.keys(grouped).sort();
+      let grandTotal = 0, html = '';
+      if (salesNames.length === 0) {
+        html = '<p class="text-sm text-center">Tidak ada transaksi</p>';
+      } else {
+        salesNames.forEach(s => {
+          const rows = grouped[s];
+          const subtotal = rows.reduce((sum,t) => sum + (t.nett||0), 0);
+          grandTotal += subtotal;
+          html += `<div style="margin-bottom:10px;text-align:left"><div style="font-weight:700;color:var(--biru);margin-bottom:4px">${esc(s)}</div><table style="width:100%;font-size:0.75rem;border-collapse:collapse">${rows.map(t => `<tr><td style="padding:3px 0">${esc(t.customer||'-')}</td><td style="text-align:right;padding:3px 0;font-family:var(--mono)">${fmtRp(t.nett||0)}</td></tr>`).join('')}<tr style="border-top:1px solid var(--border)"><td style="padding:3px 0;font-weight:700">Subtotal</td><td style="text-align:right;padding:3px 0;font-weight:700;font-family:var(--mono)">${fmtRp(subtotal)}</td></tr></table></div>`;
+        });
+        html += `<div style="text-align:right;font-weight:800;margin-top:6px">Total: ${fmtRp(grandTotal)}</div>`;
+      }
+      Swal.fire({ title: (labelMap[status]||status) + ' Hari Ini', html, width:'420px' });
     }
 
     function menuItem(page, label, icon) {
@@ -1629,6 +1688,7 @@
       try { await gasCall('saveTrx', [trx]); } catch(e) { console.warn('Gagal simpan ke GAS:', e); }
       _strKData = { trx, items };
       Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Transaksi tersimpan' });
+      addNotification('🧾', 'Transaksi Baru: '+trx.id, (trx.customer||'-')+' · '+(trx.sales||'-')+' · '+fmtRp(trx.nett||0));
       resetTrx(); showStrukModal(); syncMasterStockToSheet();
     }
 
@@ -3571,6 +3631,7 @@
       saveLocalData(); 
       try { for (const e of entries) await gasCall('saveInputBarang', [e]); } catch(e) { console.warn('Gagal simpan ke GAS:', e); } 
       Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Barang masuk dicatat' }); 
+      addNotification('📦', 'Input Barang Baru: '+inpId, (driver||'-')+' · '+items.length+' item · '+fmtRp(items.reduce((s,it)=>s+it.netModal,0)));
       loadInputBarang(); syncMasterStockToSheet(); 
     }
 
