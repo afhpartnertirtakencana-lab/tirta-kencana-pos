@@ -260,6 +260,9 @@
     /* [FIX] Menu Pelanggan: paksa warna teks tabel ikut var(--text) supaya tetap
        terang & terbaca saat Dark Mode (default), tanpa mengubah rule lain. */
     body[data-page="pelanggan"] table td, body[data-page="pelanggan"] table th { color:var(--text); }
+    /* [FIX] Dialog SweetAlert2 (mis. "Tambah Pelanggan"): teks input mengikuti
+       tema aplikasi -> putih saat Dark Mode (default), hitam saat Light Mode. */
+    .swal2-input, .swal2-textarea, .swal2-select { color:var(--text) !important; }
     .table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
     table { width:100%; border-collapse:collapse; font-size:0.7rem; }
     th,td { padding:6px 8px; text-align:left; border-bottom:1px solid rgba(0,168,232,0.12); }
@@ -1007,7 +1010,7 @@
       { name:'padong', role:'driver', password:'1234'   },
       { name:'said',   role:'driver', password:'1234'   },
       { name:'dedi',   role:'driver', password:'1234'   },
-      { name:'zehpudin', role:'driver', password:'1234'   }
+      { name:'tirta', role:'admin', password:'888999' }
     ];
     let _logoUrl = localStorage.getItem('tirtaLogo') || EMBEDDED_LOGO; // [UPDATED] fallback ke logo tertanam, mekanisme sama seperti _qrisUrl
     let _qrisUrl = '';
@@ -1163,7 +1166,7 @@
         { name:'padong', role:'driver', password:'1234'   },
         { name:'said',   role:'driver', password:'1234'   },
         { name:'dedi',   role:'driver', password:'1234'   },
-        { name:'zehpudin', role:'driver', password:'1234' }
+        { name:'tirta', role:'admin', password:'888999' }
       ];
       const _masterUsers = [
         { name:'admin',  role:'admin',  password:'020730' },
@@ -1173,7 +1176,7 @@
         { name:'padong', role:'driver', password:'1234'   },
         { name:'said',   role:'driver', password:'1234'   },
         { name:'dedi',   role:'driver', password:'1234'   },
-        { name:'zehpudin', role:'driver', password:'1234' }
+        { name:'tirta', role:'admin', password:'888999' }
       ];
       _masterUsers.forEach(mu => { if (!allUsers.find(u => u.name === mu.name)) allUsers.push(mu); });
       _logoUrl = localStorage.getItem('tirtaLogo') || EMBEDDED_LOGO; // [UPDATED] fallback ke logo tertanam
@@ -1236,7 +1239,7 @@
           { name:'padong', role:'driver', password:'1234'   },
           { name:'said',   role:'driver', password:'1234'   },
           { name:'dedi',   role:'driver', password:'1234'   },
-          { name:'zehpudin', role:'driver', password:'1234' }
+          { name:'tirta', role:'admin', password:'888999' }
         ];
         _syncBuiltin.forEach(mu => { if (!allUsers.find(u => u.name === mu.name)) allUsers.push(mu); });
         // Ambil drivers dari sheet Driver (prioritas) atau fallback dari allUsers
@@ -1308,7 +1311,7 @@
           { name:'padong',   role:'driver', password:'1234'   },
           { name:'said',     role:'driver', password:'1234'   },
           { name:'dedi',     role:'driver', password:'1234'   },
-          { name:'zehpudin', role:'driver', password:'1234'   }
+          { name:'tirta', role:'admin', password:'888999' }
         ];
       }
       const _builtinUsers = [
@@ -1319,7 +1322,7 @@
         { name:'padong', role:'driver', password:'1234'   },
         { name:'said',   role:'driver', password:'1234'   },
         { name:'dedi',   role:'driver', password:'1234'   },
-        { name:'zehpudin', role:'driver', password:'1234' }
+        { name:'tirta', role:'admin', password:'888999' }
       ];
       _builtinUsers.forEach(mu => { if (!allUsers.find(u => u.name === mu.name)) allUsers.push(mu); });
       const f = allUsers.find(x => x.name === u && x.password === p); 
@@ -3949,7 +3952,7 @@ if ('serviceWorker' in navigator) {
         { name:'padong', role:'driver', password:'1234'   },
         { name:'said',   role:'driver', password:'1234'   },
         { name:'dedi',   role:'driver', password:'1234'   },
-        { name:'zehpudin', role:'driver', password:'1234' }
+        { name:'tirta', role:'admin', password:'888999' }
       ];
       saveLocalData();
     }
