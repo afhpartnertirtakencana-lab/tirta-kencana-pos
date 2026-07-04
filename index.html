@@ -1197,6 +1197,8 @@
       const el = document.getElementById('syncStatus');
       if (el) el.textContent = '🔄 Sync...';
       _syncCountdown = 30;
+      const _oldTrxIds = new Set(allTrxList.map(t => t.id));
+      const _oldStockGroupIds = new Set(stockInHistory.map(e => e.groupId));
       try {
         const [prod, cust, trx, set, users, stockIn, gasDrivers] = await Promise.all([
           gasCall('getProducts', []), gasCall('getCustomers', []),
@@ -1251,6 +1253,19 @@
         } else {
           const driverNames = allUsers.filter(u => u.role === 'driver').map(u => u.name);
           if (driverNames.length > 0) drivers = driverNames;
+        }
+        // [NEW] Deteksi transaksi/input barang baru dari device LAIN saat sync (baseline dulu di sync pertama, biar tidak spam data lama)
+        const _notifBaselineDone = localStorage.getItem('tirtaNotifBaseline') === '1';
+        if (!_notifBaselineDone) {
+          localStorage.setItem('tirtaNotifBaseline', '1');
+        } else {
+          if (Array.isArray(trx)) {
+            trx.filter(t => !_oldTrxIds.has(t.id)).forEach(t => addNotification('🧾', 'Transaksi Baru: '+t.id, (t.customer||'-')+' · '+(t.sales||'-')+' · '+fmtRp(t.nett||0)));
+          }
+          if (Array.isArray(stockIn) && stockIn.length > 0) {
+            const _newGroupIds = new Set(stockIn.filter(e => !_oldStockGroupIds.has(e.groupId)).map(e => e.groupId));
+            _newGroupIds.forEach(gid => { const rows = stockIn.filter(e => e.groupId === gid); addNotification('📦', 'Input Barang Baru: '+gid, (rows[0]?.driver||'-')+' · '+rows.length+' item'); });
+          }
         }
         saveLocalData();
         if (currentPage === 'dashboard' || currentPage === 'transaksi' || currentPage === 'produk' || currentPage === 'gudang') renderContent();
@@ -1358,9 +1373,10 @@
     // [NEW] Sistem Notifikasi Aktivitas (transaksi jual baru, input barang baru, dll)
     let appNotifications = [];
     function loadNotifications() { try { appNotifications = JSON.parse(localStorage.getItem('tirtaNotifications') || '[]'); } catch(e) { appNotifications = []; } renderNotifBadge(); }
-    function saveNotifications() { localStorage.setItem('tirtaNotifications', JSON.stringify(appNotifications.slice(0,100))); }
+    function saveNotifications() { localStorage.setItem('tirtaNotifications', JSON.stringify(appNotifications.slice(0,10))); }
     function addNotification(icon, title, detail) {
       appNotifications.unshift({ id: Date.now()+'-'+Math.random().toString(36).slice(2,7), icon, title, detail, time: new Date().toISOString(), read: false });
+      if (appNotifications.length > 10) appNotifications.length = 10; // maksimal 10, yang paling lama otomatis terbuang
       saveNotifications();
       renderNotifBadge();
     }
@@ -2390,11 +2406,21 @@
     }
 
     function tandaiLunas(id) {
-      Swal.fire({title:'Tandai Lunas?',text:'Ubah status transaksi ini ke Transfer?',icon:'question',showCancelButton:true,confirmButtonText:'Ya, Lunas',cancelButtonText:'Batal'}).then(async r=>{
-        if(!r.isConfirmed) return;
+      Swal.fire({
+        title: 'Tandai Lunas',
+        text: 'Pilih metode pembayaran:',
+        input: 'radio',
+        inputOptions: { cod: '💰 COD', transfer: '🏦 Transfer', qris: '📱 QRIS' },
+        inputValidator: (v) => !v && 'Pilih salah satu metode pembayaran!',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Lunas',
+        cancelButtonText: 'Batal'
+      }).then(async r => {
+        if (!r.isConfirmed || !r.value) return;
+        const statusBaru = r.value;
         const idx = allTrxList.findIndex(t=>t.id===id);
-        if(idx>=0) { allTrxList[idx].status='transfer'; saveLocalData(); }
-        try { await gasCall('updateStatus',[id,'transfer']); Swal.fire({toast:true,position:'top-end',showConfirmButton:false,timer:1500,icon:'success',title:'Status diubah ke Transfer'}); } catch(e) { console.warn(e); }
+        if(idx>=0) { allTrxList[idx].status=statusBaru; saveLocalData(); }
+        try { await gasCall('updateStatus',[id,statusBaru]); Swal.fire({toast:true,position:'top-end',showConfirmButton:false,timer:1500,icon:'success',title:'Status diubah ke '+(statusBaru==='cod'?'COD':statusBaru==='qris'?'QRIS':'Transfer')}); } catch(e) { console.warn(e); }
         loadPiutang();
       });
     }
