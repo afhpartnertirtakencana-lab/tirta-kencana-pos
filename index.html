@@ -607,6 +607,50 @@
 
     /* ── Tombol toggle mode: warna berubah sesuai mode aktif ── */
     .btn-darkmode.is-light { background: rgba(255,193,7,0.18); color:#b8860b; border-color: rgba(255,193,7,0.4); }
+    /* [NEW] Claymorphism untuk popup Tandai Lunas & Notifikasi */
+    .clay-popup {
+      border-radius: 32px !important;
+      background: var(--card) !important;
+      box-shadow: 12px 12px 24px rgba(0,0,0,0.35), -10px -10px 22px rgba(255,255,255,0.06), inset 2px 2px 4px rgba(255,255,255,0.10) !important;
+      border: none !important;
+    }
+    body.light-mode .clay-popup {
+      background: #EAF1FB !important;
+      box-shadow: 10px 10px 22px rgba(30,99,233,0.16), -10px -10px 22px rgba(255,255,255,0.85), inset 2px 2px 3px rgba(255,255,255,0.6) !important;
+    }
+    .clay-btn {
+      border-radius: 20px !important;
+      border: none !important;
+      font-weight: 700 !important;
+      box-shadow: 5px 5px 12px rgba(0,0,0,0.28), -5px -5px 12px rgba(255,255,255,0.08) !important;
+    }
+    .clay-btn-confirm { background: linear-gradient(145deg, #3fa9f5, #1A6DB5) !important; }
+    .clay-btn-cancel { background: linear-gradient(145deg, #7d8ba1, #565f75) !important; }
+    .clay-option {
+      display: flex; align-items: center; gap: 10px; padding: 14px 18px;
+      border-radius: 20px; background: var(--surface2); cursor: pointer;
+      font-weight: 700; font-size: 0.85rem; color: var(--text);
+      box-shadow: 6px 6px 14px rgba(0,0,0,0.30), -6px -6px 14px rgba(255,255,255,0.05), inset 1px 1px 2px rgba(255,255,255,0.06);
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+    }
+    .clay-option:active { transform: scale(0.97); }
+    .clay-option.selected {
+      background: linear-gradient(145deg, #3fa9f5, #1A6DB5); color:#fff;
+      box-shadow: inset 4px 4px 8px rgba(0,0,0,0.25), inset -4px -4px 8px rgba(255,255,255,0.10);
+    }
+    body.light-mode .clay-option {
+      background: #F3F8FF; color: var(--text);
+      box-shadow: 6px 6px 14px rgba(30,99,233,0.14), -6px -6px 14px rgba(255,255,255,0.9), inset 1px 1px 2px rgba(255,255,255,0.7);
+    }
+    body.light-mode .clay-option.selected { background: linear-gradient(145deg, #3fa9f5, #1A6DB5) !important; color:#fff !important; }
+    .clay-notif-item {
+      border-radius: 20px; padding: 12px 16px; margin-bottom: 10px; background: var(--surface2);
+      box-shadow: 6px 6px 14px rgba(0,0,0,0.28), -6px -6px 14px rgba(255,255,255,0.05);
+    }
+    body.light-mode .clay-notif-item {
+      background: #F3F8FF;
+      box-shadow: 6px 6px 14px rgba(30,99,233,0.12), -6px -6px 14px rgba(255,255,255,0.85);
+    }
     /* [NEW] Badge notifikasi di atas ikon lonceng */
     .notif-badge { position:absolute; top:-4px; right:-4px; background:#EF4444; color:#fff; font-size:9px; font-weight:700; min-width:16px; height:16px; border-radius:8px; align-items:center; justify-content:center; padding:0 3px; line-height:16px; }
 
@@ -1408,15 +1452,15 @@
       if (appNotifications.length === 0) {
         html = '<p class="text-sm text-center">Belum ada notifikasi</p>';
       } else {
-        html = '<div style="max-height:400px;overflow-y:auto;text-align:left">' + appNotifications.map(n => {
+        html = '<div style="max-height:400px;overflow-y:auto;text-align:left;padding:2px">' + appNotifications.map(n => {
           const t = new Date(n.time);
           const timeStr = String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0')+' · '+String(t.getDate()).padStart(2,'0')+'/'+String(t.getMonth()+1).padStart(2,'0');
-          return `<div style="padding:8px 0;border-bottom:1px solid var(--border);${n.read?'opacity:0.6':''}"><div style="font-weight:700;font-size:0.8rem">${n.icon||'🔔'} ${esc(n.title)}</div><div style="font-size:0.72rem;color:var(--text2);margin-top:2px">${esc(n.detail||'')}</div><div style="font-size:0.65rem;color:var(--text3);margin-top:2px">${timeStr}</div></div>`;
+          return `<div class="clay-notif-item" style="${n.read?'opacity:0.6':''}"><div style="font-weight:700;font-size:0.8rem">${n.icon||'🔔'} ${esc(n.title)}</div><div style="font-size:0.72rem;color:var(--text2);margin-top:2px">${esc(n.detail||'')}</div><div style="font-size:0.65rem;color:var(--text3);margin-top:4px">${timeStr}</div></div>`;
         }).join('') + '</div>';
       }
       appNotifications.forEach(n => n.read = true);
       saveNotifications();
-      Swal.fire({ title: '🔔 Notifikasi', html, width:'420px', confirmButtonText:'Tutup' }).then(() => renderNotifBadge());
+      Swal.fire({ title: '🔔 Notifikasi', html, width:'420px', confirmButtonText:'Tutup', customClass: { popup: 'clay-popup', confirmButton: 'clay-btn clay-btn-confirm' } }).then(() => renderNotifBadge());
       renderNotifBadge();
     }
 
@@ -2424,16 +2468,26 @@
       if (tbody) tbody.innerHTML = rows.map(t=>{const ag=agingLabel(t.tgl||'');return`<tr><td style="font-size:0.72rem">${fmtDate(t.tgl)}</td><td>${esc(t.customer)}</td><td>${esc(t.sales||'-')}</td><td style="text-align:right;font-family:var(--mono);font-weight:700;color:var(--merah)">${fmtRp(t.nett||0)}</td><td><span style="color:${ag.color};font-weight:700;font-size:0.7rem">${ag.label}</span></td><td><button class="btn btn-sm btn-primary" style="font-size:0.65rem;padding:3px 8px" onclick="tandaiLunas('${t.id}')">✅ Lunas</button></td></tr>`;}).join('');
     }
 
+    function _selectClayPay(el, val) {
+      document.querySelectorAll('.clay-option').forEach(o => o.classList.remove('selected'));
+      el.classList.add('selected');
+      window._clayPaySelected = val;
+    }
     function tandaiLunas(id) {
+      window._clayPaySelected = null;
       Swal.fire({
         title: 'Tandai Lunas',
-        text: 'Pilih metode pembayaran:',
-        input: 'radio',
-        inputOptions: { cod: '💰 COD', transfer: '🏦 Transfer', qris: '📱 QRIS' },
-        inputValidator: (v) => !v && 'Pilih salah satu metode pembayaran!',
+        html: `<p style="margin:0 0 14px;color:var(--text2);font-size:0.85rem">Pilih metode pembayaran:</p>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div class="clay-option" onclick="_selectClayPay(this,'cod')">💰 <span>COD</span></div>
+            <div class="clay-option" onclick="_selectClayPay(this,'transfer')">🏦 <span>Transfer</span></div>
+            <div class="clay-option" onclick="_selectClayPay(this,'qris')">📱 <span>QRIS</span></div>
+          </div>`,
         showCancelButton: true,
         confirmButtonText: 'Ya, Lunas',
-        cancelButtonText: 'Batal'
+        cancelButtonText: 'Batal',
+        customClass: { popup: 'clay-popup', confirmButton: 'clay-btn clay-btn-confirm', cancelButton: 'clay-btn clay-btn-cancel' },
+        preConfirm: () => { if (!window._clayPaySelected) { Swal.showValidationMessage('Pilih salah satu metode pembayaran!'); return false; } return window._clayPaySelected; }
       }).then(async r => {
         if (!r.isConfirmed || !r.value) return;
         const statusBaru = r.value;
