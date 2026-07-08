@@ -86,6 +86,17 @@
     }
     .logo-header img{width:100%;height:100%;object-fit:contain;}
 
+    /* — Header compact (1/2 ukuran, logo kiri atas + teks di samping) — additive, hanya berlaku di dalam .header agar tidak mengubah .brand/.tagline/.alamat/.logo-header global (dipakai di splash & login) — */
+    .header { padding:9px 12px 7px; text-align:left; }
+    .header .header-top-row { display:flex; align-items:center; gap:8px; }
+    .header .logo-header { width:34px; height:34px; margin:0; flex-shrink:0; border-width:1.5px; }
+    .header .header-brand-col { flex:1; min-width:0; }
+    .header .brand { font-size:0.95rem; justify-content:flex-start; gap:4px; letter-spacing:0.5px; }
+    .header .header-info-col { margin-left:42px; }
+    .header .tagline { font-size:0.5rem; margin:2px 0 0; font-weight:700; color:#FFE58A; opacity:1; text-shadow:0 1px 2px rgba(0,0,0,0.3); }
+    .header .alamat { font-size:0.5rem; margin:2px 0 0; font-weight:700; color:#FFFFFF; opacity:1; text-shadow:0 1px 2px rgba(0,0,0,0.3); }
+    .header .wa-info { font-size:0.5rem; margin:1px 0 0; font-weight:700; color:#FFFFFF; opacity:1; text-shadow:0 1px 2px rgba(0,0,0,0.3); }
+
     /* ── NAV BAR ── */
     .nav-bar {
       display:flex; justify-content:space-between; align-items:center;
@@ -626,6 +637,41 @@
     }
     .clay-btn-confirm { background: linear-gradient(145deg, #3fa9f5, #1A6DB5) !important; }
     .clay-btn-cancel { background: linear-gradient(145deg, #7d8ba1, #565f75) !important; }
+    /* [NEW] Popup detail dashboard (COD/Transfer/QRIS/Belum Bayar): background melengkung + glass transparan di dark mode */
+    .dash-status-popup {
+      border-radius: 30px !important;
+      background:
+        radial-gradient(ellipse 60% 45% at 12% 0%, rgba(0,168,232,0.32) 0%, transparent 60%),
+        radial-gradient(ellipse 55% 40% at 95% 12%, rgba(0,209,255,0.24) 0%, transparent 58%),
+        radial-gradient(ellipse 65% 50% at 78% 105%, rgba(0,80,158,0.30) 0%, transparent 60%),
+        linear-gradient(160deg, rgba(0,40,80,0.60), rgba(0,15,40,0.82)) !important;
+      backdrop-filter: blur(24px) saturate(1.4) !important;
+      -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+      border: 1px solid rgba(0,209,255,0.22) !important;
+      box-shadow: 0 20px 60px rgba(0,10,30,0.50), inset 0 1px 0 rgba(255,255,255,0.07) !important;
+      position: relative !important;
+      overflow: hidden !important;
+    }
+    .dash-status-popup::after {
+      content: 'Tirta Kencana'; position: absolute; top: 42%; left: 50%;
+      transform: translate(-50%,-50%) rotate(-6deg);
+      font-family: var(--font); font-size: 2.7rem; font-weight: 800; letter-spacing: 1px;
+      color: rgba(255,255,255,0.05); white-space: nowrap; pointer-events: none; z-index: 0;
+    }
+    .dash-status-popup .swal2-title, .dash-status-popup .swal2-html-container { position: relative; z-index: 1; }
+    .dash-status-popup .swal2-title { color: var(--text) !important; }
+    .dash-status-popup .swal2-close { color: var(--text2) !important; }
+    body.light-mode .dash-status-popup {
+      background:
+        radial-gradient(ellipse 60% 45% at 12% 0%, rgba(0,168,232,0.14) 0%, transparent 60%),
+        radial-gradient(ellipse 55% 40% at 95% 12%, rgba(0,209,255,0.10) 0%, transparent 58%),
+        radial-gradient(ellipse 65% 50% at 78% 105%, rgba(0,80,158,0.10) 0%, transparent 60%),
+        linear-gradient(160deg, rgba(255,255,255,0.92), rgba(235,244,251,0.88)) !important;
+      border: 1px solid rgba(0,80,158,0.14) !important;
+      box-shadow: 0 16px 44px rgba(0,80,158,0.16), inset 0 1px 0 rgba(255,255,255,0.7) !important;
+    }
+    body.light-mode .dash-status-popup::after { color: rgba(0,80,158,0.055); }
+    body.light-mode .dash-status-popup .swal2-title { color:#00509E !important; }
     .clay-option {
       display: flex; align-items: center; gap: 10px; padding: 14px 18px;
       border-radius: 20px; background: var(--surface2); cursor: pointer;
@@ -643,54 +689,6 @@
       box-shadow: 6px 6px 14px rgba(30,99,233,0.14), -6px -6px 14px rgba(255,255,255,0.9), inset 1px 1px 2px rgba(255,255,255,0.7);
     }
     body.light-mode .clay-option.selected { background: linear-gradient(145deg, #3fa9f5, #1A6DB5) !important; color:#fff !important; }
-    /* [NEW] Panel "Alerts" untuk popup Notifikasi, mengikuti referensi desain */
-    .alerts-swal-popup { padding:0 !important; border-radius:28px !important; background:transparent !important; box-shadow:none !important; }
-    .alerts-panel {
-      background: linear-gradient(160deg,#1a2138,#0c1120);
-      border-radius: 28px; padding: 22px 18px 16px; text-align:left;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.45);
-    }
-    body.light-mode .alerts-panel { background: linear-gradient(160deg,#ffffff,#eef3fb); box-shadow: 0 20px 50px rgba(30,99,233,0.15); }
-    .alerts-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
-    .alerts-header h2 { font-size:1.15rem; font-weight:800; color:#fff; margin:0; }
-    body.light-mode .alerts-header h2 { color:var(--biru); }
-    .alerts-clearall { background:rgba(239,68,68,0.18); color:#ff8080; border:none; border-radius:14px; padding:6px 14px; font-size:0.68rem; font-weight:700; cursor:pointer; }
-    body.light-mode .alerts-clearall { background:rgba(239,68,68,0.12); color:#DC2626; }
-    .alerts-tabs { display:flex; gap:6px; background:rgba(255,255,255,0.06); border-radius:14px; padding:4px; margin-bottom:12px; }
-    body.light-mode .alerts-tabs { background:rgba(30,99,233,0.08); }
-    .alerts-tab { flex:1; text-align:center; padding:7px 4px; border-radius:11px; font-size:0.68rem; font-weight:700; color:#8b93a8; cursor:pointer; }
-    .alerts-tab.active { background:#fff; color:#151b2e; }
-    body.light-mode .alerts-tab { color:var(--text2); }
-    body.light-mode .alerts-tab.active { background:var(--biru); color:#fff; }
-    .alerts-list { max-height:340px; overflow-y:auto; display:flex; flex-direction:column; gap:8px; }
-    .alerts-item { display:flex; align-items:center; gap:10px; background:rgba(255,255,255,0.05); border-radius:16px; padding:10px 12px; }
-    body.light-mode .alerts-item { background:#F3F8FF; }
-    .alerts-icon { width:36px; height:36px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
-    .alerts-item-body { flex:1; min-width:0; }
-    .alerts-item-title { font-size:0.75rem; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    body.light-mode .alerts-item-title { color:var(--text); }
-    .alerts-item-sub { font-size:0.65rem; color:#8b93a8; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    body.light-mode .alerts-item-sub { color:var(--text2); }
-    .alerts-item-right { text-align:right; flex-shrink:0; }
-    .alerts-item-time { font-size:0.58rem; color:#8b93a8; }
-    body.light-mode .alerts-item-time { color:var(--text3); }
-    .alerts-dot { display:inline-block; width:7px; height:7px; border-radius:50%; background:#22C55E; margin-top:4px; }
-    /* [NEW] Claymorphism untuk isi popup detail dashboard (COD/Transfer/QRIS/Belum Bayar) */
-    .clay-sales-card {
-      border-radius: 20px; padding: 12px 16px; margin-bottom: 10px; text-align:left;
-      background: var(--surface2);
-      box-shadow: 6px 6px 14px rgba(0,0,0,0.28), -6px -6px 14px rgba(255,255,255,0.05);
-    }
-    body.light-mode .clay-sales-card { background:#F3F8FF; box-shadow: 6px 6px 14px rgba(30,99,233,0.12), -6px -6px 14px rgba(255,255,255,0.85); }
-    .clay-sales-name { font-weight:700; color:var(--biru); font-size:0.8rem; margin-bottom:6px; }
-    .clay-sales-row { display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text); padding:3px 0; }
-    .clay-sales-amt { font-family:var(--mono); }
-    .clay-sales-subtotal { border-top:1px solid var(--border); margin-top:4px; padding-top:6px; font-weight:700; }
-    .clay-total-banner {
-      border-radius: 18px; padding: 12px 16px; margin-top:8px; text-align:right; font-weight:800; color:#fff;
-      background: linear-gradient(145deg, #3fa9f5, #1A6DB5);
-      box-shadow: 5px 5px 12px rgba(0,0,0,0.28), -5px -5px 12px rgba(255,255,255,0.08);
-    }
     .clay-notif-item {
       border-radius: 20px; padding: 12px 16px; margin-bottom: 10px; background: var(--surface2);
       box-shadow: 6px 6px 14px rgba(0,0,0,0.28), -6px -6px 14px rgba(255,255,255,0.05);
@@ -994,10 +992,17 @@
 
   <div id="mainApp" class="app-container hidden">
     <div class="header">
-      <div class="brand"><span class="tirta">Tirta</span><span class="kencana">Kencana</span></div>
-      <div class="tagline">DO GOOD AND GOOD WILL COME TO YOU</div>
-      <div class="alamat" id="headerAlamat">WTC Mangga 2 Lt UG A/53</div>
-      <div class="logo-header" onclick="document.getElementById('logoFileInput').click()"><img id="logoImg" src="https://www.image2url.com/r2/default/images/1781919958885-4a0fd859-0e6f-4e9f-9370-702fbf72864f.jpg" alt="Logo"></div>
+      <div class="header-top-row">
+        <div class="logo-header" onclick="document.getElementById('logoFileInput').click()"><img id="logoImg" src="https://www.image2url.com/r2/default/images/1781919958885-4a0fd859-0e6f-4e9f-9370-702fbf72864f.jpg" alt="Logo"></div>
+        <div class="header-brand-col">
+          <div class="brand"><span class="tirta">Tirta</span><span class="kencana">Kencana</span></div>
+        </div>
+      </div>
+      <div class="header-info-col">
+        <div class="alamat" id="headerAlamat">WTC Mangga Dua Lantai UG Blok A/53</div>
+        <div class="wa-info">WA : 0882-1105-8000</div>
+        <div class="tagline">DO GOOD AND GOOD WILL COME TO YOU</div>
+      </div>
       <input type="file" id="logoFileInput" accept="image/*" style="display:none" onchange="uploadLogo(event)">
     </div>
     <div class="nav-bar">
@@ -1100,7 +1105,7 @@
     let currentUser = null, currentPage = 'dashboard';
     let products = [], pelanggan = [], allTrxList = [], allCustomers = [], stockInHistory = [], setoranHistory = [];
     let drivers = ['oji','padong','said','dedi','zehpudin'];
-    let settings = { namaToko:'Tirta Kencana', alamat:'WTC Mangga 2 Lt UG A/53', tagline:'DO GOOD AND GOOD WILL COME TO YOU', bottomLine:'Terima kasih sudah berbelanja', logo:'', qris:'', telepon:'088211058000', bank1:{ nama:'BCA', norek:'6930099099', penerima:'Hendri' }, bank2:{ nama:'bluBCA', norek:'002283588888', penerima:'Hendri' }, salesList:[] };
+    let settings = { namaToko:'Tirta Kencana', alamat:'WTC Mangga Dua Lantai UG Blok A/53', tagline:'DO GOOD AND GOOD WILL COME TO YOU', bottomLine:'Terima kasih sudah berbelanja', logo:'', qris:'', telepon:'088211058000', bank1:{ nama:'BCA', norek:'6930099099', penerima:'Hendri' }, bank2:{ nama:'bluBCA', norek:'002283588888', penerima:'Hendri' }, salesList:[] };
     let allUsers = [
       { name:'admin',  role:'admin',  password:'020730' },
       { name:'hasan',  role:'sales',  password:'1234'   },
@@ -1495,59 +1500,20 @@
       const unread = appNotifications.filter(n => !n.read).length;
       if (unread > 0) { b.textContent = unread > 99 ? '99+' : unread; b.style.display = 'flex'; } else { b.style.display = 'none'; }
     }
-    function _notifTypeOf(n) { return n.icon === '🧾' ? 'transaksi' : (n.icon === '📦' ? 'input' : 'lain'); }
-    function _renderAlertsList(tab) {
-      const list = appNotifications.filter(n => tab === 'all' || _notifTypeOf(n) === tab);
-      if (list.length === 0) return '<div style="text-align:center;padding:30px 10px;color:var(--text3);font-size:0.8rem">Tidak ada notifikasi</div>';
-      return list.map(n => {
-        const t = new Date(n.time);
-        const timeStr = String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0')+' · '+String(t.getDate()).padStart(2,'0')+'/'+String(t.getMonth()+1).padStart(2,'0');
-        const type = _notifTypeOf(n);
-        const bg = type === 'transaksi' ? 'linear-gradient(145deg,#3B82F6,#1D4ED8)' : (type === 'input' ? 'linear-gradient(145deg,#F59E0B,#D97706)' : 'linear-gradient(145deg,#8B5CF6,#6D28D9)');
-        return `<div class="alerts-item">
-          <div class="alerts-icon" style="background:${bg}">${n.icon||'🔔'}</div>
-          <div class="alerts-item-body">
-            <div class="alerts-item-title">${esc(n.title)}</div>
-            <div class="alerts-item-sub">${esc(n.detail||'')}</div>
-          </div>
-          <div class="alerts-item-right">
-            <div class="alerts-item-time">${timeStr}</div>
-            ${!n.read ? '<span class="alerts-dot"></span>' : ''}
-          </div>
-        </div>`;
-      }).join('');
-    }
-    function _notifFilterTab(tab) {
-      document.querySelectorAll('.alerts-tab').forEach(el => el.classList.toggle('active', el.dataset.tab === tab));
-      const listEl = document.getElementById('alertsList');
-      if (listEl) listEl.innerHTML = _renderAlertsList(tab);
-    }
-    function clearAllNotifications() {
-      appNotifications = [];
-      saveNotifications();
-      renderNotifBadge();
-      const listEl = document.getElementById('alertsList');
-      if (listEl) listEl.innerHTML = _renderAlertsList('all');
-    }
     function showNotifications() {
-      const _initialListHtml = _renderAlertsList('all');
-      Swal.fire({
-        html: `<div class="alerts-panel">
-          <div class="alerts-header"><h2>🔔 Alerts</h2><button class="alerts-clearall" onclick="clearAllNotifications()">Hapus Semua</button></div>
-          <div class="alerts-tabs">
-            <div class="alerts-tab active" data-tab="all" onclick="_notifFilterTab('all')">Semua</div>
-            <div class="alerts-tab" data-tab="transaksi" onclick="_notifFilterTab('transaksi')">Transaksi</div>
-            <div class="alerts-tab" data-tab="input" onclick="_notifFilterTab('input')">Input Barang</div>
-          </div>
-          <div id="alertsList" class="alerts-list">${_initialListHtml}</div>
-        </div>`,
-        showConfirmButton: false,
-        showCloseButton: true,
-        width: '380px',
-        customClass: { popup: 'alerts-swal-popup' }
-      }).then(() => renderNotifBadge());
+      let html = '';
+      if (appNotifications.length === 0) {
+        html = '<p class="text-sm text-center">Belum ada notifikasi</p>';
+      } else {
+        html = '<div style="max-height:400px;overflow-y:auto;text-align:left;padding:2px">' + appNotifications.map(n => {
+          const t = new Date(n.time);
+          const timeStr = String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0')+' · '+String(t.getDate()).padStart(2,'0')+'/'+String(t.getMonth()+1).padStart(2,'0');
+          return `<div class="clay-notif-item" style="${n.read?'opacity:0.6':''}"><div style="font-weight:700;font-size:0.8rem">${n.icon||'🔔'} ${esc(n.title)}</div><div style="font-size:0.72rem;color:var(--text2);margin-top:2px">${esc(n.detail||'')}</div><div style="font-size:0.65rem;color:var(--text3);margin-top:4px">${timeStr}</div></div>`;
+        }).join('') + '</div>';
+      }
       appNotifications.forEach(n => n.read = true);
       saveNotifications();
+      Swal.fire({ title: '🔔 Notifikasi', html, width:'420px', confirmButtonText:'Tutup', customClass: { popup: 'clay-popup', confirmButton: 'clay-btn clay-btn-confirm' } }).then(() => renderNotifBadge());
       renderNotifBadge();
     }
 
@@ -1633,6 +1599,9 @@
         const qris = todayTx.filter(t=>t.status==='qris').reduce((s,t)=>s+(t.nett||0),0);
         const belum = todayTx.filter(t=>t.status==='belumTransfer').reduce((s,t)=>s+(t.nett||0),0);
         const total = cod+transfer+qris+belum;
+        // [NEW] Total Piutang (semua transaksi belumTransfer, semua tanggal - bukan cuma hari ini)
+        const piutangAll = allTrxList.filter(t=>(t.status||'')==='belumTransfer');
+        const totalPiutangAll = piutangAll.reduce((s,t)=>s+(t.nett||0),0);
         h = `
           <div class="summary-shape">
             <div class="summary-title">💰 Total Penjualan Hari Ini</div>
@@ -1643,6 +1612,16 @@
               <div class="summary-item" style="cursor:pointer" onclick="showDashboardStatusDetail('belumTransfer')"><i class="fas fa-clock"></i><div><div class="label">Belum Bayar</div><div class="value">${fmtRp(belum)}</div></div></div>
             </div>
             <div style="margin-top:10px;text-align:right;font-weight:800;font-size:1rem;">Total: ${fmtRp(total)}</div>
+          </div>
+          <div class="summary-shape" style="cursor:pointer;margin-top:10px;background:linear-gradient(135deg,#EF4444,#DC2626);color:#fff" onclick="showDashboardPiutangDetail()">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+              <div>
+                <div style="font-size:0.7rem;font-weight:700;opacity:.85;letter-spacing:.5px">📋 TOTAL PIUTANG BELUM BAYAR</div>
+                <div style="font-size:1.4rem;font-weight:900;font-family:var(--mono);margin-top:4px">${fmtRp(totalPiutangAll)}</div>
+                <div style="font-size:0.7rem;opacity:.85;margin-top:2px">${piutangAll.length} transaksi &middot; tap untuk detail</div>
+              </div>
+              <i class="fas fa-chevron-right" style="opacity:.8"></i>
+            </div>
           </div>
         `;
       }
@@ -1723,19 +1702,77 @@
       const grouped = {};
       todayTx.forEach(t => { const s = t.sales || '—'; if (!grouped[s]) grouped[s] = []; grouped[s].push(t); });
       const salesNames = Object.keys(grouped).sort();
+      const accentMap = { cod:'#F59E0B', transfer:'#1A6DB5', qris:'#6366F1', belumTransfer:'#EF4444' };
+      const accent = accentMap[status] || '#1A6DB5';
       let grandTotal = 0, html = '';
       if (salesNames.length === 0) {
-        html = '<p class="text-sm text-center" style="color:var(--text2)">Tidak ada transaksi</p>';
+        html = `<div style="padding:24px 10px;text-align:center;color:var(--text3)"><div style="font-size:2rem;margin-bottom:6px">🗒️</div><div style="font-size:0.8rem">Tidak ada transaksi</div></div>`;
       } else {
         salesNames.forEach(s => {
           const rows = grouped[s];
           const subtotal = rows.reduce((sum,t) => sum + (t.nett||0), 0);
           grandTotal += subtotal;
-          html += `<div class="clay-sales-card"><div class="clay-sales-name">${esc(s)}</div>${rows.map(t => `<div class="clay-sales-row"><span>${esc(t.customer||'-')}</span><span class="clay-sales-amt">${fmtRp(t.nett||0)}</span></div>`).join('')}<div class="clay-sales-row clay-sales-subtotal"><span>Subtotal</span><span class="clay-sales-amt">${fmtRp(subtotal)}</span></div></div>`;
+          html += `<div style="background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);margin-bottom:12px;overflow:hidden;text-align:left">
+            <div style="background:linear-gradient(135deg, ${accent}, ${accent}cc);padding:8px 12px;display:flex;align-items:center;gap:8px">
+              <div style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.28);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0">${esc(s).charAt(0).toUpperCase()}</div>
+              <div style="font-weight:700;color:#fff;font-size:0.8rem">${esc(s)}</div>
+            </div>
+            <div style="padding:4px 12px 8px">
+              ${rows.map(t => `<div style="display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px dashed #E7EEF3;font-size:0.75rem"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.customer||'-')}</span><span style="font-family:var(--mono);font-weight:700;white-space:nowrap">${fmtRp(t.nett||0)}</span></div>`).join('')}
+              <div style="display:flex;justify-content:space-between;padding:8px 0 2px;font-weight:800;font-size:0.8rem;color:${accent}"><span>Subtotal</span><span>${fmtRp(subtotal)}</span></div>
+            </div>
+          </div>`;
         });
-        html += `<div class="clay-total-banner">Total: ${fmtRp(grandTotal)}</div>`;
+        html += `<div style="margin-top:2px;padding:12px 16px;border-radius:14px;background:linear-gradient(135deg,#00509E,#00A8E8);color:#fff;display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:0.9rem;box-shadow:0 6px 16px rgba(0,80,158,.28)"><span>Total</span><span>${fmtRp(grandTotal)}</span></div>`;
       }
-      Swal.fire({ title: (labelMap[status]||status) + ' Hari Ini', html, width:'420px', confirmButtonText:'Tutup', customClass: { popup: 'clay-popup', confirmButton: 'clay-btn clay-btn-confirm' } });
+      Swal.fire({ title: (labelMap[status]||status) + ' Hari Ini', html, width:'440px', background:'#F4F8FB', showConfirmButton:true, customClass: { popup: 'dash-status-popup' } });
+    }
+
+    // [NEW] Detail Total Piutang Belum Bayar saat card di dashboard diklik.
+    // Data diambil dari allTrxList (sumber sama dengan menu Piutang), status belumTransfer, SEMUA tanggal (bukan cuma hari ini).
+    function showDashboardPiutangDetail() {
+      const piutang = allTrxList.filter(t=>(t.status||'')==='belumTransfer');
+      const today = localDateStr();
+      function agingLabel(tgl) {
+        const diff = Math.floor((new Date(today)-new Date(tgl))/(1000*60*60*24));
+        if (diff<=0) return {label:'Hari ini', color:'#16A34A'};
+        if (diff<=7) return {label:`${diff} hari`, color:'#D97706'};
+        if (diff<=30) return {label:`${diff} hari`, color:'#EA580C'};
+        return {label:`${diff} hari ⚠️`, color:'#DC2626'};
+      }
+      const custAgg = {};
+      piutang.forEach(t=>{
+        const c = t.customer || '—';
+        if (!custAgg[c]) custAgg[c] = { customer:c, total:0, count:0, oldest:t.tgl };
+        custAgg[c].total += (t.nett||0);
+        custAgg[c].count++;
+        if ((t.tgl||'') < custAgg[c].oldest) custAgg[c].oldest = t.tgl;
+      });
+      const custRows = Object.values(custAgg).sort((a,b)=>b.total-a.total);
+      const grandTotal = piutang.reduce((s,t)=>s+(t.nett||0),0);
+      const accent = '#EF4444';
+      let html = '';
+      if (custRows.length === 0) {
+        html = `<div style="padding:24px 10px;text-align:center;color:var(--text3)"><div style="font-size:2rem;margin-bottom:6px">🗒️</div><div style="font-size:0.8rem">Tidak ada piutang</div></div>`;
+      } else {
+        custRows.forEach(r => {
+          const ag = agingLabel(r.oldest);
+          html += `<div style="background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);margin-bottom:12px;overflow:hidden;text-align:left">
+            <div style="background:linear-gradient(135deg, ${accent}, ${accent}cc);padding:8px 12px;display:flex;align-items:center;gap:8px">
+              <div style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.28);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0">${esc(r.customer).charAt(0).toUpperCase()}</div>
+              <div style="font-weight:700;color:#fff;font-size:0.8rem;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.customer)}</div>
+              <span style="background:rgba(255,255,255,.25);color:#fff;padding:2px 7px;border-radius:6px;font-size:0.65rem;font-weight:700;white-space:nowrap">${ag.label}</span>
+            </div>
+            <div style="padding:8px 12px">
+              <div style="display:flex;justify-content:space-between;gap:8px;font-size:0.75rem;color:var(--text2)"><span>${r.count} transaksi</span></div>
+              <div style="display:flex;justify-content:space-between;padding-top:4px;font-weight:800;font-size:0.85rem;color:${accent}"><span>Total</span><span>${fmtRp(r.total)}</span></div>
+            </div>
+          </div>`;
+        });
+        html += `<div style="margin-top:2px;padding:12px 16px;border-radius:14px;background:linear-gradient(135deg,#EF4444,#DC2626);color:#fff;display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:0.9rem;box-shadow:0 6px 16px rgba(220,38,38,.28)"><span>Total Piutang</span><span>${fmtRp(grandTotal)}</span></div>`;
+        html += `<div style="margin-top:10px;text-align:center"><button class="btn" onclick="Swal.close();navigateTo('piutang')" style="background:${accent};color:#fff;font-size:0.75rem;padding:7px 16px;border-radius:8px;font-weight:700">📄 Buka Halaman Piutang</button></div>`;
+      }
+      Swal.fire({ title: '📋 Total Piutang Belum Bayar', html, width:'440px', background:'#F4F8FB', showConfirmButton:true, customClass: { popup: 'dash-status-popup' } });
     }
 
     function menuItem(page, label, icon) {
