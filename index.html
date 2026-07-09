@@ -274,6 +274,12 @@
     /* [FIX] Menu Pelanggan: paksa warna teks tabel ikut var(--text) supaya tetap
        terang & terbaca saat Dark Mode (default), tanpa mengubah rule lain. */
     body[data-page="pelanggan"] table td, body[data-page="pelanggan"] table th { color:var(--text); }
+    /* [NEW] Menu Pelanggan: perbesar sedikit & bold-kan semua tulisan (judul, tabel, tombol),
+       scoped hanya ke body[data-page="pelanggan"] supaya tidak mengubah tampilan halaman lain. */
+    body[data-page="pelanggan"] .card-title { font-size:1.1rem; font-weight:800; }
+    body[data-page="pelanggan"] table th { font-size:0.92rem; font-weight:800; }
+    body[data-page="pelanggan"] table td { font-size:0.92rem; font-weight:700; }
+    body[data-page="pelanggan"] .btn { font-size:0.88rem; font-weight:800; }
     /* [FIX] Dialog SweetAlert2 (mis. "Tambah Pelanggan"): teks input mengikuti
        tema aplikasi -> putih saat Dark Mode (default), hitam saat Light Mode. */
     .swal2-input, .swal2-textarea, .swal2-select { color:var(--text) !important; }
@@ -996,7 +1002,7 @@
   <div id="mainApp" class="app-container hidden">
     <div class="header">
       <div class="header-top-row">
-        <div class="logo-header" onclick="document.getElementById('logoFileInput').click()"><img id="logoImg" src="https://www.image2url.com/r2/default/images/1781919958885-4a0fd859-0e6f-4e9f-9370-702fbf72864f.jpg" alt="Logo"></div>
+        <div class="logo-header" onclick="document.getElementById('logoFileInput').click()"><img id="logoImg" src="https://www.image2url.com/r2/default/images/1783578247549-76d14b6a-8d26-4fad-898d-5e8896ace162.jpeg" alt="Logo"></div>
         <div class="header-brand-col">
           <div class="brand"><span class="tirta">Tirta</span><span class="kencana">Kencana</span></div>
         </div>
@@ -1177,6 +1183,62 @@
       }
     }
     
+    // [NEW] Sinkronisasi data pelanggan ke Google Sheets via GAS (fn 'saveCustomers'), mengikuti pola
+    // syncProductsToSheet() di atas. Dipanggil otomatis setiap kali tambah/hapus pelanggan.
+    async function syncCustomersToSheet() {
+      try {
+        await gasCall('saveCustomers', [allCustomers]);
+        console.log('Customers synced successfully');
+      } catch(e) {
+        console.warn('Gagal sync pelanggan ke Sheets:', e);
+        Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:2000, icon:'warning', title:'Tersimpan lokal, gagal sync ke Sheets' });
+      }
+    }
+
+    // [NEW] Tombol manual "Sync ke Google Sheets" (push) & "Sync ke Aplikasi" (pull) di menu Produk.
+    // Terpisah dari syncProductsToSheet() di atas supaya tidak mengubah alur otomatis yang sudah ada;
+    // fungsi ini khusus dipanggil dari tombol dan menampilkan toast sukses/gagal ke user.
+    async function btnSyncProdukToSheet() {
+      try {
+        await gasCall('saveProducts', [products]);
+        Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:1500, icon:'success', title:'Sinkron ke Google Sheets berhasil' });
+      } catch(e) {
+        console.warn('Gagal sync produk ke Sheets:', e);
+        Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:2000, icon:'error', title:'Gagal sync ke Google Sheets' });
+      }
+    }
+    async function btnSyncProdukFromSheet() {
+      try {
+        const data = await gasCall('getProducts', []);
+        if (Array.isArray(data)) { products = data; saveLocalData(); renderProdukList(); }
+        Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:1500, icon:'success', title:'Sinkron dari Google Sheets berhasil' });
+      } catch(e) {
+        console.warn('Gagal ambil produk dari Sheets:', e);
+        Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:2000, icon:'error', title:'Gagal sync dari Google Sheets' });
+      }
+    }
+    // [NEW] Tombol manual "Sync ke Google Sheets" (push) & "Sync ke Aplikasi" (pull) di menu Pelanggan.
+    // Terpisah dari syncCustomersToSheet() di atas supaya tidak mengubah alur otomatis yang sudah ada.
+    async function btnSyncPelangganToSheet() {
+      try {
+        await gasCall('saveCustomers', [allCustomers]);
+        Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:1500, icon:'success', title:'Sinkron ke Google Sheets berhasil' });
+      } catch(e) {
+        console.warn('Gagal sync pelanggan ke Sheets:', e);
+        Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:2000, icon:'error', title:'Gagal sync ke Google Sheets' });
+      }
+    }
+    async function btnSyncPelangganFromSheet() {
+      try {
+        const data = await gasCall('getCustomers', []);
+        if (Array.isArray(data)) { allCustomers = data; pelanggan = data.slice(); saveLocalData(); renderPelangganList(); }
+        Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:1500, icon:'success', title:'Sinkron dari Google Sheets berhasil' });
+      } catch(e) {
+        console.warn('Gagal ambil pelanggan dari Sheets:', e);
+        Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:2000, icon:'error', title:'Gagal sync dari Google Sheets' });
+      }
+    }
+
     // [NEW] Fungsi untuk refresh data dari server dengan retry
     async function refreshDataFromServer(showToast = true) {
       try {
@@ -3945,7 +4007,11 @@
         <div class="card" style="padding:14px 16px;">
           <div class="flex-between mb-2">
             <div class="card-title" style="margin-bottom:0"><i class="fas fa-cubes"></i> Master Produk</div>
-            <button class="btn btn-primary btn-sm" onclick="openProdukForm(-1)" style="border-radius:10px;padding:7px 14px;font-size:0.75rem;"><i class="fas fa-plus"></i> Tambah</button>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
+              <button class="btn btn-outline btn-sm" onclick="btnSyncProdukToSheet()" style="border-radius:10px;padding:7px 12px;font-size:0.72rem;" title="Kirim data produk lokal ke Google Sheets"><i class="fas fa-cloud-upload-alt"></i> Sync ke Sheets</button>
+              <button class="btn btn-outline btn-sm" onclick="btnSyncProdukFromSheet()" style="border-radius:10px;padding:7px 12px;font-size:0.72rem;" title="Ambil data produk terbaru dari Google Sheets"><i class="fas fa-cloud-download-alt"></i> Sync ke Aplikasi</button>
+              <button class="btn btn-primary btn-sm" onclick="openProdukForm(-1)" style="border-radius:10px;padding:7px 14px;font-size:0.75rem;"><i class="fas fa-plus"></i> Tambah</button>
+            </div>
           </div>
         </div>
         <div id="produkTbody" style="display:grid;grid-template-columns:1fr;gap:10px;"></div>
@@ -4020,10 +4086,10 @@
     function deleteProduk(idx) { Swal.fire({ title:'Hapus?', text:'Hapus '+products[idx].nama+'?', icon:'warning', showCancelButton:true }).then(r => { if (r.isConfirmed) { products.splice(idx,1); saveLocalData(); renderProdukList(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Produk dihapus' }); syncProductsToSheet(); } }); }
 
     // ========== PELANGGAN ==========
-    function loadPelanggan() { document.getElementById('contentArea').innerHTML = `<div class="card"><div class="flex-between mb-2"><div class="card-title"><i class="fas fa-address-book"></i> Daftar Pelanggan</div><button class="btn btn-primary btn-sm" onclick="addPelanggan()">+ Tambah</button></div><div class="table-wrap"><table><thead><tr><th>#</th><th>Nama</th><th>Aksi</th></tr></thead><tbody id="pelangganTbody"></tbody></table></div></div>`; renderPelangganList(); }
+    function loadPelanggan() { document.getElementById('contentArea').innerHTML = `<div class="card"><div class="flex-between mb-2"><div class="card-title"><i class="fas fa-address-book"></i> Daftar Pelanggan</div><div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button class="btn btn-outline btn-sm" onclick="btnSyncPelangganToSheet()" title="Kirim data pelanggan lokal ke Google Sheets"><i class="fas fa-cloud-upload-alt"></i> Sync ke Sheets</button><button class="btn btn-outline btn-sm" onclick="btnSyncPelangganFromSheet()" title="Ambil data pelanggan terbaru dari Google Sheets"><i class="fas fa-cloud-download-alt"></i> Sync ke Aplikasi</button><button class="btn btn-primary btn-sm" onclick="addPelanggan()">+ Tambah</button></div></div><div class="table-wrap"><table><thead><tr><th>#</th><th>Nama</th><th>Aksi</th></tr></thead><tbody id="pelangganTbody"></tbody></table></div></div>`; renderPelangganList(); }
     function renderPelangganList() { const tb = document.getElementById('pelangganTbody'); if (!tb) return; if (!allCustomers.length) { tb.innerHTML = '<tr><td colspan="3" class="text-center text-sm" style="padding:32px">Belum ada pelanggan</div></tr>'; return; } tb.innerHTML = allCustomers.map((c,i) => `<tr><td>${i+1}</td><td class="fw-bold">${esc(c)}</td><td><button class="btn btn-sm btn-danger" onclick="deletePelanggan(${i})">🗑</button></td></tr>`).join(''); }
-    function addPelanggan() { Swal.fire({ title:'Tambah Pelanggan', input:'text', inputLabel:'Nama pelanggan', showCancelButton:true }).then(r => { if (r.isConfirmed && r.value) { const name = r.value.trim(); if (!allCustomers.includes(name)) { allCustomers.push(name); pelanggan = allCustomers.slice(); saveLocalData(); renderPelangganList(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Pelanggan ditambahkan' }); } else Swal.fire('Info','Sudah ada','info'); } }); }
-    function deletePelanggan(idx) { Swal.fire({ title:'Hapus?', text:'Hapus '+allCustomers[idx]+'?', icon:'warning', showCancelButton:true }).then(r => { if (r.isConfirmed) { allCustomers.splice(idx,1); pelanggan = allCustomers.slice(); saveLocalData(); renderPelangganList(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Pelanggan dihapus' }); } }); }
+    function addPelanggan() { Swal.fire({ title:'Tambah Pelanggan', input:'text', inputLabel:'Nama pelanggan', showCancelButton:true }).then(r => { if (r.isConfirmed && r.value) { const name = r.value.trim(); if (!allCustomers.includes(name)) { allCustomers.push(name); pelanggan = allCustomers.slice(); saveLocalData(); renderPelangganList(); syncCustomersToSheet(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Pelanggan ditambahkan' }); } else Swal.fire('Info','Sudah ada','info'); } }); }
+    function deletePelanggan(idx) { Swal.fire({ title:'Hapus?', text:'Hapus '+allCustomers[idx]+'?', icon:'warning', showCancelButton:true }).then(r => { if (r.isConfirmed) { allCustomers.splice(idx,1); pelanggan = allCustomers.slice(); saveLocalData(); renderPelangganList(); syncCustomersToSheet(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Pelanggan dihapus' }); } }); }
 
     // ========== PENGATURAN ==========
     function loadPengaturan() { 
