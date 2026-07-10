@@ -4393,5 +4393,70 @@ if ('serviceWorker' in navigator) {
     const savedUser = localStorage.getItem('tirtaUser');
     if (savedUser) { try { currentUser = JSON.parse(savedUser); showMainApp(); } catch(e) { localStorage.removeItem('tirtaUser'); } }
   </script>
+
+  <script>
+  // ============================================================
+  // ADDITIF — PATCH ANTI DUPLIKAT ID (Menu Jual & Input Barang)
+  // Tidak mengubah/menghapus fungsi, variabel, atau logika asli.
+  // Hanya menambah lapisan pengaman di LUAR kode asli (wrapper),
+  // supaya ID yang sama tidak bisa tersimpan lebih dari 1x —
+  // termasuk kasus double-click/double-tap dan duplikat yang
+  // lolos dari proses sinkron Google Sheets.
+  // ============================================================
+  (function() {
+    // 1) Kunci sementara (busy-lock) supaya submitTrx & saveStockIn
+    //    tidak bisa dieksekusi dobel akibat tombol Simpan ditekan 2x
+    //    dengan sangat cepat (double-click / double-tap).
+    if (typeof submitTrx === 'function') {
+      var _origSubmitTrx = submitTrx;
+      var _trxBusy = false;
+      submitTrx = async function() {
+        if (_trxBusy) return;
+        _trxBusy = true;
+        try { return await _origSubmitTrx.apply(this, arguments); }
+        finally { _trxBusy = false; }
+      };
+    }
+    if (typeof saveStockIn === 'function') {
+      var _origSaveStockIn = saveStockIn;
+      var _stockBusy = false;
+      saveStockIn = async function() {
+        if (_stockBusy) return;
+        _stockBusy = true;
+        try { return await _origSaveStockIn.apply(this, arguments); }
+        finally { _stockBusy = false; }
+      };
+    }
+
+    // 2) Saring (dedupe) data dengan ID yang sama setiap kali sebelum
+    //    disimpan ke localStorage — jaga-jaga jika duplikat muncul
+    //    dari proses sinkron Google Sheets (syncFromGAS) atau sumber lain,
+    //    supaya tidak pernah ada 2 baris dengan ID sama yang tersimpan/tertampil.
+    if (typeof saveLocalData === 'function') {
+      var _origSaveLocalData = saveLocalData;
+      saveLocalData = function() {
+        try {
+          if (Array.isArray(allTrxList)) {
+            var seenTrx = new Set();
+            allTrxList = allTrxList.filter(function(t) {
+              if (!t || seenTrx.has(t.id)) return false;
+              seenTrx.add(t.id);
+              return true;
+            });
+          }
+          if (Array.isArray(stockInHistory)) {
+            var seenStock = new Set();
+            stockInHistory = stockInHistory.filter(function(e) {
+              if (!e || seenStock.has(e.id)) return false;
+              seenStock.add(e.id);
+              return true;
+            });
+          }
+        } catch (err) { console.warn('Gagal menyaring data duplikat:', err); }
+        return _origSaveLocalData.apply(this, arguments);
+      };
+    }
+  })();
+  </script>
 </body>
 </html>
