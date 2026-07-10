@@ -195,6 +195,39 @@
     .menu-tabs::-webkit-scrollbar { height: 4px; }
     .menu-tabs::-webkit-scrollbar-track { background: transparent; }
     .menu-tabs::-webkit-scrollbar-thumb { background: rgba(0,168,232,0.4); border-radius: 10px; }
+    /* [NEW-FIX] Tombol panah kiri/kanan sebagai cara PASTI untuk menggeser baris tab menu,
+       tidak bergantung pada gesture swipe/drag yang di sebagian tablet tidak terdeteksi
+       browser-nya. Klik/tap tombol selalu berfungsi di semua device. Murni tambahan
+       (wrapper + 2 tombol baru), #menuTabs & isinya dari renderMenuTabs() tidak diubah. */
+    .menu-tabs-wrap { position:relative; display:flex; align-items:stretch; }
+    .menu-tabs-wrap .menu-tabs { flex:1; min-width:0; }
+    .menu-tabs-arrow {
+      flex:0 0 auto; width:24px; border:none; cursor:pointer; z-index:2;
+      display:flex; align-items:center; justify-content:center;
+      background: rgba(0,20,50,0.55); color:#00D1FF; font-size:0.75rem;
+      backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+    }
+    .menu-tabs-arrow-left { border-right:1px solid var(--glass-border); }
+    .menu-tabs-arrow-right { border-left:1px solid var(--glass-border); }
+    body.light-mode .menu-tabs-arrow { background:#F6F9FF !important; color:var(--biru) !important; }
+    /* [NEW] Nav bar panah kiri/kanan untuk geser tabel lebar (Transaksi & Rekap Setoran), diletakkan
+       sebagai toolbar TIPIS di ATAS tabel (di atas thead) — bukan menyamping. Murni tambahan
+       wrapper + toolbar + 2 tombol baru; .table-wrap & isinya (thead/tbody) tidak diubah/dipindah
+       strukturnya sama sekali. */
+    .tw-scroll-toolbar {
+      display:flex; align-items:center; justify-content:flex-end; gap:6px;
+      padding:5px 8px; background: rgba(0,20,50,0.45);
+      border-bottom:1px solid var(--glass-border);
+      backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+    }
+    .tw-scroll-toolbar span { font-size:0.62rem; color:var(--text3); margin-right:auto; }
+    .tw-scroll-arrow {
+      width:24px; height:22px; border:none; border-radius:6px; cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+      background: rgba(0,168,232,0.15); color:#00D1FF; font-size:0.7rem;
+    }
+    body.light-mode .tw-scroll-toolbar { background:#F6F9FF !important; }
+    body.light-mode .tw-scroll-arrow { background:rgba(0,168,232,0.12) !important; color:var(--biru) !important; }
     .tab {
       flex:0 0 auto; padding:7px 14px; border-radius:20px;
       border: 1px solid var(--glass-border);
@@ -816,6 +849,14 @@
       .tab.active { animation: none !important; }
       .card { animation: none !important; }
       .content-area { animation: none !important; }
+      /* [NEW-FIX] Tablet/touchscreen: scroll horizontal menu-tabs (nav tab menu) dan scroll
+         vertikal content-area kadang tidak jalan di beberapa browser tablet saat overflow:auto
+         gagal terdeteksi/ter-scroll oleh sentuhan. Dipaksa jadi overflow:scroll (tetap invisible
+         via scrollbar custom yang sudah ada) + touch-action eksplisit supaya gesture geser
+         horizontal (tab menu) & vertikal (isi halaman) tetap berfungsi normal di tablet,
+         sama seperti di web. Murni tambahan, tidak mengubah rule/behavior lain yang sudah ada. */
+      .menu-tabs { overflow-x:scroll !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-x !important; }
+      .content-area { overflow-y:scroll !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior:auto !important; }
     }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
@@ -1024,7 +1065,11 @@
         <button class="btn-logout" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i></button>
       </div>
     </div>
-    <div class="menu-tabs" id="menuTabs"></div>
+    <div class="menu-tabs-wrap">
+      <button type="button" class="menu-tabs-arrow menu-tabs-arrow-left" onclick="document.getElementById('menuTabs').scrollBy({left:-140,behavior:'smooth'})" aria-label="Geser ke kiri"><i class="fas fa-chevron-left"></i></button>
+      <div class="menu-tabs" id="menuTabs"></div>
+      <button type="button" class="menu-tabs-arrow menu-tabs-arrow-right" onclick="document.getElementById('menuTabs').scrollBy({left:140,behavior:'smooth'})" aria-label="Geser ke kanan"><i class="fas fa-chevron-right"></i></button>
+    </div>
     <div class="content-area" id="contentArea"></div>
     <div class="bottom-bar">Terima kasih sudah berbelanja · Tirta Kencana</div>
   </div>
@@ -1333,6 +1378,29 @@
         _pullCurrentY = 0;
       });
     }
+    // [NEW-FIX] Fallback drag-scroll horizontal khusus untuk .menu-tabs (baris tab menu),
+    // untuk tablet/browser yang native touch-scroll overflow-x-nya tidak jalan (vertikal
+    // content-area sudah normal, tapi horizontal menu-tabs masih macet di beberapa tablet).
+    // Pakai event delegation di document (bukan di #menuTabs langsung) supaya tetap jalan
+    // walau isi #menuTabs di-render ulang oleh renderMenuTabs() yang sudah ada.
+    // Klik tab tetap berfungsi normal seperti biasa: drag-scroll hanya aktif kalau gerakan
+    // horizontal melewati ambang batas (bukan sekadar tap), dan klik yang menyusul persis
+    // setelah drag akan diblok supaya tidak salah pindah menu.
+    (function initMenuTabsDragScroll(){
+      let dragEl=null, startX=0, startScrollLeft=0, moved=false, isDown=false, justDragged=false;
+      const THRESHOLD = 8;
+      function tabsElFrom(t){ return (t && t.closest) ? t.closest('.menu-tabs') : null; }
+      function down(x, el){ isDown=true; moved=false; dragEl=el; startX=x; startScrollLeft=el.scrollLeft; }
+      function move(x){ if(!isDown||!dragEl) return; const diff=x-startX; if(Math.abs(diff)>THRESHOLD){ moved=true; dragEl.scrollLeft = startScrollLeft - diff; } }
+      function up(){ if(moved){ justDragged=true; setTimeout(()=>{ justDragged=false; }, 300); } isDown=false; moved=false; dragEl=null; }
+      document.addEventListener('touchstart', e=>{ const el=tabsElFrom(e.target); if(el) down(e.touches[0].clientX, el); }, { passive:true });
+      document.addEventListener('touchmove', e=>{ const el=tabsElFrom(e.target); if(el) move(e.touches[0].clientX); }, { passive:true });
+      document.addEventListener('touchend', ()=>{ up(); }, { passive:true });
+      document.addEventListener('mousedown', e=>{ const el=tabsElFrom(e.target); if(el) down(e.clientX, el); });
+      document.addEventListener('mousemove', e=>{ if(isDown) move(e.clientX); });
+      document.addEventListener('mouseup', ()=>{ up(); });
+      document.addEventListener('click', e=>{ if(justDragged && tabsElFrom(e.target)){ e.preventDefault(); e.stopPropagation(); } }, true);
+    })();
     function loadLocalData() {
       const s = localStorage.getItem('tirtaFullData');
       if (s) { try { const d = JSON.parse(s); products = d.products || []; pelanggan = d.pelanggan || []; allTrxList = d.allTrxList || []; allCustomers = d.allCustomers || []; stockInHistory = d.stockInHistory || []; setoranHistory = d.setoranHistory || []; drivers = d.drivers || ['oji','padong','said','dedi','zehpudin']; settings = { ...settings, ...(d.settings || {}) }; allUsers = d.allUsers || []; masterStockHistory = d.masterStockHistory || {}; } catch(e) {} }
@@ -2233,7 +2301,8 @@
               <button class="btn btn-sm btn-ghost" onclick="showSetoranEditLog()"><i class="fas fa-clipboard-list"></i> Log Edit</button>
             </div>
           </div>
-          <div class="table-wrap"><table style="font-size:11px;white-space:nowrap">
+          <div class="tw-scroll-toolbar"><span>Geser tabel</span><button type="button" class="tw-scroll-arrow" onclick="document.getElementById('rsTableWrap').scrollBy({left:-140,behavior:'smooth'})" aria-label="Geser ke kiri"><i class="fas fa-chevron-left"></i></button><button type="button" class="tw-scroll-arrow" onclick="document.getElementById('rsTableWrap').scrollBy({left:140,behavior:'smooth'})" aria-label="Geser ke kanan"><i class="fas fa-chevron-right"></i></button></div>
+          <div class="table-wrap" id="rsTableWrap"><table style="font-size:11px;white-space:nowrap">
             <thead><tr>
               <th>Tgl</th><th>Sales</th><th>Grand COD</th><th>Uang Makan</th><th>Tips</th><th>Parkir</th><th>Bensin</th><th>Flazz</th><th>Transfer</th><th>Cicilan</th><th>Tagihan</th><th>Ket 1</th><th>Jml 1</th><th>Ket 2</th><th>Jml 2</th><th>Total</th><th>Setor</th><th>Selisih</th><th>Aksi</th>
             </tr></thead>
@@ -2328,7 +2397,7 @@
       allTrxList.sort((a,b) => (b.tgl||'').localeCompare(a.tgl||'') || (b.id||'').localeCompare(a.id||''));
       let salesOpts = '<option value="">Semua Sales</option>';
       (settings.salesList||[]).forEach(s => { salesOpts += `<option value="${esc(s)}">${esc(s)}</option>`; });
-      document.getElementById('contentArea').innerHTML = `<div class="filter-bar"><input id="trxSearch" class="form-control" placeholder="🔍 Cari ID/pelanggan…" oninput="filterTrx()" style="min-width:160px"><select id="trxFilterStatus" class="form-control" onchange="filterTrx()"><option value="">Semua Status</option><option value="cod">COD</option><option value="transfer">Transfer</option><option value="qris">QRIS</option><option value="belumtransfer">Belum Transfer</option></select><select id="trxFilterSales" class="form-control" onchange="filterTrx()">${salesOpts}</select><button class="btn btn-sm btn-outline" onclick="exportExcelTransaksi(document.getElementById('trxSearch').value?null:localDateStr())" style="font-size:0.7rem;white-space:nowrap">📥 Excel</button><button class="btn btn-sm btn-ghost" onclick="showEditLog()" style="font-size:0.7rem;white-space:nowrap">📋 Log Edit</button></div><div class="card" style="padding:0;overflow:hidden"><div class="table-wrap"><table><thead><tr><th>ID</th><th>Tgl</th><th>Customer</th><th>Sales</th><th>Gross</th><th>Diskon</th><th>Nett</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="trxTbody"></tbody></table></div></div>`;
+      document.getElementById('contentArea').innerHTML = `<div class="filter-bar"><input id="trxSearch" class="form-control" placeholder="🔍 Cari ID/pelanggan…" oninput="filterTrx()" style="min-width:160px"><select id="trxFilterStatus" class="form-control" onchange="filterTrx()"><option value="">Semua Status</option><option value="cod">COD</option><option value="transfer">Transfer</option><option value="qris">QRIS</option><option value="belumtransfer">Belum Transfer</option></select><select id="trxFilterSales" class="form-control" onchange="filterTrx()">${salesOpts}</select><button class="btn btn-sm btn-outline" onclick="exportExcelTransaksi(document.getElementById('trxSearch').value?null:localDateStr())" style="font-size:0.7rem;white-space:nowrap">📥 Excel</button><button class="btn btn-sm btn-ghost" onclick="showEditLog()" style="font-size:0.7rem;white-space:nowrap">📋 Log Edit</button></div><div class="card" style="padding:0;overflow:hidden"><div class="tw-scroll-toolbar"><span>Geser tabel</span><button type="button" class="tw-scroll-arrow" onclick="document.getElementById('trxTableWrap').scrollBy({left:-140,behavior:'smooth'})" aria-label="Geser ke kiri"><i class="fas fa-chevron-left"></i></button><button type="button" class="tw-scroll-arrow" onclick="document.getElementById('trxTableWrap').scrollBy({left:140,behavior:'smooth'})" aria-label="Geser ke kanan"><i class="fas fa-chevron-right"></i></button></div><div class="table-wrap" id="trxTableWrap"><table><thead><tr><th>ID</th><th>Tgl</th><th>Customer</th><th>Sales</th><th>Gross</th><th>Diskon</th><th>Nett</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="trxTbody"></tbody></table></div></div>`;
       renderTrxTable();
     }
     function filterTrx() {
