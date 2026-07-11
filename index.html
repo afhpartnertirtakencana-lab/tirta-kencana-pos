@@ -4651,5 +4651,60 @@ if ('serviceWorker' in navigator) {
     }
   })();
   </script>
+  <script>
+  // ============================================================
+  // ADDITIF — PERBAIKI "CETAK ULANG" TERASA LAMBAT/BERHENTI (Menu Transaksi)
+  // Tidak mengubah/menghapus fungsi, variabel, atau logika asli.
+  // cetakUlangStruk asli TETAP ADA di kode, hanya ditimpa (override)
+  // dari luar dengan versi yang perilaku akhirnya identik, TAPI:
+  //   1) Menampilkan indikator loading saat mengambil detail transaksi
+  //      dari server, supaya tidak terlihat seperti "hang/berhenti".
+  //   2) Menambah batas tunggu tampilan (UX timeout) 10 detik — kalau
+  //      server lambat, struk tetap dibuka (memakai data yang ada)
+  //      alih-alih membuat user menunggu sampai 40 detik tanpa kejelasan.
+  //      Proses pengambilan data di background TETAP jalan; begitu
+  //      selesai, hasilnya tetap disimpan untuk pemakaian berikutnya
+  //      (klik "Cetak" kedua kali untuk transaksi yang sama jadi instan).
+  // gasCall & mekanisme retry/timeout aslinya TIDAK disentuh sama sekali.
+  // ============================================================
+  (function() {
+    if (typeof cetakUlangStruk !== 'function') return;
+
+    cetakUlangStruk = async function(id) {
+      let trx = allTrxList.find(function(t) { return t.id === id; });
+      if (!trx) return Swal.fire('Error', 'Transaksi tidak ditemukan', 'error');
+
+      if (!trx.items || trx.items.length === 0) {
+        Swal.fire({
+          title: 'Menyiapkan struk...',
+          text: 'Mengambil detail transaksi dari server',
+          allowOutsideClick: false,
+          allowEscapeKey: false,
+          didOpen: function() { Swal.showLoading(); }
+        });
+
+        var detailPromise = gasCall('getTrxDetail', [id]).then(function(detail) {
+          if (detail && Array.isArray(detail.items) && detail.items.length > 0) {
+            trx.items = detail.items;
+            var idx = allTrxList.findIndex(function(t) { return t.id === id; });
+            if (idx >= 0) allTrxList[idx] = Object.assign({}, allTrxList[idx], { items: detail.items });
+            saveLocalData();
+          }
+          return detail;
+        }).catch(function(e) { console.warn('Gagal ambil detail dari GAS:', e); return null; });
+
+        var uxTimeoutPromise = new Promise(function(res) { setTimeout(function() { res('__ux_timeout__'); }, 10000); });
+
+        try { await Promise.race([detailPromise, uxTimeoutPromise]); }
+        catch (e) { console.warn('Gagal ambil detail dari GAS:', e); }
+
+        Swal.close();
+      }
+
+      _strKData = { trx: trx, items: trx.items || [] };
+      showStrukModal();
+    };
+  })();
+  </script>
 </body>
 </html>
