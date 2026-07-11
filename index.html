@@ -4989,5 +4989,90 @@ if ('serviceWorker' in navigator) {
     };
   })();
   </script>
+  <script>
+  // ============================================================
+  // ADDITIF — PASTIKAN TRANSAKSI TERBARU SELALU DI PALING ATAS
+  // (termasuk sesama transaksi di TANGGAL yang sama)
+  // Tidak mengubah/menghapus fungsi, variabel, struktur data, atau
+  // logika asli. allTrxList, submitTrx, syncFromGAS, loadTransaksi,
+  // saveLocalData semuanya TETAP ADA & TETAP jalan apa adanya.
+  //
+  // Akar masalah: pengurutan asli pakai tanggal lalu tie-break pakai
+  // ID transaksi (TRX-YYYYMMDD-XXXX), padahal XXXX itu 4 karakter
+  // ACAK — jadi transaksi di tanggal yang sama urutannya acak, bukan
+  // sesuai waktu input sebenarnya (data trx memang tidak menyimpan jam).
+  //
+  // Solusi (murni tambahan, tanpa ubah struktur trx yang sudah ada):
+  //  - Simpan peta "ID transaksi -> waktu pertama kali terlihat di
+  //    perangkat ini" secara TERPISAH di localStorage (key baru,
+  //    tidak menyentuh key/struktur data asli).
+  //  - Setiap kali saveLocalData() terpanggil (dari jalur manapun:
+  //    submit transaksi baru, sync, dll), ID yang belum pernah tercatat
+  //    otomatis diberi cap waktu saat itu.
+  //  - Setelah loadTransaksi() asli selesai, urutkan ULANG allTrxList:
+  //    tanggal tetap prioritas utama (sama seperti asli), tapi untuk
+  //    tanggal yang sama, dipakai cap waktu lokal tadi (bukan ID acak)
+  //    supaya transaksi yang BENAR-BENAR baru diinput selalu di atas.
+  // ============================================================
+  (function() {
+    if (typeof loadTransaksi !== 'function' || typeof saveLocalData !== 'function') return;
+
+    var LOCAL_ORDER_KEY = 'tirtaTrxLocalOrder';
+    var _trxLocalOrder = {};
+    try { _trxLocalOrder = JSON.parse(localStorage.getItem(LOCAL_ORDER_KEY) || '{}') || {}; } catch (e) { _trxLocalOrder = {}; }
+    var _knownTrxIds = {};
+    Object.keys(_trxLocalOrder).forEach(function(k) { _knownTrxIds[k] = true; });
+
+    function _persistLocalOrder() {
+      try {
+        var keys = Object.keys(_trxLocalOrder);
+        if (keys.length > 1000) { // batasi ukuran, buang cap waktu paling lama
+          keys.sort(function(a, b) { return _trxLocalOrder[a] - _trxLocalOrder[b]; });
+          keys.slice(0, keys.length - 1000).forEach(function(k) { delete _trxLocalOrder[k]; });
+        }
+        localStorage.setItem(LOCAL_ORDER_KEY, JSON.stringify(_trxLocalOrder));
+      } catch (e) { /* diamkan, tidak boleh mengganggu aplikasi utama */ }
+    }
+
+    var _origSaveLocalDataForOrder = saveLocalData;
+    saveLocalData = function() {
+      try {
+        if (Array.isArray(allTrxList)) {
+          var changed = false;
+          for (var i = 0; i < allTrxList.length; i++) {
+            var t = allTrxList[i];
+            if (t && t.id && !_knownTrxIds[t.id]) {
+              _knownTrxIds[t.id] = true;
+              _trxLocalOrder[t.id] = Date.now() + i * 0.001; // offset kecil biar stabil kalau banyak masuk bersamaan
+              changed = true;
+            }
+          }
+          if (changed) _persistLocalOrder();
+        }
+      } catch (e) { /* diamkan */ }
+      return _origSaveLocalDataForOrder.apply(this, arguments);
+    };
+
+    var _origLoadTransaksiForOrder = loadTransaksi;
+    loadTransaksi = function() {
+      var result = _origLoadTransaksiForOrder.apply(this, arguments);
+      try {
+        if (Array.isArray(allTrxList)) {
+          allTrxList.sort(function(a, b) {
+            var dateCmp = (b.tgl || '').localeCompare(a.tgl || '');
+            if (dateCmp !== 0) return dateCmp;
+            var oa = _trxLocalOrder[a.id], ob = _trxLocalOrder[b.id];
+            if (oa !== undefined && ob !== undefined) return ob - oa; // makin baru = makin atas
+            if (oa !== undefined) return -1;
+            if (ob !== undefined) return 1;
+            return (b.id || '').localeCompare(a.id || ''); // fallback: sama seperti perilaku asli
+          });
+        }
+        if (typeof renderTrxTable === 'function') renderTrxTable();
+      } catch (e) { /* diamkan */ }
+      return result;
+    };
+  })();
+  </script>
 </body>
 </html>
