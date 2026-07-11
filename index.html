@@ -5136,7 +5136,7 @@ if ('serviceWorker' in navigator) {
         items.forEach(function(it) {
           var nettPer = it.nettPer !== undefined ? it.nettPer : (it.harga || 0) - (it.discRpPer || 0);
           var sub = nettPer * (it.qty || 1);
-          lines.push('▪ ' + it.nama + ' (' + it.qty + 'x Rp ' + Number(it.harga).toLocaleString('id-ID') + ')');
+          lines.push('💧 ' + it.nama + ' (' + it.qty + 'x Rp ' + Number(it.harga).toLocaleString('id-ID') + ')');
           if (it.discRpPer) lines.push('   Disc: -Rp ' + Number(it.discRpPer).toLocaleString('id-ID'));
           lines.push('   = Rp ' + Number(sub).toLocaleString('id-ID'));
         });
