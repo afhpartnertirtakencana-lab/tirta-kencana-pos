@@ -4915,5 +4915,79 @@ if ('serviceWorker' in navigator) {
     };
   })();
   </script>
+  <script>
+  // ============================================================
+  // ADDITIF — PAGINASI TABEL TRANSAKSI (data sudah 2000+ baris)
+  // Tidak mengubah/menghapus fungsi, variabel, atau logika asli.
+  // renderTrxTable & loadTransaksi asli TETAP ADA persis di kode,
+  // hanya ditimpa (override) dari luar. Data allTrxList, filterTrx,
+  // dan semua logika bisnis lain TIDAK disentuh sama sekali — hanya
+  // JUMLAH BARIS yang di-render ke DOM dalam satu waktu yang dibatasi
+  // (50 baris/halaman), supaya render & scroll jauh lebih ringan.
+  // Fitur cari/filter/export Excel/edit/hapus/cetak ulang semuanya
+  // tetap bekerja seperti biasa terhadap SELURUH data (bukan cuma
+  // yang sedang tampil di halaman aktif).
+  // ============================================================
+  (function() {
+    if (typeof renderTrxTable !== 'function' || typeof loadTransaksi !== 'function') return;
+    var _origRenderTrxTable = renderTrxTable;
+    var _origLoadTransaksi = loadTransaksi;
+    var PAGE_SIZE = 50;
+    var _curPage = 1;
+    var _fullFiltered = null;
+
+    function _renderPageBar() {
+      var bar = document.getElementById('trxPaginationBar');
+      if (!bar) return;
+      if (!_fullFiltered || _fullFiltered.length <= PAGE_SIZE) { bar.innerHTML = ''; return; }
+      var total = _fullFiltered.length;
+      var totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+      if (_curPage > totalPages) _curPage = totalPages;
+      bar.innerHTML =
+        '<span>Halaman ' + _curPage + ' dari ' + totalPages + ' &middot; ' + total + ' transaksi</span>' +
+        '<div style="display:flex;gap:6px">' +
+          '<button type="button" class="btn btn-sm btn-outline" id="trxPagePrev"' + (_curPage <= 1 ? ' disabled' : '') + '>&lsaquo; Sebelumnya</button>' +
+          '<button type="button" class="btn btn-sm btn-outline" id="trxPageNext"' + (_curPage >= totalPages ? ' disabled' : '') + '>Berikutnya &rsaquo;</button>' +
+        '</div>';
+      var prevBtn = document.getElementById('trxPagePrev');
+      var nextBtn = document.getElementById('trxPageNext');
+      if (prevBtn) prevBtn.onclick = function() { _goToPage(_curPage - 1); };
+      if (nextBtn) nextBtn.onclick = function() { _goToPage(_curPage + 1); };
+    }
+
+    function _goToPage(n) {
+      if (!_fullFiltered) return;
+      var totalPages = Math.max(1, Math.ceil(_fullFiltered.length / PAGE_SIZE));
+      if (n < 1) n = 1;
+      if (n > totalPages) n = totalPages;
+      _curPage = n;
+      var start = (n - 1) * PAGE_SIZE;
+      _origRenderTrxTable(_fullFiltered.slice(start, start + PAGE_SIZE));
+      _renderPageBar();
+      var wrap = document.getElementById('trxTableWrap');
+      if (wrap) wrap.scrollTop = 0;
+    }
+
+    renderTrxTable = function(filtered) {
+      _fullFiltered = (filtered !== undefined) ? filtered : allTrxList;
+      _curPage = 1;
+      _origRenderTrxTable(_fullFiltered.slice(0, PAGE_SIZE));
+      _renderPageBar();
+    };
+
+    loadTransaksi = function() {
+      var result = _origLoadTransaksi.apply(this, arguments);
+      var contentArea = document.getElementById('contentArea');
+      if (contentArea) {
+        var bar = document.createElement('div');
+        bar.id = 'trxPaginationBar';
+        bar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:10px 2px;font-size:12px;color:#5b7c93';
+        contentArea.appendChild(bar);
+      }
+      _renderPageBar();
+      return result;
+    };
+  })();
+  </script>
 </body>
 </html>
