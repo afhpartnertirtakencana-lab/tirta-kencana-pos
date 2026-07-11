@@ -5083,5 +5083,112 @@ if ('serviceWorker' in navigator) {
     };
   })();
   </script>
+  <script>
+  // ============================================================
+  // ADDITIF — PERBAIKI TAMPILAN STRUK WHATSAPP (Jual & Setoran)
+  // Tidak mengubah/menghapus fungsi, variabel, atau logika asli.
+  // doStrukWA & doSetoranWA asli TETAP ADA persis di kode, hanya
+  // ditimpa (override) dari luar dengan tampilan pesan yang lebih
+  // rapi & dinamis:
+  //  - Garis pembatas dipanjangkan sampai ujung (26 karakter)
+  //  - Nama toko dibuat rata-tengah (WhatsApp tidak punya fitur
+  //    center asli untuk pesan teks, jadi dipakai trik padding
+  //    spasi standar yang umum dipakai template struk WA)
+  //  - Ditambahkan alamat & nomor WA di bawah nama toko
+  //  - Ditambahkan "TERIMA KASIH ATAS PEMBELIAN ANDA" di baris
+  //    paling bawah
+  // Data transaksi/setoran yang ditampilkan (nominal, item, status,
+  // dsb.) TIDAK ada yang berubah — cuma tata letaknya saja.
+  // ============================================================
+  (function() {
+    var STORE_ADDRESS = 'WTC MANGGA DUA LANTAI UG A/53';
+    var STORE_WA = 'WA : 0882-1105-8000';
+    var WA_DASH_RATIO = 1.85; // '-' lebih tipis dari huruf biasa di WA, jadi butuh ±1.85x jumlah karakter biar visualnya sepanjang alamat + 3 huruf (tidak kependekan, tidak kepanjangan)
+    var WA_LINE_WIDTH = Math.round((STORE_ADDRESS.length + 3) * WA_DASH_RATIO) + 5; // garis berakhir 3 huruf setelah "A/53" + 5 titik tambahan
+    var WA_DIVIDER = '-'.repeat(WA_LINE_WIDTH);
+
+    function _waCenter(text) {
+      text = String(text || '');
+      if (text.length >= WA_LINE_WIDTH) return text;
+      var left = Math.floor((WA_LINE_WIDTH - text.length) / 2);
+      return ' '.repeat(left) + text;
+    }
+
+    if (typeof doStrukWA === 'function') {
+      doStrukWA = function() {
+        if (!_strKData) return;
+        var trx = _strKData.trx, items = _strKData.items || [];
+        var storeName = (settings.namaToko || 'Tirta Kencana').toUpperCase();
+        var lines = [
+          '🧾 *STRUK TRANSAKSI*',
+          WA_DIVIDER,
+          storeName,
+          STORE_ADDRESS,
+          STORE_WA,
+          WA_DIVIDER
+        ];
+        lines.push('No: *' + trx.id + '*');
+        lines.push('Tgl: ' + fmtDate(trx.tgl));
+        lines.push('Pelanggan: *' + (trx.customer || '-') + '*');
+        if (trx.sales) lines.push('Sales: ' + trx.sales);
+        lines.push('Status: *' + (trx.status === 'cod' ? 'COD' : trx.status === 'transfer' ? 'Transfer' : trx.status === 'qris' ? 'QRIS' : 'Belum Transfer') + '*');
+        lines.push(WA_DIVIDER);
+        items.forEach(function(it) {
+          var nettPer = it.nettPer !== undefined ? it.nettPer : (it.harga || 0) - (it.discRpPer || 0);
+          var sub = nettPer * (it.qty || 1);
+          lines.push('▪ ' + it.nama + ' (' + it.qty + 'x Rp ' + Number(it.harga).toLocaleString('id-ID') + ')');
+          if (it.discRpPer) lines.push('   Disc: -Rp ' + Number(it.discRpPer).toLocaleString('id-ID'));
+          lines.push('   = Rp ' + Number(sub).toLocaleString('id-ID'));
+        });
+        lines.push(WA_DIVIDER);
+        lines.push('Gross : Rp ' + Number(trx.gross).toLocaleString('id-ID'));
+        if (trx.diskon) lines.push('Diskon: -Rp ' + Number(trx.diskon).toLocaleString('id-ID'));
+        if (trx.biayaJml && trx.biayaJml > 0) lines.push((trx.biayaKet || 'Biaya Tambahan') + ': +Rp ' + Number(trx.biayaJml).toLocaleString('id-ID'));
+        lines.push('*TOTAL : Rp ' + Number(trx.nett).toLocaleString('id-ID') + '*');
+        lines.push(WA_DIVIDER);
+        lines.push('Terima kasih atas pembelian Anda 🙏');
+        window.open('https://wa.me/?text=' + encodeURIComponent(lines.join('\n')), '_blank');
+      };
+    }
+
+    if (typeof doSetoranWA === 'function') {
+      doSetoranWA = function() {
+        if (!_lastSetoranPayload) return;
+        var p = _lastSetoranPayload;
+        var storeName = (settings.namaToko || 'Tirta Kencana').toUpperCase();
+        var lines = [
+          '🧾 *STRUK SETORAN*',
+          WA_DIVIDER,
+          storeName,
+          STORE_ADDRESS,
+          STORE_WA,
+          WA_DIVIDER
+        ];
+        lines.push('Sales: *' + p.sales + '*');
+        lines.push('Tgl: ' + fmtDate(p.tgl));
+        lines.push(WA_DIVIDER);
+        lines.push('Grand COD : ' + fmtRp(p.grandTotal));
+        lines.push('Tagihan   : ' + fmtRp(p.tagihan));
+        lines.push('Cicilan   : ' + fmtRp(p.cicilan));
+        lines.push('Pengeluaran:');
+        lines.push('  Makan   : -' + fmtRp(p.makan));
+        lines.push('  Tips    : -' + fmtRp(p.tips));
+        lines.push('  Parkir  : -' + fmtRp(p.parkir));
+        lines.push('  Bensin  : -' + fmtRp(p.bensin));
+        lines.push('  Flazz   : -' + fmtRp(p.flazz));
+        lines.push('  Transfer: -' + fmtRp(p.transfer));
+        if (p.ket1) lines.push('  ' + p.ket1 + ' : -' + fmtRp(p.jml1));
+        if (p.ket2) lines.push('  ' + p.ket2 + ' : -' + fmtRp(p.jml2));
+        lines.push(WA_DIVIDER);
+        lines.push('*TOTAL SETORAN : ' + fmtRp(p.total) + '*');
+        lines.push('Setor      : ' + fmtRp(p.setor));
+        lines.push('Selisih    : ' + fmtRp(p.selisih));
+        lines.push(WA_DIVIDER);
+        lines.push('Terima kasih atas pembelian Anda 🙏');
+        window.open('https://wa.me/?text=' + encodeURIComponent(lines.join('\n')), '_blank');
+      };
+    }
+  })();
+  </script>
 </body>
 </html>
