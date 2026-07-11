@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
   <meta name="theme-color" content="#00509E">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Tirta Kencana">
   <link rel="manifest" href="manifest.json">
@@ -4454,6 +4455,59 @@ if ('serviceWorker' in navigator) {
           }
         } catch (err) { console.warn('Gagal menyaring data duplikat:', err); }
         return _origSaveLocalData.apply(this, arguments);
+      };
+    }
+  })();
+  </script>
+
+  <script>
+  // ============================================================
+  // ADDITIF — FIX LOGO HILANG SAAT DOWNLOAD PNG (Struk Jual & Input Barang)
+  // Tidak mengubah/menghapus fungsi, variabel, atau logika asli sedikit pun.
+  //
+  // Akar masalah: buildStrukHTML() & buildStrukInputBarangHTML() memakai
+  // logo dari URL remote (_logoUrl) langsung. Saat PREVIEW (<img> biasa)
+  // gambar lintas-domain tampil normal, tapi saat DOWNLOAD PNG (html2canvas
+  // melukis ke <canvas>) gambar lintas-domain tanpa izin CORS gagal
+  // dirender sehingga logo hilang dari hasil PNG — walau proses download
+  // tetap "berhasil" (tidak error).
+  //
+  // Solusi: memakai teknik yang SUDAH ADA & terbukti berhasil di struk
+  // Setoran (_ensureLogoDataUrl — mengubah logo jadi data URL base64
+  // lebih dulu). Di sini kita terapkan pola yang sama untuk struk Jual
+  // & Input Barang, dengan cara MEMBUNGKUS (wrap) buildStrukHTML dan
+  // buildStrukInputBarangHTML dari LUAR, tanpa menyentuh isi fungsi asli.
+  // ============================================================
+  (function() {
+    var _logoPngCache = null; // {src, data} — cache data URL logo, diisi otomatis di background
+
+    function _refreshLogoPngCacheForDownload() {
+      if (typeof _ensureLogoDataUrl !== 'function' || typeof _logoUrl === 'undefined' || !_logoUrl) return;
+      if (_logoPngCache && _logoPngCache.src === _logoUrl) return; // sudah ter-cache & masih sama, tak perlu fetch ulang
+      _ensureLogoDataUrl(_logoUrl).then(function(dataUrl) {
+        _logoPngCache = { src: _logoUrl, data: dataUrl };
+      });
+    }
+    _refreshLogoPngCacheForDownload();
+    setInterval(_refreshLogoPngCacheForDownload, 4000); // jaga-jaga kalau logo diganti (upload logo baru / sinkron settings)
+
+    if (typeof buildStrukHTML === 'function') {
+      var _origBuildStrukHTML = buildStrukHTML;
+      buildStrukHTML = function() {
+        var _origLogo = _logoUrl;
+        if (_logoPngCache && _logoPngCache.src === _logoUrl) _logoUrl = _logoPngCache.data;
+        try { return _origBuildStrukHTML.apply(this, arguments); }
+        finally { _logoUrl = _origLogo; }
+      };
+    }
+
+    if (typeof buildStrukInputBarangHTML === 'function') {
+      var _origBuildStrukInputBarangHTML = buildStrukInputBarangHTML;
+      buildStrukInputBarangHTML = function() {
+        var _origLogo = _logoUrl;
+        if (_logoPngCache && _logoPngCache.src === _logoUrl) _logoUrl = _logoPngCache.data;
+        try { return _origBuildStrukInputBarangHTML.apply(this, arguments); }
+        finally { _logoUrl = _origLogo; }
       };
     }
   })();
