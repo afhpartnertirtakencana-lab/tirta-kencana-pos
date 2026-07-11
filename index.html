@@ -4706,5 +4706,214 @@ if ('serviceWorker' in navigator) {
     };
   })();
   </script>
+  <script>
+  // ============================================================
+  // ADDITIF — RESPONSIVITAS UMUM (1) Debounce pencarian Transaksi
+  //                              (2) Coalesce/gabung penulisan saveLocalData
+  // Tidak mengubah/menghapus fungsi, variabel, atau logika asli.
+  // ============================================================
+  (function() {
+    // ---- (1) Debounce input pencarian di menu Transaksi ----
+    // loadTransaksi() asli TETAP dipanggil apa adanya (tidak diubah).
+    // Setelah itu, kita ganti handler bawaan oninput="filterTrx()" pada
+    // input #trxSearch (yang tadinya trigger di SETIAP huruf) dengan
+    // versi ber-debounce, supaya render tabel hanya jalan setelah user
+    // berhenti mengetik sejenak (~300ms). Dropdown filter status/sales
+    // TIDAK didebounce (tetap instan seperti asli), karena itu tidak
+    // dipicu per-huruf.
+    if (typeof loadTransaksi === 'function') {
+      var _origLoadTransaksi = loadTransaksi;
+      loadTransaksi = function() {
+        var result = _origLoadTransaksi.apply(this, arguments);
+        var searchEl = document.getElementById('trxSearch');
+        if (searchEl && typeof filterTrx === 'function') {
+          searchEl.oninput = null; // lepas handler bawaan yang tanpa debounce
+          var _debounceTimer = null;
+          searchEl.addEventListener('input', function() {
+            if (_debounceTimer) clearTimeout(_debounceTimer);
+            _debounceTimer = setTimeout(function() { filterTrx(); }, 300);
+          });
+        }
+        return result;
+      };
+    }
+
+    // ---- (2) Coalesce penulisan saveLocalData ----
+    // saveLocalData asli TETAP ADA & TETAP dipanggil dengan isi yang sama
+    // persis (tidak ada data yang diubah/dihilangkan). Yang berubah HANYA
+    // waktu eksekusinya: kalau saveLocalData dipanggil berkali-kali dalam
+    // waktu sangat berdekatan (<150ms), yang benar-benar menulis ke
+    // localStorage cukup panggilan TERAKHIR saja — karena state yang
+    // ditulis toh sama-sama mengambil data TERBARU dari variabel global
+    // saat itu dijalankan (bukan snapshot lama), jadi hasil akhirnya identik
+    // dengan kalau dipanggil berkali-kali, cuma lebih hemat proses tulis.
+    if (typeof saveLocalData === 'function') {
+      var _origSaveLocalData2 = saveLocalData;
+      var _saveDebounceTimer = null;
+      saveLocalData = function() {
+        var args = arguments;
+        var self = this;
+        if (_saveDebounceTimer) clearTimeout(_saveDebounceTimer);
+        _saveDebounceTimer = setTimeout(function() {
+          _saveDebounceTimer = null;
+          _origSaveLocalData2.apply(self, args);
+        }, 150);
+      };
+      // Jaring pengaman: kalau tab ditutup/direfresh SAAT masih ada
+      // penulisan yang tertunda (dalam jendela 150ms di atas), paksa
+      // tulis segera supaya tidak ada data yang hilang.
+      function _flushPendingSave() {
+        if (_saveDebounceTimer) {
+          clearTimeout(_saveDebounceTimer);
+          _saveDebounceTimer = null;
+          _origSaveLocalData2();
+        }
+      }
+      window.addEventListener('beforeunload', _flushPendingSave);
+      window.addEventListener('pagehide', _flushPendingSave);
+      document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'hidden') _flushPendingSave();
+      });
+    }
+  })();
+  </script>
+  <script>
+  // ============================================================
+  // ADDITIF — PAGINATION MENU TRANSAKSI (data sudah 2000+ baris)
+  // Tidak mengubah/menghapus fungsi, variabel, atau logika asli.
+  // renderTrxTable() ASLI TETAP ADA & tetap dipakai apa adanya untuk
+  // membangun HTML baris tabel (template row tidak diduplikasi ulang,
+  // supaya tidak ada risiko beda hasil) — kita hanya MEMOTONG data
+  // yang dikirim ke fungsi asli itu jadi per-halaman (50 baris),
+  // lalu menambahkan navigasi halaman di bawah tabel.
+  // filterTrx() & loadTransaksi() TIDAK disentuh sama sekali.
+  // ============================================================
+  (function() {
+    if (typeof renderTrxTable !== 'function') return;
+    var _origRenderTrxTable = renderTrxTable;
+    var _trxPageSize = 50;
+    var _trxPageState = { filtered: null, page: 1 };
+
+    function _renderTrxPaginationBar() {
+      var wrap = document.getElementById('trxTableWrap');
+      if (!wrap || !wrap.parentNode) return;
+      var existing = document.getElementById('trxPaginationBar');
+      if (existing) existing.remove();
+
+      var totalRows = _trxPageState.filtered ? _trxPageState.filtered.length : 0;
+      if (totalRows <= _trxPageSize) return; // data sedikit, tak perlu pagination
+
+      var totalPages = Math.max(1, Math.ceil(totalRows / _trxPageSize));
+      var bar = document.createElement('div');
+      bar.id = 'trxPaginationBar';
+      bar.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:10px;padding:12px;font-size:12px;flex-wrap:wrap;border-top:1px solid rgba(0,0,0,.06)';
+      bar.innerHTML =
+        '<button type="button" class="btn btn-sm btn-outline" id="trxPagePrev"' + (_trxPageState.page <= 1 ? ' disabled' : '') + '>‹ Sebelumnya</button>' +
+        '<span>Halaman ' + _trxPageState.page + ' / ' + totalPages + ' &middot; ' + totalRows + ' transaksi</span>' +
+        '<button type="button" class="btn btn-sm btn-outline" id="trxPageNext"' + (_trxPageState.page >= totalPages ? ' disabled' : '') + '>Berikutnya ›</button>';
+      wrap.parentNode.insertBefore(bar, wrap.nextSibling);
+
+      var prevBtn = document.getElementById('trxPagePrev');
+      var nextBtn = document.getElementById('trxPageNext');
+      if (prevBtn) prevBtn.addEventListener('click', function() {
+        if (_trxPageState.page > 1) { _trxPageState.page--; _renderCurrentTrxPage(); wrap.scrollTop = 0; }
+      });
+      if (nextBtn) nextBtn.addEventListener('click', function() {
+        if (_trxPageState.page < totalPages) { _trxPageState.page++; _renderCurrentTrxPage(); wrap.scrollTop = 0; }
+      });
+    }
+
+    function _renderCurrentTrxPage() {
+      var start = (_trxPageState.page - 1) * _trxPageSize;
+      var pageItems = _trxPageState.filtered.slice(start, start + _trxPageSize);
+      _origRenderTrxTable(pageItems); // pakai fungsi render baris ASLI, tidak diduplikasi
+      _renderTrxPaginationBar();
+    }
+
+    renderTrxTable = function(filtered) {
+      if (filtered === undefined) filtered = allTrxList;
+      _trxPageState.filtered = filtered;
+      _trxPageState.page = 1; // data/filter baru -> mulai dari halaman 1
+      _renderCurrentTrxPage();
+    };
+  })();
+  </script>
+  <script>
+  // ============================================================
+  // ADDITIF — PAGINATION TABEL TRANSAKSI (100 baris/halaman)
+  // Tidak mengubah/menghapus fungsi, variabel, atau logika asli.
+  // renderTrxTable() ASLI TETAP ADA & tetap dipakai apa adanya untuk
+  // benar-benar merender baris (tidak disentuh sama sekali) — hanya
+  // dipanggil dengan POTONGAN (slice) data per halaman, bukan semua
+  // 2000+ baris sekaligus, plus ditambahkan bar navigasi halaman.
+  // Fitur cari/filter/urutan data ASLI tidak berubah sama sekali.
+  // ============================================================
+  (function() {
+    if (typeof renderTrxTable !== 'function') return;
+    var _origRenderTrxTable3 = renderTrxTable;
+    var _TRX_PAGE_SIZE = 100;
+    var _trxCurrentPage = 1;
+    var _trxLastFilteredArr = null;
+    var _trxLastSignature = null;
+
+    function _trxFilterSignature() {
+      var q = document.getElementById('trxSearch') ? document.getElementById('trxSearch').value : '';
+      var st = document.getElementById('trxFilterStatus') ? document.getElementById('trxFilterStatus').value : '';
+      var sf = document.getElementById('trxFilterSales') ? document.getElementById('trxFilterSales').value : '';
+      return q + '|' + st + '|' + sf;
+    }
+
+    function _ensureTrxPaginationBar() {
+      var bar = document.getElementById('trxPaginationBar');
+      if (!bar) {
+        var contentArea = document.getElementById('contentArea');
+        if (!contentArea) return null;
+        bar = document.createElement('div');
+        bar.id = 'trxPaginationBar';
+        bar.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:12px;padding:14px 0;font-size:12.5px;color:var(--text3)';
+        contentArea.appendChild(bar);
+      }
+      return bar;
+    }
+
+    window._trxGoToPage = function(delta) {
+      var totalItems = (_trxLastFilteredArr || allTrxList).length;
+      var totalPages = Math.max(1, Math.ceil(totalItems / _TRX_PAGE_SIZE));
+      _trxCurrentPage = Math.min(totalPages, Math.max(1, _trxCurrentPage + delta));
+      renderTrxTable(_trxLastFilteredArr || allTrxList);
+      var wrap = document.getElementById('trxTableWrap');
+      if (wrap) wrap.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    renderTrxTable = function(filtered) {
+      if (filtered === undefined) filtered = allTrxList;
+      var sig = _trxFilterSignature();
+      if (sig !== _trxLastSignature) { _trxLastSignature = sig; _trxCurrentPage = 1; }
+      _trxLastFilteredArr = filtered;
+
+      var totalItems = filtered.length;
+      var totalPages = Math.max(1, Math.ceil(totalItems / _TRX_PAGE_SIZE));
+      if (_trxCurrentPage > totalPages) _trxCurrentPage = totalPages;
+      var startIdx = (_trxCurrentPage - 1) * _TRX_PAGE_SIZE;
+      var pageSlice = filtered.slice(startIdx, startIdx + _TRX_PAGE_SIZE);
+
+      _origRenderTrxTable3(pageSlice);
+
+      var bar = _ensureTrxPaginationBar();
+      if (bar) {
+        if (totalItems === 0) {
+          bar.innerHTML = '';
+        } else {
+          var showingFrom = startIdx + 1;
+          var showingTo = Math.min(startIdx + _TRX_PAGE_SIZE, totalItems);
+          bar.innerHTML =
+            '<button class="btn btn-sm btn-outline" ' + (_trxCurrentPage <= 1 ? 'disabled' : '') + ' onclick="_trxGoToPage(-1)">⬅ Sebelumnya</button>' +
+            '<span>Menampilkan ' + showingFrom + '–' + showingTo + ' dari ' + totalItems + ' transaksi (hal. ' + _trxCurrentPage + '/' + totalPages + ')</span>' +
+            '<button class="btn btn-sm btn-outline" ' + (_trxCurrentPage >= totalPages ? 'disabled' : '') + ' onclick="_trxGoToPage(1)">Berikutnya ➡</button>';
+        }
+      }
+    };
+  })();
+  </script>
 </body>
 </html>
