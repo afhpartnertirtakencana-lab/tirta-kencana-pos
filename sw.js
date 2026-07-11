@@ -11,7 +11,7 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim());
 });
 
-// Passthrough sederhana — tidak menyimpan cache apa pun,
+// Passthrough sederhana - tidak menyimpan cache apa pun,
 // jadi tidak akan menyebabkan halaman menampilkan versi lama.
 self.addEventListener('fetch', (event) => {
   event.respondWith(
