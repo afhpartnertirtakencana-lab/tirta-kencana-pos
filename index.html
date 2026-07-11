@@ -5061,11 +5061,20 @@ if ('serviceWorker' in navigator) {
           allTrxList.sort(function(a, b) {
             var dateCmp = (b.tgl || '').localeCompare(a.tgl || '');
             if (dateCmp !== 0) return dateCmp;
+            // Prioritas 1: createdAt ASLI dari server (backend GAS sudah diupdate untuk
+            // mengirim field ini) — akurat & konsisten di semua device.
+            var ca = a.createdAt, cb = b.createdAt;
+            if (ca && cb) { var cCmp = String(cb).localeCompare(String(ca)); if (cCmp !== 0) return cCmp; }
+            else if (ca && !cb) return -1;
+            else if (!ca && cb) return 1;
+            // Prioritas 2: cap waktu lokal (untuk transaksi yang baru diinput di perangkat
+            // ini sebelum sempat sinkron createdAt dari server, atau data lama sebelum
+            // backend diupdate).
             var oa = _trxLocalOrder[a.id], ob = _trxLocalOrder[b.id];
             if (oa !== undefined && ob !== undefined) return ob - oa; // makin baru = makin atas
             if (oa !== undefined) return -1;
             if (ob !== undefined) return 1;
-            return (b.id || '').localeCompare(a.id || ''); // fallback: sama seperti perilaku asli
+            return (b.id || '').localeCompare(a.id || ''); // fallback terakhir: sama seperti perilaku asli
           });
         }
         if (typeof renderTrxTable === 'function') renderTrxTable();
