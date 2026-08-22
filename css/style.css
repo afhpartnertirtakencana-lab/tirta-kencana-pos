@@ -6,14 +6,14 @@
       --surface2: rgba(0,20,50,0.80); --border: rgba(0,168,232,0.22);
       --shadow: 0 4px 24px rgba(0,80,158,0.22); --shadow-md: 0 8px 40px rgba(0,80,158,0.32);
       --radius: 18px; --radius-sm: 12px;
-      --text: #e0f4ff; --text2: #7ec8e3; --text3: #3a6a8a;
+      --text: #e0f4ff; --text2: #7ec8e3; --text3: #5a8fb0;
       --merah: #ff4d6d; --hijau: #00e5a0; --teal: #00D1FF; --warn: #ffd166;
       --font: 'Plus Jakarta Sans', sans-serif; --mono: 'JetBrains Mono', monospace;
       --nav-h: 64px;
       --glass: rgba(0,168,232,0.08); --glass-border: rgba(0,209,255,0.20);
       --glass-shadow: 0 8px 32px rgba(0,80,158,0.28); --glow: 0 0 18px rgba(0,209,255,0.18);
     }
-    body.dark { --bg:#000d1a; --bg2:#010e1c; --card:rgba(0,20,50,0.72); --surface:rgba(0,15,40,0.85); --surface2:rgba(0,10,30,0.90); --border:rgba(0,168,232,0.18); --text:#c8eeff; --text2:#4f9ab5; --text3:#1e4a66; --biru-muda:rgba(0,80,158,0.22); --kuning-muda:rgba(0,209,255,0.08); --shadow:0 4px 24px rgba(0,0,0,0.50); --shadow-md:0 8px 40px rgba(0,0,0,0.60); }
+    body.dark { --bg:#000d1a; --bg2:#010e1c; --card:rgba(0,20,50,0.72); --surface:rgba(0,15,40,0.85); --surface2:rgba(0,10,30,0.90); --border:rgba(0,168,232,0.18); --text:#c8eeff; --text2:#4f9ab5; --text3:#558aac; --biru-muda:rgba(0,80,158,0.22); --kuning-muda:rgba(0,209,255,0.08); --shadow:0 4px 24px rgba(0,0,0,0.50); --shadow-md:0 8px 40px rgba(0,0,0,0.60); }
     * { margin:0; padding:0; box-sizing:border-box; }
     body {
       font-family:var(--font);
@@ -592,52 +592,17 @@
     }
 
     /* ================================================================
-       [NEW] LIGHT MODE (Mode Terang) — tambahan murni, tidak mengubah
-       aturan/variabel body.dark maupun default (Ocean Dark) yang sudah
-       ada & berjalan normal. Header, tombol biru, splash & tab aktif
-       tetap gradient biru tua + teks putih di kedua mode (identitas warna
-       tidak berubah), sesuai permintaan agar "warna biru tua tetap putih".
+       LIGHT MODE (Mode Terang) — konsolidasi: sebelumnya ada DUA blok
+       body.light-mode terpisah (varian awal di sini + varian kedua yang
+       memakai !important di bawah, dekat baris ~800). Karena keduanya
+       menarget selector yang sama dan blok kedua pakai !important, blok
+       pertama itu sepenuhnya tertimpa/tidak pernah tampil — dihapus di
+       sini. Dua aturan di bawah ini TIDAK ada padanannya di blok kedua,
+       jadi tetap dipertahankan sebagai satu-satunya sisa yang masih hidup
+       dari blok lama.
        ================================================================ */
-    body.light-mode {
-      --bg:#f2f8fd; --bg2:#ffffff;
-      --card: rgba(255,255,255,0.85); --surface: rgba(255,255,255,0.90); --surface2: rgba(240,248,255,0.95);
-      --border: rgba(0,80,158,0.16);
-      --shadow: 0 4px 20px rgba(0,80,158,0.10); --shadow-md: 0 8px 32px rgba(0,80,158,0.14);
-      --text:#0b2a45; --text2:#3d6a8a; --text3:#7ea8c4;
-      --biru-muda: rgba(0,80,158,0.07); --kuning-muda: rgba(0,168,232,0.06);
-      --glass: rgba(0,80,158,0.05); --glass-border: rgba(0,80,158,0.14);
-      --glass-shadow: 0 8px 28px rgba(0,80,158,0.10); --glow: 0 0 14px rgba(0,168,232,0.12);
-    }
-    body.light-mode { background: radial-gradient(ellipse at 20% 10%, #eaf5ff 0%, #f6fbff 50%, #ffffff 100%); background-attachment:fixed; }
-    body.light-mode::before { background: radial-gradient(ellipse at 80% 80%, rgba(0,168,232,0.06) 0%, transparent 60%), radial-gradient(ellipse at 10% 90%, rgba(0,209,255,0.05) 0%, transparent 50%); }
-    body.light-mode .app-container { background: rgba(255,255,255,0.80); border-color: rgba(0,80,158,0.14); }
-    body.light-mode .nav-bar { background: rgba(255,255,255,0.75); }
-    body.light-mode .menu-tabs { background: rgba(240,248,255,0.65); }
-    body.light-mode .tab { background: rgba(0,80,158,0.06); color: var(--text2); }
-    body.light-mode .tab:hover { background: rgba(0,80,158,0.12); color:#00509E; }
-    body.light-mode .card { background: rgba(255,255,255,0.80); box-shadow: 0 4px 20px rgba(0,80,158,0.08), inset 0 1px 0 rgba(255,255,255,0.6); }
-    body.light-mode .card:hover { border-color: rgba(0,80,158,0.22); box-shadow: 0 6px 24px rgba(0,80,158,0.12), inset 0 1px 0 rgba(255,255,255,0.7); }
-    body.light-mode input, body.light-mode select, body.light-mode textarea { background: rgba(255,255,255,0.90); color: var(--text); border-color: rgba(0,80,158,0.18); }
-    body.light-mode input[readonly] { background: rgba(0,80,158,0.08); color:#00509E; }
-    body.light-mode select option { background:#ffffff; color:#0b2a45; }
-    body.light-mode th { background: rgba(0,80,158,0.08); color:#00509E; }
-    body.light-mode td { border-bottom-color: rgba(0,80,158,0.10); }
-    body.light-mode tr:hover td { background: rgba(0,80,158,0.04); }
-    body.light-mode .total-box { background: rgba(0,80,158,0.07); color:#00509E; }
     body.light-mode .summary-box { background: rgba(0,80,158,0.07); }
     body.light-mode .summary-item .value { color:#fff; }
-    body.light-mode .modal { background: rgba(255,255,255,0.92); }
-    body.light-mode .modal-header h2 { color:#00509E; }
-    body.light-mode .bottom-bar { background: rgba(240,248,255,0.70); }
-    body.light-mode #syncStatus { color:#3d6a8a; }
-    body.light-mode .loading { color: var(--text2); }
-    body.light-mode .menu-row-title { color:#00509E; }
-    body.light-mode .menu-circle-label { color: var(--text2); }
-    body.light-mode .menu-circle { background: rgba(255,255,255,0.75); box-shadow: 0 4px 14px rgba(0,80,158,0.10), inset 0 1px 0 rgba(255,255,255,0.8); }
-    body.light-mode .action-card { background: rgba(255,255,255,0.70); border-color: rgba(0,80,158,0.14); }
-    body.light-mode .action-card:hover { background: rgba(0,80,158,0.06); }
-    body.light-mode .card-title { color:#00509E; }
-    body.light-mode .card-title i { color:#00A8E8; }
 
     /* ── Tombol toggle mode: warna berubah sesuai mode aktif ── */
     .btn-darkmode.is-light { background: rgba(255,193,7,0.18); color:#b8860b; border-color: rgba(255,193,7,0.4); }
@@ -863,13 +828,13 @@
        terang aslinya (--text:#e0f4ff dari :root) dan TIDAK kelihatan hitam lagi
        di atas latar gelap. */
     body.light-mode {
-      --biru:#1E63E9; --biru2:#2F80FF; --kuning:#FFC94D;
+      --biru:#1E63E9; --biru2:#2F80FF; --kuning:#A87C0A;
       --biru-muda:#EAF2FF; --kuning-muda:#FFF6DE;
       --bg:#F3F7FD; --bg2:#FFFFFF; --card:#FFFFFF; --surface:#FFFFFF; --surface2:#F8FAFF;
       --border: rgba(30,99,233,0.12);
       --shadow: 8px 8px 20px rgba(163,177,198,0.35), -8px -8px 20px rgba(255,255,255,0.85);
       --shadow-md: 12px 12px 28px rgba(163,177,198,0.38), -12px -12px 28px rgba(255,255,255,0.9);
-      --text:#16213E; --text2:#5B6B8C; --text3:#9FB0CC;
+      --text:#16213E; --text2:#5B6B8C; --text3:#556280;
       --merah:#EF4444; --hijau:#16A34A; --teal:#1E63E9; --warn:#F59E0B;
       --glass: rgba(30,99,233,0.04); --glass-border: rgba(30,99,233,0.10);
       --glass-shadow: 8px 8px 24px rgba(163,177,198,0.30), -8px -8px 24px rgba(255,255,255,0.8);
