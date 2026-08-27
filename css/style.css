@@ -928,15 +928,14 @@
        dibereskan sekalian: angka statistik Dashboard, judul section, dan SEMUA badge status
        (COD/Transfer/QRIS/Belum Bayar/Kiriman/Titipan) yang dipakai di banyak menu (Transaksi,
        Input Barang, Titipan, dll), karena semuanya berasal dari pola hardcode yang sama. */
-    body.light-mode .role-tag { background:rgba(30,99,233,0.12) !important; border-color:rgba(30,99,233,0.30) !important; color:#1E63E9 !important; text-shadow:none !important; }
-    body.light-mode .stat-value { color:#1E63E9 !important; }
-    body.light-mode .section-title { color:#1E63E9 !important; border-bottom-color:rgba(30,99,233,0.30) !important; }
-    body.light-mode .summary-item i { color:#1E63E9 !important; text-shadow:none !important; }
-    body.light-mode .tag { background:rgba(30,99,233,0.10) !important; border-color:rgba(30,99,233,0.30) !important; color:#1E63E9 !important; }
+    body.light-mode .role-tag { background:rgba(0,0,0,0.06) !important; border-color:rgba(0,0,0,0.20) !important; color:#000000 !important; text-shadow:none !important; }
+    body.light-mode .stat-value { color:#000000 !important; }
+    body.light-mode .section-title { color:#000000 !important; border-bottom-color:rgba(0,0,0,0.20) !important; }
+    body.light-mode .tag { background:rgba(0,0,0,0.05) !important; border-color:rgba(0,0,0,0.20) !important; color:#000000 !important; }
     body.light-mode .tag-remove { color:#C81E3D !important; }
     body.light-mode .status-cod { color:#7A5600 !important; border-color:rgba(255,209,102,0.55) !important; }
     body.light-mode .status-transfer { color:#075985 !important; border-color:rgba(0,168,232,0.45) !important; }
-    body.light-mode .status-qris { color:#0A6E90 !important; border-color:rgba(0,209,255,0.45) !important; }
+    body.light-mode .status-qris { color:#000000 !important; border-color:rgba(0,0,0,0.25) !important; }
     body.light-mode .status-belumbayar { color:#C81E3D !important; border-color:rgba(255,77,109,0.45) !important; }
     body.light-mode .status-kiriman { color:#1D6FA4 !important; border-color:rgba(0,168,232,0.40) !important; }
     body.light-mode .status-titipan { color:#5B21B6 !important; border-color:rgba(139,92,246,0.45) !important; }
