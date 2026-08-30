@@ -185,6 +185,10 @@
        tidak bergantung pada gesture swipe/drag yang di sebagian tablet tidak terdeteksi
        browser-nya. Klik/tap tombol selalu berfungsi di semua device. Murni tambahan
        (wrapper + 2 tombol baru), #menuTabs & isinya dari renderMenuTabs() tidak diubah. */
+    /* [REVERTED] Bottom nav dihapus (lihat komentar di .bottom-nav-mobile) - tab
+       menu ini dikembalikan jadi navigasi utama seperti semula, di semua ukuran
+       layar. Tombol panah kiri/kanan di bawah tetap dipakai supaya tetap mudah
+       digeser di tablet yang gesture swipe-nya kadang tidak terdeteksi. */
     .menu-tabs-wrap { position:relative; display:flex; align-items:stretch; }
     .menu-tabs-wrap .menu-tabs { flex:1; min-width:0; }
     .menu-tabs-arrow {
@@ -248,14 +252,11 @@
     body.light-mode .mobile-greeting { color:var(--text2); }
     body.light-mode .mobile-greeting #mobileGreetName { color:var(--biru); }
 
-    /* ── [NEW] Menu bawah (bottom nav) - khusus tampilan mobile ──
-       Menggantikan .menu-tabs-wrap di layar HP (disembunyikan lewat media query
-       max-width:600px di index.html; tablet/web tidak berubah sama sekali).
-       Diisi lewat renderBottomNav() di app.js sesuai role user (admin/sales/
-       driver) - lihat BOTTOM_NAV_CONFIG. Warna/gaya konsisten dengan nav-bar
-       (biru gelap glassmorphism) supaya menyatu dengan tema, dan TIDAK berubah
-       warna di light-mode (sama seperti header - lihat komentar di header CSS),
-       supaya kontras ikon tetap terjaga di kedua mode. */
+    /* ── Menu bawah (bottom nav) - khusus TIER "KOMPAK" (HP & tablet potret kecil) ──
+       Ditampilkan/disembunyikan lewat 2 media query di index.html (bukan di sini),
+       supaya satu tempat saja yang mengatur kapan tier kompak vs tier lebar aktif.
+       Di tier lebar (tablet landscape/PC/laptop), navigasi pakai toolbar ikon hasil
+       restyle .menu-tabs-wrap, bukan bar ini - lihat index.html. */
     .bottom-nav-mobile {
       display:none; position:fixed; left:0; right:0; bottom:0; z-index:60;
       max-width:500px; margin:0 auto;
@@ -287,6 +288,7 @@
       display:flex; align-items:center; justify-content:center;
       box-shadow:0 4px 14px rgba(0,168,232,0.55), 0 0 0 4px rgba(0,20,45,0.94);
       transform:translateY(-12px);
+      cursor:pointer;
     }
     .bnav-center .bnav-center-btn i { color:#fff; font-size:1.25rem; }
     .bnav-center span { transform:translateY(-10px); }
@@ -305,8 +307,13 @@
       max-height:62vh; overflow-y:auto; -webkit-overflow-scrolling:touch;
       box-shadow:0 -10px 34px rgba(0,10,25,0.45);
       transform:translateY(100%); transition:transform 0.25s ease;
+      pointer-events:none;
     }
-    .bottom-nav-more-sheet.open { transform:translateY(0); }
+    /* Base rule menaruh sheet-nya tetap "ada" (display ditentukan tier aktif di
+       index.html) tapi digeser keluar layar (translateY 100%) supaya transisi
+       slide-up mulus - pointer-events dimatikan saat tersembunyi biar tidak
+       menghalangi klik ke konten di belakangnya, dinyalakan lagi saat .open. */
+    .bottom-nav-more-sheet.open { transform:translateY(0); pointer-events:auto; }
     .bnav-more-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; font-weight:700; color:var(--text); font-size:0.9rem; }
     .bnav-more-close { background:none; border:none; color:var(--text3); font-size:1rem; cursor:pointer; padding:4px 8px; }
     .bnav-more-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
