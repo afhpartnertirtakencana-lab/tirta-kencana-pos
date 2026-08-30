@@ -39,7 +39,12 @@
        (header ringkas, menu bawah/bottom-nav, kartu ringkasan freeze, dst) juga
        berlaku di tablet, bukan cuma HP. Layar di atas 1024px (desktop/laptop)
        tetap pakai header & tab-menu lama seperti sebelumnya. */
-    @media (max-width: 1024px) {
+    /* [CHANGED] Dinaikkan lagi ke 1366px - tablet ukuran besar/mode landscape
+       (mis. iPad Pro landscape ~1366px, tablet Android besar) lebarnya bisa
+       melebihi 1024px, jadi kalau breakpoint cuma 1024px tampilan HP tidak
+       kepakai saat tablet diputar ke landscape. 1366px mencakup hampir semua
+       tablet di kedua orientasi; laptop/desktop asli baru mulai di atas ini. */
+    @media (max-width: 1366px) {
       .header { padding-bottom: 8px !important; }
       .header .logo-header { width: 52px !important; height: 52px !important; }
       .header .logo-header img { width: 62px !important; height: 62px !important; }
@@ -128,7 +133,7 @@
        supaya tidak makan tempat terlalu banyak di layar lebar. Sama polanya dengan
        aturan mobile di atas, cuma faktor skalanya beda & breakpoint-nya kebalikannya
        (berlaku mulai layar yang LEBIH LEBAR dari batas mobile). */
-    @media (min-width: 1025px) {
+    @media (min-width: 1367px) {
       .header { padding-bottom: 17px !important; }
       .header .logo-header { width: 69px !important; height: 69px !important; }
       .header .logo-header img { width: 84px !important; height: 84px !important; }

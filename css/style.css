@@ -42,6 +42,7 @@
        ukuran tablet, supaya tetap sejajar/pas dengan kartu aplikasi (bukan cuma
        500px sempit di tengah layar tablet yang lebih lebar). */
     @media(min-width:768px){ .bottom-nav-mobile, .bottom-nav-more-sheet { max-width:720px; } }
+    @media(min-width:1024px){ .bottom-nav-mobile, .bottom-nav-more-sheet { max-width:1000px; } }
     @media(max-width:480px){ body{padding:4px;} .app-container{border-radius:18px;} .brand{font-size:1.5rem!important;} .tab{font-size:0.65rem!important;padding:6px 10px!important;} input,select,textarea{font-size:0.75rem!important;padding:8px 10px!important;} .btn{font-size:0.75rem!important;padding:8px 12px!important;} table{font-size:0.65rem!important;} th,td{padding:4px 5px!important;} .card{padding:12px!important;} }
 
     /* ── HEADER ── */
