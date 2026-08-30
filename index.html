@@ -134,6 +134,23 @@
       .tab i { font-size: 1.25rem !important; }
       .tab span, .tab { font-size: 0.68rem !important; }
 
+      /* [FIX] "jangan hitam putih" - sebelumnya semua ikon toolbar warnanya sama
+         (ikut warna teks label, abu-abu/hitam polos) jadi kelihatan monokrom.
+         Sekarang tiap ikon dapat warna bergilir (siklus 8 warna) - palet sama
+         persis dengan yang sudah dipakai di ring warna-warni grid "Menu Utama",
+         supaya senada dengan tema aplikasi, bukan warna sembarangan baru. Tombol
+         yang aktif (sedang dibuka) tetap ikon putih polos supaya kontras dengan
+         latar gradien birunya sendiri. */
+      .menu-tabs .tab:nth-child(8n+1) i { color: #00A8E8 !important; }
+      .menu-tabs .tab:nth-child(8n+2) i { color: #00E5A0 !important; }
+      .menu-tabs .tab:nth-child(8n+3) i { color: #FFB300 !important; }
+      .menu-tabs .tab:nth-child(8n+4) i { color: #8B5CF6 !important; }
+      .menu-tabs .tab:nth-child(8n+5) i { color: #FF4D6D !important; }
+      .menu-tabs .tab:nth-child(8n+6) i { color: #14B8A6 !important; }
+      .menu-tabs .tab:nth-child(8n+7) i { color: #FF8A65 !important; }
+      .menu-tabs .tab:nth-child(8n) i { color: #2F80FF !important; }
+      .menu-tabs .tab.active i { color: #fff !important; text-shadow: 0 0 8px rgba(255,255,255,0.5); }
+
       /* Menu Utama di dashboard - kolom ditambah, ikon dibesarkan, memanfaatkan
          ruang layar lebar yang tersedia. */
       .menu-grid { grid-template-columns: repeat(8, 1fr) !important; gap: 20px 14px !important; }

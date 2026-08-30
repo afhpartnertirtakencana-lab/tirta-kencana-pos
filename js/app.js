@@ -1014,7 +1014,7 @@
         h = `<button class="tab ${currentPage==='dashboard'?'active':''}" onclick="navigateTo('dashboard')"><i class="fas fa-chart-pie"></i> Dashboard</button>
              <button class="tab ${currentPage==='inputbarang'?'active':''}" onclick="navigateTo('inputbarang')"><i class="fas fa-boxes"></i> Input</button>
              <button class="tab ${currentPage==='rekapinput'?'active':''}" onclick="navigateTo('rekapinput')"><i class="fas fa-boxes"></i> Rekap Input</button>
-             <button class="tab ${currentPage==='cekkosongan'?'active':''}" onclick="navigateTo('cekkosongan')"><i class="fas fa-recycle"></i> Cek Kosongan</button>
+             <button class="tab ${currentPage==='pesanan'?'active':''}" onclick="navigateTo('pesanan')"><i class="fas fa-eye"></i> Pesanan</button>
              <button class="tab ${currentPage==='pengaturanUser'?'active':''}" onclick="navigateTo('pengaturanUser')"><i class="fas fa-cog"></i> Atur</button>`;
       }
       document.getElementById('menuTabs').innerHTML = h;
@@ -1193,7 +1193,7 @@
       // (Jual, Input, dst) sudah bisa diakses lewat menu bawah (mobile/tablet) atau
       // tab menu (desktop), jadi tidak perlu duplikasi di sini.
 
-      h += `<div style="font-weight:700;font-size:0.9rem;color:var(--biru);margin-bottom:12px;">📌 Menu Utama</div>`;
+      h += `<div style="font-weight:700;font-size:0.9rem;color:var(--biru);margin:4px 0 12px;">📌 Menu Utama</div>`;
 
       if (role === 'admin') {
         h += `<div class="menu-row-title">👑 Admin</div>`;
