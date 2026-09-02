@@ -405,6 +405,177 @@
       const enabled = localStorage.getItem('tirtaBioEnabled') === '1';
       if (enabled) { disableBiometricLock(); } else { await enableBiometricLock(); renderBioSettingUI(); }
     }
+
+    // ========== [NEW] KUNCI POLA (PATTERN LOCK) ==========
+    // Catatan: login biometrik di atas (WebAuthn) SUDAH otomatis mencakup Face ID -
+    // di HP yang Face ID-nya aktif (mis. iPhone), enableBiometricLock() di atas akan
+    // memunculkan prompt Face ID dengan sendirinya (browser yang memilih sensor mana
+    // yang dipakai, bukan sesuatu yang bisa/perlu dipisah lewat kode). Makanya label
+    // di pengaturan sudah ditulis "Sidik Jari / Face ID".
+    // Pattern Lock ini fitur BARU & terpisah - pola 3x3 titik yang digambar dengan
+    // jari (seperti kunci pola Android), sebagai alternatif buat device yang tidak
+    // punya sensor biometrik, atau buat yang lebih suka pola.
+    async function _sha256Hex(str) {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+    function _patternDotCoord(i) { return { x: 50 + (i % 3) * 100, y: 50 + Math.floor(i / 3) * 100 }; }
+    function _patternHitTest(x, y) {
+      for (let i = 0; i < 9; i++) { const c = _patternDotCoord(i); if (Math.hypot(x - c.x, y - c.y) <= 32) return i; }
+      return -1;
+    }
+    function _patternGridSvgHtml() {
+      let dots = '';
+      for (let i = 0; i < 9; i++) {
+        const c = _patternDotCoord(i);
+        dots += `<circle class="pattern-dot-outer" data-i="${i}" cx="${c.x}" cy="${c.y}" r="28" fill="transparent" stroke="rgba(0,168,232,0.35)" stroke-width="2"></circle>
+                 <circle class="pattern-dot-inner" data-i="${i}" cx="${c.x}" cy="${c.y}" r="9" fill="rgba(0,168,232,0.55)"></circle>`;
+      }
+      return `<svg id="patternSvg" viewBox="0 0 300 300" style="width:250px;height:250px;touch-action:none;user-select:none">
+        <g id="patternLines"></g>
+        <line id="patternDragLine" x1="0" y1="0" x2="0" y2="0" stroke="#00D1FF" stroke-width="4" stroke-linecap="round" style="display:none"></line>
+        ${dots}
+      </svg>`;
+    }
+    // Memasang interaksi gambar-pola (drag jari/mouse) ke satu elemen SVG grid.
+    // onFinish(sequence) dipanggil setiap kali user selesai menggambar (angkat jari),
+    // sequence = array indeks titik (0-8) yang dilewati, urut sesuai gambar.
+    function _wirePatternDrag(svg, onFinish) {
+      const linesG = svg.querySelector('#patternLines');
+      const dragLine = svg.querySelector('#patternDragLine');
+      let sequence = [], dragging = false;
+      function svgPoint(e) {
+        const r = svg.getBoundingClientRect();
+        return { x: (e.clientX - r.left) / r.width * 300, y: (e.clientY - r.top) / r.height * 300 };
+      }
+      function markDot(i) {
+        const inner = svg.querySelector(`.pattern-dot-inner[data-i="${i}"]`);
+        const outer = svg.querySelector(`.pattern-dot-outer[data-i="${i}"]`);
+        if (inner) { inner.setAttribute('fill', '#00D1FF'); inner.setAttribute('r', '11'); }
+        if (outer) outer.setAttribute('stroke', '#00D1FF');
+      }
+      function addSegment(i1, i2) {
+        const c1 = _patternDotCoord(i1), c2 = _patternDotCoord(i2);
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', c1.x); line.setAttribute('y1', c1.y);
+        line.setAttribute('x2', c2.x); line.setAttribute('y2', c2.y);
+        line.setAttribute('stroke', '#00D1FF'); line.setAttribute('stroke-width', '4'); line.setAttribute('stroke-linecap', 'round');
+        linesG.appendChild(line);
+      }
+      function reset() {
+        sequence = []; linesG.innerHTML = ''; dragLine.style.display = 'none';
+        svg.querySelectorAll('.pattern-dot-inner').forEach(el => { el.setAttribute('fill', 'rgba(0,168,232,0.55)'); el.setAttribute('r', '9'); });
+        svg.querySelectorAll('.pattern-dot-outer').forEach(el => el.setAttribute('stroke', 'rgba(0,168,232,0.35)'));
+      }
+      function onDown(e) {
+        const p = svgPoint(e); const hit = _patternHitTest(p.x, p.y);
+        if (hit < 0) return;
+        reset(); dragging = true; sequence.push(hit); markDot(hit); dragLine.style.display = 'block';
+        if (svg.setPointerCapture) { try { svg.setPointerCapture(e.pointerId); } catch (err) {} }
+      }
+      function onMove(e) {
+        if (!dragging) return;
+        const p = svgPoint(e);
+        const last = _patternDotCoord(sequence[sequence.length - 1]);
+        dragLine.setAttribute('x1', last.x); dragLine.setAttribute('y1', last.y);
+        dragLine.setAttribute('x2', p.x); dragLine.setAttribute('y2', p.y);
+        const hit = _patternHitTest(p.x, p.y);
+        if (hit >= 0 && !sequence.includes(hit)) { addSegment(sequence[sequence.length - 1], hit); sequence.push(hit); markDot(hit); }
+      }
+      function onUp() {
+        if (!dragging) return;
+        dragging = false; dragLine.style.display = 'none';
+        const finished = sequence.slice();
+        reset();
+        onFinish(finished);
+      }
+      svg.addEventListener('pointerdown', onDown);
+      svg.addEventListener('pointermove', onMove);
+      svg.addEventListener('pointerup', onUp);
+      svg.addEventListener('pointerleave', onUp);
+    }
+    // Modal sekali-gambar (dipakai saat SETUP pola baru) - resolve(sequence) kalau
+    // berhasil (>=4 titik), resolve(null) kalau dibatalkan.
+    function _promptDrawPatternOnce(title) {
+      return new Promise((resolve) => {
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,10,25,0.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:20px;';
+        modal.innerHTML = `<div style="color:#fff;font-weight:700;font-size:1rem;text-align:center;max-width:280px">${esc(title)}</div>
+          <div id="pgw"></div>
+          <div id="patternHintOnce" style="color:#9fc1e6;font-size:0.8rem">Hubungkan minimal 4 titik</div>
+          <button type="button" class="btn btn-outline" id="patternCancelOnce" style="color:#fff;border-color:rgba(255,255,255,0.3)">Batal</button>`;
+        document.body.appendChild(modal);
+        modal.querySelector('#pgw').innerHTML = _patternGridSvgHtml();
+        const svg = modal.querySelector('#patternSvg');
+        _wirePatternDrag(svg, (seq) => {
+          if (seq.length < 4) { modal.querySelector('#patternHintOnce').textContent = 'Terlalu pendek, minimal 4 titik - coba lagi'; return; }
+          modal.remove(); resolve(seq);
+        });
+        modal.querySelector('#patternCancelOnce').onclick = () => { modal.remove(); resolve(null); };
+      });
+    }
+    function isPatternLockEnabled() { return localStorage.getItem('tirtaPatternEnabled') === '1'; }
+    async function enablePatternLock() {
+      const p1 = await _promptDrawPatternOnce('Gambar pola kunci baru');
+      if (!p1) return false;
+      const p2 = await _promptDrawPatternOnce('Gambar ulang pola yang sama untuk konfirmasi');
+      if (!p2) return false;
+      if (p1.join('-') !== p2.join('-')) { Swal.fire('Tidak Cocok', 'Pola konfirmasi tidak sama dengan yang pertama. Coba lagi.', 'error'); return false; }
+      localStorage.setItem('tirtaPatternHash', await _sha256Hex(p1.join('-')));
+      localStorage.setItem('tirtaPatternEnabled', '1');
+      Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, icon: 'success', title: 'Kunci pola diaktifkan!' });
+      return true;
+    }
+    function disablePatternLock() {
+      localStorage.removeItem('tirtaPatternHash');
+      localStorage.removeItem('tirtaPatternEnabled');
+      Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Kunci pola dinonaktifkan' });
+      renderPatternSettingUI();
+    }
+    async function togglePatternSetting() {
+      if (isPatternLockEnabled()) { disablePatternLock(); } else { await enablePatternLock(); renderPatternSettingUI(); }
+    }
+    function renderPatternSettingUI() {
+      const statusEl = document.getElementById('patternSettingStatus');
+      const btnEl = document.getElementById('patternSettingBtn');
+      if (!statusEl || !btnEl) return;
+      const enabled = isPatternLockEnabled();
+      statusEl.textContent = enabled ? 'Aktif di perangkat ini — app akan minta gambar pola tiap dibuka.' : 'Nonaktif — app langsung masuk seperti biasa tanpa diminta pola.';
+      btnEl.innerHTML = enabled ? '<i class="fas fa-lock-open"></i> Nonaktifkan Kunci Pola' : '<i class="fas fa-draw-polygon"></i> Aktifkan Kunci Pola';
+    }
+    // Dipanggil sekali dari halaman Pengaturan (admin/sales/driver) setelah HTML-nya
+    // dirender, supaya kedua tombol (biometrik & pola) langsung terisi status yang benar.
+    function initKeamananSectionUI() { renderBioSettingUI(); renderPatternSettingUI(); }
+
+    // Lock-screen pola (dipanggil saat app dibuka & kunci pola aktif) - beda dari
+    // modal setup di atas: ini LANGSUNG cek kecocokan hash & LOOPING kalau salah
+    // (tidak menutup diri sendiri sampai benar atau user pilih "Gunakan Password").
+    async function showPatternLockScreen() {
+      document.getElementById('loginPage').classList.add('hidden');
+      document.getElementById('mainApp').classList.add('hidden');
+      const hash = localStorage.getItem('tirtaPatternHash');
+      if (!hash) { showMainApp(); return; }
+      const modal = document.createElement('div');
+      modal.id = 'patternLockModal';
+      modal.style.cssText = 'position:fixed;inset:0;z-index:9999;background:linear-gradient(160deg,#010d1f,#00509E);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:20px;';
+      modal.innerHTML = `
+        <div style="width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;margin-bottom:4px"><i class="fas fa-draw-polygon" style="font-size:1.6rem;color:#00D1FF"></i></div>
+        <div style="color:#fff;font-weight:700;font-size:1.05rem">Gambar Pola untuk Membuka</div>
+        <div id="pgw2"></div>
+        <div id="patternLockHint" style="color:#9fc1e6;font-size:0.8rem;min-height:1.2em">Hubungkan titik-titik sesuai pola Anda</div>
+        <button type="button" class="btn btn-outline" id="patternUsePasswordBtn" style="color:#fff;border-color:rgba(255,255,255,0.35)"><i class="fas fa-key"></i> Gunakan Password</button>`;
+      document.body.appendChild(modal);
+      modal.querySelector('#pgw2').innerHTML = _patternGridSvgHtml();
+      const svg = modal.querySelector('#patternSvg');
+      const hintEl = modal.querySelector('#patternLockHint');
+      _wirePatternDrag(svg, async (seq) => {
+        if (seq.length < 4) return; // ketuk-lepas tidak sengaja, abaikan diam-diam
+        const drawnHash = await _sha256Hex(seq.join('-'));
+        if (drawnHash === hash) { modal.remove(); showMainApp(); }
+        else { hintEl.textContent = 'Pola salah, coba lagi'; hintEl.style.color = '#FF8A80'; setTimeout(() => { hintEl.style.color = '#9fc1e6'; hintEl.textContent = 'Hubungkan titik-titik sesuai pola Anda'; }, 1500); }
+      });
+      modal.querySelector('#patternUsePasswordBtn').onclick = () => { modal.remove(); doLogout(); };
+    }
     let products = [], pelanggan = [], allTrxList = [], allCustomers = [], stockInHistory = [], setoranHistory = [];
     let drivers = ['oji','padong','said','dedi','zehpudin'];
     let settings = { namaToko:'Tirta Kencana', alamat:'WTC Mangga Dua Lantai UG Blok A/53', tagline:'DO GOOD AND GOOD WILL COME TO YOU', bottomLine:'Terima kasih sudah berbelanja', logo:'', qris:'', telepon:'088211058000', bank1:{ nama:'BCA', norek:'6930099099', penerima:'Hendri' }, bank2:{ nama:'bluBCA', norek:'002283588888', penerima:'Hendri' }, salesList:[] };
@@ -5713,9 +5884,14 @@
           <div class="section-title">💾 Backup & Restore</div><div class="flex-row"><button class="btn btn-warning" style="flex:1" onclick="backupData()"><i class="fas fa-download"></i> Backup</button><button class="btn btn-danger" style="flex:1" onclick="restoreData()"><i class="fas fa-upload"></i> Restore</button></div>
           <div class="section-title">🔐 Keamanan</div>
           <div class="form-group">
-            <label>Login Biometrik (Sidik Jari / Wajah)</label>
+            <label>Login Biometrik (Sidik Jari / Face ID)</label>
             <div id="bioSettingStatus" style="font-size:0.75rem;color:var(--text3);margin-bottom:8px"></div>
             <button class="btn btn-primary btn-block" id="bioSettingBtn" onclick="toggleBiometricSetting()">Memuat...</button>
+          </div>
+          <div class="form-group mt-2">
+            <label>Kunci Pola (Pattern Lock)</label>
+            <div id="patternSettingStatus" style="font-size:0.75rem;color:var(--text3);margin-bottom:8px"></div>
+            <button class="btn btn-outline btn-block" id="patternSettingBtn" onclick="togglePatternSetting()">Memuat...</button>
           </div>
         </div>`;
       document.getElementById('setNamaToko').value=settings.namaToko||''; document.getElementById('setTagline').value=settings.tagline||''; document.getElementById('setAlamat').value=settings.alamat||''; document.getElementById('setTelepon').value=settings.telepon||''; document.getElementById('setFooter').value=settings.bottomLine||''; document.getElementById('setB1Nama').value=settings.bank1?.nama||''; document.getElementById('setB1Norek').value=settings.bank1?.norek||''; document.getElementById('setB1Penerima').value=settings.bank1?.penerima||''; document.getElementById('setB2Nama').value=settings.bank2?.nama||''; document.getElementById('setB2Norek').value=settings.bank2?.norek||''; document.getElementById('setB2Penerima').value=settings.bank2?.penerima||''; 
@@ -5727,6 +5903,7 @@
       const ssIdEl = document.getElementById('setSpreadsheetId');
       if (ssIdEl) ssIdEl.value = localStorage.getItem('tirtaSpreadsheetId') || '';
       renderBioSettingUI();
+      renderPatternSettingUI();
     }
 
     function saveGasUrl() {
@@ -5818,10 +5995,22 @@
             <div class="flex-row mb-2"><button class="btn btn-primary" style="flex:1" onclick="saveUserGasUrl()"><i class="fas fa-link"></i> Simpan URL</button><button class="btn btn-outline btn-sm" onclick="testUserGasConnection()"><i class="fas fa-plug"></i> Test</button></div>
             <div class="section-title">💾 Backup & Restore Data Lokal</div>
             <div class="flex-row"><button class="btn btn-warning" style="flex:1" onclick="backupData()"><i class="fas fa-download"></i> Backup</button><button class="btn btn-danger" style="flex:1" onclick="restoreData()"><i class="fas fa-upload"></i> Restore</button></div>
+            <div class="section-title">🔐 Keamanan</div>
+            <div class="form-group">
+              <label>Login Biometrik (Sidik Jari / Face ID)</label>
+              <div id="bioSettingStatus" style="font-size:0.75rem;color:var(--text3);margin-bottom:8px"></div>
+              <button class="btn btn-primary btn-block" id="bioSettingBtn" onclick="toggleBiometricSetting()">Memuat...</button>
+            </div>
+            <div class="form-group mt-2">
+              <label>Kunci Pola (Pattern Lock)</label>
+              <div id="patternSettingStatus" style="font-size:0.75rem;color:var(--text3);margin-bottom:8px"></div>
+              <button class="btn btn-outline btn-block" id="patternSettingBtn" onclick="togglePatternSetting()">Memuat...</button>
+            </div>
           </div>
         `;
         if (_logoUrl) document.getElementById('salesLogoPrev').innerHTML = `<img src="${_logoUrl}" style="max-height:80px;max-width:100%;border-radius:8px"><div style="font-size:11px;color:var(--text3);margin-top:6px">Klik untuk ganti</div>`;
         if (_qrisUrl) document.getElementById('salesQrisPrev').innerHTML = `<img src="${_qrisUrl}" style="max-height:130px;max-width:100%;border-radius:8px"><div style="font-size:11px;color:var(--text3);margin-top:6px">Klik untuk ganti</div>`;
+        initKeamananSectionUI();
       } 
       else if (role === 'driver') {
         document.getElementById('contentArea').innerHTML = `
@@ -5835,9 +6024,21 @@
             <div class="flex-row mb-2"><button class="btn btn-primary" style="flex:1" onclick="saveUserGasUrl()"><i class="fas fa-link"></i> Simpan URL</button><button class="btn btn-outline btn-sm" onclick="testUserGasConnection()"><i class="fas fa-plug"></i> Test</button></div>
             <div class="section-title">💾 Backup & Restore Data Lokal</div>
             <div class="flex-row"><button class="btn btn-warning" style="flex:1" onclick="backupData()"><i class="fas fa-download"></i> Backup</button><button class="btn btn-danger" style="flex:1" onclick="restoreData()"><i class="fas fa-upload"></i> Restore</button></div>
+            <div class="section-title">🔐 Keamanan</div>
+            <div class="form-group">
+              <label>Login Biometrik (Sidik Jari / Face ID)</label>
+              <div id="bioSettingStatus" style="font-size:0.75rem;color:var(--text3);margin-bottom:8px"></div>
+              <button class="btn btn-primary btn-block" id="bioSettingBtn" onclick="toggleBiometricSetting()">Memuat...</button>
+            </div>
+            <div class="form-group mt-2">
+              <label>Kunci Pola (Pattern Lock)</label>
+              <div id="patternSettingStatus" style="font-size:0.75rem;color:var(--text3);margin-bottom:8px"></div>
+              <button class="btn btn-outline btn-block" id="patternSettingBtn" onclick="togglePatternSetting()">Memuat...</button>
+            </div>
           </div>
         `;
         renderDriverUserTags();
+        initKeamananSectionUI();
       } else {
         document.getElementById('contentArea').innerHTML = '<div class="card"><p class="text-center">Role tidak dikenali.</p></div>';
       }
@@ -6010,7 +6211,9 @@ if ('serviceWorker' in navigator) {
     } else {
     const savedUser = localStorage.getItem('tirtaUser');
     if (savedUser) { try { const parsed = JSON.parse(savedUser); sessionToken = parsed.token || null; currentUser = { name: parsed.name, role: parsed.role };
-      if (localStorage.getItem('tirtaBioEnabled') === '1' && isBiometricSupported()) { showBioLockScreen(); } else { showMainApp(); }
+      if (localStorage.getItem('tirtaBioEnabled') === '1' && isBiometricSupported()) { showBioLockScreen(); }
+      else if (isPatternLockEnabled()) { showPatternLockScreen(); }
+      else { showMainApp(); }
     } catch(e) { localStorage.removeItem('tirtaUser'); } }
     } // end else (!window._publicMode)
   
