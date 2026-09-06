@@ -5588,13 +5588,24 @@
       } catch(e) { console.warn('[AutoRollover] Error:', e); }
     }
 
-    // Cek tiap 1 menit; jalankan tepat sekali saat jam menunjukkan 00:00 (per hari)
+    // [BUGFIX] Sebelumnya hanya jalan kalau app KEBETULAN lagi terbuka PERSIS jam
+    // 00:00 (getHours()===0 && getMinutes()===0). Kalau HP lagi tidur/tab di-
+    // background (timer di-throttle browser, sangat umum di HP) atau user baru
+    // buka app paginya jam 7, syarat "jam harus pas 00:00" itu tidak akan pernah
+    // terpenuhi lagi sampai besok - rollover hari itu jadi TIDAK PERNAH jalan
+    // otomatis, harus diklik manual. Ini penyebab utama keluhan "kadang-kadang
+    // masih sebagian yang ter-rollover, harus manual".
+    // Sekarang syarat jam/menit dihapus - cukup cek "apakah rollover utk tanggal
+    // HARI INI sudah pernah jalan atau belum" (lastRun !== todayStr). Jadi begitu
+    // app dibuka jam berapa pun (bukan cuma pas tengah malam), kalau rollover hari
+    // itu belum jalan, langsung dijalankan saat itu juga - baik lewat panggilan
+    // checkAndRun() pertama saat startup, maupun lewat interval 1 menit kalau app
+    // dibiarkan terbuka lewat tengah malam.
     function startAutoRolloverScheduler() {
       const checkAndRun = () => {
-        const now = new Date();
         const todayStr = localDateStr();
         const lastRun = localStorage.getItem('tirtaLastAutoRollover');
-        if (now.getHours() === 0 && now.getMinutes() === 0 && lastRun !== todayStr) {
+        if (lastRun !== todayStr) {
           localStorage.setItem('tirtaLastAutoRollover', todayStr);
           autoRolloverStokAwal();
         }
