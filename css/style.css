@@ -396,7 +396,14 @@
     body[data-page="pelanggan"] .btn { font-size:0.88rem; font-weight:800; }
     /* [FIX] Dialog SweetAlert2 (mis. "Tambah Pelanggan"): teks input mengikuti
        tema aplikasi -> putih saat Dark Mode (default), hitam saat Light Mode. */
-    .swal2-input, .swal2-textarea, .swal2-select { color:var(--text) !important; }
+    /* [BUGFIX] Sebelumnya warna teks di sini ikut var(--text) - di dark mode itu
+       warna TERANG/putih. Padahal kotak popup SweetAlert2 (.swal2-popup) di app ini
+       TIDAK PERNAH diberi latar gelap - dia selalu putih bawaan, di light maupun
+       dark mode. Akibatnya di dark mode: teks putih di atas latar putih = tidak
+       kelihatan sama sekali (persis kasus dropdown "Status" di dialog Edit
+       Transaksi). Diganti warna gelap tetap, supaya selalu kebaca di atas latar
+       putih si popup, apa pun mode aplikasinya. */
+    .swal2-input, .swal2-textarea, .swal2-select { color:#1a2332 !important; }
     .table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
     table { width:100%; border-collapse:collapse; font-size:0.7rem; }
     th,td { padding:6px 8px; text-align:left; border-bottom:1px solid rgba(0,168,232,0.12); }
