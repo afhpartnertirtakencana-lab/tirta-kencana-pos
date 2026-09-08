@@ -396,14 +396,26 @@
     body[data-page="pelanggan"] .btn { font-size:0.88rem; font-weight:800; }
     /* [FIX] Dialog SweetAlert2 (mis. "Tambah Pelanggan"): teks input mengikuti
        tema aplikasi -> putih saat Dark Mode (default), hitam saat Light Mode. */
-    /* [BUGFIX] Sebelumnya warna teks di sini ikut var(--text) - di dark mode itu
-       warna TERANG/putih. Padahal kotak popup SweetAlert2 (.swal2-popup) di app ini
-       TIDAK PERNAH diberi latar gelap - dia selalu putih bawaan, di light maupun
-       dark mode. Akibatnya di dark mode: teks putih di atas latar putih = tidak
-       kelihatan sama sekali (persis kasus dropdown "Status" di dialog Edit
-       Transaksi). Diganti warna gelap tetap, supaya selalu kebaca di atas latar
-       putih si popup, apa pun mode aplikasinya. */
-    .swal2-input, .swal2-textarea, .swal2-select { color:#1a2332 !important; }
+    /* [BUGFIX-2] Analisa sebelumnya SALAH: dikira kotak input di dialog SweetAlert2
+       ikut warna putih bawaan popup-nya. Ternyata TIDAK - .swal2-input dkk adalah
+       elemen <input>/<select>/<textarea> biasa, jadi ikut ke-hook oleh CSS input
+       GLOBAL aplikasi (baris "input,select,textarea{...}" di atas & versi
+       light-mode-nya) yang mengatur warna beda per mode (gelap di Dark Mode,
+       terang di Light Mode). Fix sebelumnya cuma mengubah warna TEKS jadi gelap
+       tanpa mengubah warna LATAR - di Dark Mode, latar dari rule global itu
+       GELAP, jadi hasilnya teks gelap di atas latar gelap (makin parah, cuma
+       kebalikan dari bug awal).
+       Fix yang benar: kunci LATAR & TEKS-nya SEKALIGUS jadi terang (menyatu
+       dengan warna putih kotak popup di sekelilingnya), dengan selector yang
+       sengaja dibuat lebih spesifik (".swal2-popup .swal2-input" dst, 2 class)
+       supaya menang dari rule global manapun (baik versi Dark Mode maupun versi
+       "body.light-mode ..." yang sama-sama pakai !important) - jadi input di
+       dalam dialog SweetAlert2 SELALU konsisten terang+gelap, di kedua mode. */
+    .swal2-popup .swal2-input, .swal2-popup .swal2-textarea, .swal2-popup .swal2-select {
+      background:#F1F5F9 !important; color:#1a2332 !important;
+      border:1px solid #D8E3EE !important; box-shadow:none !important;
+    }
+    .swal2-popup select.swal2-select option { background:#fff !important; color:#1a2332 !important; }
     .table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
     table { width:100%; border-collapse:collapse; font-size:0.7rem; }
     th,td { padding:6px 8px; text-align:left; border-bottom:1px solid rgba(0,168,232,0.12); }
