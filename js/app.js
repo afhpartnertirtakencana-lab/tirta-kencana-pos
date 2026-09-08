@@ -902,6 +902,7 @@
           gasCall('getTrxList', []), gasCall('getSettings', []), gasCall('getUsers', []),
           gasCall('getInputBarangHistory', []), gasCall('getDrivers', [])
         ]);
+        syncCustomerPhonesFromGAS(); // [NEW] tarik nomor WA pelanggan terbaru dari Sheets juga (tidak perlu ditunggu/di-await, biar tidak memperlambat sync utama)
         if (Array.isArray(prod)) products = prod;
         if (Array.isArray(cust)) { allCustomers = cust; pelanggan = cust.slice(); }
         if (Array.isArray(trx)) {
@@ -1854,7 +1855,7 @@
       return `<div id="struk-root" style="width:360px;background:#fff;border-radius:16px;overflow:hidden;font-family:'DM Sans',sans-serif;box-shadow:0 8px 32px rgba(29,111,164,.18)"><div style="background:linear-gradient(135deg,#1A6DB5,#2B8FDE);padding:18px 18px 14px;display:flex;align-items:center;gap:12px">${logoHtml}<div><div style="font-size:15px;font-weight:800;color:#fff;letter-spacing:-.3px">${esc(settings.namaToko||'Tirta Kencana')}</div>${settings.tagline?`<div style="font-size:11px;color:rgba(255,255,255,.75);margin-top:1px">${esc(settings.tagline)}</div>`:''}${settings.alamat?`<div style="font-size:10px;color:rgba(255,255,255,.6);margin-top:2px">${esc(settings.alamat)}</div>`:''}</div></div><div style="background:#EBF4FB;padding:10px 18px;display:flex;justify-content:space-between;align-items:center;font-size:11px"><div><div style="color:#7BAAC4;font-weight:700;text-transform:uppercase;letter-spacing:.8px;font-size:9px">No Transaksi</div><div style="font-weight:700;color:#1D6FA4;font-family:'JetBrains Mono',monospace;font-size:11px">${esc(trx.id)}</div></div><div style="text-align:right"><div style="color:#7BAAC4;font-weight:700;text-transform:uppercase;letter-spacing:.8px;font-size:9px">Tanggal · Waktu</div><div style="font-weight:600;color:#0D2B3E;font-size:11px">${fmtDate(trx.tgl)} · ${timeStr}</div></div></div><div style="padding:14px 18px"><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;background:#F0F6FB;border-radius:10px;padding:10px 12px"><div><div style="font-size:9px;color:#7BAAC4;font-weight:700;text-transform:uppercase;letter-spacing:.8px">Pelanggan</div><div style="font-size:12px;font-weight:700;color:#0D2B3E">${esc(trx.customer||'-')}</div></div><div style="text-align:right"><div style="font-size:9px;color:#7BAAC4;font-weight:700;text-transform:uppercase;letter-spacing:.8px">Sales</div><div style="font-size:12px;font-weight:700;color:#1D6FA4">${esc(trx.sales||'—')}</div></div><div style="grid-column:1/-1"><div style="font-size:9px;color:#7BAAC4;font-weight:700;text-transform:uppercase;letter-spacing:.8px">Status</div><div style="margin-top:3px">${(()=>{const cm={cod:'#F59E0B',transfer:'#1A6DB5',qris:'#6366F1',belumtransfer:'#EF4444'};return `<span style="display:inline-block;padding:2px 10px;border-radius:99px;font-size:10.5px;font-weight:700;background:${(cm[ns]||'#EF4444')+'22'};color:${cm[ns]||'#EF4444'}">${ns==='cod'?'COD':ns==='transfer'?'Transfer':ns==='qris'?'QRIS':'Belum Transfer'}</span>`;})()}</div></div></div><div style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#7BAAC4;margin-bottom:8px">Item Pembelian</div><table style="width:100%;border-collapse:collapse"><tbody>${itemRows}</tbody></table><div style="margin-top:12px;padding-top:12px;border-top:1.5px dashed #C5DFF0"><div style="display:flex;justify-content:space-between;font-size:12px;color:#7BAAC4;margin-bottom:4px"><span>Gross</span><span style="font-family:Tahoma,Arial,sans-serif">Rp ${Number(trx.gross||0).toLocaleString('id-ID')}</span></div>${trx.diskon?`<div style="display:flex;justify-content:space-between;font-size:12px;color:#7BAAC4;margin-bottom:4px"><span>Diskon</span><span style="font-family:Tahoma,Arial,sans-serif;color:#1D6FA4">-Rp ${Number(trx.diskon).toLocaleString('id-ID')}</span></div>`:''}${(trx.biayaJml&&trx.biayaJml>0)?`<div style="display:flex;justify-content:space-between;font-size:12px;color:#7BAAC4;margin-bottom:4px"><span>${esc(trx.biayaKet||'Biaya Tambahan')}</span><span style="font-family:Tahoma,Arial,sans-serif;color:#16A34A">+Rp ${Number(trx.biayaJml).toLocaleString('id-ID')}</span></div>`:''}<div style="display:flex;justify-content:space-between;font-size:15px;font-weight:800;color:#0D2B3E;margin-top:6px"><span>TOTAL</span><span style="color:#1A6DB5;font-family:Tahoma,Arial,sans-serif">Rp ${Number(trx.nett||0).toLocaleString('id-ID')}</span></div></div></div>${bankHtml||qrisHtml?`<div style="padding:0 18px 14px">${bankHtml}${qrisHtml}</div>`:''}<div style="background:#EBF4FB;padding:12px 18px;text-align:center;font-size:11.5px;color:#3D6880;font-weight:600;border-top:1px dashed #C5DFF0">${esc(settings.bottomLine||'Terima kasih telah berbelanja!')}</div></div>`;
     }
 
-    function showStrukModal() { if (!_strKData) return; const html = buildStrukHTML(_strKData); document.getElementById('strukContent').innerHTML = `<div class="modal-header"><h2>🧾 Struk</h2><button class="modal-close" onclick="closeStruk()">✕</button></div><div class="action-grid"><div class="action-card" onclick="doStrukPrint()"><div style="font-size:28px">🖨️</div><div style="font-size:13px;font-weight:700">Print</div></div><div class="action-card" onclick="doStrukPng()"><div style="font-size:28px">📥</div><div style="font-size:13px;font-weight:700">Download PNG</div></div><div class="action-card" onclick="doStrukWA()"><div style="font-size:28px">💬</div><div style="font-size:13px;font-weight:700">WhatsApp</div></div><div class="action-card" onclick="document.getElementById('fotoInputStruk').click()"><div style="font-size:28px">📸</div><div style="font-size:13px;font-weight:700">Upload Foto</div></div><div class="action-card" onclick="showFotoBukti('${_strKData?.id||''}','Struk ${_strKData?.id||''}')"><div style="font-size:28px">🖼</div><div style="font-size:13px;font-weight:700">Lihat Foto</div></div></div><input type="file" id="fotoInputStruk" accept="image/*" capture="environment" style="display:none" onchange="uploadFotoBukti('${_strKData?.id||''}','transfer',this)"><div style="border:1px solid var(--border);border-radius:14px;overflow:auto;max-height:480px;background:#e8f2f9;padding:14px"><div style="width:360px;margin:0 auto">${html}</div></div>`; document.getElementById('strukModal').classList.add('show'); }
+    function showStrukModal() { if (!_strKData) return; const html = buildStrukHTML(_strKData); document.getElementById('strukContent').innerHTML = `<div class="modal-header"><h2>🧾 Struk</h2><button class="modal-close" onclick="closeStruk()">✕</button></div><div class="action-grid"><div class="action-card" onclick="doStrukPrint()"><div style="font-size:28px">🖨️</div><div style="font-size:13px;font-weight:700">Print</div></div><div class="action-card" onclick="doStrukPng()"><div style="font-size:28px">📥</div><div style="font-size:13px;font-weight:700">Download PNG</div></div><div class="action-card" onclick="doStrukWA()"><div style="font-size:28px">💬</div><div style="font-size:13px;font-weight:700">WhatsApp</div></div><div class="action-card" onclick="doStrukWaPelanggan()"><div style="font-size:28px">📤</div><div style="font-size:13px;font-weight:700">Kirim ke Pelanggan</div></div><div class="action-card" onclick="document.getElementById('fotoInputStruk').click()"><div style="font-size:28px">📸</div><div style="font-size:13px;font-weight:700">Upload Foto</div></div><div class="action-card" onclick="showFotoBukti('${_strKData?.id||''}','Struk ${_strKData?.id||''}')"><div style="font-size:28px">🖼</div><div style="font-size:13px;font-weight:700">Lihat Foto</div></div></div><input type="file" id="fotoInputStruk" accept="image/*" capture="environment" style="display:none" onchange="uploadFotoBukti('${_strKData?.id||''}','transfer',this)"><div style="border:1px solid var(--border);border-radius:14px;overflow:auto;max-height:480px;background:#e8f2f9;padding:14px"><div style="width:360px;margin:0 auto">${html}</div></div>`; document.getElementById('strukModal').classList.add('show'); }
 
     // [NEW] Cek Transaksi Publik - dipanggil dari #publicCekPage (index.html), TANPA login.
     // Sama sekali tidak menyentuh currentUser/sessionToken. Cetak strukturnya pakai ULANG
@@ -1890,6 +1891,25 @@
     function doStrukPrint() { if (!_strKData) return; const win = window.open('','_blank','width=420,height=700'); win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Struk</title></head><body style="margin:16px;background:#e8f2f9;display:flex;justify-content:center">'); win.document.write(buildStrukHTML(_strKData)); win.document.write('<script>window.onload=function(){window.print();}<\/script></body></html>'); win.document.close(); }
     function doStrukPng() { if (!_strKData) return; const off = document.getElementById('strukOffscreen'); off.style.cssText = 'position:fixed;left:-9999px;top:0;pointer-events:none;z-index:-1;background:#e8f2f9;padding:20px'; const ns = (_strKData.trx.status||'').toLowerCase(); const render = () => { off.innerHTML = buildStrukHTML(_strKData); const el = off.querySelector('#struk-root'); if (!el) return Swal.fire('Error','Gagal render','error'); setTimeout(() => { html2canvas(el, {backgroundColor:'#e8f2f9',scale:2.5,useCORS:true,allowTaint:true,logging:false}).then(canvas => { const a = document.createElement('a'); a.download = 'Struk-'+(_strKData.trx.id||'trx')+'.png'; a.href = canvas.toDataURL('image/png'); document.body.appendChild(a); a.click(); document.body.removeChild(a); off.innerHTML = ''; Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, icon: 'success', title: 'Struk tersimpan' }); }).catch(err => { off.innerHTML=''; Swal.fire('Error',err.message,'error'); }); }, 400); }; if (ns === 'qris' && _qrisUrl && _qrisUrl.indexOf('data:') !== 0) { _ensureQrisDataUrl(_qrisUrl).then(dataUrl => { const orig = _qrisUrl; _qrisUrl = dataUrl || ''; render(); _qrisUrl = orig; if (!dataUrl) Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 4500, icon: 'warning', title: 'Gambar QRIS gagal disertakan di PNG. Upload ulang QRIS lewat menu Pengaturan agar selalu muncul saat download.' }); }); } else { render(); } }
     function doStrukWA() { if (!_strKData) return; const trx = _strKData.trx, items = _strKData.items || []; let lines = ['🧾 *STRUK TRANSAKSI*','*'+(settings.namaToko||'Tirta Kencana')+'*','━━━━━━━━━━']; lines.push('No: *'+trx.id+'*'); lines.push('Tgl: '+fmtDate(trx.tgl)); lines.push('Pelanggan: *'+(trx.customer||'-')+'*'); if (trx.sales) lines.push('Sales: '+trx.sales); lines.push('Status: *'+(trx.status==='cod'?'COD':trx.status==='transfer'?'Transfer':trx.status==='qris'?'QRIS':'Belum Transfer')+'*'); lines.push('━━━━━━━━━━'); items.forEach(it => { const nettPer = it.nettPer !== undefined ? it.nettPer : (it.harga||0) - (it.discRpPer||0); const sub = nettPer * (it.qty||1); lines.push('- '+it.nama+' ('+it.qty+'x Rp '+Number(it.harga).toLocaleString('id-ID')+')'); if (it.discRpPer) lines.push('  Disc: -Rp '+Number(it.discRpPer).toLocaleString('id-ID')); lines.push('  = Rp '+Number(sub).toLocaleString('id-ID')); }); lines.push('━━━━━━━━━━'); lines.push('Gross : Rp '+Number(trx.gross).toLocaleString('id-ID')); if (trx.diskon) lines.push('Diskon: -Rp '+Number(trx.diskon).toLocaleString('id-ID')); if (trx.biayaJml&&trx.biayaJml>0) lines.push((trx.biayaKet||'Biaya Tambahan')+': +Rp '+Number(trx.biayaJml).toLocaleString('id-ID')); lines.push('*TOTAL : Rp '+Number(trx.nett).toLocaleString('id-ID')+'*'); window.open('https://wa.me/?text='+encodeURIComponent(lines.join('\n')),'_blank'); }
+    // [NEW] Sama persis isi pesannya dengan doStrukWA() di atas, bedanya dikirim
+    // LANGSUNG ke nomor WA pelanggan yang bersangkutan (tersimpan/diminta sekali),
+    // bukan share generik yang masih harus cari kontak manual.
+    function doStrukWaPelanggan() {
+      if (!_strKData) return;
+      const trx = _strKData.trx, items = _strKData.items || [];
+      if (!trx.customer) return Swal.fire('Info', 'Transaksi ini tidak punya nama pelanggan.', 'info');
+      let lines = ['🧾 *STRUK TRANSAKSI*','*'+(settings.namaToko||'Tirta Kencana')+'*','━━━━━━━━━━'];
+      lines.push('No: *'+trx.id+'*'); lines.push('Tgl: '+fmtDate(trx.tgl)); lines.push('Pelanggan: *'+(trx.customer||'-')+'*');
+      if (trx.sales) lines.push('Sales: '+trx.sales);
+      lines.push('Status: *'+(trx.status==='cod'?'COD':trx.status==='transfer'?'Transfer':trx.status==='qris'?'QRIS':'Belum Transfer')+'*');
+      lines.push('━━━━━━━━━━');
+      items.forEach(it => { const nettPer = it.nettPer !== undefined ? it.nettPer : (it.harga||0) - (it.discRpPer||0); const sub = nettPer * (it.qty||1); lines.push('- '+it.nama+' ('+it.qty+'x Rp '+Number(it.harga).toLocaleString('id-ID')+')'); if (it.discRpPer) lines.push('  Disc: -Rp '+Number(it.discRpPer).toLocaleString('id-ID')); lines.push('  = Rp '+Number(sub).toLocaleString('id-ID')); });
+      lines.push('━━━━━━━━━━'); lines.push('Gross : Rp '+Number(trx.gross).toLocaleString('id-ID'));
+      if (trx.diskon) lines.push('Diskon: -Rp '+Number(trx.diskon).toLocaleString('id-ID'));
+      if (trx.biayaJml&&trx.biayaJml>0) lines.push((trx.biayaKet||'Biaya Tambahan')+': +Rp '+Number(trx.biayaJml).toLocaleString('id-ID'));
+      lines.push('*TOTAL : Rp '+Number(trx.nett).toLocaleString('id-ID')+'*');
+      kirimWaKeNomorPelanggan(trx.customer, lines.join('\n'));
+    }
 
     // ========== SETORAN (sama seperti sebelumnya) ==========
     function loadSetoran() { 
@@ -5882,16 +5902,21 @@
           <td class="fw-bold">${esc(c)}</td>
           <td style="text-align:center;font-family:var(--mono)">${jumlahTrx || '-'}</td>
           <td style="text-align:right;font-family:var(--mono);font-weight:700;color:${piutang>0?'var(--merah)':'var(--text3)'}">${piutang>0?fmtRp(piutang):'-'}</td>
-          <td style="display:flex;gap:3px"><button class="btn btn-sm btn-outline" onclick="showPelangganDetail('${esc(c).replace(/'/g,"\\'")}')" title="Lihat riwayat & piutang"><i class="fas fa-eye"></i></button><button class="btn btn-sm btn-danger" onclick="deletePelanggan(${i})">🗑</button></td>
+          <td style="display:flex;gap:3px"><button class="btn btn-sm btn-outline" onclick="showPelangganDetail('${esc(c).replace(/'/g,"\\'")}')" title="Lihat riwayat & piutang"><i class="fas fa-eye"></i></button><button class="btn btn-sm btn-outline" onclick="editCustomerPhone('${esc(c).replace(/'/g,"\\'")}')" title="Atur nomor WA"><i class="fas fa-phone"></i></button><button class="btn btn-sm btn-danger" onclick="deletePelanggan(${i})">🗑</button></td>
         </tr>`;
       }).join('');
     }
     // [NEW] Detail pelanggan: ringkasan (total belanja, piutang, jumlah transaksi,
-    // tanggal pertama/terakhir) + riwayat transaksi terbaru. Data diambil murni dari
-    // allTrxList yang sudah ada (filter by nama customer) - tidak perlu struktur
-    // data pelanggan baru, jadi aman & tidak mengubah cara kerja sync yang sudah ada.
-    function showPelangganDetail(name) {
-      const trxCust = allTrxList.filter(t => (t.customer||'') === name).sort((a,b) => (b.tgl||'').localeCompare(a.tgl||''));
+    // tanggal pertama/terakhir) + riwayat transaksi, dengan filter periode
+    // (tanggal awal - akhir) & tombol cetak. Data diambil murni dari allTrxList
+    // yang sudah ada (filter by nama customer) - tidak perlu struktur data
+    // pelanggan baru, jadi aman & tidak mengubah cara kerja sync yang sudah ada.
+    function showPelangganDetail(name, startDate, endDate) {
+      startDate = startDate || ''; endDate = endDate || '';
+      let trxCust = allTrxList.filter(t => (t.customer||'') === name);
+      if (startDate) trxCust = trxCust.filter(t => (t.tgl||'') >= startDate);
+      if (endDate) trxCust = trxCust.filter(t => (t.tgl||'') <= endDate);
+      trxCust = trxCust.slice().sort((a,b) => (b.tgl||'').localeCompare(a.tgl||''));
       const jumlahTrx = trxCust.length;
       const totalBelanja = trxCust.reduce((s,t) => s + (t.nett||0), 0);
       const totalPiutang = trxCust.filter(t => t.status === 'belumTransfer').reduce((s,t) => s + (t.nett||0), 0);
@@ -5908,17 +5933,24 @@
         const first = items[0].nama || items[0].sku || '-';
         return items.length > 1 ? `${esc(first)} +${items.length-1} lainnya` : esc(first);
       };
+      const nameEsc = esc(name).replace(/'/g,"\\'");
       const html = `<div style="text-align:left">
+        <div style="display:flex;gap:6px;align-items:flex-end;margin-bottom:12px;flex-wrap:wrap">
+          <div style="flex:1;min-width:110px"><label style="font-size:0.62rem;color:#5a7a90;display:block;margin-bottom:2px">Dari tanggal</label><input type="date" id="pgDetStart" value="${startDate}" style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #D8E3EE;font-size:0.72rem;color:#1a2332;background:#F1F5F9"></div>
+          <div style="flex:1;min-width:110px"><label style="font-size:0.62rem;color:#5a7a90;display:block;margin-bottom:2px">Sampai tanggal</label><input type="date" id="pgDetEnd" value="${endDate}" style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #D8E3EE;font-size:0.72rem;color:#1a2332;background:#F1F5F9"></div>
+          <button type="button" class="btn btn-sm btn-primary" onclick="_applyPelangganDetailFilter('${nameEsc}')">Terapkan</button>
+          ${(startDate||endDate) ? `<button type="button" class="btn btn-sm btn-outline" onclick="showPelangganDetail('${nameEsc}')">Reset</button>` : ''}
+        </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
           <div style="background:#F4F8FB;border-radius:12px;padding:10px 12px"><div style="font-size:0.68rem;color:#5a7a90">Total Belanja</div><div style="font-weight:800;font-size:1rem;color:#1A6DB5;font-family:monospace">${fmtRp(totalBelanja)}</div></div>
-          <div style="background:${totalPiutang>0?'#FEECEC':'#F4F8FB'};border-radius:12px;padding:10px 12px"><div style="font-size:0.68rem;color:#5a7a90">Piutang Belum Bayar</div><div style="font-weight:800;font-size:1rem;color:${totalPiutang>0?'#DC2626':'#1A6DB5'};font-family:monospace">${fmtRp(totalPiutang)}</div></div>
+          <div style="background:${totalPiutang>0?'#FEECEC':'#F4F8FB'};border-radius:12px;padding:10px 12px"><div style="font-size:0.68rem;color:#5a7a90">Piutang Belum Bayar</div><div style="font-weight:800;font-size:1rem;color:${totalPiutang>0?'#DC2626':'#1A6DB5'};font-family:monospace">${fmtRp(totalPiutang)}</div>${totalPiutang>0?`<button type="button" onclick="kirimReminderPiutangPelanggan('${nameEsc}',${totalPiutang},${trxCust.filter(t=>t.status==='belumTransfer').length})" style="margin-top:6px;width:100%;background:#DC2626;color:#fff;border:none;border-radius:8px;padding:5px 6px;font-size:0.62rem;font-weight:700;cursor:pointer">📢 Ingatkan via WA</button>`:''}</div>
           <div style="background:#F4F8FB;border-radius:12px;padding:10px 12px"><div style="font-size:0.68rem;color:#5a7a90">Jumlah Transaksi</div><div style="font-weight:800;font-size:1rem;color:#0D2B3E">${jumlahTrx}</div></div>
           <div style="background:#F4F8FB;border-radius:12px;padding:10px 12px"><div style="font-size:0.68rem;color:#5a7a90">Rata-rata / Transaksi</div><div style="font-weight:800;font-size:1rem;color:#0D2B3E;font-family:monospace">${fmtRp(rataRata)}</div></div>
         </div>
         ${jumlahTrx ? `<div style="font-size:0.7rem;color:#5a7a90;margin-bottom:10px">Transaksi pertama: <b>${esc(fmtDate(tglPertama))}</b> &nbsp;·&nbsp; Terakhir: <b>${esc(fmtDate(tglTerakhir))}</b></div>` : ''}
         <div style="font-weight:700;font-size:0.8rem;color:#0D2B3E;margin-bottom:6px">Riwayat Transaksi${jumlahTrx > RECENT_LIMIT ? ` (${RECENT_LIMIT} terbaru dari ${jumlahTrx})` : ''}</div>
-        <div style="max-height:260px;overflow-y:auto;border:1px solid #EEF4F9;border-radius:10px">
-          ${jumlahTrx === 0 ? `<div style="padding:20px;text-align:center;color:#94A3B8;font-size:0.8rem">Belum ada transaksi</div>` : recentRows.map(t => `
+        <div style="max-height:260px;overflow-y:auto;border:1px solid #EEF4F9;border-radius:10px;background:#fff">
+          ${jumlahTrx === 0 ? `<div style="padding:20px;text-align:center;color:#94A3B8;font-size:0.8rem">Tidak ada transaksi pada periode ini</div>` : recentRows.map(t => `
             <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid #F1F5F9">
               <div style="min-width:0">
                 <div style="font-size:0.72rem;color:#94A3B8">${esc(fmtDate(t.tgl))} · ${esc(t.id)}</div>
@@ -5934,14 +5966,117 @@
       Swal.fire({
         title: `👤 ${esc(name)}`, html, width: '480px', background: '#F4F8FB',
         showConfirmButton: true, confirmButtonText: 'Tutup',
-        showDenyButton: jumlahTrx > 0, denyButtonText: '📋 Lihat di Menu Transaksi',
+        showDenyButton: jumlahTrx > 0, denyButtonText: '🖨️ Cetak',
+        showCancelButton: jumlahTrx > 0, cancelButtonText: '📋 Transaksi',
         customClass: { popup: 'dash-status-popup' }
       }).then(r => {
         if (r.isDenied) {
+          cetakPelangganDetail(name, trxCust.slice(0, 200), { startDate, endDate, totalBelanja, totalPiutang, jumlahTrx, rataRata });
+        } else if (r.dismiss === Swal.DismissReason.cancel) {
           navigateTo('transaksi');
           setTimeout(() => { const el = document.getElementById('trxSearch'); if (el) { el.value = name; filterTrx(); } }, 150);
         }
       });
+    }
+    function _applyPelangganDetailFilter(name) {
+      const s = document.getElementById('pgDetStart')?.value || '';
+      const e = document.getElementById('pgDetEnd')?.value || '';
+      if (s && e && s > e) return Swal.fire({ icon:'warning', title:'Tanggal Tidak Valid', text:'Tanggal awal harus sebelum tanggal akhir.' });
+      showPelangganDetail(name, s, e);
+    }
+
+    // ---- Cetak Riwayat Pelanggan (Print / PNG / WhatsApp) - pola sama dgn cetakPiutangCustomer ----
+    let _lastPelangganStrukPayload = null;
+    function cetakPelangganDetail(name, rows, stats) {
+      if (!rows.length) return Swal.fire({ icon:'info', title:'Tidak Ada Data', text:'Tidak ada transaksi pada periode ini.' });
+      _lastPelangganStrukPayload = { name, rows, stats };
+      showPelangganStrukModal(_lastPelangganStrukPayload);
+    }
+    function buildPelangganStrukHTML(payload, logoOverride) {
+      const { name, rows, stats } = payload;
+      const periodeLabel = (stats.startDate || stats.endDate) ? `${stats.startDate ? fmtDate(stats.startDate) : 'Awal'} – ${stats.endDate ? fmtDate(stats.endDate) : 'Sekarang'}` : 'Semua Periode';
+      const _logo = (logoOverride !== undefined ? logoOverride : _logoUrl);
+      const logoHtml = _logo ? `<img src="${_logo}" crossorigin="anonymous" style="width:44px;height:44px;border-radius:10px;object-fit:contain;background:#fff;padding:3px;flex-shrink:0;border:1.5px solid rgba(255,255,255,.4)">` : '<div style="width:44px;height:44px;border-radius:10px;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">👤</div>';
+      const statusLabel = { cod:'COD', transfer:'Transfer', qris:'QRIS', belumTransfer:'Belum Bayar' };
+      const rowsHtml = rows.map(t => {
+        const items = t.items || [];
+        const isum = items.length ? (items.length > 1 ? `${esc(items[0].nama||items[0].sku||'-')} +${items.length-1} lainnya` : esc(items[0].nama||items[0].sku||'-')) : '-';
+        return `<tr style="border-bottom:1px solid #EEF4F9"><td style="padding:6px 0;font-size:11px;color:#0D2B3E">${fmtDate(t.tgl)}<div style="font-size:9.5px;color:#94A3B8">${isum} · ${statusLabel[t.status]||t.status||'-'}</div></td><td style="text-align:right;font-size:11.5px;font-weight:800;font-family:monospace;color:#0D2B3E">${fmtRp(t.nett||0)}</td></tr>`;
+      }).join('');
+      return `<div id="pelanggan-struk-root" style="width:380px;background:#fff;border-radius:16px;overflow:hidden;font-family:'DM Sans',sans-serif;box-shadow:0 8px 32px rgba(29,111,164,.18)">
+        <div style="background:linear-gradient(135deg,#1A6DB5,#2F80FF);padding:18px 18px 14px;display:flex;align-items:center;gap:12px">${logoHtml}<div><div style="font-size:15px;font-weight:800;color:#fff;letter-spacing:-.3px">${esc(name)}</div><div style="font-size:11px;color:rgba(255,255,255,.75);margin-top:1px">${esc(settings.namaToko||'Tirta Kencana')} · Riwayat Pelanggan</div></div></div>
+        <div style="background:#EAF2FF;padding:10px 18px;font-size:11px;color:#0D2B3E">Periode: <b>${periodeLabel}</b></div>
+        <div style="padding:12px 18px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+            <div style="background:#F4F8FB;border-radius:10px;padding:8px 10px"><div style="font-size:9.5px;color:#5a7a90">Total Belanja</div><div style="font-weight:800;font-size:13px;color:#1A6DB5;font-family:monospace">${fmtRp(stats.totalBelanja)}</div></div>
+            <div style="background:${stats.totalPiutang>0?'#FEECEC':'#F4F8FB'};border-radius:10px;padding:8px 10px"><div style="font-size:9.5px;color:#5a7a90">Piutang</div><div style="font-weight:800;font-size:13px;color:${stats.totalPiutang>0?'#DC2626':'#1A6DB5'};font-family:monospace">${fmtRp(stats.totalPiutang)}</div></div>
+            <div style="background:#F4F8FB;border-radius:10px;padding:8px 10px"><div style="font-size:9.5px;color:#5a7a90">Jumlah Transaksi</div><div style="font-weight:800;font-size:13px;color:#0D2B3E">${stats.jumlahTrx}</div></div>
+            <div style="background:#F4F8FB;border-radius:10px;padding:8px 10px"><div style="font-size:9.5px;color:#5a7a90">Rata-rata</div><div style="font-weight:800;font-size:13px;color:#0D2B3E;font-family:monospace">${fmtRp(stats.rataRata)}</div></div>
+          </div>
+          <table style="width:100%;border-collapse:collapse">${rowsHtml}</table>
+        </div>
+        <div style="background:#EAF2FF;padding:12px 18px;text-align:center;font-size:11px;color:#0D2B3E;font-weight:600;border-top:1px dashed #BFDBFE">${esc(settings.bottomLine||'Terima kasih!')}</div>
+      </div>`;
+    }
+    function showPelangganStrukModal(payload) {
+      const html = buildPelangganStrukHTML(payload);
+      document.getElementById('strukContent').innerHTML = `<div class="modal-header"><h2>🧾 Riwayat ${esc(payload.name)}</h2><button class="modal-close" onclick="closeStruk()">✕</button></div><div class="action-grid"><div class="action-card" onclick="doPelangganStrukPrint()"><div>🖨️</div><div>Print</div></div><div class="action-card" onclick="doPelangganStrukPng()"><div>📥</div><div>Download PNG</div></div><div class="action-card" onclick="doPelangganStrukWA()"><div>💬</div><div>WhatsApp</div></div><div class="action-card" onclick="doPelangganStrukWaPelanggan()"><div>📤</div><div>Kirim ke Pelanggan</div></div></div><div style="text-align:center;max-height:70vh;overflow:auto;background:#e8f2f9;border-radius:14px;padding:10px">${html}</div>`;
+      document.getElementById('strukModal').classList.add('show');
+    }
+    function doPelangganStrukPrint() {
+      if (!_lastPelangganStrukPayload) return;
+      const win = window.open('', '_blank', 'width=420,height=700');
+      win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Riwayat Pelanggan</title></head><body style="margin:16px;background:#e8f2f9;display:flex;justify-content:center">');
+      win.document.write(buildPelangganStrukHTML(_lastPelangganStrukPayload));
+      win.document.write('<script>window.onload=function(){window.print();}<\/script></body></html>');
+      win.document.close();
+    }
+    function doPelangganStrukPng() {
+      if (!_lastPelangganStrukPayload) return;
+      const off = document.getElementById('strukOffscreen');
+      off.style.cssText = 'position:fixed;left:-9999px;top:0;pointer-events:none;z-index:-1;background:#e8f2f9;padding:20px';
+      _ensureLogoDataUrl(_logoUrl).then(logoData => {
+        off.innerHTML = buildPelangganStrukHTML(_lastPelangganStrukPayload, logoData);
+        const el = off.querySelector('#pelanggan-struk-root');
+        if (!el) return Swal.fire('Error','Gagal render','error');
+        setTimeout(() => {
+          html2canvas(el, { backgroundColor:'#e8f2f9', scale:2.5, useCORS:true, allowTaint:true, logging:false }).then(canvas => {
+            const a = document.createElement('a');
+            a.download = 'Riwayat-' + _lastPelangganStrukPayload.name.replace(/\s+/g,'') + '-' + localDateStr() + '.png';
+            a.href = canvas.toDataURL('image/png');
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            off.innerHTML = '';
+            Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, icon: 'success', title: 'Laporan tersimpan' });
+          }).catch(err => { off.innerHTML=''; Swal.fire('Error', err.message, 'error'); });
+        }, 400);
+      });
+    }
+    function doPelangganStrukWA() {
+      if (!_lastPelangganStrukPayload) return;
+      const p = _lastPelangganStrukPayload;
+      const periodeLabel = (p.stats.startDate || p.stats.endDate) ? `${p.stats.startDate?fmtDate(p.stats.startDate):'Awal'} - ${p.stats.endDate?fmtDate(p.stats.endDate):'Sekarang'}` : 'Semua Periode';
+      let lines = [`📋 *RIWAYAT PELANGGAN - ${p.name.toUpperCase()}*`, '*'+(settings.namaToko||'Tirta Kencana')+'*', '━━━━━━━━━━'];
+      lines.push('Periode: ' + periodeLabel);
+      lines.push('Total Belanja: ' + fmtRp(p.stats.totalBelanja));
+      lines.push('Piutang: ' + fmtRp(p.stats.totalPiutang));
+      lines.push('Jumlah Transaksi: ' + p.stats.jumlahTrx);
+      lines.push('━━━━━━━━━━');
+      p.rows.slice(0,30).forEach(t => lines.push(fmtDate(t.tgl) + ': ' + fmtRp(t.nett||0)));
+      window.open('https://wa.me/?text=' + encodeURIComponent(lines.join('\n')), '_blank');
+    }
+    // [NEW] Sama persis isinya, dikirim LANGSUNG ke nomor WA pelanggan tsb.
+    function doPelangganStrukWaPelanggan() {
+      if (!_lastPelangganStrukPayload) return;
+      const p = _lastPelangganStrukPayload;
+      const periodeLabel = (p.stats.startDate || p.stats.endDate) ? `${p.stats.startDate?fmtDate(p.stats.startDate):'Awal'} - ${p.stats.endDate?fmtDate(p.stats.endDate):'Sekarang'}` : 'Semua Periode';
+      let lines = [`📋 *RIWAYAT PELANGGAN - ${p.name.toUpperCase()}*`, '*'+(settings.namaToko||'Tirta Kencana')+'*', '━━━━━━━━━━'];
+      lines.push('Periode: ' + periodeLabel);
+      lines.push('Total Belanja: ' + fmtRp(p.stats.totalBelanja));
+      lines.push('Piutang: ' + fmtRp(p.stats.totalPiutang));
+      lines.push('Jumlah Transaksi: ' + p.stats.jumlahTrx);
+      lines.push('━━━━━━━━━━');
+      p.rows.slice(0,30).forEach(t => lines.push(fmtDate(t.tgl) + ': ' + fmtRp(t.nett||0)));
+      kirimWaKeNomorPelanggan(p.name, lines.join('\n'));
     }
     function addPelanggan() { Swal.fire({ title:'Tambah Pelanggan', input:'text', inputLabel:'Nama pelanggan', showCancelButton:true }).then(r => { if (r.isConfirmed && r.value) { const name = r.value.trim(); if (!allCustomers.includes(name)) { allCustomers.push(name); pelanggan = allCustomers.slice(); saveLocalData(); renderPelangganList(); syncCustomersToSheet(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Pelanggan ditambahkan' }); } else Swal.fire('Info','Sudah ada','info'); } }); }
     function deletePelanggan(idx) { Swal.fire({ title:'Hapus?', text:'Hapus '+allCustomers[idx]+'?', icon:'warning', showCancelButton:true }).then(r => { if (r.isConfirmed) { allCustomers.splice(idx,1); pelanggan = allCustomers.slice(); saveLocalData(); renderPelangganList(); syncCustomersToSheet(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Pelanggan dihapus' }); } }); }
@@ -6251,6 +6386,115 @@
     function fmtDate(s) { if (!s) return '-'; const p = String(s).substring(0,10).split('-'); if (p.length<3) return s; const m=['','Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des']; return p[2]+' '+m[parseInt(p[1])]+' '+p[0]; }
     function genId() { const d = new Date(), pp = n => String(n).padStart(2,'0'); return 'TRX-'+d.getFullYear()+pp(d.getMonth()+1)+pp(d.getDate())+'-'+Math.random().toString(36).slice(2,6).toUpperCase(); }
     function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    // ========== [NEW] NOMOR WA PELANGGAN & KIRIM LANGSUNG ==========
+    // allCustomers cuma daftar nama polos (tidak ada field nomor HP), jadi nomor WA
+    // disimpan TERPISAH secara lokal di sini (map nama -> nomor), diminta sekali
+    // saat pertama kali kirim ke pelanggan tsb, lalu diingat untuk pengiriman
+    // berikutnya. Ini tidak mengubah struktur data pelanggan yang sudah ada/sync
+    // ke Sheets - murni kenyamanan lokal per device.
+    const CUSTOMER_PHONE_KEY = 'tirtaCustomerPhones';
+    function _loadCustomerPhones() { try { return JSON.parse(localStorage.getItem(CUSTOMER_PHONE_KEY) || '{}'); } catch(e) { return {}; } }
+    function getCustomerPhone(name) { return _loadCustomerPhones()[name] || ''; }
+    function setCustomerPhone(name, phone) {
+      const m = _loadCustomerPhones();
+      m[name] = phone;
+      localStorage.setItem(CUSTOMER_PHONE_KEY, JSON.stringify(m));
+      syncCustomerPhonesToSheet(); // [NEW] supaya nomor WA ikut tersimpan di Google Sheets (kolom B sheet Pelanggan), bukan cuma lokal
+    }
+    // [NEW] Sync nomor WA pelanggan ke Google Sheets - pola debounce+dedupe yang
+    // sama persis dengan syncCustomersToSheet(): kalau beberapa nomor diinput
+    // beruntun dalam waktu dekat, cukup 1x kirim (snapshot terakhir/lengkap),
+    // bukan sekali kirim per nomor.
+    let _custPhoneSyncTimer = null;
+    function syncCustomerPhonesToSheet() {
+      if (_custPhoneSyncTimer) clearTimeout(_custPhoneSyncTimer);
+      _custPhoneSyncTimer = setTimeout(() => {
+        _custPhoneSyncTimer = null;
+        _syncQueue = _syncQueue.filter(q => q.fn !== 'saveCustomerPhones');
+        _saveSyncQueueState();
+        enqueueSync('saveCustomerPhones', [_loadCustomerPhones()], 'Nomor WA Pelanggan');
+      }, 1500);
+    }
+    // [NEW] Tarik nomor WA pelanggan terbaru dari Google Sheets (mis. yang diisi
+    // dari device lain), digabung dengan yang sudah ada lokal - punya SERVER
+    // menang kalau ada bentrok utk nama yang sama (server = sumber kebenaran
+    // bersama, sama seperti pola sync lain di app ini).
+    async function syncCustomerPhonesFromGAS() {
+      try {
+        const serverMap = await gasCall('getCustomerPhones', []);
+        if (serverMap && typeof serverMap === 'object') {
+          const local = _loadCustomerPhones();
+          const merged = Object.assign({}, local, serverMap);
+          localStorage.setItem(CUSTOMER_PHONE_KEY, JSON.stringify(merged));
+          if (currentPage === 'pelanggan' && typeof renderPelangganList === 'function') renderPelangganList(true);
+        }
+      } catch (e) { console.warn('Gagal ambil nomor WA pelanggan dari server:', e); }
+    }
+    // Normalisasi nomor HP Indonesia ke format wa.me (62xxxxxxxxxx, tanpa +/spasi/strip).
+    function _normalizeWaNumber(raw) {
+      let n = String(raw||'').replace(/[^0-9+]/g,'');
+      if (n.startsWith('+')) n = n.substring(1);
+      if (n.startsWith('0')) n = '62' + n.substring(1);
+      else if (!n.startsWith('62')) n = '62' + n;
+      return n;
+    }
+    // Minta/pastikan nomor WA pelanggan tersedia (pakai yang tersimpan, atau minta
+    // input sekali lalu simpan). resolve(null) kalau user batal.
+    function ensureCustomerPhone(name) {
+      const saved = getCustomerPhone(name);
+      return Swal.fire({
+        title: 'Nomor WA ' + name,
+        input: 'text',
+        inputLabel: 'Nomor WhatsApp pelanggan (mis. 0812xxxxxxx)',
+        inputValue: saved,
+        showCancelButton: true,
+        confirmButtonText: saved ? 'Kirim' : 'Simpan & Kirim',
+        inputValidator: (v) => { if (!v || v.replace(/[^0-9]/g,'').length < 8) return 'Nomor HP tidak valid'; }
+      }).then(r => {
+        if (!r.isConfirmed) return null;
+        const phone = r.value.trim();
+        setCustomerPhone(name, phone);
+        return phone;
+      });
+    }
+    // Buka WhatsApp LANGSUNG ke nomor pelanggan (bukan share-generic) dengan teks
+    // yang sudah disiapkan. Dipakai oleh tombol "Kirim ke WA Pelanggan" di semua
+    // modal struk (transaksi, riwayat pelanggan) & reminder piutang.
+    async function kirimWaKeNomorPelanggan(name, text) {
+      const phone = await ensureCustomerPhone(name);
+      if (!phone) return;
+      window.open('https://wa.me/' + _normalizeWaNumber(phone) + '?text=' + encodeURIComponent(text), '_blank');
+    }
+    // Reminder piutang untuk SATU pelanggan (dipakai dari tombol khusus di detail
+    // Pelanggan saat masih ada piutang belum bayar).
+    function kirimReminderPiutangPelanggan(name, totalPiutang, jumlahTrxBelumBayar) {
+      const lines = [
+        `Halo *${name}*, 👋`, '',
+        `Ini pengingat dari *${settings.namaToko||'Tirta Kencana'}* mengenai piutang yang masih belum terbayar:`, '',
+        `📄 Jumlah transaksi: *${jumlahTrxBelumBayar}*`,
+        `💰 Total tagihan: *${fmtRp(totalPiutang)}*`, '',
+        `Mohon konfirmasi pembayarannya ya, terima kasih 🙏`
+      ];
+      kirimWaKeNomorPelanggan(name, lines.join('\n'));
+    }
+    // [NEW] Set/ubah nomor WA pelanggan secara proaktif dari daftar Pelanggan,
+    // tanpa perlu menunggu momen kirim struk/reminder dulu.
+    function editCustomerPhone(name) {
+      Swal.fire({
+        title: 'Nomor WA ' + name,
+        input: 'text',
+        inputLabel: 'Nomor WhatsApp pelanggan (mis. 0812xxxxxxx)',
+        inputValue: getCustomerPhone(name),
+        showCancelButton: true,
+        confirmButtonText: 'Simpan',
+        inputValidator: (v) => { if (v && v.replace(/[^0-9]/g,'').length < 8) return 'Nomor HP tidak valid'; }
+      }).then(r => {
+        if (!r.isConfirmed) return;
+        setCustomerPhone(name, r.value.trim());
+        Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Nomor WA disimpan' });
+      });
+    }
     function localDateStr(d) { const dt = d||new Date(); return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0'); }
 
     // PWA
