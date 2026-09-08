@@ -5851,18 +5851,97 @@
     function deleteProduk(idx) { Swal.fire({ title:'Hapus?', text:'Hapus '+products[idx].nama+'?', icon:'warning', showCancelButton:true }).then(r => { if (r.isConfirmed) { products.splice(idx,1); saveLocalData(); renderProdukList(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Produk dihapus' }); syncProductsToSheet(); } }); }
 
     // ========== PELANGGAN ==========
-    function loadPelanggan() { document.getElementById('contentArea').innerHTML = `<div class="card"><div class="flex-between mb-2"><div class="card-title"><i class="fas fa-address-book"></i> Daftar Pelanggan</div><div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button class="btn btn-outline btn-sm" onclick="btnSyncPelangganToSheet()" title="Kirim data pelanggan lokal ke Google Sheets"><i class="fas fa-cloud-upload-alt"></i> Sync ke Sheets</button><button class="btn btn-outline btn-sm" onclick="btnSyncPelangganFromSheet()" title="Ambil data pelanggan terbaru dari Google Sheets"><i class="fas fa-cloud-download-alt"></i> Sync ke Aplikasi</button><button class="btn btn-primary btn-sm" onclick="addPelanggan()">+ Tambah</button></div></div><div class="table-wrap"><table><thead><tr><th>#</th><th>Nama</th><th>Aksi</th></tr></thead><tbody id="pelangganTbody"></tbody></table></div><div id="pelangganPaginationBar"></div></div>`; renderPelangganList(); }
+    function loadPelanggan() { document.getElementById('contentArea').innerHTML = `<div class="card"><div class="flex-between mb-2"><div class="card-title"><i class="fas fa-address-book"></i> Daftar Pelanggan</div><div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button class="btn btn-outline btn-sm" onclick="btnSyncPelangganToSheet()" title="Kirim data pelanggan lokal ke Google Sheets"><i class="fas fa-cloud-upload-alt"></i> Sync ke Sheets</button><button class="btn btn-outline btn-sm" onclick="btnSyncPelangganFromSheet()" title="Ambil data pelanggan terbaru dari Google Sheets"><i class="fas fa-cloud-download-alt"></i> Sync ke Aplikasi</button><button class="btn btn-primary btn-sm" onclick="addPelanggan()">+ Tambah</button></div></div><input id="pelangganSearch" class="form-control mb-2" placeholder="🔍 Cari nama pelanggan…" oninput="renderPelangganList()"><div class="table-wrap"><table><thead><tr><th>#</th><th>Nama</th><th style="text-align:center">Transaksi</th><th style="text-align:right">Piutang</th><th>Aksi</th></tr></thead><tbody id="pelangganTbody"></tbody></table></div><div id="pelangganPaginationBar"></div></div>`; renderPelangganList(); }
     function renderPelangganList(_pgKeep = false) {
       const tb = document.getElementById('pelangganTbody');
       if (!tb) return;
-      if (!allCustomers.length) { tb.innerHTML = '<tr><td colspan="3" class="text-center text-sm" style="padding:32px">Belum ada pelanggan</td></tr>'; const pcb0 = document.getElementById('pelangganPaginationBar'); if (pcb0) pcb0.innerHTML = ''; return; }
+      if (!allCustomers.length) { tb.innerHTML = '<tr><td colspan="5" class="text-center text-sm" style="padding:32px">Belum ada pelanggan</td></tr>'; const pcb0 = document.getElementById('pelangganPaginationBar'); if (pcb0) pcb0.innerHTML = ''; return; }
+      // [NEW] Ringkasan per pelanggan (jumlah transaksi & total piutang belum bayar)
+      // dihitung sekali dari allTrxList, bukan query ulang per baris - supaya tetap
+      // ringan walau daftar pelanggan/transaksi banyak.
+      const trxCountMap = {}, piutangMap = {};
+      allTrxList.forEach(t => {
+        const cust = t.customer || '';
+        trxCountMap[cust] = (trxCountMap[cust] || 0) + 1;
+        if (t.status === 'belumTransfer') piutangMap[cust] = (piutangMap[cust] || 0) + (t.nett || 0);
+      });
+      const q = (document.getElementById('pelangganSearch')?.value || '').toLowerCase().trim();
       if (!_pgKeep) pgReset('pelanggan');
       window._pgRerender_pelanggan = () => renderPelangganList(true);
-      const _pgIndexed = allCustomers.map((c, i) => ({ c, i }));
+      let _pgIndexed = allCustomers.map((c, i) => ({ c, i }));
+      if (q) _pgIndexed = _pgIndexed.filter(({c}) => c.toLowerCase().includes(q));
+      if (!_pgIndexed.length) { tb.innerHTML = '<tr><td colspan="5" class="text-center text-sm" style="padding:32px">Tidak ada pelanggan yang cocok</td></tr>'; const pcb1 = document.getElementById('pelangganPaginationBar'); if (pcb1) pcb1.innerHTML = ''; return; }
       const _pg = pgSlice(_pgIndexed, 'pelanggan', 30);
       const pcb = document.getElementById('pelangganPaginationBar');
       if (pcb) pcb.innerHTML = pgBar('pelanggan', _pg.page, _pg.totalPages, _pg.total, _pg.pageSize);
-      tb.innerHTML = _pg.items.map(({ c, i }) => `<tr><td>${i+1}</td><td class="fw-bold">${esc(c)}</td><td><button class="btn btn-sm btn-danger" onclick="deletePelanggan(${i})">🗑</button></td></tr>`).join('');
+      tb.innerHTML = _pg.items.map(({ c, i }) => {
+        const jumlahTrx = trxCountMap[c] || 0;
+        const piutang = piutangMap[c] || 0;
+        return `<tr>
+          <td>${i+1}</td>
+          <td class="fw-bold">${esc(c)}</td>
+          <td style="text-align:center;font-family:var(--mono)">${jumlahTrx || '-'}</td>
+          <td style="text-align:right;font-family:var(--mono);font-weight:700;color:${piutang>0?'var(--merah)':'var(--text3)'}">${piutang>0?fmtRp(piutang):'-'}</td>
+          <td style="display:flex;gap:3px"><button class="btn btn-sm btn-outline" onclick="showPelangganDetail('${esc(c).replace(/'/g,"\\'")}')" title="Lihat riwayat & piutang"><i class="fas fa-eye"></i></button><button class="btn btn-sm btn-danger" onclick="deletePelanggan(${i})">🗑</button></td>
+        </tr>`;
+      }).join('');
+    }
+    // [NEW] Detail pelanggan: ringkasan (total belanja, piutang, jumlah transaksi,
+    // tanggal pertama/terakhir) + riwayat transaksi terbaru. Data diambil murni dari
+    // allTrxList yang sudah ada (filter by nama customer) - tidak perlu struktur
+    // data pelanggan baru, jadi aman & tidak mengubah cara kerja sync yang sudah ada.
+    function showPelangganDetail(name) {
+      const trxCust = allTrxList.filter(t => (t.customer||'') === name).sort((a,b) => (b.tgl||'').localeCompare(a.tgl||''));
+      const jumlahTrx = trxCust.length;
+      const totalBelanja = trxCust.reduce((s,t) => s + (t.nett||0), 0);
+      const totalPiutang = trxCust.filter(t => t.status === 'belumTransfer').reduce((s,t) => s + (t.nett||0), 0);
+      const rataRata = jumlahTrx ? totalBelanja / jumlahTrx : 0;
+      const tglTerakhir = jumlahTrx ? trxCust[0].tgl : null;
+      const tglPertama = jumlahTrx ? trxCust[jumlahTrx-1].tgl : null;
+      const statusLabel = { cod:'COD', transfer:'Transfer', qris:'QRIS', belumTransfer:'Belum Bayar' };
+      const statusClass = { cod:'status-cod', transfer:'status-transfer', qris:'status-qris', belumTransfer:'status-belumbayar' };
+      const RECENT_LIMIT = 20;
+      const recentRows = trxCust.slice(0, RECENT_LIMIT);
+      const itemSummary = t => {
+        const items = t.items || [];
+        if (!items.length) return '-';
+        const first = items[0].nama || items[0].sku || '-';
+        return items.length > 1 ? `${esc(first)} +${items.length-1} lainnya` : esc(first);
+      };
+      const html = `<div style="text-align:left">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+          <div style="background:#F4F8FB;border-radius:12px;padding:10px 12px"><div style="font-size:0.68rem;color:#5a7a90">Total Belanja</div><div style="font-weight:800;font-size:1rem;color:#1A6DB5;font-family:monospace">${fmtRp(totalBelanja)}</div></div>
+          <div style="background:${totalPiutang>0?'#FEECEC':'#F4F8FB'};border-radius:12px;padding:10px 12px"><div style="font-size:0.68rem;color:#5a7a90">Piutang Belum Bayar</div><div style="font-weight:800;font-size:1rem;color:${totalPiutang>0?'#DC2626':'#1A6DB5'};font-family:monospace">${fmtRp(totalPiutang)}</div></div>
+          <div style="background:#F4F8FB;border-radius:12px;padding:10px 12px"><div style="font-size:0.68rem;color:#5a7a90">Jumlah Transaksi</div><div style="font-weight:800;font-size:1rem;color:#0D2B3E">${jumlahTrx}</div></div>
+          <div style="background:#F4F8FB;border-radius:12px;padding:10px 12px"><div style="font-size:0.68rem;color:#5a7a90">Rata-rata / Transaksi</div><div style="font-weight:800;font-size:1rem;color:#0D2B3E;font-family:monospace">${fmtRp(rataRata)}</div></div>
+        </div>
+        ${jumlahTrx ? `<div style="font-size:0.7rem;color:#5a7a90;margin-bottom:10px">Transaksi pertama: <b>${esc(fmtDate(tglPertama))}</b> &nbsp;·&nbsp; Terakhir: <b>${esc(fmtDate(tglTerakhir))}</b></div>` : ''}
+        <div style="font-weight:700;font-size:0.8rem;color:#0D2B3E;margin-bottom:6px">Riwayat Transaksi${jumlahTrx > RECENT_LIMIT ? ` (${RECENT_LIMIT} terbaru dari ${jumlahTrx})` : ''}</div>
+        <div style="max-height:260px;overflow-y:auto;border:1px solid #EEF4F9;border-radius:10px">
+          ${jumlahTrx === 0 ? `<div style="padding:20px;text-align:center;color:#94A3B8;font-size:0.8rem">Belum ada transaksi</div>` : recentRows.map(t => `
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid #F1F5F9">
+              <div style="min-width:0">
+                <div style="font-size:0.72rem;color:#94A3B8">${esc(fmtDate(t.tgl))} · ${esc(t.id)}</div>
+                <div style="font-size:0.78rem;color:#0D2B3E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${itemSummary(t)}</div>
+              </div>
+              <div style="text-align:right;flex-shrink:0">
+                <div style="font-family:monospace;font-weight:700;font-size:0.78rem;color:#0D2B3E">${fmtRp(t.nett||0)}</div>
+                <span class="status-badge ${statusClass[t.status]||''}" style="font-size:0.55rem">${statusLabel[t.status]||t.status||'-'}</span>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>`;
+      Swal.fire({
+        title: `👤 ${esc(name)}`, html, width: '480px', background: '#F4F8FB',
+        showConfirmButton: true, confirmButtonText: 'Tutup',
+        showDenyButton: jumlahTrx > 0, denyButtonText: '📋 Lihat di Menu Transaksi',
+        customClass: { popup: 'dash-status-popup' }
+      }).then(r => {
+        if (r.isDenied) {
+          navigateTo('transaksi');
+          setTimeout(() => { const el = document.getElementById('trxSearch'); if (el) { el.value = name; filterTrx(); } }, 150);
+        }
+      });
     }
     function addPelanggan() { Swal.fire({ title:'Tambah Pelanggan', input:'text', inputLabel:'Nama pelanggan', showCancelButton:true }).then(r => { if (r.isConfirmed && r.value) { const name = r.value.trim(); if (!allCustomers.includes(name)) { allCustomers.push(name); pelanggan = allCustomers.slice(); saveLocalData(); renderPelangganList(); syncCustomersToSheet(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Pelanggan ditambahkan' }); } else Swal.fire('Info','Sudah ada','info'); } }); }
     function deletePelanggan(idx) { Swal.fire({ title:'Hapus?', text:'Hapus '+allCustomers[idx]+'?', icon:'warning', showCancelButton:true }).then(r => { if (r.isConfirmed) { allCustomers.splice(idx,1); pelanggan = allCustomers.slice(); saveLocalData(); renderPelangganList(); syncCustomersToSheet(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Pelanggan dihapus' }); } }); }
