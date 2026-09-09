@@ -2286,7 +2286,7 @@
     }
     function pgGoto(key, page) { _pgState[key] = page; const fn = window['_pgRerender_' + key]; if (typeof fn === 'function') fn(); }
 
-    function renderTrxTable(filtered = allTrxList, _pgKeep = false) { const tb = document.getElementById('trxTbody'); if (!tb) return; if (!_pgKeep) pgReset('trx'); window._pgRerender_trx = () => renderTrxTable(filtered, true); if (!filtered.length) { tb.innerHTML = '<tr><td colspan="9" class="text-center text-sm" style="padding:32px">Tidak ada transaksi</td></tr>'; const pb0 = document.getElementById('trxPaginationBar'); if (pb0) pb0.innerHTML = ''; return; } const _pg = pgSlice(filtered, 'trx', 25); const pb = document.getElementById('trxPaginationBar'); if (pb) pb.innerHTML = pgBar('trx', _pg.page, _pg.totalPages, _pg.total, _pg.pageSize); tb.innerHTML = _pg.items.map(t => `<tr><td style="font-family:var(--mono);font-size:11px;color:var(--biru);font-weight:700">${esc(t.id)}</td><td>${fmtDate(t.tgl)}</td><td>${esc(t.customer||'-')}</td><td>${esc(t.sales||'-')}</td><td style="font-family:var(--mono);font-size:12px">${fmtRp(t.gross)}</td><td style="color:var(--merah);font-family:var(--mono);font-size:12px">${fmtRp(t.diskon)}</td><td class="fw-bold" style="font-family:var(--mono);font-size:12px;color:var(--biru)">${fmtRp(t.nett)}</td><td><select class="form-control" style="font-size:0.65rem;padding:2px 4px;min-width:80px" onchange="updateTrxStatus('${esc(t.id).replace(/'/g,"\\'")}', this.value)"><option value="cod" ${t.status==='cod'?'selected':''}>COD</option><option value="transfer" ${t.status==='transfer'?'selected':''}>Transfer</option><option value="qris" ${t.status==='qris'?'selected':''}>QRIS</option><option value="belumTransfer" ${t.status==='belumTransfer'?'selected':''}>Belum</option></select></td><td style="display:flex;gap:3px"><button class="btn btn-sm btn-primary" onclick="cetakUlangStruk('${esc(t.id).replace(/'/g,"\\'")}')">🧾 Cetak</button><button class="btn btn-sm btn-outline" onclick="editTrx('${esc(t.id).replace(/'/g,"\\'")}')">✏️</button><button class="btn btn-sm btn-danger" onclick="deleteTrx('${esc(t.id).replace(/'/g,"\\'")}')">🗑</button></td></tr>`).join(''); }
+    function renderTrxTable(filtered = allTrxList, _pgKeep = false) { const tb = document.getElementById('trxTbody'); if (!tb) return; if (!_pgKeep) pgReset('trx'); window._pgRerender_trx = () => renderTrxTable(filtered, true); if (!filtered.length) { tb.innerHTML = '<tr><td colspan="9" class="text-center text-sm" style="padding:32px">Tidak ada transaksi</td></tr>'; const pb0 = document.getElementById('trxPaginationBar'); if (pb0) pb0.innerHTML = ''; return; } const _pg = pgSlice(filtered, 'trx', 25); const pb = document.getElementById('trxPaginationBar'); if (pb) pb.innerHTML = pgBar('trx', _pg.page, _pg.totalPages, _pg.total, _pg.pageSize); const _isAdmin = currentUser?.role === 'admin'; tb.innerHTML = _pg.items.map(t => `<tr><td style="font-family:var(--mono);font-size:11px;color:var(--biru);font-weight:700">${esc(t.id)}</td><td>${fmtDate(t.tgl)}</td><td>${esc(t.customer||'-')}</td><td>${esc(t.sales||'-')}</td><td style="font-family:var(--mono);font-size:12px">${fmtRp(t.gross)}</td><td style="color:var(--merah);font-family:var(--mono);font-size:12px">${fmtRp(t.diskon)}</td><td class="fw-bold" style="font-family:var(--mono);font-size:12px;color:var(--biru)">${fmtRp(t.nett)}</td><td><select class="form-control" style="font-size:0.65rem;padding:2px 4px;min-width:80px" onchange="updateTrxStatus('${esc(t.id).replace(/'/g,"\\'")}', this.value)"><option value="cod" ${t.status==='cod'?'selected':''}>COD</option><option value="transfer" ${t.status==='transfer'?'selected':''}>Transfer</option><option value="qris" ${t.status==='qris'?'selected':''}>QRIS</option><option value="belumTransfer" ${t.status==='belumTransfer'?'selected':''}>Belum</option></select></td><td style="display:flex;gap:3px"><button class="btn btn-sm btn-primary" onclick="cetakUlangStruk('${esc(t.id).replace(/'/g,"\\'")}')">🧾 Cetak</button>${_isAdmin ? `<button class="btn btn-sm btn-outline" onclick="editTrx('${esc(t.id).replace(/'/g,"\\'")}')">✏️</button>` : ''}<button class="btn btn-sm btn-danger" onclick="deleteTrx('${esc(t.id).replace(/'/g,"\\'")}')">🗑</button></td></tr>`).join(''); }
 
     async function cetakUlangStruk(id) {
       let trx = allTrxList.find(t => t.id === id);
@@ -2979,15 +2979,21 @@
     function saveEditLog() { try { localStorage.setItem('tirtaEditLog', JSON.stringify(_editLog.slice(-200))); } catch(e){} }
 
     function editTrx(id) {
+      // [NEW] Hanya admin yang boleh mengedit transaksi (Customer/Sales/Status/
+      // SKU/Qty/Disc). Sales/driver tetap bisa lihat & cetak, tombol ✏️ Edit
+      // sendiri sudah disembunyikan untuk mereka di renderTrxTable() - guard ini
+      // jaga-jaga kalau fungsi terpanggil lewat jalur lain.
+      if (currentUser?.role !== 'admin') return Swal.fire('Akses Ditolak', 'Hanya admin yang bisa mengedit transaksi.', 'error');
       const trx = allTrxList.find(t=>t.id===id);
       if (!trx) return;
       const items = trx.items || [];
-      // [NEW] Baris editable untuk SKU & Qty setiap item dalam transaksi
+      // [NEW] Baris editable untuk SKU, Qty, & Disc setiap item dalam transaksi
       let prodOpts = products.map(p => `<option value="${esc(p.sku)}">${esc(p.sku)} - ${esc(p.nama)}</option>`).join('');
       let itemsHtml = items.length ? items.map((it,i) => `
           <div style="display:flex;gap:4px;margin:4px 0;align-items:center">
             <select id="editItemSku${i}" style="flex:2;font-size:12px;height:34px;border:1px solid #d9d9d9;border-radius:6px;padding:0 6px">${prodOpts.replace(`value="${esc(it.sku)}"`, `value="${esc(it.sku)}" selected`)}</select>
-            <input id="editItemQty${i}" type="number" min="1" value="${it.qty||1}" style="width:64px;font-size:12px;height:34px;border:1px solid #d9d9d9;border-radius:6px;padding:0 6px">
+            <input id="editItemQty${i}" type="number" min="1" value="${it.qty||1}" title="Qty" style="width:56px;font-size:12px;height:34px;border:1px solid #d9d9d9;border-radius:6px;padding:0 6px">
+            <input id="editItemDisc${i}" type="number" min="0" value="${it.discRpPer||0}" title="Disc per item (Rp)" style="width:72px;font-size:12px;height:34px;border:1px solid #d9d9d9;border-radius:6px;padding:0 6px">
           </div>`).join('') : '<div style="font-size:12px;color:#999">Tidak ada item</div>';
       Swal.fire({
         title: '✏️ Edit Transaksi',
@@ -3005,20 +3011,25 @@
           </select>
           <label style="font-size:12px;font-weight:600">Nett (Rp)</label>
           <input id="editNett" type="number" class="swal2-input" value="${trx.nett||0}">
-          <label style="font-size:12px;font-weight:600;margin-top:6px;display:block">Item Transaksi (SKU & Qty bisa diedit)</label>
-          <div id="editItemsWrap" style="max-height:220px;overflow:auto;border:1px solid #eee;border-radius:8px;padding:6px;margin-top:4px">${itemsHtml}</div>
+          <label style="font-size:12px;font-weight:600;margin-top:6px;display:block">Item Transaksi (SKU, Qty & Disc per item bisa diedit)</label>
+          <div style="display:flex;gap:4px;font-size:10px;color:#5a7a90;padding:0 2px 2px"><span style="flex:2">SKU</span><span style="width:56px">Qty</span><span style="width:72px">Disc/item</span></div>
+          <div id="editItemsWrap" style="max-height:220px;overflow:auto;border:1px solid #eee;border-radius:8px;padding:6px;margin-top:2px">${itemsHtml}</div>
         </div>`,
         showCancelButton: true, confirmButtonText: '💾 Simpan', cancelButtonText: 'Batal',
         preConfirm: () => {
           const newItems = items.map((it,i) => {
             const sel = document.getElementById('editItemSku'+i);
             const qtyEl = document.getElementById('editItemQty'+i);
+            const discEl = document.getElementById('editItemDisc'+i);
             const sku = sel ? sel.value : it.sku;
             const qty = Math.max(1, parseInt(qtyEl?.value)||it.qty||1);
             const skuChanged = sku !== it.sku;
             const p = products.find(x => x.sku === sku);
             const harga = skuChanged ? (p ? (p.jual||p.harga||0) : it.harga) : it.harga;
-            const discRpPer = skuChanged ? 0 : (it.discRpPer||0);
+            // [NEW] Disc per item sekarang selalu dibaca langsung dari input-nya
+            // (bisa diedit bebas oleh admin), bukan otomatis di-reset ke 0 saat
+            // SKU diganti seperti sebelumnya.
+            const discRpPer = Math.max(0, parseFloat(discEl?.value) || 0);
             const modal = skuChanged ? (p ? (p.modal||0) : it.modal) : it.modal;
             const nama = skuChanged ? (p ? p.nama : it.nama) : it.nama;
             const nettPer = harga - discRpPer;
@@ -4650,12 +4661,13 @@
             <div class="form-group col-1"><label>Sales</label><select id="pesSales"><option value="">-- Pilih --</option>${sOpts}</select></div>
             <div class="form-group col-1"><label>Customer</label><input type="text" id="pesCustomer" list="pesCustDatalist" placeholder="Nama customer" autocomplete="off"><datalist id="pesCustDatalist">${custDatalist}</datalist></div>
           </div>
-          <div class="flex-row">
-            <div class="form-group col-1"><label>SKU / Barang</label><input type="text" id="pesSku" list="pesProductDatalist" placeholder="Ketik atau pilih SKU" autocomplete="off" oninput="pesSkuChange()"></div>
-            <div class="form-group col-1"><label>Nama Barang</label><input type="text" id="pesNama" readonly placeholder="Otomatis terisi" style="background:var(--biru-muda)"></div>
-          </div>
-          <div class="form-group"><label>Qty</label><input type="number" id="pesQty" placeholder="0" min="1"></div>
-          <button class="btn btn-primary btn-block" onclick="pesananAddEntry()"><i class="fas fa-plus"></i> Tambah ke Pesanan</button>
+          <!-- [CHANGED] Dulu input SKU+Qty langsung tersimpan satu-satu (harus pilih
+               ulang Sales & Customer tiap tambah 1 barang). Sekarang polanya sama
+               seperti menu Jual: Sales & Customer diisi SEKALI, lalu tinggal tambah
+               beberapa baris barang (SKU+Qty) sebelum disimpan sekaligus. -->
+          <div style="display:flex;justify-content:space-between;align-items:center;margin:10px 0 6px"><strong style="font-size:0.8rem">📦 Barang</strong><button class="btn btn-outline btn-sm" onclick="pesAddItemRow()"><i class="fas fa-plus"></i> Item</button></div>
+          <div id="pesItemsContainer"></div>
+          <button class="btn btn-primary btn-block mt-2" onclick="pesananSubmitCart()"><i class="fas fa-save"></i> Simpan Pesanan</button>
           <div class="table-wrap mt-2"><table>
             <thead><tr><th>Sales</th><th>Customer</th><th>SKU</th><th>Nama Barang</th><th style="text-align:center">Qty</th><th></th></tr></thead>
             <tbody>${d.entries.length === 0 ? '<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:16px">Belum ada pesanan diinput</td></tr>' : d.entries.map(e => `<tr><td>${esc(e.sales||'-')}</td><td>${esc(e.customer||'-')}</td><td style="font-family:var(--mono);font-size:11px">${esc(e.sku||'-')}</td><td>${esc(e.nama||'-')}</td><td style="text-align:center;font-weight:700">${e.qty}</td><td><button class="btn btn-sm btn-danger" onclick="pesananRemoveEntry('${e.id}')"><i class="fas fa-trash"></i></button></td></tr>`).join('')}</tbody>
@@ -4680,35 +4692,67 @@
           </div>
           <div id="pesananOrderTableWrap" class="table-wrap mt-2"><p class="text-sm" style="padding:16px;text-align:center;color:var(--text3)">Memuat data stock...</p></div>
         </div>`;
+      pesResetItemsCart();
       renderPesananOrderTable();
     }
 
-    function pesSkuChange() {
-      const val = document.getElementById('pesSku').value.trim();
-      const namaEl = document.getElementById('pesNama');
-      if (!val) { namaEl.value = ''; return; }
-      const p = products.find(x => String(x.sku).toLowerCase() === val.toLowerCase());
-      namaEl.value = p ? p.nama : '';
+    // [NEW] Cart barang untuk Input Pesanan - mirip addItemRow() di menu Jual, versi
+    // ringkas (cuma SKU+Nama+Qty, tanpa harga/disc karena Pesanan bukan transaksi jual).
+    function pesAddItemRow() {
+      const div = document.createElement('div');
+      div.className = 'pes-item-row';
+      div.style.cssText = 'display:flex;gap:6px;margin-bottom:6px;align-items:center';
+      div.innerHTML = `
+        <input class="pes-cart-sku" data-field="sku" placeholder="SKU" list="pesProductDatalist" autocomplete="off" style="flex:2;min-width:0;font-size:0.8rem;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--card)">
+        <input class="pes-cart-nama" data-field="nama" readonly placeholder="Nama" style="flex:2;min-width:0;background:var(--biru-muda);font-size:0.72rem;text-align:center;border:1px solid var(--border);border-radius:8px;padding:8px 4px">
+        <input class="pes-cart-qty" data-field="qty" type="number" min="1" placeholder="Qty" style="width:60px;font-size:0.8rem;padding:8px 6px;border-radius:8px;border:1px solid var(--border);background:var(--card)">
+        <button class="btn btn-danger btn-sm" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>`;
+      const skuInput = div.querySelector('[data-field="sku"]');
+      const namaInput = div.querySelector('[data-field="nama"]');
+      skuInput.addEventListener('input', () => {
+        const val = skuInput.value.trim();
+        if (!val) { namaInput.value = ''; return; }
+        const p = products.find(x => String(x.sku).toLowerCase() === val.toLowerCase());
+        namaInput.value = p ? p.nama : '';
+      });
+      document.getElementById('pesItemsContainer').appendChild(div);
     }
-    function pesananAddEntry() {
+    function pesResetItemsCart() {
+      const c = document.getElementById('pesItemsContainer');
+      if (!c) return;
+      c.innerHTML = '';
+      pesAddItemRow();
+    }
+    // [NEW] Ganti pesananAddEntry() lama (satu barang = satu kali submit, wajib
+    // pilih ulang Sales & Customer tiap kali) - sekarang Sales & Customer dibaca
+    // SEKALI, lalu SEMUA baris barang di cart disimpan sekaligus jadi beberapa
+    // entry pesanan (struktur data entry per-item TIDAK berubah, jadi rekap per
+    // sales & rencana order di bawahnya tetap jalan seperti biasa tanpa perlu
+    // diutak-atik). Sales & Customer SENGAJA tidak dikosongkan setelah simpan -
+    // supaya kalau mau tambah pesanan lagi untuk customer yang sama, tinggal isi
+    // barang baru tanpa perlu pilih ulang.
+    function pesananSubmitCart() {
       const sales = document.getElementById('pesSales').value;
       const customer = document.getElementById('pesCustomer').value.trim();
-      const sku = document.getElementById('pesSku').value.trim();
-      const qty = parseInt(document.getElementById('pesQty').value) || 0;
       if (!sales) return Swal.fire({ icon:'warning', title:'Sales belum dipilih' });
       if (!customer) return Swal.fire({ icon:'warning', title:'Customer belum diisi' });
-      if (!sku) return Swal.fire({ icon:'warning', title:'SKU belum dipilih' });
-      const prod = products.find(p => String(p.sku).toLowerCase() === sku.toLowerCase());
-      if (!prod) return Swal.fire({ icon:'warning', title:'SKU Tidak Ditemukan', text:'Pilih SKU dari daftar yang tersedia.' });
-      if (qty <= 0) return Swal.fire({ icon:'warning', title:'Qty harus lebih dari 0' });
-      const entry = { id: 'pes_' + Date.now() + '_' + Math.floor(Math.random()*1000), sales, customer, sku: prod.sku, nama: prod.nama, qty };
-      window._pesananData.entries.push(entry);
+      const rows = document.querySelectorAll('#pesItemsContainer .pes-item-row');
+      const newEntries = [];
+      let hasInvalidSku = false;
+      rows.forEach(row => {
+        const sku = row.querySelector('[data-field="sku"]')?.value.trim() || '';
+        const qty = parseInt(row.querySelector('[data-field="qty"]')?.value) || 0;
+        if (!sku && qty <= 0) return; // baris kosong, lewati diam-diam
+        const prod = products.find(p => String(p.sku).toLowerCase() === sku.toLowerCase());
+        if (!prod || qty <= 0) { hasInvalidSku = true; return; }
+        newEntries.push({ id: 'pes_' + Date.now() + '_' + Math.floor(Math.random()*1000) + '_' + newEntries.length, sales, customer, sku: prod.sku, nama: prod.nama, qty });
+      });
+      if (hasInvalidSku) return Swal.fire({ icon:'warning', title:'Ada Barang Tidak Valid', text:'Pastikan semua baris punya SKU yang benar dan Qty lebih dari 0.' });
+      if (newEntries.length === 0) return Swal.fire({ icon:'warning', title:'Belum Ada Barang', text:'Tambahkan minimal 1 barang.' });
+      window._pesananData.entries.push(...newEntries);
       _savePesanan(localDateStr(), window._pesananData);
-      document.getElementById('pesCustomer').value = '';
-      document.getElementById('pesSku').value = '';
-      document.getElementById('pesNama').value = '';
-      document.getElementById('pesQty').value = '';
       renderPesananPage();
+      Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:1500, icon:'success', title: newEntries.length + ' barang ditambahkan ke pesanan' });
     }
     function pesananRemoveEntry(id) {
       window._pesananData.entries = window._pesananData.entries.filter(e => e.id !== id);
