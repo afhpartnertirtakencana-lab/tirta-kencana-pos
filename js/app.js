@@ -907,9 +907,20 @@
         if (Array.isArray(cust)) { allCustomers = cust; pelanggan = cust.slice(); }
         if (Array.isArray(trx)) {
           const localMap = new Map(allTrxList.map(t => [t.id, t]));
+          // [FIX] Backend getTrxList() sekarang SUDAH benar menyertakan item
+          // (digabung dari sheet Detail - lihat perbaikan di backend .gs). Sebelumnya
+          // baris ini SELALU memakai item dari cache lokal (karena server memang
+          // tidak pernah mengirim item sama sekali), yang menyebabkan device yang
+          // TIDAK membuat transaksi itu sendiri (mis. tablet/laptop yang cuma
+          // sync) selalu melihat "Tidak ada item". Sekarang utamakan item dari
+          // SERVER (sumber kebenaran bersama - supaya edit item dari device lain
+          // ikut ter-refresh di sini juga); cache lokal cuma jadi fallback kalau
+          // server kebetulan tidak mengembalikan item sama sekali.
           allTrxList = trx.map(t => {
+            if (Array.isArray(t.items) && t.items.length > 0) return t;
             const existing = localMap.get(t.id);
-            return existing && Array.isArray(existing.items) ? { ...t, items: existing.items } : t;
+            if (existing && Array.isArray(existing.items) && existing.items.length > 0) return { ...t, items: existing.items };
+            return t;
           });
           allTrxList.sort((a, b) => (b.tgl || '').localeCompare(a.tgl || '') || (b.id || '').localeCompare(a.id || ''));
         }
