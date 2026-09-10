@@ -2989,6 +2989,41 @@
     }
     function saveEditLog() { try { localStorage.setItem('tirtaEditLog', JSON.stringify(_editLog.slice(-200))); } catch(e){} }
 
+    // [NEW] Satu-satunya tempat rumus Gross/Diskon/Nett dihitung untuk dialog Edit
+    // Transaksi - dipakai baik oleh preview live (_editTrxRecalc) maupun saat
+    // disimpan (preConfirm), supaya angka yang tampil ke admin SELALU sama
+    // persis dengan angka yang benar-benar tersimpan (tidak ada lagi celah
+    // "sudah diedit tapi Total tidak ikut berubah").
+    function _editTrxCalc() {
+      const ctx = window._editTrxCtx;
+      const newItems = ctx.items.map((it,i) => {
+        const sel = document.getElementById('editItemSku'+i);
+        const qtyEl = document.getElementById('editItemQty'+i);
+        const discEl = document.getElementById('editItemDisc'+i);
+        const sku = sel ? sel.value : it.sku;
+        const qty = Math.max(1, parseInt(qtyEl?.value)||it.qty||1);
+        const skuChanged = sku !== it.sku;
+        const p = products.find(x => x.sku === sku);
+        const harga = skuChanged ? (p ? (p.jual||p.harga||0) : it.harga) : it.harga;
+        const discRpPer = Math.max(0, parseFloat(discEl?.value) || 0);
+        const modal = skuChanged ? (p ? (p.modal||0) : it.modal) : it.modal;
+        const nama = skuChanged ? (p ? p.nama : it.nama) : it.nama;
+        const nettPer = harga - discRpPer;
+        return { sku, nama, qty, harga, discRpPer, modal, nettPer, subtotal: nettPer * qty };
+      });
+      const gross = newItems.reduce((s,it)=>s+(it.harga||0)*(it.qty||0),0);
+      const itemDisc = newItems.reduce((s,it)=>s+(it.discRpPer||0)*(it.qty||0),0);
+      const diskon = itemDisc + ctx.globalDiscPortion;
+      const nett = gross - diskon + ctx.biayaJml;
+      return { items: newItems, gross, diskon, nett };
+    }
+    function _editTrxRecalc() {
+      const calc = _editTrxCalc();
+      const gEl = document.getElementById('editSumGross'), dEl = document.getElementById('editSumDisc'), nEl = document.getElementById('editSumNett');
+      if (gEl) gEl.textContent = fmtRp(calc.gross);
+      if (dEl) dEl.textContent = fmtRp(calc.diskon);
+      if (nEl) nEl.textContent = fmtRp(calc.nett);
+    }
     function editTrx(id) {
       // [NEW] Hanya admin yang boleh mengedit transaksi (Customer/Sales/Status/
       // SKU/Qty/Disc). Sales/driver tetap bisa lihat & cetak, tombol ✏️ Edit
@@ -2998,14 +3033,28 @@
       const trx = allTrxList.find(t=>t.id===id);
       if (!trx) return;
       const items = trx.items || [];
+      // [FIX] Porsi diskon "global" (di luar diskon per item, mis. dari diskon
+      // tambahan saat transaksi dibuat) dihitung SEKALI di sini & dipertahankan
+      // apa adanya - baik untuk tampilan live preview maupun saat disimpan.
+      const oldItemDiscTotal = items.reduce((s,it)=>s+(it.discRpPer||0)*(it.qty||0),0);
+      const globalDiscPortion = Math.max(0, (trx.diskon||0) - oldItemDiscTotal);
+      const biayaJml = trx.biayaJml || 0;
       // [NEW] Baris editable untuk SKU, Qty, & Disc setiap item dalam transaksi
       let prodOpts = products.map(p => `<option value="${esc(p.sku)}">${esc(p.sku)} - ${esc(p.nama)}</option>`).join('');
       let itemsHtml = items.length ? items.map((it,i) => `
           <div style="display:flex;gap:4px;margin:4px 0;align-items:center">
-            <select id="editItemSku${i}" style="flex:2;font-size:12px;height:34px;border:1px solid #d9d9d9;border-radius:6px;padding:0 6px">${prodOpts.replace(`value="${esc(it.sku)}"`, `value="${esc(it.sku)}" selected`)}</select>
-            <input id="editItemQty${i}" type="number" min="1" value="${it.qty||1}" title="Qty" style="width:56px;font-size:12px;height:34px;border:1px solid #d9d9d9;border-radius:6px;padding:0 6px">
-            <input id="editItemDisc${i}" type="number" min="0" value="${it.discRpPer||0}" title="Disc per item (Rp)" style="width:72px;font-size:12px;height:34px;border:1px solid #d9d9d9;border-radius:6px;padding:0 6px">
+            <select id="editItemSku${i}" onchange="_editTrxRecalc()" style="flex:2;font-size:12px;height:34px;border:1px solid #d9d9d9;border-radius:6px;padding:0 6px">${prodOpts.replace(`value="${esc(it.sku)}"`, `value="${esc(it.sku)}" selected`)}</select>
+            <input id="editItemQty${i}" type="number" min="1" value="${it.qty||1}" title="Qty" oninput="_editTrxRecalc()" style="width:56px;font-size:12px;height:34px;border:1px solid #d9d9d9;border-radius:6px;padding:0 6px">
+            <input id="editItemDisc${i}" type="number" min="0" value="${it.discRpPer||0}" title="Disc per item (Rp)" oninput="_editTrxRecalc()" style="width:72px;font-size:12px;height:34px;border:1px solid #d9d9d9;border-radius:6px;padding:0 6px">
           </div>`).join('') : '<div style="font-size:12px;color:#999">Tidak ada item</div>';
+      // [FIX] "Nett (Rp)" SEBELUMNYA adalah input manual yang HARUS diketik ulang
+      // sendiri oleh admin tiap kali item/qty/disc diubah - kalau lupa, Total di
+      // struk jadi tidak sinkron dengan item yang sebenarnya (persis bug yang
+      // dilaporkan: sudah edit item, Total di struk tidak ikut berubah). Sekarang
+      // diganti ringkasan Gross/Diskon/TOTAL yang dihitung OTOMATIS & LANGSUNG
+      // ter-update tiap kali SKU/Qty/Disc di atas diubah (lewat _editTrxRecalc()) -
+      // tidak ada lagi field manual yang bisa lupa disesuaikan.
+      window._editTrxCtx = { items, globalDiscPortion, biayaJml };
       Swal.fire({
         title: '✏️ Edit Transaksi',
         html: `<div style="text-align:left">
@@ -3020,54 +3069,34 @@
             <option value="qris" ${trx.status==='qris'?'selected':''}>QRIS</option>
             <option value="belumTransfer" ${trx.status==='belumTransfer'?'selected':''}>Belum Transfer</option>
           </select>
-          <label style="font-size:12px;font-weight:600">Nett (Rp)</label>
-          <input id="editNett" type="number" class="swal2-input" value="${trx.nett||0}">
           <label style="font-size:12px;font-weight:600;margin-top:6px;display:block">Item Transaksi (SKU, Qty & Disc per item bisa diedit)</label>
           <div style="display:flex;gap:4px;font-size:10px;color:#5a7a90;padding:0 2px 2px"><span style="flex:2">SKU</span><span style="width:56px">Qty</span><span style="width:72px">Disc/item</span></div>
           <div id="editItemsWrap" style="max-height:220px;overflow:auto;border:1px solid #eee;border-radius:8px;padding:6px;margin-top:2px">${itemsHtml}</div>
+          <div style="background:#F4F8FB;border-radius:10px;padding:10px 12px;margin-top:10px">
+            <div style="display:flex;justify-content:space-between;font-size:12px;color:#5a7a90"><span>Gross</span><span id="editSumGross" style="font-family:monospace">Rp 0</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;color:#5a7a90;margin-top:2px"><span>Diskon</span><span id="editSumDisc" style="font-family:monospace">Rp 0</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:800;color:#0D2B3E;margin-top:6px"><span>TOTAL</span><span id="editSumNett" style="font-family:monospace;color:#1A6DB5">Rp 0</span></div>
+          </div>
         </div>`,
         showCancelButton: true, confirmButtonText: '💾 Simpan', cancelButtonText: 'Batal',
+        didOpen: () => _editTrxRecalc(),
         preConfirm: () => {
-          const newItems = items.map((it,i) => {
-            const sel = document.getElementById('editItemSku'+i);
-            const qtyEl = document.getElementById('editItemQty'+i);
-            const discEl = document.getElementById('editItemDisc'+i);
-            const sku = sel ? sel.value : it.sku;
-            const qty = Math.max(1, parseInt(qtyEl?.value)||it.qty||1);
-            const skuChanged = sku !== it.sku;
-            const p = products.find(x => x.sku === sku);
-            const harga = skuChanged ? (p ? (p.jual||p.harga||0) : it.harga) : it.harga;
-            // [NEW] Disc per item sekarang selalu dibaca langsung dari input-nya
-            // (bisa diedit bebas oleh admin), bukan otomatis di-reset ke 0 saat
-            // SKU diganti seperti sebelumnya.
-            const discRpPer = Math.max(0, parseFloat(discEl?.value) || 0);
-            const modal = skuChanged ? (p ? (p.modal||0) : it.modal) : it.modal;
-            const nama = skuChanged ? (p ? p.nama : it.nama) : it.nama;
-            const nettPer = harga - discRpPer;
-            return { sku, nama, qty, harga, discRpPer, modal, nettPer, subtotal: nettPer * qty };
-          });
+          const calc = _editTrxCalc();
           return {
             customer: document.getElementById('editCust').value.trim(),
             sales: document.getElementById('editSales').value.trim(),
             status: document.getElementById('editStatus').value,
-            nett: parseFloat(document.getElementById('editNett').value)||0,
-            items: newItems
+            gross: calc.gross, diskon: calc.diskon, nett: calc.nett,
+            items: calc.items
           };
         }
       }).then(async r => {
         if (!r.isConfirmed) return;
         const before = { customer:trx.customer, sales:trx.sales, status:trx.status, nett:trx.nett, items:JSON.parse(JSON.stringify(items)) };
         const after = r.value;
-        // [NEW] Hitung ulang gross & diskon dari item yang baru, tapi pertahankan porsi diskon global (manual) yang sudah ada sebelumnya
-        const oldGross = items.reduce((s,it)=>s+(it.harga||0)*(it.qty||0),0);
-        const oldItemDisc = items.reduce((s,it)=>s+(it.discRpPer||0)*(it.qty||0),0);
-        const globalDiscPortion = Math.max(0,(trx.diskon||0) - oldItemDisc);
-        const newGross = after.items.reduce((s,it)=>s+(it.harga||0)*(it.qty||0),0);
-        const newItemDisc = after.items.reduce((s,it)=>s+(it.discRpPer||0)*(it.qty||0),0);
-        const newDiskon = newItemDisc + globalDiscPortion;
         // Update lokal
         const idx = allTrxList.findIndex(t=>t.id===id);
-        if (idx>=0) { allTrxList[idx] = {...allTrxList[idx], customer:after.customer, sales:after.sales, status:after.status, nett:after.nett, items:after.items, gross:newGross, diskon:newDiskon }; saveLocalData(); }
+        if (idx>=0) { allTrxList[idx] = {...allTrxList[idx], customer:after.customer, sales:after.sales, status:after.status, nett:after.nett, items:after.items, gross:after.gross, diskon:after.diskon }; saveLocalData(); }
         // Log edit (termasuk perubahan item SKU/Qty)
         loadEditLog();
         _editLog.push({ id, waktu: localDateStr()+' '+new Date().toTimeString().slice(0,8), editor: currentUser?.name||'?', before, after: { customer:after.customer, sales:after.sales, status:after.status, nett:after.nett, items:after.items } });
