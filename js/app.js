@@ -3039,14 +3039,16 @@
       const oldItemDiscTotal = items.reduce((s,it)=>s+(it.discRpPer||0)*(it.qty||0),0);
       const globalDiscPortion = Math.max(0, (trx.diskon||0) - oldItemDiscTotal);
       const biayaJml = trx.biayaJml || 0;
-      // [NEW] Baris editable untuk SKU, Qty, & Disc setiap item dalam transaksi
+      // [NEW] Baris editable untuk SKU, Qty, & Disc setiap item dalam transaksi -
+      // didesain ulang jadi kartu (bukan baris input polos berdempetan) supaya
+      // lebih modern & enak dibaca.
       let prodOpts = products.map(p => `<option value="${esc(p.sku)}">${esc(p.sku)} - ${esc(p.nama)}</option>`).join('');
       let itemsHtml = items.length ? items.map((it,i) => `
-          <div style="display:flex;gap:4px;margin:4px 0;align-items:center">
-            <select id="editItemSku${i}" onchange="_editTrxRecalc()" style="flex:2;font-size:12px;height:34px;border:1px solid #d9d9d9;border-radius:6px;padding:0 6px">${prodOpts.replace(`value="${esc(it.sku)}"`, `value="${esc(it.sku)}" selected`)}</select>
-            <input id="editItemQty${i}" type="number" min="1" value="${it.qty||1}" title="Qty" oninput="_editTrxRecalc()" style="width:56px;font-size:12px;height:34px;border:1px solid #d9d9d9;border-radius:6px;padding:0 6px">
-            <input id="editItemDisc${i}" type="number" min="0" value="${it.discRpPer||0}" title="Disc per item (Rp)" oninput="_editTrxRecalc()" style="width:72px;font-size:12px;height:34px;border:1px solid #d9d9d9;border-radius:6px;padding:0 6px">
-          </div>`).join('') : '<div style="font-size:12px;color:#999">Tidak ada item</div>';
+          <div style="display:flex;gap:6px;align-items:center;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:8px 10px">
+            <select id="editItemSku${i}" onchange="_editTrxRecalc()" style="flex:2;min-width:0;font-size:0.78rem;padding:7px 8px;border-radius:8px;border:1px solid #E2E8F0;background:#fff;color:#1a2332">${prodOpts.replace(`value="${esc(it.sku)}"`, `value="${esc(it.sku)}" selected`)}</select>
+            <input id="editItemQty${i}" type="number" min="1" value="${it.qty||1}" title="Qty" oninput="_editTrxRecalc()" style="width:52px;font-size:0.78rem;padding:7px 6px;border-radius:8px;border:1px solid #E2E8F0;background:#fff;text-align:center;color:#1a2332">
+            <input id="editItemDisc${i}" type="number" min="0" value="${it.discRpPer||0}" title="Disc per item (Rp)" oninput="_editTrxRecalc()" style="width:76px;font-size:0.78rem;padding:7px 6px;border-radius:8px;border:1px solid #E2E8F0;background:#fff;text-align:center;color:#1a2332">
+          </div>`).join('') : '<div style="font-size:12px;color:#94A3B8;text-align:center;padding:16px">Tidak ada item</div>';
       // [FIX] "Nett (Rp)" SEBELUMNYA adalah input manual yang HARUS diketik ulang
       // sendiri oleh admin tiap kali item/qty/disc diubah - kalau lupa, Total di
       // struk jadi tidak sinkron dengan item yang sebenarnya (persis bug yang
@@ -3055,30 +3057,46 @@
       // ter-update tiap kali SKU/Qty/Disc di atas diubah (lewat _editTrxRecalc()) -
       // tidak ada lagi field manual yang bisa lupa disesuaikan.
       window._editTrxCtx = { items, globalDiscPortion, biayaJml };
+      // [NEW] Desain ulang total - sebelumnya cuma label+input polos bawaan
+      // SweetAlert2 (kaku/kuno). Sekarang pakai header custom (avatar bulat +
+      // ID transaksi), grid 2 kolom utk Customer/Sales, label berikon huruf
+      // kapital kecil ala form modern, kartu item dgn latar abu lembut, dan
+      // panel ringkasan gradien biru senada tema aplikasi.
       Swal.fire({
-        title: '✏️ Edit Transaksi',
-        html: `<div style="text-align:left">
-          <label style="font-size:12px;font-weight:600">Customer</label>
-          <input id="editCust" class="swal2-input" value="${esc(trx.customer||'')}" placeholder="Customer">
-          <label style="font-size:12px;font-weight:600">Sales</label>
-          <input id="editSales" class="swal2-input" value="${esc(trx.sales||'')}" placeholder="Sales">
-          <label style="font-size:12px;font-weight:600">Status</label>
-          <select id="editStatus" class="swal2-input">
-            <option value="cod" ${trx.status==='cod'?'selected':''}>COD</option>
-            <option value="transfer" ${trx.status==='transfer'?'selected':''}>Transfer</option>
-            <option value="qris" ${trx.status==='qris'?'selected':''}>QRIS</option>
-            <option value="belumTransfer" ${trx.status==='belumTransfer'?'selected':''}>Belum Transfer</option>
-          </select>
-          <label style="font-size:12px;font-weight:600;margin-top:6px;display:block">Item Transaksi (SKU, Qty & Disc per item bisa diedit)</label>
-          <div style="display:flex;gap:4px;font-size:10px;color:#5a7a90;padding:0 2px 2px"><span style="flex:2">SKU</span><span style="width:56px">Qty</span><span style="width:72px">Disc/item</span></div>
-          <div id="editItemsWrap" style="max-height:220px;overflow:auto;border:1px solid #eee;border-radius:8px;padding:6px;margin-top:2px">${itemsHtml}</div>
-          <div style="background:#F4F8FB;border-radius:10px;padding:10px 12px;margin-top:10px">
-            <div style="display:flex;justify-content:space-between;font-size:12px;color:#5a7a90"><span>Gross</span><span id="editSumGross" style="font-family:monospace">Rp 0</span></div>
-            <div style="display:flex;justify-content:space-between;font-size:12px;color:#5a7a90;margin-top:2px"><span>Diskon</span><span id="editSumDisc" style="font-family:monospace">Rp 0</span></div>
-            <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:800;color:#0D2B3E;margin-top:6px"><span>TOTAL</span><span id="editSumNett" style="font-family:monospace;color:#1A6DB5">Rp 0</span></div>
+        html: `<div style="text-align:left;font-family:inherit">
+          <div style="text-align:center;margin-bottom:14px">
+            <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#1A6DB5,#2F80FF);display:flex;align-items:center;justify-content:center;margin:0 auto 8px;box-shadow:0 6px 16px rgba(26,109,181,.3)"><i class="fas fa-receipt" style="color:#fff;font-size:20px"></i></div>
+            <div style="font-size:1.05rem;font-weight:800;color:#0D2B3E">Edit Transaksi</div>
+            <div style="font-size:0.72rem;color:#94A3B8;font-family:monospace;margin-top:2px">${esc(trx.id)}</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div><label style="font-size:0.64rem;font-weight:700;color:#5a7a90;text-transform:uppercase;letter-spacing:.03em;display:block;margin-bottom:4px"><i class="fas fa-user" style="margin-right:4px"></i>Customer</label>
+              <input id="editCust" value="${esc(trx.customer||'')}" placeholder="Nama customer" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid #E2E8F0;background:#F8FAFC;font-size:0.85rem;color:#1a2332"></div>
+            <div><label style="font-size:0.64rem;font-weight:700;color:#5a7a90;text-transform:uppercase;letter-spacing:.03em;display:block;margin-bottom:4px"><i class="fas fa-id-badge" style="margin-right:4px"></i>Sales</label>
+              <input id="editSales" value="${esc(trx.sales||'')}" placeholder="Nama sales" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid #E2E8F0;background:#F8FAFC;font-size:0.85rem;color:#1a2332"></div>
+          </div>
+          <div style="margin-top:10px"><label style="font-size:0.64rem;font-weight:700;color:#5a7a90;text-transform:uppercase;letter-spacing:.03em;display:block;margin-bottom:4px"><i class="fas fa-tag" style="margin-right:4px"></i>Status Pembayaran</label>
+            <select id="editStatus" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid #E2E8F0;background:#F8FAFC;font-size:0.85rem;color:#1a2332">
+              <option value="cod" ${trx.status==='cod'?'selected':''}>COD</option>
+              <option value="transfer" ${trx.status==='transfer'?'selected':''}>Transfer</option>
+              <option value="qris" ${trx.status==='qris'?'selected':''}>QRIS</option>
+              <option value="belumTransfer" ${trx.status==='belumTransfer'?'selected':''}>Belum Transfer</option>
+            </select>
+          </div>
+          <div style="margin-top:16px;margin-bottom:6px"><label style="font-size:0.72rem;font-weight:800;color:#0D2B3E"><i class="fas fa-boxes" style="margin-right:5px;color:#1A6DB5"></i>Item Transaksi</label></div>
+          <div style="display:flex;gap:6px;font-size:0.6rem;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:.02em;padding:0 10px 4px"><span style="flex:2">Produk</span><span style="width:52px;text-align:center">Qty</span><span style="width:76px;text-align:center">Disc</span></div>
+          <div id="editItemsWrap" style="max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding:2px">${itemsHtml}</div>
+          <div style="background:linear-gradient(135deg,#EAF2FF,#F4F8FB);border:1px solid #DCEAFB;border-radius:14px;padding:14px 16px;margin-top:14px">
+            <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:#5a7a90"><span>Gross</span><span id="editSumGross" style="font-family:monospace;font-weight:600;color:#0D2B3E">Rp 0</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:#5a7a90;margin-top:4px"><span>Diskon</span><span id="editSumDisc" style="font-family:monospace;font-weight:600;color:#DC2626">-Rp 0</span></div>
+            <div style="height:1px;background:#DCEAFB;margin:8px 0"></div>
+            <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:0.85rem;font-weight:800;color:#0D2B3E">TOTAL</span><span id="editSumNett" style="font-family:monospace;font-weight:800;font-size:1.2rem;color:#1A6DB5">Rp 0</span></div>
           </div>
         </div>`,
-        showCancelButton: true, confirmButtonText: '💾 Simpan', cancelButtonText: 'Batal',
+        width: '520px', padding: '28px 24px',
+        showCancelButton: true, confirmButtonText: '💾 Simpan Perubahan', cancelButtonText: 'Batal',
+        confirmButtonColor: '#1A6DB5', cancelButtonColor: '#94A3B8',
+        buttonsStyling: true,
         didOpen: () => _editTrxRecalc(),
         preConfirm: () => {
           const calc = _editTrxCalc();
