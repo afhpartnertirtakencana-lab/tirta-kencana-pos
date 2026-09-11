@@ -903,6 +903,7 @@
           gasCall('getInputBarangHistory', []), gasCall('getDrivers', [])
         ]);
         syncCustomerPhonesFromGAS(); // [NEW] tarik nomor WA pelanggan terbaru dari Sheets juga (tidak perlu ditunggu/di-await, biar tidak memperlambat sync utama)
+        syncEditLogFromGAS(); // [NEW] tarik log edit terbaru dari semua device/admin juga
         if (Array.isArray(prod)) products = prod;
         if (Array.isArray(cust)) { allCustomers = cust; pelanggan = cust.slice(); }
         if (Array.isArray(trx)) {
@@ -1997,6 +1998,7 @@
           loadSetoranEditLog();
           _setoranEditLog.push({ waktu: localDateStr()+' '+new Date().toTimeString().slice(0,8), editor: currentUser?.name||'?', sales: payload.sales, tgl: payload.tgl, before: window._editingSetoranBefore || {}, after: payload });
           saveSetoranEditLog();
+          logEditAction('setoran', payload.sales + '-' + payload.tgl, payload.sales, window._editingSetoranBefore || {}, payload); // [NEW] ikut tercatat di log universal juga
           window._editingSetoranIndex = undefined;
           window._editingSetoranBefore = undefined;
           Swal.fire({icon:'success',title:'Berhasil',text:'Data setoran berhasil diupdate'});
@@ -2253,6 +2255,7 @@
       loadSetoranEditLog();
       _setoranEditLog.push({ waktu: localDateStr()+' '+new Date().toTimeString().slice(0,8), editor: currentUser?.name||'?', sales: after.sales, tgl: after.tgl, before, after });
       saveSetoranEditLog();
+      logEditAction('setoran', after.sales + '-' + after.tgl, after.sales, before, after); // [NEW] ikut tercatat di log universal juga
       // Sync ke Google Sheets lewat antrian - gagal pun tidak hilang, dicoba lagi otomatis
       enqueueSync('saveSetoran', [after], 'Setoran ' + (after.sales||'') + ' ' + (after.tgl||''));
       Swal.fire({toast:true, position:'top-end', showConfirmButton:false, timer:1500, icon:'success', title:'Setoran diupdate'});
@@ -2982,12 +2985,44 @@
       loadLaporanBulanan();
     }
 
-    // ========== RIWAYAT EDIT TRANSAKSI ==========
+    // ========== [NEW] LOG EDIT UNIVERSAL - dipakai oleh SEMUA menu yang bisa
+    // diedit (Transaksi, Produk, Setoran, Stock, Pelanggan, dst), bukan cuma
+    // Transaksi seperti sebelumnya. Log disimpan lokal (tampil instan) DAN
+    // disync ke Google Sheets (sheet baru "LogEdit") supaya jadi jejak audit
+    // BERSAMA - semua admin lihat riwayat yang sama dari device manapun,
+    // bukan cuma device yang melakukan editnya. ==========
     let _editLog = [];
     function loadEditLog() {
       try { _editLog = JSON.parse(localStorage.getItem('tirtaEditLog')||'[]'); } catch(e) { _editLog=[]; }
     }
-    function saveEditLog() { try { localStorage.setItem('tirtaEditLog', JSON.stringify(_editLog.slice(-200))); } catch(e){} }
+    function saveEditLogLocal() { try { localStorage.setItem('tirtaEditLog', JSON.stringify(_editLog.slice(-300))); } catch(e){} }
+    // module: 'transaksi'|'produk'|'setoran'|'stock'|'pelanggan'|dst (label kategori di viewer)
+    // refId: ID unik record yang diedit (mis. ID transaksi, SKU produk)
+    // refLabel: label yang enak dibaca manusia (mis. nama produk/customer)
+    // before/after: object field->value, cuma field yang relevan untuk modul itu
+    function logEditAction(module, refId, refLabel, before, after) {
+      loadEditLog();
+      const entry = { module, id: refId, label: refLabel, waktu: localDateStr()+' '+new Date().toTimeString().slice(0,8), editor: currentUser?.name||'?', before, after };
+      _editLog.push(entry);
+      saveEditLogLocal();
+      enqueueSync('saveEditLogEntry', [entry], 'Log edit ' + module + ' ' + refLabel);
+    }
+    // Tarik log edit terbaru dari server (gabungan semua device/admin), dipanggil
+    // saat sync utama & saat viewer dibuka supaya selalu up to date.
+    async function syncEditLogFromGAS() {
+      try {
+        const serverLog = await gasCall('getEditLog', []);
+        if (Array.isArray(serverLog)) {
+          // Server = sumber kebenaran bersama (sudah mencakup semua device),
+          // tapi tetap gabung dengan yang lokal untuk entry yang mungkin belum
+          // sempat ter-sync (masih di antrian) supaya tidak sempat hilang dari
+          // tampilan sebelum berhasil terkirim.
+          const pendingLocal = _editLog.filter(l => !serverLog.some(s => s.waktu === l.waktu && s.id === l.id && s.editor === l.editor));
+          _editLog = serverLog.concat(pendingLocal);
+          saveEditLogLocal();
+        }
+      } catch (e) { console.warn('Gagal ambil log edit dari server:', e); }
+    }
 
     // [NEW] Satu-satunya tempat rumus Gross/Diskon/Nett dihitung untuk dialog Edit
     // Transaksi - dipakai baik oleh preview live (_editTrxRecalc) maupun saat
@@ -3071,9 +3106,9 @@
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
             <div><label style="font-size:0.64rem;font-weight:700;color:#5a7a90;text-transform:uppercase;letter-spacing:.03em;display:block;margin-bottom:4px"><i class="fas fa-user" style="margin-right:4px"></i>Customer</label>
-              <input id="editCust" value="${esc(trx.customer||'')}" placeholder="Nama customer" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid #E2E8F0;background:#F8FAFC;font-size:0.85rem;color:#1a2332"></div>
+              <select id="editCust" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid #E2E8F0;background:#F8FAFC;font-size:0.85rem;color:#1a2332">${allCustomers.map(c => `<option value="${esc(c)}" ${c===trx.customer?'selected':''}>${esc(c)}</option>`).join('')}${!allCustomers.includes(trx.customer||'') && trx.customer ? `<option value="${esc(trx.customer)}" selected>${esc(trx.customer)}</option>` : ''}</select></div>
             <div><label style="font-size:0.64rem;font-weight:700;color:#5a7a90;text-transform:uppercase;letter-spacing:.03em;display:block;margin-bottom:4px"><i class="fas fa-id-badge" style="margin-right:4px"></i>Sales</label>
-              <input id="editSales" value="${esc(trx.sales||'')}" placeholder="Nama sales" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid #E2E8F0;background:#F8FAFC;font-size:0.85rem;color:#1a2332"></div>
+              <select id="editSales" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid #E2E8F0;background:#F8FAFC;font-size:0.85rem;color:#1a2332">${(settings.salesList||[]).map(s => `<option value="${esc(s)}" ${s===trx.sales?'selected':''}>${esc(s)}</option>`).join('')}${!(settings.salesList||[]).includes(trx.sales||'') && trx.sales ? `<option value="${esc(trx.sales)}" selected>${esc(trx.sales)}</option>` : ''}</select></div>
           </div>
           <div style="margin-top:10px"><label style="font-size:0.64rem;font-weight:700;color:#5a7a90;text-transform:uppercase;letter-spacing:.03em;display:block;margin-bottom:4px"><i class="fas fa-tag" style="margin-right:4px"></i>Status Pembayaran</label>
             <select id="editStatus" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid #E2E8F0;background:#F8FAFC;font-size:0.85rem;color:#1a2332">
@@ -3115,10 +3150,8 @@
         // Update lokal
         const idx = allTrxList.findIndex(t=>t.id===id);
         if (idx>=0) { allTrxList[idx] = {...allTrxList[idx], customer:after.customer, sales:after.sales, status:after.status, nett:after.nett, items:after.items, gross:after.gross, diskon:after.diskon }; saveLocalData(); }
-        // Log edit (termasuk perubahan item SKU/Qty)
-        loadEditLog();
-        _editLog.push({ id, waktu: localDateStr()+' '+new Date().toTimeString().slice(0,8), editor: currentUser?.name||'?', before, after: { customer:after.customer, sales:after.sales, status:after.status, nett:after.nett, items:after.items } });
-        saveEditLog();
+        // Log edit (termasuk perubahan item SKU/Qty) - pakai sistem log universal
+        logEditAction('transaksi', id, trx.customer || id, before, { customer:after.customer, sales:after.sales, status:after.status, nett:after.nett, items:after.items });
         // [BUGFIX] Sebelumnya edit transaksi memanggil gasCall('updateStatus') lalu
         // gasCall('saveTrx') terpisah - tapi saveTrx SEKARANG melewati (skip) ID yang
         // sudah ada di Sheets (fitur anti-dobel dari perbaikan sebelumnya), jadi hasil
@@ -3131,30 +3164,55 @@
       });
     }
 
-    function showEditLog() {
+    // [CHANGED] Viewer log sekarang menampilkan SEMUA modul (Transaksi, Produk,
+    // Setoran, Stock, Pelanggan, dst), bukan cuma Transaksi - dengan filter
+    // dropdown per modul. Selalu tarik dulu dari server supaya lihat riwayat
+    // edit dari SEMUA device/admin, bukan cuma yang tercatat di device ini.
+    async function showEditLog(moduleFilter) {
+      await syncEditLogFromGAS();
       loadEditLog();
       if (!_editLog.length) return Swal.fire('Info','Belum ada riwayat edit','info');
-      const rows = _editLog.slice().reverse().slice(0,50);
-      const fieldLabel = { customer:'Customer', sales:'Sales', status:'Status', nett:'Nett' };
-      const html = `<div style="max-height:400px;overflow-y:auto;font-size:12px">
-        <table style="width:100%;border-collapse:collapse">
-          <thead><tr style="background:#EAF4FD"><th style="padding:4px 8px;text-align:left">Waktu</th><th style="text-align:left">Editor</th><th style="text-align:left">ID</th><th style="text-align:left">Perubahan</th></tr></thead>
-          <tbody>${rows.map(log=>{
-            const before = log.before||{}, after = log.after||{};
-            let diffParts = Object.keys(fieldLabel).filter(k=>before[k]!==after[k]).map(k=>`<b>${fieldLabel[k]}</b>: ${esc(String(before[k]))} → ${esc(String(after[k]))}`);
-            // [NEW] Tampilkan perubahan SKU/Qty per item secara ringkas, bukan dump object mentah
+      const MODULE_LABEL = { transaksi:'🧾 Transaksi', produk:'📦 Produk', setoran:'💰 Setoran', stock:'📋 Stock', pelanggan:'👤 Pelanggan' };
+      const modulesPresent = [...new Set(_editLog.map(l => l.module || 'transaksi'))];
+      const filterOpts = `<option value="">Semua Modul</option>` + modulesPresent.map(m => `<option value="${m}" ${m===moduleFilter?'selected':''}>${MODULE_LABEL[m]||m}</option>`).join('');
+      const renderRows = (filt) => {
+        let rows = _editLog.slice().reverse();
+        if (filt) rows = rows.filter(l => (l.module||'transaksi') === filt);
+        rows = rows.slice(0, 80);
+        if (!rows.length) return `<tr><td colspan="5" style="text-align:center;padding:20px;color:#94A3B8">Tidak ada log untuk modul ini</td></tr>`;
+        return rows.map(log => {
+          const before = log.before||{}, after = log.after||{};
+          const module = log.module || 'transaksi';
+          let diffParts = [];
+          if (module === 'transaksi') {
+            const fieldLabel = { customer:'Customer', sales:'Sales', status:'Status', nett:'Nett' };
+            diffParts = Object.keys(fieldLabel).filter(k=>before[k]!==after[k]).map(k=>`<b>${fieldLabel[k]}</b>: ${esc(String(before[k]))} → ${esc(String(after[k]))}`);
             const bItems = before.items||[], aItems = after.items||[];
-            aItems.forEach((it,i) => {
-              const bi = bItems[i];
-              if (bi && (bi.sku !== it.sku || bi.qty !== it.qty)) {
-                diffParts.push(`<b>Item #${i+1}</b>: ${esc(bi.sku)} (qty ${bi.qty}) → ${esc(it.sku)} (qty ${it.qty})`);
-              }
-            });
-            if (!diffParts.length) diffParts.push('<i>Tidak ada perubahan nilai</i>');
-            return `<tr style="border-bottom:1px solid #eee"><td style="padding:4px 8px;white-space:nowrap">${log.waktu}</td><td>${esc(log.editor)}</td><td style="font-family:monospace;font-size:11px">${esc(log.id)}</td><td style="font-size:11px">${diffParts.join('<br>')}</td></tr>`;
-          }).join('')}</tbody>
-        </table></div>`;
-      Swal.fire({ title:'📋 Riwayat Edit', html, width:'700px', showConfirmButton:false, showCloseButton:true });
+            aItems.forEach((it,i) => { const bi = bItems[i]; if (bi && (bi.sku !== it.sku || bi.qty !== it.qty)) diffParts.push(`<b>Item #${i+1}</b>: ${esc(bi.sku)} (qty ${bi.qty}) → ${esc(it.sku)} (qty ${it.qty})`); });
+          } else {
+            // Generik untuk modul lain (Produk/Setoran/Stock/Pelanggan) - bandingkan tiap field yang ada di after
+            diffParts = Object.keys(after).filter(k => JSON.stringify(before[k]) !== JSON.stringify(after[k])).map(k => `<b>${esc(k)}</b>: ${esc(String(before[k]===undefined?'-':before[k]))} → ${esc(String(after[k]))}`);
+          }
+          if (!diffParts.length) diffParts.push('<i>Tidak ada perubahan nilai</i>');
+          return `<tr style="border-bottom:1px solid #eee"><td style="padding:4px 8px;white-space:nowrap">${esc(log.waktu)}</td><td>${esc(log.editor)}</td><td style="font-size:10px;font-weight:700;color:#1A6DB5">${(MODULE_LABEL[module]||module)}</td><td style="font-family:monospace;font-size:11px">${esc(log.label||log.id||'-')}</td><td style="font-size:11px">${diffParts.join('<br>')}</td></tr>`;
+        }).join('');
+      };
+      const html = `<div style="text-align:left">
+        <select id="editLogModuleFilter" onchange="_editLogApplyFilter()" style="margin-bottom:8px;padding:6px 10px;border-radius:8px;border:1px solid #E2E8F0;background:#F8FAFC;font-size:0.8rem;color:#1a2332">${filterOpts}</select>
+        <div style="max-height:400px;overflow-y:auto;font-size:12px">
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr style="background:#EAF4FD"><th style="padding:4px 8px;text-align:left">Waktu</th><th style="text-align:left">Editor</th><th style="text-align:left">Modul</th><th style="text-align:left">Ref</th><th style="text-align:left">Perubahan</th></tr></thead>
+            <tbody id="editLogTbody">${renderRows(moduleFilter||'')}</tbody>
+          </table>
+        </div>
+      </div>`;
+      window._editLogRenderRows = renderRows;
+      Swal.fire({ title:'📋 Riwayat Edit', html, width:'760px', showConfirmButton:false, showCloseButton:true });
+    }
+    function _editLogApplyFilter() {
+      const filt = document.getElementById('editLogModuleFilter')?.value || '';
+      const tb = document.getElementById('editLogTbody');
+      if (tb && window._editLogRenderRows) tb.innerHTML = window._editLogRenderRows(filt);
     }
 
     // ========== FOTO BUKTI ==========
@@ -5796,11 +5854,19 @@
     
     function editStockQty(id, newQty) {
       const idx = stockInHistory.findIndex(s => s.id === id);
-      if (idx >= 0) { stockInHistory[idx].qty = parseInt(newQty)||0; stockInHistory[idx].netModal = (stockInHistory[idx].hargaModal - (stockInHistory[idx].disc||0)) * stockInHistory[idx].qty; saveLocalData(); enqueueSync('updateInputBarang', [{ id, qty: parseInt(newQty)||0 }], 'Update qty ' + id); }
+      if (idx >= 0) {
+        const before = { qty: stockInHistory[idx].qty };
+        stockInHistory[idx].qty = parseInt(newQty)||0; stockInHistory[idx].netModal = (stockInHistory[idx].hargaModal - (stockInHistory[idx].disc||0)) * stockInHistory[idx].qty; saveLocalData(); enqueueSync('updateInputBarang', [{ id, qty: parseInt(newQty)||0 }], 'Update qty ' + id);
+        logEditAction('stock', id, stockInHistory[idx].nama || id, before, { qty: stockInHistory[idx].qty });
+      }
     }
     function editStockStatus(id, newStatus) {
       const idx = stockInHistory.findIndex(s => s.id === id);
-      if (idx >= 0) { stockInHistory[idx].status = newStatus; saveLocalData(); enqueueSync('updateInputBarang', [{ id, status: newStatus }], 'Update status ' + id); Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:1500, icon:'success', title:'Status diperbarui' }); }
+      if (idx >= 0) {
+        const before = { status: stockInHistory[idx].status };
+        stockInHistory[idx].status = newStatus; saveLocalData(); enqueueSync('updateInputBarang', [{ id, status: newStatus }], 'Update status ' + id); Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:1500, icon:'success', title:'Status diperbarui' });
+        logEditAction('stock', id, stockInHistory[idx].nama || id, before, { status: newStatus });
+      }
     }
     async function deleteStockIn(id) {
       const confirm = await Swal.fire({ title:'Hapus?', text:'Hapus data input barang '+id+'?', icon:'warning', showCancelButton:true });
@@ -5975,7 +6041,7 @@
     }
     function openProdukForm(idx) { document.getElementById('editProdIdx').value = idx; if (idx >= 0 && products[idx]) { const p = products[idx]; document.getElementById('produkModalTitle').textContent = 'Edit Produk'; document.getElementById('prodSku').value = p.sku||''; document.getElementById('prodBarcode').value = p.barcode||''; document.getElementById('prodNama').value = p.nama||''; document.getElementById('prodJual').value = p.jual||p.harga||0; document.getElementById('prodModal').value = p.modal||0; document.getElementById('prodStok').value = p.stokAwal||0; } else { document.getElementById('produkModalTitle').textContent = 'Tambah Produk'; ['prodSku','prodBarcode','prodNama'].forEach(id => document.getElementById(id).value = ''); document.getElementById('prodJual').value = ''; document.getElementById('prodModal').value = ''; document.getElementById('prodStok').value = ''; } document.getElementById('produkModal').classList.add('show'); }
     function closeProdukForm() { document.getElementById('produkModal').classList.remove('show'); }
-    function saveProduk() { const sku = document.getElementById('prodSku').value.trim(), nama = document.getElementById('prodNama').value.trim(); if (!sku || !nama) return Swal.fire('Error','SKU dan Nama wajib diisi','error'); const obj = { sku, barcode: document.getElementById('prodBarcode').value.trim(), nama, jual: parseFloat(document.getElementById('prodJual').value)||0, harga: parseFloat(document.getElementById('prodJual').value)||0, modal: parseFloat(document.getElementById('prodModal').value)||0, stokAwal: parseInt(document.getElementById('prodStok').value)||0 }; const idx = parseInt(document.getElementById('editProdIdx').value); if (idx >= 0 && products[idx]) products[idx] = obj; else products.push(obj); saveLocalData(); closeProdukForm(); renderProdukList(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Produk disimpan' }); syncProductsToSheet(); }
+    function saveProduk() { const sku = document.getElementById('prodSku').value.trim(), nama = document.getElementById('prodNama').value.trim(); if (!sku || !nama) return Swal.fire('Error','SKU dan Nama wajib diisi','error'); const obj = { sku, barcode: document.getElementById('prodBarcode').value.trim(), nama, jual: parseFloat(document.getElementById('prodJual').value)||0, harga: parseFloat(document.getElementById('prodJual').value)||0, modal: parseFloat(document.getElementById('prodModal').value)||0, stokAwal: parseInt(document.getElementById('prodStok').value)||0 }; const idx = parseInt(document.getElementById('editProdIdx').value); if (idx >= 0 && products[idx]) { const before = {...products[idx]}; products[idx] = obj; logEditAction('produk', sku, nama, before, obj); } else products.push(obj); saveLocalData(); closeProdukForm(); renderProdukList(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Produk disimpan' }); syncProductsToSheet(); }
     function deleteProduk(idx) { Swal.fire({ title:'Hapus?', text:'Hapus '+products[idx].nama+'?', icon:'warning', showCancelButton:true }).then(r => { if (r.isConfirmed) { products.splice(idx,1); saveLocalData(); renderProdukList(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Produk dihapus' }); syncProductsToSheet(); } }); }
 
     // ========== PELANGGAN ==========
@@ -6215,6 +6281,8 @@
           <div class="form-group"><label>SPREADSHEET_ID</label><input id="setSpreadsheetId" placeholder="ID Google Spreadsheet" style="font-size:0.65rem"></div>
           <div class="flex-row"><button class="btn btn-primary" style="flex:1" onclick="saveSpreadsheetId()"><i class="fas fa-save"></i> Simpan Spreadsheet ID</button></div>
           <div class="section-title">💾 Backup & Restore</div><div class="flex-row"><button class="btn btn-warning" style="flex:1" onclick="backupData()"><i class="fas fa-download"></i> Backup</button><button class="btn btn-danger" style="flex:1" onclick="restoreData()"><i class="fas fa-upload"></i> Restore</button></div>
+          <div class="section-title">📋 Riwayat Perubahan Data</div>
+          <div class="form-group"><p class="text-sm" style="color:var(--text3);margin-bottom:8px">Jejak audit semua edit (Transaksi, Produk, Setoran, Stock, Pelanggan) - kapan diubah & oleh siapa, digabung dari semua device/admin.</p><button class="btn btn-outline btn-block" onclick="showEditLog()"><i class="fas fa-history"></i> Lihat Log Edit</button></div>
           <div class="section-title">🔐 Keamanan</div>
           <div class="form-group">
             <label>Login Biometrik (Sidik Jari / Face ID)</label>
@@ -6589,17 +6657,19 @@
     // [NEW] Set/ubah nomor WA pelanggan secara proaktif dari daftar Pelanggan,
     // tanpa perlu menunggu momen kirim struk/reminder dulu.
     function editCustomerPhone(name) {
+      const before = getCustomerPhone(name);
       Swal.fire({
         title: 'Nomor WA ' + name,
         input: 'text',
         inputLabel: 'Nomor WhatsApp pelanggan (mis. 0812xxxxxxx)',
-        inputValue: getCustomerPhone(name),
+        inputValue: before,
         showCancelButton: true,
         confirmButtonText: 'Simpan',
         inputValidator: (v) => { if (v && v.replace(/[^0-9]/g,'').length < 8) return 'Nomor HP tidak valid'; }
       }).then(r => {
         if (!r.isConfirmed) return;
         setCustomerPhone(name, r.value.trim());
+        if (before !== r.value.trim()) logEditAction('pelanggan', name, name, { nomorWA: before }, { nomorWA: r.value.trim() });
         Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Nomor WA disimpan' });
       });
     }
