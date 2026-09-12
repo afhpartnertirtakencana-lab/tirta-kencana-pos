@@ -2340,7 +2340,7 @@
         filterTrx();
       }
     }
-    async function deleteTrx(id) { const confirm = await Swal.fire({ title:'Hapus?', text:'Hapus transaksi '+id+'?', icon:'warning', showCancelButton:true }); if (confirm.isConfirmed) { allTrxList = allTrxList.filter(t => t.id !== id); saveLocalData(); enqueueSync('deleteTrx', [id], 'Hapus transaksi ' + id); filterTrx(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Transaksi dihapus' }); } }
+    async function deleteTrx(id) { const confirm = await Swal.fire({ title:'Hapus?', text:'Hapus transaksi '+id+'?', icon:'warning', showCancelButton:true }); if (confirm.isConfirmed) { const trx = allTrxList.find(t => t.id === id); allTrxList = allTrxList.filter(t => t.id !== id); saveLocalData(); enqueueSync('deleteTrx', [id], 'Hapus transaksi ' + id); if (trx) logEditAction('transaksi', id, trx.customer || id, trx, null); filterTrx(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Transaksi dihapus' }); } }
     function openStrukById(id) { const trx = allTrxList.find(t => t.id === id); if (!trx) return Swal.fire('Error','Transaksi tidak ditemukan','error'); _strKData = { trx, items: trx.items || [] }; showStrukModal(); }
 
     // ========== SCANNER ==========
@@ -3172,7 +3172,7 @@
       await syncEditLogFromGAS();
       loadEditLog();
       if (!_editLog.length) return Swal.fire('Info','Belum ada riwayat edit','info');
-      const MODULE_LABEL = { transaksi:'🧾 Transaksi', produk:'📦 Produk', setoran:'💰 Setoran', stock:'📋 Stock', pelanggan:'👤 Pelanggan' };
+      const MODULE_LABEL = { transaksi:'🧾 Transaksi', produk:'📦 Produk', setoran:'💰 Setoran', stock:'📋 Stock', pelanggan:'👤 Pelanggan', user:'🔑 User' };
       const modulesPresent = [...new Set(_editLog.map(l => l.module || 'transaksi'))];
       const filterOpts = `<option value="">Semua Modul</option>` + modulesPresent.map(m => `<option value="${m}" ${m===moduleFilter?'selected':''}>${MODULE_LABEL[m]||m}</option>`).join('');
       const renderRows = (filt) => {
@@ -3181,20 +3181,25 @@
         rows = rows.slice(0, 80);
         if (!rows.length) return `<tr><td colspan="5" style="text-align:center;padding:20px;color:#94A3B8">Tidak ada log untuk modul ini</td></tr>`;
         return rows.map(log => {
-          const before = log.before||{}, after = log.after||{};
+          const before = log.before||{}, after = log.after;
           const module = log.module || 'transaksi';
           let diffParts = [];
-          if (module === 'transaksi') {
+          const isDelete = after === null || after === undefined;
+          if (isDelete) {
+            // [NEW] Aksi HAPUS - tampilkan ringkas apa yang dihapus (bukan diff
+            // field-per-field seperti edit biasa, karena tidak ada "sesudah").
+            diffParts.push('<span style="color:#DC2626;font-weight:700">🗑️ Data dihapus</span>');
+          } else if (module === 'transaksi') {
             const fieldLabel = { customer:'Customer', sales:'Sales', status:'Status', nett:'Nett' };
             diffParts = Object.keys(fieldLabel).filter(k=>before[k]!==after[k]).map(k=>`<b>${fieldLabel[k]}</b>: ${esc(String(before[k]))} → ${esc(String(after[k]))}`);
             const bItems = before.items||[], aItems = after.items||[];
             aItems.forEach((it,i) => { const bi = bItems[i]; if (bi && (bi.sku !== it.sku || bi.qty !== it.qty)) diffParts.push(`<b>Item #${i+1}</b>: ${esc(bi.sku)} (qty ${bi.qty}) → ${esc(it.sku)} (qty ${it.qty})`); });
           } else {
-            // Generik untuk modul lain (Produk/Setoran/Stock/Pelanggan) - bandingkan tiap field yang ada di after
+            // Generik untuk modul lain (Produk/Setoran/Stock/Pelanggan/User) - bandingkan tiap field yang ada di after
             diffParts = Object.keys(after).filter(k => JSON.stringify(before[k]) !== JSON.stringify(after[k])).map(k => `<b>${esc(k)}</b>: ${esc(String(before[k]===undefined?'-':before[k]))} → ${esc(String(after[k]))}`);
           }
           if (!diffParts.length) diffParts.push('<i>Tidak ada perubahan nilai</i>');
-          return `<tr style="border-bottom:1px solid #eee"><td style="padding:4px 8px;white-space:nowrap">${esc(log.waktu)}</td><td>${esc(log.editor)}</td><td style="font-size:10px;font-weight:700;color:#1A6DB5">${(MODULE_LABEL[module]||module)}</td><td style="font-family:monospace;font-size:11px">${esc(log.label||log.id||'-')}</td><td style="font-size:11px">${diffParts.join('<br>')}</td></tr>`;
+          return `<tr style="border-bottom:1px solid #eee;${isDelete?'background:#FEF2F2':''}"><td style="padding:4px 8px;white-space:nowrap">${esc(log.waktu)}</td><td>${esc(log.editor)}</td><td style="font-size:10px;font-weight:700;color:${isDelete?'#DC2626':'#1A6DB5'}">${(MODULE_LABEL[module]||module)}</td><td style="font-family:monospace;font-size:11px">${esc(log.label||log.id||'-')}</td><td style="font-size:11px">${diffParts.join('<br>')}</td></tr>`;
         }).join('');
       };
       const html = `<div style="text-align:left">
@@ -5871,9 +5876,11 @@
     async function deleteStockIn(id) {
       const confirm = await Swal.fire({ title:'Hapus?', text:'Hapus data input barang '+id+'?', icon:'warning', showCancelButton:true });
       if (confirm.isConfirmed) {
+        const rec = stockInHistory.find(s => s.id === id);
         stockInHistory = stockInHistory.filter(s => s.id !== id);
         saveLocalData();
         enqueueSync('deleteInputBarang', [id], 'Hapus input barang ' + id);
+        if (rec) logEditAction('stock', id, rec.nama || id, rec, null);
         renderStockHistory();
         Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:1500, icon:'success', title:'Data dihapus' });
       }
@@ -6042,7 +6049,7 @@
     function openProdukForm(idx) { document.getElementById('editProdIdx').value = idx; if (idx >= 0 && products[idx]) { const p = products[idx]; document.getElementById('produkModalTitle').textContent = 'Edit Produk'; document.getElementById('prodSku').value = p.sku||''; document.getElementById('prodBarcode').value = p.barcode||''; document.getElementById('prodNama').value = p.nama||''; document.getElementById('prodJual').value = p.jual||p.harga||0; document.getElementById('prodModal').value = p.modal||0; document.getElementById('prodStok').value = p.stokAwal||0; } else { document.getElementById('produkModalTitle').textContent = 'Tambah Produk'; ['prodSku','prodBarcode','prodNama'].forEach(id => document.getElementById(id).value = ''); document.getElementById('prodJual').value = ''; document.getElementById('prodModal').value = ''; document.getElementById('prodStok').value = ''; } document.getElementById('produkModal').classList.add('show'); }
     function closeProdukForm() { document.getElementById('produkModal').classList.remove('show'); }
     function saveProduk() { const sku = document.getElementById('prodSku').value.trim(), nama = document.getElementById('prodNama').value.trim(); if (!sku || !nama) return Swal.fire('Error','SKU dan Nama wajib diisi','error'); const obj = { sku, barcode: document.getElementById('prodBarcode').value.trim(), nama, jual: parseFloat(document.getElementById('prodJual').value)||0, harga: parseFloat(document.getElementById('prodJual').value)||0, modal: parseFloat(document.getElementById('prodModal').value)||0, stokAwal: parseInt(document.getElementById('prodStok').value)||0 }; const idx = parseInt(document.getElementById('editProdIdx').value); if (idx >= 0 && products[idx]) { const before = {...products[idx]}; products[idx] = obj; logEditAction('produk', sku, nama, before, obj); } else products.push(obj); saveLocalData(); closeProdukForm(); renderProdukList(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Produk disimpan' }); syncProductsToSheet(); }
-    function deleteProduk(idx) { Swal.fire({ title:'Hapus?', text:'Hapus '+products[idx].nama+'?', icon:'warning', showCancelButton:true }).then(r => { if (r.isConfirmed) { products.splice(idx,1); saveLocalData(); renderProdukList(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Produk dihapus' }); syncProductsToSheet(); } }); }
+    function deleteProduk(idx) { const p = products[idx]; Swal.fire({ title:'Hapus?', text:'Hapus '+products[idx].nama+'?', icon:'warning', showCancelButton:true }).then(r => { if (r.isConfirmed) { products.splice(idx,1); saveLocalData(); renderProdukList(); if (p) logEditAction('produk', p.sku, p.nama, p, null); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Produk dihapus' }); syncProductsToSheet(); } }); }
 
     // ========== PELANGGAN ==========
     function loadPelanggan() { document.getElementById('contentArea').innerHTML = `<div class="card"><div class="flex-between mb-2"><div class="card-title"><i class="fas fa-address-book"></i> Daftar Pelanggan</div><div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button class="btn btn-outline btn-sm" onclick="btnSyncPelangganToSheet()" title="Kirim data pelanggan lokal ke Google Sheets"><i class="fas fa-cloud-upload-alt"></i> Sync ke Sheets</button><button class="btn btn-outline btn-sm" onclick="btnSyncPelangganFromSheet()" title="Ambil data pelanggan terbaru dari Google Sheets"><i class="fas fa-cloud-download-alt"></i> Sync ke Aplikasi</button><button class="btn btn-primary btn-sm" onclick="addPelanggan()">+ Tambah</button></div></div><input id="pelangganSearch" class="form-control mb-2" placeholder="🔍 Cari nama pelanggan…" oninput="renderPelangganList()"><div class="table-wrap"><table><thead><tr><th>#</th><th>Nama</th><th style="text-align:center">Transaksi</th><th style="text-align:right">Piutang</th><th>Aksi</th></tr></thead><tbody id="pelangganTbody"></tbody></table></div><div id="pelangganPaginationBar"></div></div>`; renderPelangganList(); }
@@ -6253,7 +6260,7 @@
       kirimWaKeNomorPelanggan(p.name, lines.join('\n'));
     }
     function addPelanggan() { Swal.fire({ title:'Tambah Pelanggan', input:'text', inputLabel:'Nama pelanggan', showCancelButton:true }).then(r => { if (r.isConfirmed && r.value) { const name = r.value.trim(); if (!allCustomers.includes(name)) { allCustomers.push(name); pelanggan = allCustomers.slice(); saveLocalData(); renderPelangganList(); syncCustomersToSheet(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Pelanggan ditambahkan' }); } else Swal.fire('Info','Sudah ada','info'); } }); }
-    function deletePelanggan(idx) { Swal.fire({ title:'Hapus?', text:'Hapus '+allCustomers[idx]+'?', icon:'warning', showCancelButton:true }).then(r => { if (r.isConfirmed) { allCustomers.splice(idx,1); pelanggan = allCustomers.slice(); saveLocalData(); renderPelangganList(); syncCustomersToSheet(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Pelanggan dihapus' }); } }); }
+    function deletePelanggan(idx) { const nama = allCustomers[idx]; Swal.fire({ title:'Hapus?', text:'Hapus '+allCustomers[idx]+'?', icon:'warning', showCancelButton:true }).then(r => { if (r.isConfirmed) { allCustomers.splice(idx,1); pelanggan = allCustomers.slice(); saveLocalData(); renderPelangganList(); syncCustomersToSheet(); if (nama) logEditAction('pelanggan', nama, nama, { nama }, null); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Pelanggan dihapus' }); } }); }
 
     // ========== PENGATURAN ==========
     function loadPengaturan() { 
@@ -6373,7 +6380,7 @@
     function removeDriver(i) { drivers.splice(i,1); saveLocalData(); enqueueSync('saveDrivers', [drivers.map(String)], 'Daftar Driver'); renderDriverTags(); }
     function renderUserList() { const el = document.getElementById('userList'); if (!el) return; el.innerHTML = allUsers.length ? allUsers.map((u,i) => `<div class="flex-between mb-1" style="padding:4px 0;border-bottom:1px solid var(--border)"><span><b>${esc(u.name)}</b> (${u.role})</span><button class="btn btn-sm btn-danger" onclick="deleteUser(${i})">🗑</button></div>`).join('') : '<p class="text-sm text-center">Belum ada user</p>'; }
     function addUser() { const name = document.getElementById('newUserName').value.trim(), role = document.getElementById('newUserRole').value, pass = document.getElementById('newUserPass').value.trim(); if (!name || !pass) return Swal.fire('Error','Nama dan password wajib diisi','error'); if (allUsers.find(u => u.name === name)) return Swal.fire('Error','Nama sudah ada','error'); allUsers.push({ name, role }); saveLocalData(); enqueueSync('saveUser', [{ name, role, password: pass }], 'User ' + name); document.getElementById('newUserName').value = ''; document.getElementById('newUserPass').value = ''; renderUserList(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'User ditambahkan' }); }
-    function deleteUser(i) { Swal.fire({ title:'Hapus user?', text:'Hapus '+allUsers[i].name+'?', icon:'warning', showCancelButton:true }).then(r => { if (r.isConfirmed) { const deletedName = allUsers[i].name; allUsers.splice(i,1); saveLocalData(); renderUserList(); enqueueSync('deleteUser', [deletedName], 'Hapus user ' + deletedName); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'User dihapus' }); } }); }
+    function deleteUser(i) { Swal.fire({ title:'Hapus user?', text:'Hapus '+allUsers[i].name+'?', icon:'warning', showCancelButton:true }).then(r => { if (r.isConfirmed) { const deletedUser = {...allUsers[i]}; allUsers.splice(i,1); saveLocalData(); renderUserList(); enqueueSync('deleteUser', [deletedUser.name], 'Hapus user ' + deletedUser.name); logEditAction('user', deletedUser.name, deletedUser.name, deletedUser, null); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'User dihapus' }); } }); }
     function savePengaturan() { settings.namaToko = document.getElementById('setNamaToko').value.trim(); settings.tagline = document.getElementById('setTagline').value.trim(); settings.alamat = document.getElementById('setAlamat').value.trim(); settings.telepon = document.getElementById('setTelepon').value.trim(); settings.bottomLine = document.getElementById('setFooter').value.trim(); settings.bank1 = { nama: document.getElementById('setB1Nama').value.trim(), norek: document.getElementById('setB1Norek').value.trim(), penerima: document.getElementById('setB1Penerima').value.trim() }; settings.bank2 = { nama: document.getElementById('setB2Nama').value.trim(), norek: document.getElementById('setB2Norek').value.trim(), penerima: document.getElementById('setB2Penerima').value.trim() }; document.getElementById('headerAlamat').textContent = settings.alamat; saveLocalData(); enqueueSync('saveSettings', [{ storeName: settings.namaToko||settings.storeName, tagline: settings.tagline, address: settings.alamat||settings.address, phone: settings.telepon||settings.phone, footer: settings.bottomLine||settings.footer, salesList: settings.salesList||[], bank1: settings.bank1, bank2: settings.bank2, qris: settings.qris||_qrisUrl }], 'Pengaturan Toko'); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Pengaturan disimpan' }); }
     function backupData() { saveLocalData(); const blob = new Blob([localStorage.getItem('tirtaFullData')], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'tirta-backup-'+new Date().toISOString().slice(0,10)+'.json'; a.click(); }
     function restoreData() { Swal.fire({ title:'Restore Data', text:'Pilih file backup JSON', icon:'warning', showCancelButton:true }).then(r => { if (r.isConfirmed) { const input = document.createElement('input'); input.type='file'; input.accept='.json'; input.onchange = e => { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = ev => { try { const data = JSON.parse(ev.target.result); localStorage.setItem('tirtaFullData', JSON.stringify(data)); loadLocalData(); Swal.fire('Sukses','Data direstore! Refresh halaman.','success'); } catch(err) { Swal.fire('Error','File tidak valid','error'); } }; reader.readAsText(file); }; input.click(); } }); }
