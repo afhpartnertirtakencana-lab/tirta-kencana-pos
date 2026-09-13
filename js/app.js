@@ -6121,18 +6121,20 @@
     function deleteProduk(idx) { const p = products[idx]; Swal.fire({ title:'Hapus?', text:'Hapus '+products[idx].nama+'?', icon:'warning', showCancelButton:true }).then(r => { if (r.isConfirmed) { products.splice(idx,1); saveLocalData(); renderProdukList(); if (p) logEditAction('produk', p.sku, p.nama, p, null); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Produk dihapus' }); syncProductsToSheet(); } }); }
 
     // ========== PELANGGAN ==========
-    function loadPelanggan() { document.getElementById('contentArea').innerHTML = `<div class="card"><div class="flex-between mb-2"><div class="card-title"><i class="fas fa-address-book"></i> Daftar Pelanggan</div><div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button class="btn btn-outline btn-sm" onclick="btnSyncPelangganToSheet()" title="Kirim data pelanggan lokal ke Google Sheets"><i class="fas fa-cloud-upload-alt"></i> Sync ke Sheets</button><button class="btn btn-outline btn-sm" onclick="btnSyncPelangganFromSheet()" title="Ambil data pelanggan terbaru dari Google Sheets"><i class="fas fa-cloud-download-alt"></i> Sync ke Aplikasi</button><button class="btn btn-primary btn-sm" onclick="addPelanggan()">+ Tambah</button></div></div><input id="pelangganSearch" class="form-control mb-2" placeholder="🔍 Cari nama pelanggan…" oninput="renderPelangganList()"><div class="table-wrap"><table><thead><tr><th>#</th><th>Nama</th><th style="text-align:center">Transaksi</th><th style="text-align:right">Piutang</th><th>Aksi</th></tr></thead><tbody id="pelangganTbody"></tbody></table></div><div id="pelangganPaginationBar"></div></div>`; renderPelangganList(); }
+    function loadPelanggan() { document.getElementById('contentArea').innerHTML = `<div class="card"><div class="flex-between mb-2"><div class="card-title"><i class="fas fa-address-book"></i> Daftar Pelanggan</div><div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button class="btn btn-outline btn-sm" onclick="btnSyncPelangganToSheet()" title="Kirim data pelanggan lokal ke Google Sheets"><i class="fas fa-cloud-upload-alt"></i> Sync ke Sheets</button><button class="btn btn-outline btn-sm" onclick="btnSyncPelangganFromSheet()" title="Ambil data pelanggan terbaru dari Google Sheets"><i class="fas fa-cloud-download-alt"></i> Sync ke Aplikasi</button><button class="btn btn-primary btn-sm" onclick="addPelanggan()">+ Tambah</button></div></div><input id="pelangganSearch" class="form-control mb-2" placeholder="🔍 Cari nama pelanggan…" oninput="renderPelangganList()"><div class="table-wrap"><table><thead><tr><th>#</th><th>Nama</th><th style="text-align:center" title="Jumlah transaksi bulan ini">Transaksi<br><span style="font-weight:400;font-size:0.6rem;opacity:.7">Bulan Ini</span></th><th style="text-align:right">Piutang</th><th>Aksi</th></tr></thead><tbody id="pelangganTbody"></tbody></table></div><div id="pelangganPaginationBar"></div></div>`; renderPelangganList(); }
     function renderPelangganList(_pgKeep = false) {
       const tb = document.getElementById('pelangganTbody');
       if (!tb) return;
       if (!allCustomers.length) { tb.innerHTML = '<tr><td colspan="5" class="text-center text-sm" style="padding:32px">Belum ada pelanggan</td></tr>'; const pcb0 = document.getElementById('pelangganPaginationBar'); if (pcb0) pcb0.innerHTML = ''; return; }
-      // [NEW] Ringkasan per pelanggan (jumlah transaksi & total piutang belum bayar)
-      // dihitung sekali dari allTrxList, bukan query ulang per baris - supaya tetap
-      // ringan walau daftar pelanggan/transaksi banyak.
+      // [CHANGED] Jumlah transaksi di kolom "Transaksi" sekarang cuma menghitung
+      // transaksi BULAN INI (bukan sepanjang waktu seperti sebelumnya) - piutang
+      // tetap dihitung all-time (tagihan lama tidak boleh "hilang" dari radar
+      // cuma karena sudah lewat bulan).
+      const bulanIni = localDateStr().substring(0, 7); // 'YYYY-MM'
       const trxCountMap = {}, piutangMap = {};
       allTrxList.forEach(t => {
         const cust = t.customer || '';
-        trxCountMap[cust] = (trxCountMap[cust] || 0) + 1;
+        if ((t.tgl||'').substring(0,7) === bulanIni) trxCountMap[cust] = (trxCountMap[cust] || 0) + 1;
         if (t.status === 'belumTransfer') piutangMap[cust] = (piutangMap[cust] || 0) + (t.nett || 0);
       });
       const q = (document.getElementById('pelangganSearch')?.value || '').toLowerCase().trim();
