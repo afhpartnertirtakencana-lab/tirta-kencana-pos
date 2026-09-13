@@ -545,7 +545,11 @@
     }
     // Dipanggil sekali dari halaman Pengaturan (admin/sales/driver) setelah HTML-nya
     // dirender, supaya kedua tombol (biometrik & pola) langsung terisi status yang benar.
-    function initKeamananSectionUI() { renderBioSettingUI(); renderPatternSettingUI(); }
+    function initKeamananSectionUI() {
+      renderBioSettingUI(); renderPatternSettingUI();
+      const sel = document.getElementById('autoLockSelect');
+      if (sel) sel.value = String(getAutoLockMinutes());
+    }
 
     // Lock-screen pola (dipanggil saat app dibuka & kunci pola aktif) - beda dari
     // modal setup di atas: ini LANGSUNG cek kecocokan hash & LOOPING kalau salah
@@ -575,6 +579,41 @@
         else { hintEl.textContent = 'Pola salah, coba lagi'; hintEl.style.color = '#FF8A80'; setTimeout(() => { hintEl.style.color = '#9fc1e6'; hintEl.textContent = 'Hubungkan titik-titik sesuai pola Anda'; }, 1500); }
       });
       modal.querySelector('#patternUsePasswordBtn').onclick = () => { modal.remove(); doLogout(); };
+    }
+
+    // ========== [NEW] AUTO-KUNCI SETELAH TIDAK AKTIF ==========
+    // Sebelumnya Biometric Lock & Pattern Lock cuma aktif saat app PERTAMA
+    // dibuka - begitu sudah login, aplikasi tetap terbuka tanpa batas waktu.
+    // Kalau HP dipinjam/ditinggal orang lain saat masih login, siapapun bisa
+    // langsung akses data bisnis tanpa perlu buka ulang app. Sekarang ada timer
+    // tidak-aktif: kalau tidak ada interaksi (sentuh/klik/scroll/ketik) selama
+    // durasi yang dipilih, aplikasi otomatis terkunci lagi.
+    const AUTOLOCK_KEY = 'tirtaAutoLockMinutes';
+    function getAutoLockMinutes() { return parseInt(localStorage.getItem(AUTOLOCK_KEY)) || 0; } // 0 = mati
+    function setAutoLockMinutes(min) { localStorage.setItem(AUTOLOCK_KEY, String(min)); resetInactivityTimer(); }
+    let _inactivityTimer = null;
+    function resetInactivityTimer() {
+      if (_inactivityTimer) { clearTimeout(_inactivityTimer); _inactivityTimer = null; }
+      const minutes = getAutoLockMinutes();
+      const mainAppEl = document.getElementById('mainApp');
+      if (!minutes || !mainAppEl || mainAppEl.classList.contains('hidden')) return; // fitur mati, atau belum login/sedang di layar kunci lain
+      _inactivityTimer = setTimeout(triggerAutoLock, minutes * 60000);
+    }
+    function triggerAutoLock() {
+      const mainAppEl = document.getElementById('mainApp');
+      if (!mainAppEl || mainAppEl.classList.contains('hidden')) return; // jaga-jaga: jangan kunci kalau ternyata sudah tidak di halaman utama
+      // Prioritas: Biometrik dulu (paling cepat dibuka lagi), lalu Pattern Lock,
+      // dan kalau admin belum mengaktifkan keduanya, tetap paksa login ulang
+      // penuh (bukan dibiarkan diam-diam tetap terbuka) - auto-kunci harus
+      // benar-benar mengunci, bukan cuma percuma kalau tidak ada metode cepat.
+      if (localStorage.getItem('tirtaBioEnabled') === '1' && isBiometricSupported()) { showBioLockScreen(); }
+      else if (isPatternLockEnabled()) { showPatternLockScreen(); }
+      else { doLogout(); }
+    }
+    // Dipasang SEKALI per sesi (lihat guard di showMainApp()) - event listener
+    // pasif, tidak mengganggu performa, cukup me-reset timer tiap ada interaksi.
+    function initInactivityWatcher() {
+      ['mousedown','mousemove','keydown','touchstart','scroll'].forEach(evt => document.addEventListener(evt, resetInactivityTimer, { passive: true }));
     }
     let products = [], pelanggan = [], allTrxList = [], allCustomers = [], stockInHistory = [], setoranHistory = [];
     let drivers = ['oji','padong','said','dedi','zehpudin'];
@@ -904,6 +943,7 @@
         ]);
         syncCustomerPhonesFromGAS(); // [NEW] tarik nomor WA pelanggan terbaru dari Sheets juga (tidak perlu ditunggu/di-await, biar tidak memperlambat sync utama)
         syncEditLogFromGAS(); // [NEW] tarik log edit terbaru dari semua device/admin juga
+        syncCustomerAddressesFromGAS(); // [NEW] tarik alamat pelanggan terbaru dari Sheets juga
         if (Array.isArray(prod)) products = prod;
         if (Array.isArray(cust)) { allCustomers = cust; pelanggan = cust.slice(); }
         if (Array.isArray(trx)) {
@@ -1109,6 +1149,11 @@
       // supaya tidak numpuk kalau showMainApp() kepanggil berkali-kali).
       updateHeaderClock();
       if (!window._headerClockStarted) { window._headerClockStarted = true; setInterval(updateHeaderClock, 30000); }
+      // [NEW] Auto-kunci setelah tidak aktif - dipasang sekali per sesi (dijaga
+      // flag yang sama polanya dengan header clock di atas), lalu setiap kali
+      // showMainApp() terpanggil lagi (mis. setelah unlock), timer-nya di-reset.
+      if (!window._inactivityWatcherStarted) { window._inactivityWatcherStarted = true; initInactivityWatcher(); }
+      resetInactivityTimer();
       if (settings.alamat) document.getElementById('headerAlamat').textContent = settings.alamat;
       const _effectiveLogo = localStorage.getItem('tirtaLogo') || _logoUrl;
       if (_effectiveLogo) { _logoUrl = _effectiveLogo; document.getElementById('logoImg').src = _effectiveLogo; }
@@ -5825,6 +5870,30 @@
       const now = new Date(), date = localDateStr(now), createdAt = localDateStr(now)+' '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0'); 
       const entries = items.map((it, idx) => ({ id: inpId + '-' + (idx+1), groupId: inpId, sku: it.sku, nama: it.nama, qty: it.qty, hargaModal: it.hargaModal, disc: it.disc, netModal: it.netModal, driver, rit, status, date, createdAt })); 
       entries.forEach(e => stockInHistory.unshift(e)); 
+      // [NEW] Sinkronisasi harga modal produk otomatis dari Input Barang.
+      // Sebelumnya: `modal` di data Produk cuma diisi manual sekali di form
+      // Produk, TIDAK PERNAH ikut ter-update walau harga beli sebenarnya sudah
+      // berubah lewat Input Barang - jadi perhitungan profit di Transaksi/
+      // Grafik/Rekap bisa memakai angka modal yang sudah usang.
+      // Pendekatan yang dipakai: "harga modal terakhir" (bukan rata-rata
+      // tertimbang) - begitu ada barang masuk, modal produk langsung disamakan
+      // dengan harga beli bersih (setelah disc) dari input itu. Ini pilihan yang
+      // sengaja dibuat sederhana & mudah dipahami pemilik toko ("modal = harga
+      // beli terakhir"), dan tidak bergantung pada perhitungan stok berjalan yang
+      // lebih kompleks (rata-rata tertimbang perlu tahu stok saat ini yang akurat).
+      const modalUpdates = [];
+      items.forEach(it => {
+        const netModalPerUnit = it.hargaModal - (it.disc||0);
+        const p = products.find(x => x.sku === it.sku);
+        if (p && netModalPerUnit > 0 && p.modal !== netModalPerUnit) {
+          modalUpdates.push({ sku: p.sku, nama: p.nama, before: p.modal, after: netModalPerUnit });
+          p.modal = netModalPerUnit;
+        }
+      });
+      if (modalUpdates.length) {
+        modalUpdates.forEach(m => logEditAction('produk', m.sku, m.nama, { modal: m.before }, { modal: m.after, _sumber: 'Auto dari Input Barang ' + inpId }));
+        syncProductsToSheet();
+      }
       saveLocalData(); 
       entries.forEach(e => enqueueSync('saveInputBarang', [e], 'Input Barang ' + e.id)); // [PERF+NEW] instan lokal, sync lewat antrian
       Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Barang masuk dicatat' }); 
@@ -6083,7 +6152,7 @@
           <td class="fw-bold">${esc(c)}</td>
           <td style="text-align:center;font-family:var(--mono)">${jumlahTrx || '-'}</td>
           <td style="text-align:right;font-family:var(--mono);font-weight:700;color:${piutang>0?'var(--merah)':'var(--text3)'}">${piutang>0?fmtRp(piutang):'-'}</td>
-          <td style="display:flex;gap:3px"><button class="btn btn-sm btn-outline" onclick="showPelangganDetail('${esc(c).replace(/'/g,"\\'")}')" title="Lihat riwayat & piutang"><i class="fas fa-eye"></i></button><button class="btn btn-sm btn-outline" onclick="editCustomerPhone('${esc(c).replace(/'/g,"\\'")}')" title="Atur nomor WA"><i class="fas fa-phone"></i></button><button class="btn btn-sm btn-danger" onclick="deletePelanggan(${i})">🗑</button></td>
+          <td style="display:flex;gap:3px"><button class="btn btn-sm btn-outline" onclick="showPelangganDetail('${esc(c).replace(/'/g,"\\'")}')" title="Lihat riwayat & piutang"><i class="fas fa-eye"></i></button><button class="btn btn-sm btn-outline" onclick="editCustomerPhone('${esc(c).replace(/'/g,"\\'")}')" title="Atur nomor WA"><i class="fas fa-phone"></i></button><button class="btn btn-sm btn-outline" onclick="editCustomerAddress('${esc(c).replace(/'/g,"\\'")}')" title="Atur alamat"><i class="fas fa-map-marker-alt"></i></button><button class="btn btn-sm btn-danger" onclick="deletePelanggan(${i})">🗑</button></td>
         </tr>`;
       }).join('');
     }
@@ -6115,7 +6184,9 @@
         return items.length > 1 ? `${esc(first)} +${items.length-1} lainnya` : esc(first);
       };
       const nameEsc = esc(name).replace(/'/g,"\\'");
+      const custAddress = getCustomerAddress(name);
       const html = `<div style="text-align:left">
+        ${custAddress ? `<div style="font-size:0.72rem;color:#5a7a90;margin-bottom:10px"><i class="fas fa-map-marker-alt"></i> ${esc(custAddress)} <a href="javascript:void(0)" onclick="editCustomerAddress('${nameEsc}')" style="color:#1A6DB5;text-decoration:underline">Ubah</a></div>` : `<div style="margin-bottom:10px"><button type="button" onclick="editCustomerAddress('${nameEsc}')" style="font-size:0.68rem;color:#1A6DB5;background:none;border:none;cursor:pointer;padding:0"><i class="fas fa-map-marker-alt"></i> + Tambah alamat</button></div>`}
         <div style="display:flex;gap:6px;align-items:flex-end;margin-bottom:12px;flex-wrap:wrap">
           <div style="flex:1;min-width:110px"><label style="font-size:0.62rem;color:#5a7a90;display:block;margin-bottom:2px">Dari tanggal</label><input type="date" id="pgDetStart" value="${startDate}" style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #D8E3EE;font-size:0.72rem;color:#1a2332;background:#F1F5F9"></div>
           <div style="flex:1;min-width:110px"><label style="font-size:0.62rem;color:#5a7a90;display:block;margin-bottom:2px">Sampai tanggal</label><input type="date" id="pgDetEnd" value="${endDate}" style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #D8E3EE;font-size:0.72rem;color:#1a2332;background:#F1F5F9"></div>
@@ -6301,6 +6372,13 @@
             <div id="patternSettingStatus" style="font-size:0.75rem;color:var(--text3);margin-bottom:8px"></div>
             <button class="btn btn-outline btn-block" id="patternSettingBtn" onclick="togglePatternSetting()">Memuat...</button>
           </div>
+          <div class="form-group mt-2">
+            <label>Auto-Kunci Setelah Tidak Aktif</label>
+            <p class="text-sm" style="color:var(--text3);margin-bottom:6px">Kunci otomatis (pakai Biometrik/Pola/login ulang) kalau HP didiamkan tanpa disentuh.</p>
+            <select id="autoLockSelect" onchange="setAutoLockMinutes(this.value)">
+              <option value="0">Mati</option><option value="1">1 menit</option><option value="5">5 menit</option><option value="10">10 menit</option><option value="30">30 menit</option>
+            </select>
+          </div>
         </div>`;
       document.getElementById('setNamaToko').value=settings.namaToko||''; document.getElementById('setTagline').value=settings.tagline||''; document.getElementById('setAlamat').value=settings.alamat||''; document.getElementById('setTelepon').value=settings.telepon||''; document.getElementById('setFooter').value=settings.bottomLine||''; document.getElementById('setB1Nama').value=settings.bank1?.nama||''; document.getElementById('setB1Norek').value=settings.bank1?.norek||''; document.getElementById('setB1Penerima').value=settings.bank1?.penerima||''; document.getElementById('setB2Nama').value=settings.bank2?.nama||''; document.getElementById('setB2Norek').value=settings.bank2?.norek||''; document.getElementById('setB2Penerima').value=settings.bank2?.penerima||''; 
       if (_logoUrl) document.getElementById('logoPrev').innerHTML = `<img src="${_logoUrl}" style="max-height:80px;max-width:100%;border-radius:8px"><div style="font-size:11px;color:var(--text3);margin-top:6px">Klik untuk ganti</div>`; 
@@ -6414,6 +6492,13 @@
               <div id="patternSettingStatus" style="font-size:0.75rem;color:var(--text3);margin-bottom:8px"></div>
               <button class="btn btn-outline btn-block" id="patternSettingBtn" onclick="togglePatternSetting()">Memuat...</button>
             </div>
+            <div class="form-group mt-2">
+              <label>Auto-Kunci Setelah Tidak Aktif</label>
+              <p class="text-sm" style="color:var(--text3);margin-bottom:6px">Kunci otomatis (pakai Biometrik/Pola/login ulang) kalau HP didiamkan tanpa disentuh.</p>
+              <select id="autoLockSelect" onchange="setAutoLockMinutes(this.value)">
+                <option value="0">Mati</option><option value="1">1 menit</option><option value="5">5 menit</option><option value="10">10 menit</option><option value="30">30 menit</option>
+              </select>
+            </div>
           </div>
         `;
         if (_logoUrl) document.getElementById('salesLogoPrev').innerHTML = `<img src="${_logoUrl}" style="max-height:80px;max-width:100%;border-radius:8px"><div style="font-size:11px;color:var(--text3);margin-top:6px">Klik untuk ganti</div>`;
@@ -6442,6 +6527,13 @@
               <label>Kunci Pola (Pattern Lock)</label>
               <div id="patternSettingStatus" style="font-size:0.75rem;color:var(--text3);margin-bottom:8px"></div>
               <button class="btn btn-outline btn-block" id="patternSettingBtn" onclick="togglePatternSetting()">Memuat...</button>
+            </div>
+            <div class="form-group mt-2">
+              <label>Auto-Kunci Setelah Tidak Aktif</label>
+              <p class="text-sm" style="color:var(--text3);margin-bottom:6px">Kunci otomatis (pakai Biometrik/Pola/login ulang) kalau HP didiamkan tanpa disentuh.</p>
+              <select id="autoLockSelect" onchange="setAutoLockMinutes(this.value)">
+                <option value="0">Mati</option><option value="1">1 menit</option><option value="5">5 menit</option><option value="10">10 menit</option><option value="30">30 menit</option>
+              </select>
             </div>
           </div>
         `;
@@ -6613,6 +6705,55 @@
           if (currentPage === 'pelanggan' && typeof renderPelangganList === 'function') renderPelangganList(true);
         }
       } catch (e) { console.warn('Gagal ambil nomor WA pelanggan dari server:', e); }
+    }
+
+    // ========== [NEW] ALAMAT PELANGGAN - pola PERSIS sama dengan nomor WA di atas ==========
+    const CUSTOMER_ADDRESS_KEY = 'tirtaCustomerAddresses';
+    function _loadCustomerAddresses() { try { return JSON.parse(localStorage.getItem(CUSTOMER_ADDRESS_KEY) || '{}'); } catch(e) { return {}; } }
+    function getCustomerAddress(name) { return _loadCustomerAddresses()[name] || ''; }
+    function setCustomerAddress(name, address) {
+      const m = _loadCustomerAddresses();
+      m[name] = address;
+      localStorage.setItem(CUSTOMER_ADDRESS_KEY, JSON.stringify(m));
+      syncCustomerAddressesToSheet();
+    }
+    let _custAddressSyncTimer = null;
+    function syncCustomerAddressesToSheet() {
+      if (_custAddressSyncTimer) clearTimeout(_custAddressSyncTimer);
+      _custAddressSyncTimer = setTimeout(() => {
+        _custAddressSyncTimer = null;
+        _syncQueue = _syncQueue.filter(q => q.fn !== 'saveCustomerAddresses');
+        _saveSyncQueueState();
+        enqueueSync('saveCustomerAddresses', [_loadCustomerAddresses()], 'Alamat Pelanggan');
+      }, 1500);
+    }
+    async function syncCustomerAddressesFromGAS() {
+      try {
+        const serverMap = await gasCall('getCustomerAddresses', []);
+        if (serverMap && typeof serverMap === 'object') {
+          const local = _loadCustomerAddresses();
+          const merged = Object.assign({}, local, serverMap);
+          localStorage.setItem(CUSTOMER_ADDRESS_KEY, JSON.stringify(merged));
+          if (currentPage === 'pelanggan' && typeof renderPelangganList === 'function') renderPelangganList(true);
+        }
+      } catch (e) { console.warn('Gagal ambil alamat pelanggan dari server:', e); }
+    }
+    // Set/ubah alamat pelanggan dari daftar Pelanggan (tombol 📍 di tiap baris).
+    function editCustomerAddress(name) {
+      const before = getCustomerAddress(name);
+      Swal.fire({
+        title: 'Alamat ' + name,
+        input: 'textarea',
+        inputLabel: 'Alamat pengiriman pelanggan',
+        inputValue: before,
+        showCancelButton: true,
+        confirmButtonText: 'Simpan'
+      }).then(r => {
+        if (!r.isConfirmed) return;
+        setCustomerAddress(name, r.value.trim());
+        if (before !== r.value.trim()) logEditAction('pelanggan', name, name, { alamat: before }, { alamat: r.value.trim() });
+        Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Alamat disimpan' });
+      });
     }
     // Normalisasi nomor HP Indonesia ke format wa.me (62xxxxxxxxxx, tanpa +/spasi/strip).
     function _normalizeWaNumber(raw) {
