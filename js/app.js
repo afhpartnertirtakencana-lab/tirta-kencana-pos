@@ -247,6 +247,61 @@
       window.addEventListener('online', () => { console.log('Koneksi kembali online, proses antrian sync...'); processSyncQueue(); });
       setInterval(() => { if (_syncQueue.length > 0) processSyncQueue(); }, 25000);
     }
+    // [NEW] Dashboard Kesehatan Sync - supaya kalau ada masalah sync (sering
+    // terjadi sepanjang pengembangan app ini: rollover stok, item transaksi
+    // hilang, dsb), admin bisa cek sendiri kondisinya tanpa harus lapor dulu:
+    // kapan terakhir berhasil sync, ada berapa yang masih mengantre, dan
+    // jumlah data yang tersimpan lokal di device ini per jenis data.
+    function showSyncHealthDashboard() {
+      const lastOK = parseInt(localStorage.getItem('tirtaLastSyncOK')) || 0;
+      const lastErrRaw = localStorage.getItem('tirtaLastSyncError');
+      let lastErr = null; try { lastErr = lastErrRaw ? JSON.parse(lastErrRaw) : null; } catch(e) {}
+      const fmtRelative = (ts) => {
+        if (!ts) return 'Belum pernah';
+        const diffMin = Math.round((Date.now() - ts) / 60000);
+        if (diffMin < 1) return 'Baru saja';
+        if (diffMin < 60) return diffMin + ' menit lalu';
+        const diffJam = Math.round(diffMin / 60);
+        if (diffJam < 24) return diffJam + ' jam lalu';
+        return Math.round(diffJam / 24) + ' hari lalu';
+      };
+      const queueOk = _syncQueue.length === 0;
+      const dataRows = [
+        { label: 'Transaksi', count: allTrxList.length },
+        { label: 'Produk', count: products.length },
+        { label: 'Pelanggan', count: allCustomers.length },
+        { label: 'Input Barang', count: stockInHistory.length },
+        { label: 'Setoran', count: setoranHistory.length },
+      ];
+      const html = `<div style="text-align:left">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+          <div style="background:${queueOk?'#EEF9F2':'#FEF3E2'};border-radius:12px;padding:10px 12px">
+            <div style="font-size:0.68rem;color:#5a7a90">Status Antrian</div>
+            <div style="font-weight:800;font-size:1rem;color:${queueOk?'#16A34A':'#D97706'}">${queueOk ? '✓ Tersinkron' : _syncQueue.length + ' menunggu'}</div>
+          </div>
+          <div style="background:${lastErr?'#FEECEC':'#F4F8FB'};border-radius:12px;padding:10px 12px">
+            <div style="font-size:0.68rem;color:#5a7a90">Sync Berhasil Terakhir</div>
+            <div style="font-weight:800;font-size:0.9rem;color:${lastErr?'#DC2626':'#0D2B3E'}">${esc(fmtRelative(lastOK))}</div>
+          </div>
+        </div>
+        ${lastErr ? `<div style="background:#FEECEC;border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:0.72rem;color:#DC2626"><b>⚠️ Percobaan sync terakhir gagal</b> (${esc(fmtRelative(lastErr.time))}): ${esc(lastErr.message||'-')}</div>` : ''}
+        <div style="font-weight:700;font-size:0.8rem;color:#0D2B3E;margin-bottom:6px">Jumlah Data Tersimpan di Device Ini</div>
+        <div style="border:1px solid #EEF4F9;border-radius:10px;overflow:hidden;margin-bottom:14px">
+          ${dataRows.map(r => `<div style="display:flex;justify-content:space-between;padding:7px 12px;border-bottom:1px solid #F1F5F9;font-size:0.78rem"><span style="color:#5a7a90">${esc(r.label)}</span><span style="font-weight:700;color:#0D2B3E;font-family:monospace">${r.count}</span></div>`).join('')}
+        </div>
+        <p style="font-size:0.68rem;color:#94A3B8">Antrian otomatis dicoba lagi tiap ±25 detik & saat internet nyambung. Data yang belum sync AMAN tersimpan di HP ini.</p>
+      </div>`;
+      Swal.fire({
+        title: '🩺 Kesehatan Sync', html, width: '460px', background: '#F4F8FB',
+        showConfirmButton: true, confirmButtonText: 'Tutup',
+        showDenyButton: !queueOk, denyButtonText: 'Lihat Detail Antrian',
+        showCancelButton: true, cancelButtonText: '🔄 Sync Sekarang',
+        customClass: { popup: 'dash-status-popup' }
+      }).then(r => {
+        if (r.isDenied) showSyncQueueDetail();
+        else if (r.dismiss === Swal.DismissReason.cancel) syncFromGAS();
+      });
+    }
     // berlaku / tidak valid). Paksa kembali ke halaman login dengan pesan jelas,
     // supaya tidak muncul error generik berulang-ulang di seluruh menu.
     let _reloginTriggered = false;
@@ -554,6 +609,26 @@
     // Lock-screen pola (dipanggil saat app dibuka & kunci pola aktif) - beda dari
     // modal setup di atas: ini LANGSUNG cek kecocokan hash & LOOPING kalau salah
     // (tidak menutup diri sendiri sampai benar atau user pilih "Gunakan Password").
+    // [NEW] Proteksi percobaan gagal - sebelumnya pola bisa dicoba BERKALI-KALI
+    // TANPA BATAS kalau salah terus (beda dengan biometrik yang dibatasi sistem
+    // OS). Sekarang setiap 5x salah berturut-turut, ada jeda yang makin lama
+    // (30d -> 60d -> 120d -> ... maks 5 menit) sebelum bisa coba lagi. Disimpan
+    // di localStorage (bukan variabel biasa) supaya tidak bisa di-reset cuma
+    // dengan menutup-buka app lagi.
+    const PATTERN_FAIL_KEY = 'tirtaPatternFailCount';
+    const PATTERN_LOCK_UNTIL_KEY = 'tirtaPatternLockUntil';
+    function _getPatternFailCount() { return parseInt(localStorage.getItem(PATTERN_FAIL_KEY)) || 0; }
+    function _getPatternLockUntil() { return parseInt(localStorage.getItem(PATTERN_LOCK_UNTIL_KEY)) || 0; }
+    function _registerPatternFail() {
+      const count = _getPatternFailCount() + 1;
+      localStorage.setItem(PATTERN_FAIL_KEY, String(count));
+      if (count % 5 === 0) {
+        const stage = Math.min(count / 5, 5); // maks di kelipatan ke-5 (5 menit)
+        const lockSeconds = Math.min(30 * Math.pow(2, stage - 1), 300);
+        localStorage.setItem(PATTERN_LOCK_UNTIL_KEY, String(Date.now() + lockSeconds * 1000));
+      }
+    }
+    function _resetPatternFail() { localStorage.removeItem(PATTERN_FAIL_KEY); localStorage.removeItem(PATTERN_LOCK_UNTIL_KEY); }
     async function showPatternLockScreen() {
       document.getElementById('loginPage').classList.add('hidden');
       document.getElementById('mainApp').classList.add('hidden');
@@ -572,13 +647,39 @@
       modal.querySelector('#pgw2').innerHTML = _patternGridSvgHtml();
       const svg = modal.querySelector('#patternSvg');
       const hintEl = modal.querySelector('#patternLockHint');
-      _wirePatternDrag(svg, async (seq) => {
-        if (seq.length < 4) return; // ketuk-lepas tidak sengaja, abaikan diam-diam
-        const drawnHash = await _sha256Hex(seq.join('-'));
-        if (drawnHash === hash) { modal.remove(); showMainApp(); }
-        else { hintEl.textContent = 'Pola salah, coba lagi'; hintEl.style.color = '#FF8A80'; setTimeout(() => { hintEl.style.color = '#9fc1e6'; hintEl.textContent = 'Hubungkan titik-titik sesuai pola Anda'; }, 1500); }
-      });
       modal.querySelector('#patternUsePasswordBtn').onclick = () => { modal.remove(); doLogout(); };
+      // [NEW] Kalau masih dalam masa jeda (lockout) dari percobaan gagal
+      // sebelumnya, tampilkan hitung mundur & matikan grid-nya dulu.
+      function checkLockoutAndMaybeWire() {
+        const lockUntil = _getPatternLockUntil();
+        const remaining = lockUntil - Date.now();
+        if (remaining > 0) {
+          svg.style.pointerEvents = 'none';
+          svg.style.opacity = '0.35';
+          const detik = Math.ceil(remaining / 1000);
+          hintEl.style.color = '#FF8A80';
+          hintEl.textContent = `Terlalu banyak percobaan salah. Coba lagi dalam ${detik} detik.`;
+          setTimeout(checkLockoutAndMaybeWire, 1000);
+          return;
+        }
+        svg.style.pointerEvents = 'auto';
+        svg.style.opacity = '1';
+        hintEl.style.color = '#9fc1e6';
+        hintEl.textContent = 'Hubungkan titik-titik sesuai pola Anda';
+        _wirePatternDrag(svg, async (seq) => {
+          if (seq.length < 4) return; // ketuk-lepas tidak sengaja, abaikan diam-diam
+          if (_getPatternLockUntil() > Date.now()) return; // jaga-jaga kalau sempat digambar pas jeda baru mulai
+          const drawnHash = await _sha256Hex(seq.join('-'));
+          if (drawnHash === hash) { _resetPatternFail(); modal.remove(); showMainApp(); }
+          else {
+            _registerPatternFail();
+            if (_getPatternLockUntil() > Date.now()) { checkLockoutAndMaybeWire(); return; }
+            hintEl.textContent = 'Pola salah, coba lagi'; hintEl.style.color = '#FF8A80';
+            setTimeout(() => { hintEl.style.color = '#9fc1e6'; hintEl.textContent = 'Hubungkan titik-titik sesuai pola Anda'; }, 1500);
+          }
+        });
+      }
+      checkLockoutAndMaybeWire();
     }
 
     // ========== [NEW] AUTO-KUNCI SETELAH TIDAK AKTIF ==========
@@ -1027,9 +1128,12 @@
           }
         }
         saveLocalData();
+        localStorage.setItem('tirtaLastSyncOK', String(Date.now())); // [NEW] dipakai Dashboard Kesehatan Sync
+        localStorage.removeItem('tirtaLastSyncError');
         if (currentPage === 'dashboard' || currentPage === 'transaksi' || currentPage === 'produk' || currentPage === 'gudang') renderContent();
       } catch (e) {
         console.warn('Gagal sinkron:', e);
+        localStorage.setItem('tirtaLastSyncError', JSON.stringify({ time: Date.now(), message: e.message || 'Gagal terhubung' })); // [NEW]
         Swal.fire({
           icon: 'error',
           title: 'Koneksi GAGAL',
@@ -3248,7 +3352,10 @@
         }).join('');
       };
       const html = `<div style="text-align:left">
-        <select id="editLogModuleFilter" onchange="_editLogApplyFilter()" style="margin-bottom:8px;padding:6px 10px;border-radius:8px;border:1px solid #E2E8F0;background:#F8FAFC;font-size:0.8rem;color:#1a2332">${filterOpts}</select>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+          <select id="editLogModuleFilter" onchange="_editLogApplyFilter()" style="padding:6px 10px;border-radius:8px;border:1px solid #E2E8F0;background:#F8FAFC;font-size:0.8rem;color:#1a2332">${filterOpts}</select>
+          <button type="button" onclick="exportEditLogExcel()" style="margin-left:auto;padding:6px 12px;border-radius:8px;border:1px solid #DCEAFB;background:#EAF2FF;color:#1A6DB5;font-size:0.78rem;font-weight:700;cursor:pointer"><i class="fas fa-file-excel"></i> Ekspor Excel</button>
+        </div>
         <div style="max-height:400px;overflow-y:auto;font-size:12px">
           <table style="width:100%;border-collapse:collapse">
             <thead><tr style="background:#EAF4FD"><th style="padding:4px 8px;text-align:left">Waktu</th><th style="text-align:left">Editor</th><th style="text-align:left">Modul</th><th style="text-align:left">Ref</th><th style="text-align:left">Perubahan</th></tr></thead>
@@ -3263,6 +3370,27 @@
       const filt = document.getElementById('editLogModuleFilter')?.value || '';
       const tb = document.getElementById('editLogTbody');
       if (tb && window._editLogRenderRows) tb.innerHTML = window._editLogRenderRows(filt);
+    }
+    // [NEW] Ekspor Log Edit ke Excel - ikut filter modul yang sedang aktif di
+    // viewer (kalau ada), untuk kebutuhan audit/laporan ke pemilik bisnis.
+    function exportEditLogExcel() {
+      const filt = document.getElementById('editLogModuleFilter')?.value || '';
+      let rows = _editLog.slice().reverse();
+      if (filt) rows = rows.filter(l => (l.module||'transaksi') === filt);
+      if (!rows.length) return Swal.fire('Info', 'Tidak ada data log untuk diekspor', 'info');
+      const MODULE_LABEL = { transaksi:'Transaksi', produk:'Produk', setoran:'Setoran', stock:'Stock', pelanggan:'Pelanggan', user:'User' };
+      const aoa = [['Waktu','Editor','Modul','Referensi','Aksi','Sebelum','Sesudah']];
+      rows.forEach(log => {
+        const isDelete = log.after === null || log.after === undefined;
+        aoa.push([
+          log.waktu||'', log.editor||'', MODULE_LABEL[log.module]||log.module||'Transaksi', log.label||log.id||'',
+          isDelete ? 'HAPUS' : 'EDIT',
+          JSON.stringify(log.before||{}), isDelete ? '-' : JSON.stringify(log.after||{})
+        ]);
+      });
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Log Edit');
+      XLSX.writeFile(wb, `log-edit-${filt||'semua'}-${localDateStr()}.xlsx`);
     }
 
     // ========== FOTO BUKTI ==========
@@ -6154,7 +6282,7 @@
           <td class="fw-bold">${esc(c)}</td>
           <td style="text-align:center;font-family:var(--mono)">${jumlahTrx || '-'}</td>
           <td style="text-align:right;font-family:var(--mono);font-weight:700;color:${piutang>0?'var(--merah)':'var(--text3)'}">${piutang>0?fmtRp(piutang):'-'}</td>
-          <td style="display:flex;gap:3px"><button class="btn btn-sm btn-outline" onclick="showPelangganDetail('${esc(c).replace(/'/g,"\\'")}')" title="Lihat riwayat & piutang"><i class="fas fa-eye"></i></button><button class="btn btn-sm btn-outline" onclick="editCustomerPhone('${esc(c).replace(/'/g,"\\'")}')" title="Atur nomor WA"><i class="fas fa-phone"></i></button><button class="btn btn-sm btn-outline" onclick="editCustomerAddress('${esc(c).replace(/'/g,"\\'")}')" title="Atur alamat"><i class="fas fa-map-marker-alt"></i></button><button class="btn btn-sm btn-danger" onclick="deletePelanggan(${i})">🗑</button></td>
+          <td style="display:flex;gap:3px"><button class="btn btn-sm btn-outline" onclick="showPelangganDetail('${esc(c).replace(/'/g,"\\'")}')" title="Lihat riwayat & piutang"><i class="fas fa-eye"></i></button><button class="btn btn-sm btn-outline" onclick="editCustomerPhone('${esc(c).replace(/'/g,"\\'")}')" title="Atur nomor WA"><i class="fas fa-phone"></i></button><button class="btn btn-sm btn-outline" onclick="editCustomerAddress('${esc(c).replace(/'/g,"\\'")}')" title="Atur alamat"><i class="fas fa-map-marker-alt"></i></button><button class="btn btn-sm btn-outline" onclick="openCustomerAddressInMaps('${esc(c).replace(/'/g,"\\'")}')" title="Buka di Google Maps"><i class="fas fa-location-arrow"></i></button><button class="btn btn-sm btn-danger" onclick="deletePelanggan(${i})">🗑</button></td>
         </tr>`;
       }).join('');
     }
@@ -6188,7 +6316,7 @@
       const nameEsc = esc(name).replace(/'/g,"\\'");
       const custAddress = getCustomerAddress(name);
       const html = `<div style="text-align:left">
-        ${custAddress ? `<div style="font-size:0.72rem;color:#5a7a90;margin-bottom:10px"><i class="fas fa-map-marker-alt"></i> ${esc(custAddress)} <a href="javascript:void(0)" onclick="editCustomerAddress('${nameEsc}')" style="color:#1A6DB5;text-decoration:underline">Ubah</a></div>` : `<div style="margin-bottom:10px"><button type="button" onclick="editCustomerAddress('${nameEsc}')" style="font-size:0.68rem;color:#1A6DB5;background:none;border:none;cursor:pointer;padding:0"><i class="fas fa-map-marker-alt"></i> + Tambah alamat</button></div>`}
+        ${custAddress ? `<div style="font-size:0.72rem;color:#5a7a90;margin-bottom:10px"><i class="fas fa-map-marker-alt"></i> ${esc(custAddress)} <a href="javascript:void(0)" onclick="editCustomerAddress('${nameEsc}')" style="color:#1A6DB5;text-decoration:underline">Ubah</a> · <a href="javascript:void(0)" onclick="openCustomerAddressInMaps('${nameEsc}')" style="color:#1A6DB5;text-decoration:underline">Buka di Maps</a></div>` : `<div style="margin-bottom:10px"><button type="button" onclick="editCustomerAddress('${nameEsc}')" style="font-size:0.68rem;color:#1A6DB5;background:none;border:none;cursor:pointer;padding:0"><i class="fas fa-map-marker-alt"></i> + Tambah alamat</button></div>`}
         <div style="display:flex;gap:6px;align-items:flex-end;margin-bottom:12px;flex-wrap:wrap">
           <div style="flex:1;min-width:110px"><label style="font-size:0.62rem;color:#5a7a90;display:block;margin-bottom:2px">Dari tanggal</label><input type="date" id="pgDetStart" value="${startDate}" style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #D8E3EE;font-size:0.72rem;color:#1a2332;background:#F1F5F9"></div>
           <div style="flex:1;min-width:110px"><label style="font-size:0.62rem;color:#5a7a90;display:block;margin-bottom:2px">Sampai tanggal</label><input type="date" id="pgDetEnd" value="${endDate}" style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #D8E3EE;font-size:0.72rem;color:#1a2332;background:#F1F5F9"></div>
@@ -6363,6 +6491,8 @@
           <div class="section-title">💾 Backup & Restore</div><div class="flex-row"><button class="btn btn-warning" style="flex:1" onclick="backupData()"><i class="fas fa-download"></i> Backup</button><button class="btn btn-danger" style="flex:1" onclick="restoreData()"><i class="fas fa-upload"></i> Restore</button></div>
           <div class="section-title">📋 Riwayat Perubahan Data</div>
           <div class="form-group"><p class="text-sm" style="color:var(--text3);margin-bottom:8px">Jejak audit semua edit (Transaksi, Produk, Setoran, Stock, Pelanggan) - kapan diubah & oleh siapa, digabung dari semua device/admin.</p><button class="btn btn-outline btn-block" onclick="showEditLog()"><i class="fas fa-history"></i> Lihat Log Edit</button></div>
+          <div class="section-title">🩺 Kesehatan Sync</div>
+          <div class="form-group"><p class="text-sm" style="color:var(--text3);margin-bottom:8px">Cek kapan terakhir berhasil sync, data apa yang masih mengantre, dan jumlah data tersimpan di device ini.</p><button class="btn btn-outline btn-block" onclick="showSyncHealthDashboard()"><i class="fas fa-heartbeat"></i> Lihat Kesehatan Sync</button></div>
           <div class="section-title">🔐 Keamanan</div>
           <div class="form-group">
             <label>Login Biometrik (Sidik Jari / Face ID)</label>
@@ -6756,6 +6886,20 @@
         if (before !== r.value.trim()) logEditAction('pelanggan', name, name, { alamat: before }, { alamat: r.value.trim() });
         Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Alamat disimpan' });
       });
+    }
+    // [NEW] Buka alamat pelanggan langsung di Google Maps - berguna terutama
+    // buat driver yang mau ke lokasi pengiriman. Kalau alamat belum diisi,
+    // langsung tawarkan untuk mengisinya dulu daripada buka Maps kosong.
+    function openCustomerAddressInMaps(name) {
+      const address = getCustomerAddress(name);
+      if (!address) {
+        return Swal.fire({
+          icon: 'info', title: 'Alamat Belum Diisi',
+          text: 'Alamat ' + name + ' belum diisi. Isi dulu supaya bisa dibuka di Maps.',
+          showCancelButton: true, confirmButtonText: 'Isi Alamat', cancelButtonText: 'Tutup'
+        }).then(r => { if (r.isConfirmed) editCustomerAddress(name); });
+      }
+      window.open('https://maps.google.com/?q=' + encodeURIComponent(address), '_blank');
     }
     // Normalisasi nomor HP Indonesia ke format wa.me (62xxxxxxxxxx, tanpa +/spasi/strip).
     function _normalizeWaNumber(raw) {
