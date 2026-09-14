@@ -1709,6 +1709,147 @@
       `;
     }
 
+    // ========== [NEW] PERINTAH SUARA - Menu Jual ==========
+    // PENTING (transparansi ke pengguna, bukan cuma komentar kode): ini BUKAN
+    // asisten AI percakapan penuh. Ini pakai fitur bawaan browser (Web Speech
+    // API) untuk ubah suara jadi teks - GRATIS, tanpa kirim data ke server
+    // manapun, tanpa API key. Lalu teksnya diuraikan pakai pola kata kunci
+    // (pelanggan/qty/diskon + cocokkan nama barang ke daftar produk yang ada).
+    // Ini sengaja TIDAK langsung submit transaksi - hasilnya SELALU ditampilkan
+    // dulu untuk dikonfirmasi manusia sebelum masuk ke form, karena ini
+    // menyangkut uang & pengenalan suara/pencocokan kata bisa saja salah dengar.
+    function isVoiceCommandSupported() { return !!(window.SpeechRecognition || window.webkitSpeechRecognition); }
+    function startVoiceCommandJual() {
+      if (!isVoiceCommandSupported()) {
+        return Swal.fire({ icon:'info', title:'Belum Didukung', text:'Perintah suara belum didukung di browser ini. Coba pakai Google Chrome (Android/desktop).' });
+      }
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const rec = new SR();
+      rec.lang = 'id-ID'; rec.interimResults = false; rec.maxAlternatives = 1;
+      let handled = false;
+      Swal.fire({
+        title: '🎙️ Mendengarkan...',
+        html: `<style>@keyframes voicePulse{0%{box-shadow:0 0 0 0 rgba(239,68,68,.5)}70%{box-shadow:0 0 0 18px rgba(239,68,68,0)}100%{box-shadow:0 0 0 0 rgba(239,68,68,0)}}</style>
+          <div style="text-align:center">
+            <div style="width:70px;height:70px;border-radius:50%;background:linear-gradient(135deg,#EF4444,#F87171);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;animation:voicePulse 1.4s infinite"><i class="fas fa-microphone" style="color:#fff;font-size:28px"></i></div>
+            <p style="font-size:0.78rem;color:#5a7a90">Contoh: <i>"pelanggan Budi, Aqua Galon, qty 2, diskon 2000"</i></p>
+          </div>`,
+        showConfirmButton: false, showCancelButton: true, cancelButtonText: 'Batal', allowOutsideClick: false,
+        didOpen: () => { try { rec.start(); } catch(e) { Swal.close(); } },
+        willClose: () => { if (!handled) { try { rec.stop(); } catch(e) {} } }
+      });
+      rec.onresult = (e) => { handled = true; const transcript = e.results[0][0].transcript; Swal.close(); processVoiceCommandJual(transcript); };
+      rec.onerror = (e) => { if (handled) return; handled = true; Swal.close(); Swal.fire({ icon:'error', title:'Gagal Menangkap Suara', text: 'Tidak terdengar jelas, coba lagi. (' + (e.error||'error') + ')' }); };
+      rec.onspeechend = () => { rec.stop(); };
+    }
+    // Konversi teks angka (digit ATAU kata bahasa Indonesia sederhana) jadi angka.
+    // Chrome biasanya sudah mengubah ucapan angka jadi digit sendiri, tapi kamus
+    // kata dipakai sebagai cadangan kalau tidak.
+    function _parseSpokenNumber(str) {
+      str = String(str||'').trim().toLowerCase();
+      if (/\d/.test(str)) {
+        const cleaned = str.replace(/[^\d.,]/g,'').replace(/\.(?=\d{3}(\D|$))/g,'').replace(',', '.');
+        const n = parseFloat(cleaned);
+        if (!isNaN(n)) return n;
+      }
+      const ones = {nol:0,satu:1,dua:2,tiga:3,empat:4,lima:5,enam:6,tujuh:7,delapan:8,sembilan:9,sepuluh:10,sebelas:11};
+      let total = 0, current = 0, found = false;
+      str.split(/\s+/).forEach(w => {
+        if (ones[w] !== undefined) { current += ones[w]; found = true; }
+        else if (w === 'belas') { current += 10; found = true; }
+        else if (w === 'puluh') { current = (current||1) * 10; found = true; }
+        else if (w === 'ratus') { total += (current||1) * 100; current = 0; found = true; }
+        else if (w === 'ribu') { total += (current||1) * 1000; current = 0; found = true; }
+        else if (w === 'juta') { total += (current||1) * 1000000; current = 0; found = true; }
+      });
+      total += current;
+      return found ? total : 0;
+    }
+    // Cocokkan sisa teks (setelah kata kunci pelanggan/qty/diskon dibuang) ke
+    // produk yang ada, berdasar kemiripan kata (bukan harus sama persis).
+    function _fuzzyMatchProduct(text) {
+      text = (text||'').trim().toLowerCase();
+      if (!text) return null;
+      const words = text.split(/\s+/).filter(w => w.length > 1);
+      if (!words.length) return null;
+      let best = null, bestScore = 0;
+      products.forEach(p => {
+        const nameLower = (p.nama||'').toLowerCase();
+        const skuLower = (p.sku||'').toLowerCase();
+        let score = 0;
+        if (skuLower === text.replace(/\s+/g,'')) score += 100;
+        words.forEach(w => { if (nameLower.includes(w)) score += 3; if (skuLower.includes(w)) score += 2; });
+        if (score > bestScore) { bestScore = score; best = p; }
+      });
+      return bestScore > 0 ? best : null;
+    }
+    function processVoiceCommandJual(transcript) {
+      const original = transcript;
+      let text = transcript.toLowerCase();
+      let customer = null, custMatchFull = null, discMatchFull = null, qtyMatchFull = null;
+      const custMatch = text.match(/(?:pelanggan|customer|untuk|buat)\s+([a-z0-9\s]+?)(?:,|\s+(?:qty|jumlah|sebanyak|diskon|potongan)\b|$)/);
+      if (custMatch) { customer = custMatch[1].trim(); custMatchFull = custMatch[0]; }
+      let disc = 0;
+      const discMatch = text.match(/(?:diskon|potongan)\s+([a-z0-9\s]+?)(?:,|$)/);
+      if (discMatch) { disc = _parseSpokenNumber(discMatch[1]); discMatchFull = discMatch[0]; }
+      let qty = 0;
+      const qtyMatch = text.match(/(?:qty|jumlah|sebanyak|banyak)\s+([a-z0-9\s]+?)(?:,|\s+diskon|\s+potongan|$)/);
+      if (qtyMatch) { qty = _parseSpokenNumber(qtyMatch[1]) || 1; qtyMatchFull = qtyMatch[0]; }
+      let productText = text;
+      [custMatchFull, discMatchFull, qtyMatchFull].forEach(m => { if (m) productText = productText.replace(m, ' '); });
+      productText = productText.replace(/\b(?:qty|jumlah|sebanyak|banyak|diskon|potongan|pelanggan|customer|untuk|buat)\b/g, ' ');
+      if (!qty) {
+        const inlineNum = productText.match(/\b(\d+)\b/);
+        if (inlineNum) { qty = parseInt(inlineNum[1]); productText = productText.replace(inlineNum[0], ' '); }
+      }
+      productText = productText.replace(/\s+/g, ' ').trim();
+      const matchedProduct = _fuzzyMatchProduct(productText);
+      showVoiceCommandPreview({ original, customer, matchedProduct, qty: qty || 1, disc });
+    }
+    function showVoiceCommandPreview(parsed) {
+      const { original, customer, matchedProduct, qty, disc } = parsed;
+      const custExists = customer && allCustomers.some(c => c.toLowerCase() === customer.toLowerCase());
+      const html = `<div style="text-align:left">
+        <div style="background:#F1F5F9;border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:0.72rem;color:#5a7a90"><i class="fas fa-quote-left"></i> "${esc(original)}"</div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9"><span style="color:#5a7a90;font-size:0.78rem">Pelanggan</span><span style="font-weight:700;font-size:0.82rem">${customer ? esc(customer) + (custExists ? '' : ' <span style="color:#16A34A;font-size:0.65rem">(baru, akan dibuat)</span>') : '<span style="color:#DC2626">Tidak terdengar</span>'}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9"><span style="color:#5a7a90;font-size:0.78rem">Barang</span><span style="font-weight:700;font-size:0.82rem">${matchedProduct ? esc(matchedProduct.nama) : '<span style="color:#DC2626">Tidak ditemukan</span>'}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9"><span style="color:#5a7a90;font-size:0.78rem">Qty</span><span style="font-weight:700;font-size:0.82rem">${qty}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0"><span style="color:#5a7a90;font-size:0.78rem">Diskon</span><span style="font-weight:700;font-size:0.82rem">${fmtRp(disc)}</span></div>
+        <p style="font-size:0.65rem;color:#94A3B8;margin-top:10px">Periksa dulu sebelum diisi ke formulir - pengenalan suara kadang bisa salah dengar/cocok.</p>
+      </div>`;
+      Swal.fire({
+        title: matchedProduct ? '✅ Berhasil Dikenali' : '⚠️ Barang Tidak Dikenali',
+        html, showCancelButton: true,
+        confirmButtonText: matchedProduct ? 'Isi ke Formulir' : '🎙️ Coba Lagi',
+        cancelButtonText: 'Batal'
+      }).then(r => {
+        if (!r.isConfirmed) return;
+        if (matchedProduct) applyVoiceCommandToForm(parsed); else startVoiceCommandJual();
+      });
+    }
+    function applyVoiceCommandToForm(parsed) {
+      const { customer, matchedProduct, qty, disc } = parsed;
+      if (customer) {
+        const custInput = document.getElementById('trxCust');
+        if (custInput) custInput.value = customer;
+        if (!allCustomers.some(c => c.toLowerCase() === customer.toLowerCase())) {
+          allCustomers.push(customer); pelanggan = allCustomers.slice(); saveLocalData(); syncCustomersToSheet();
+          const dl = document.getElementById('custDatalist'); if (dl) dl.innerHTML += `<option value="${esc(customer)}">`;
+        }
+      }
+      let rows = document.querySelectorAll('#itemsContainer .cart-item-row');
+      let targetRow = null;
+      rows.forEach(row => { if (!targetRow && !row.querySelector('[data-field="sku"]').value.trim()) targetRow = row; });
+      if (!targetRow) { addItemRow(); rows = document.querySelectorAll('#itemsContainer .cart-item-row'); targetRow = rows[rows.length-1]; }
+      const skuInput = targetRow.querySelector('[data-field="sku"]');
+      skuInput.value = matchedProduct.sku;
+      skuInput.dispatchEvent(new Event('input')); // supaya nama & harga ikut terisi otomatis (logika sudah ada di addItemRow)
+      targetRow.querySelector('[data-field="qty"]').value = qty;
+      targetRow.querySelector('[data-field="disc"]').value = disc;
+      recalcTotals();
+      Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1800, icon: 'success', title: '🎙️ Terisi otomatis!' });
+    }
+
     // ========== PENJUALAN (sama seperti sebelumnya) ==========
     let _itemIdx = 0;
     let _currentTrxId = ''; // Untuk menyimpan ID transaksi saat ini (untuk upload foto)
@@ -1723,6 +1864,9 @@
         <datalist id="productDatalist">${datalistOptions}</datalist>
         <div class="jual-two-col">
         <div class="card jual-col-left"><div class="card-title"><i class="fas fa-cash-register"></i> Buat Invoice</div>
+        <!-- [NEW] Perintah Suara - isi pelanggan/barang/qty/disc dengan ucapkan
+             saja, lihat startVoiceCommandJual() untuk detail cara kerjanya. -->
+        <button type="button" class="btn btn-outline btn-block" onclick="startVoiceCommandJual()" style="margin-bottom:10px;border-color:#EF4444;color:#EF4444"><i class="fas fa-microphone"></i> 🎙️ Perintah Suara</button>
         <div class="form-group"><label>ID Transaksi</label><input id="trxId" readonly style="font-family:var(--mono)" value="${trxIdVal}"></div>
         <div class="flex-row"><div class="form-group col-1"><label>Tanggal</label><input type="date" id="trxTgl"></div><div class="form-group col-1"><label>Pelanggan *</label><input id="trxCust" placeholder="Nama pelanggan" list="custDatalist" autocomplete="off"><datalist id="custDatalist">${cDatalist}</datalist></div></div>
         <div class="flex-row"><div class="form-group col-1"><label>Sales *</label><select id="trxSales">${sOpts}</select></div><div class="form-group col-1"><label>Status</label><select id="trxStatus"><option value="">-- Pilih --</option><option value="belumTransfer">Belum Transfer</option><option value="cod">COD</option><option value="transfer">Transfer</option><option value="qris">QRIS</option></select></div></div>
@@ -5998,30 +6142,6 @@
       const now = new Date(), date = localDateStr(now), createdAt = localDateStr(now)+' '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0'); 
       const entries = items.map((it, idx) => ({ id: inpId + '-' + (idx+1), groupId: inpId, sku: it.sku, nama: it.nama, qty: it.qty, hargaModal: it.hargaModal, disc: it.disc, netModal: it.netModal, driver, rit, status, date, createdAt })); 
       entries.forEach(e => stockInHistory.unshift(e)); 
-      // [NEW] Sinkronisasi harga modal produk otomatis dari Input Barang.
-      // Sebelumnya: `modal` di data Produk cuma diisi manual sekali di form
-      // Produk, TIDAK PERNAH ikut ter-update walau harga beli sebenarnya sudah
-      // berubah lewat Input Barang - jadi perhitungan profit di Transaksi/
-      // Grafik/Rekap bisa memakai angka modal yang sudah usang.
-      // Pendekatan yang dipakai: "harga modal terakhir" (bukan rata-rata
-      // tertimbang) - begitu ada barang masuk, modal produk langsung disamakan
-      // dengan harga beli bersih (setelah disc) dari input itu. Ini pilihan yang
-      // sengaja dibuat sederhana & mudah dipahami pemilik toko ("modal = harga
-      // beli terakhir"), dan tidak bergantung pada perhitungan stok berjalan yang
-      // lebih kompleks (rata-rata tertimbang perlu tahu stok saat ini yang akurat).
-      const modalUpdates = [];
-      items.forEach(it => {
-        const netModalPerUnit = it.hargaModal - (it.disc||0);
-        const p = products.find(x => x.sku === it.sku);
-        if (p && netModalPerUnit > 0 && p.modal !== netModalPerUnit) {
-          modalUpdates.push({ sku: p.sku, nama: p.nama, before: p.modal, after: netModalPerUnit });
-          p.modal = netModalPerUnit;
-        }
-      });
-      if (modalUpdates.length) {
-        modalUpdates.forEach(m => logEditAction('produk', m.sku, m.nama, { modal: m.before }, { modal: m.after, _sumber: 'Auto dari Input Barang ' + inpId }));
-        syncProductsToSheet();
-      }
       saveLocalData(); 
       entries.forEach(e => enqueueSync('saveInputBarang', [e], 'Input Barang ' + e.id)); // [PERF+NEW] instan lokal, sync lewat antrian
       Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Barang masuk dicatat' }); 
