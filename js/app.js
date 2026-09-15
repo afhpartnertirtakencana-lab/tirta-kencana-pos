@@ -7286,7 +7286,13 @@ if ('serviceWorker' in navigator) {
         var hasCustomLogo = !!localStorage.getItem('tirtaLogo');
         if (hasCustomLogo) return; // hormati logo custom upload user, tidak diganggu
         if (typeof EMBEDDED_LOGO !== 'undefined' && _logoUrl === EMBEDDED_LOGO) {
-          _logoUrl = _fixedLogoDataUri;
+          // [FIX] Sebelumnya diarahkan ke _fixedLogoDataUri (base64 WebP) - itu
+          // cuma re-encode dari logo LAMA (latar hitam) supaya CORS-safe, bukan
+          // mengganti desainnya. Sekarang diarahkan ke file "icon-512-white.png"
+          // (latar putih, sudah dipakai & terbukti aman di splash screen) -
+          // file ini juga same-origin (bukan hosting luar), jadi tetap aman
+          // dari isu CORS di html2canvas seperti tujuan awal blok ini.
+          _logoUrl = 'icons/icon-512-white.png';
         }
       } catch (err) { /* diamkan, tidak boleh mengganggu aplikasi utama */ }
     }
