@@ -1719,6 +1719,72 @@
     // dulu untuk dikonfirmasi manusia sebelum masuk ke form, karena ini
     // menyangkut uang & pengenalan suara/pencocokan kata bisa saja salah dengar.
     function isVoiceCommandSupported() { return !!(window.SpeechRecognition || window.webkitSpeechRecognition); }
+    const MIC_BTN_STYLE = 'width:26px;height:26px;border-radius:50%;border:none;background:#FEE2E2;color:#EF4444;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:0.7rem;padding:0';
+    // [NEW] Mic PER-FIELD - beda dari tombol "🎙️ Perintah Suara" (yang mengisi
+    // banyak kolom sekaligus dari satu kalimat panjang), ini untuk isi SATU
+    // kolom saja langsung dari suara: tekan mic di sebelah kolom yang mau
+    // diisi, ucapkan isinya, langsung terisi (tanpa dialog konfirmasi terpisah
+    // - cukup toast kecil di pojok, karena risikonya kecil untuk 1 kolom saja
+    // dan hasilnya tetap kelihatan+bisa dikoreksi langsung di kolom itu).
+    function _voiceToast(msg, isWarn) {
+      Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, icon: isWarn ? 'warning' : 'success', title: msg });
+    }
+    function startFieldVoiceInput(fieldType, btnEl) {
+      if (!isVoiceCommandSupported()) return Swal.fire({ icon:'info', title:'Belum Didukung', text:'Perintah suara belum didukung di browser ini. Coba pakai Google Chrome (Android/desktop).' });
+      const row = btnEl.closest('.cart-item-row'); // null kalau tombolnya bukan di dalam baris item (mis. Pelanggan/Sales/Status)
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const rec = new SR();
+      rec.lang = 'id-ID'; rec.interimResults = false; rec.maxAlternatives = 1;
+      const origIcon = btnEl.innerHTML;
+      btnEl.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
+      btnEl.disabled = true;
+      const restoreBtn = () => { btnEl.innerHTML = origIcon; btnEl.disabled = false; };
+      rec.onresult = (e) => { restoreBtn(); applyFieldVoiceResult(fieldType, e.results[0][0].transcript, row); };
+      rec.onerror = () => { restoreBtn(); _voiceToast('Tidak terdengar jelas, coba lagi', true); };
+      rec.onspeechend = () => rec.stop();
+      try { rec.start(); } catch(e) { restoreBtn(); }
+    }
+    function applyFieldVoiceResult(fieldType, transcript, row) {
+      const text = transcript.trim();
+      if (fieldType === 'customer') {
+        const custInput = document.getElementById('trxCust');
+        if (custInput) custInput.value = text;
+        if (!allCustomers.some(c => c.toLowerCase() === text.toLowerCase())) {
+          allCustomers.push(text); pelanggan = allCustomers.slice(); saveLocalData(); syncCustomersToSheet();
+          const dl = document.getElementById('custDatalist'); if (dl) dl.innerHTML += `<option value="${esc(text)}">`;
+        }
+        _voiceToast('Pelanggan: ' + text);
+      } else if (fieldType === 'sales') {
+        const matched = _fuzzyMatchSales(text);
+        if (matched) { document.getElementById('trxSales').value = matched; _voiceToast('Sales: ' + matched); }
+        else _voiceToast('Sales "' + text + '" tidak ditemukan di daftar', true);
+      } else if (fieldType === 'status') {
+        const matched = _matchStatus(text.toLowerCase());
+        if (matched) { document.getElementById('trxStatus').value = matched; _voiceToast('Status diisi'); }
+        else _voiceToast('Status tidak dikenali dari ucapan itu', true);
+      } else if (fieldType === 'sku') {
+        if (!row) return;
+        const matched = _fuzzyMatchProduct(text);
+        if (matched) {
+          const skuInput = row.querySelector('[data-field="sku"]');
+          skuInput.value = matched.sku;
+          skuInput.dispatchEvent(new Event('input'));
+          _voiceToast('Barang: ' + matched.nama);
+        } else _voiceToast('Barang "' + text + '" tidak ditemukan', true);
+      } else if (fieldType === 'qty') {
+        if (!row) return;
+        const n = _parseSpokenNumber(text) || 1;
+        row.querySelector('[data-field="qty"]').value = n;
+        recalcTotals();
+        _voiceToast('Qty: ' + n);
+      } else if (fieldType === 'disc') {
+        if (!row) return;
+        const n = _parseSpokenNumber(text) || 0;
+        row.querySelector('[data-field="disc"]').value = n;
+        recalcTotals();
+        _voiceToast('Diskon: ' + fmtRp(n));
+      }
+    }
     function startVoiceCommandJual() {
       if (!isVoiceCommandSupported()) {
         return Swal.fire({ icon:'info', title:'Belum Didukung', text:'Perintah suara belum didukung di browser ini. Coba pakai Google Chrome (Android/desktop).' });
@@ -1925,8 +1991,8 @@
              saja, lihat startVoiceCommandJual() untuk detail cara kerjanya. -->
         <button type="button" class="btn btn-outline btn-block" onclick="startVoiceCommandJual()" style="margin-bottom:10px;border-color:#EF4444;color:#EF4444"><i class="fas fa-microphone"></i> 🎙️ Perintah Suara</button>
         <div class="form-group"><label>ID Transaksi</label><input id="trxId" readonly style="font-family:var(--mono)" value="${trxIdVal}"></div>
-        <div class="flex-row"><div class="form-group col-1"><label>Tanggal</label><input type="date" id="trxTgl"></div><div class="form-group col-1"><label>Pelanggan *</label><input id="trxCust" placeholder="Nama pelanggan" list="custDatalist" autocomplete="off"><datalist id="custDatalist">${cDatalist}</datalist></div></div>
-        <div class="flex-row"><div class="form-group col-1"><label>Sales *</label><select id="trxSales">${sOpts}</select></div><div class="form-group col-1"><label>Status</label><select id="trxStatus"><option value="">-- Pilih --</option><option value="belumTransfer">Belum Transfer</option><option value="cod">COD</option><option value="transfer">Transfer</option><option value="qris">QRIS</option></select></div></div>
+        <div class="flex-row"><div class="form-group col-1"><label>Tanggal</label><input type="date" id="trxTgl"></div><div class="form-group col-1"><label>Pelanggan *</label><div style="display:flex;gap:4px"><input id="trxCust" placeholder="Nama pelanggan" list="custDatalist" autocomplete="off" style="flex:1;min-width:0"><button type="button" onclick="startFieldVoiceInput('customer', this)" title="Isi dengan suara" style="${MIC_BTN_STYLE}"><i class="fas fa-microphone"></i></button></div><datalist id="custDatalist">${cDatalist}</datalist></div></div>
+        <div class="flex-row"><div class="form-group col-1"><label>Sales *</label><div style="display:flex;gap:4px"><select id="trxSales" style="flex:1;min-width:0">${sOpts}</select><button type="button" onclick="startFieldVoiceInput('sales', this)" title="Isi dengan suara" style="${MIC_BTN_STYLE}"><i class="fas fa-microphone"></i></button></div></div><div class="form-group col-1"><label>Status</label><div style="display:flex;gap:4px"><select id="trxStatus" style="flex:1;min-width:0"><option value="">-- Pilih --</option><option value="belumTransfer">Belum Transfer</option><option value="cod">COD</option><option value="transfer">Transfer</option><option value="qris">QRIS</option></select><button type="button" onclick="startFieldVoiceInput('status', this)" title="Isi dengan suara" style="${MIC_BTN_STYLE}"><i class="fas fa-microphone"></i></button></div></div></div>
         <div class="form-group"><label>Diskon Global (Rp)</label><input type="number" id="trxDiscGlobal" placeholder="0" min="0" oninput="recalcTotals()"></div>
         </div>
         <div class="card jual-col-right"><div class="card-title"><i class="fas fa-box-open"></i> Item</div>
@@ -2127,11 +2193,11 @@
       const div = document.createElement('div');
       div.className = 'cart-item-row';
       div.innerHTML = `
-        <input class="cart-item-select" data-field="sku" placeholder="SKU" list="productDatalist" value="${skuVal||''}" autocomplete="off" style="flex:2;min-width:100px">
+        <div style="display:flex;gap:2px;flex:2;min-width:100px"><input class="cart-item-select" data-field="sku" placeholder="SKU" list="productDatalist" value="${skuVal||''}" autocomplete="off" style="flex:1;min-width:0"><button type="button" onclick="startFieldVoiceInput('sku', this)" title="Isi barang dengan suara" style="${MIC_BTN_STYLE}"><i class="fas fa-microphone"></i></button></div>
         <input class="cart-nama" data-field="nama" readonly placeholder="Nama" style="width:110px;background:var(--biru-muda);font-size:0.7rem;text-align:center;border:1px solid var(--border);border-radius:8px;padding:6px 4px;">
-        <input class="cart-qty" data-field="qty" type="number" min="1" placeholder="0" style="width:55px">
+        <div style="display:flex;gap:2px"><input class="cart-qty" data-field="qty" type="number" min="1" placeholder="0" style="width:55px"><button type="button" onclick="startFieldVoiceInput('qty', this)" title="Isi qty dengan suara" style="${MIC_BTN_STYLE}"><i class="fas fa-microphone"></i></button></div>
         <input class="cart-disc" data-field="harga" type="number" min="0" placeholder="Harga" value="" style="width:70px">
-        <input class="cart-disc" data-field="disc" type="number" min="0" placeholder="Disc" value="" style="width:55px">
+        <div style="display:flex;gap:2px"><input class="cart-disc" data-field="disc" type="number" min="0" placeholder="Disc" value="" style="width:55px"><button type="button" onclick="startFieldVoiceInput('disc', this)" title="Isi diskon dengan suara" style="${MIC_BTN_STYLE}"><i class="fas fa-microphone"></i></button></div>
         <button class="btn btn-danger btn-sm" onclick="this.parentElement.remove();recalcTotals()">✕</button>`;
       const skuInput = div.querySelector('[data-field="sku"]');
       const namaInput = div.querySelector('[data-field="nama"]');
