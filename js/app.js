@@ -1732,7 +1732,8 @@
         html: `<style>@keyframes voicePulse{0%{box-shadow:0 0 0 0 rgba(239,68,68,.5)}70%{box-shadow:0 0 0 18px rgba(239,68,68,0)}100%{box-shadow:0 0 0 0 rgba(239,68,68,0)}}</style>
           <div style="text-align:center">
             <div style="width:70px;height:70px;border-radius:50%;background:linear-gradient(135deg,#EF4444,#F87171);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;animation:voicePulse 1.4s infinite"><i class="fas fa-microphone" style="color:#fff;font-size:28px"></i></div>
-            <p style="font-size:0.78rem;color:#5a7a90">Contoh: <i>"pelanggan Budi, Aqua Galon, qty 2, diskon 2000"</i></p>
+            <p style="font-size:0.78rem;color:#5a7a90;text-align:left">Contoh 1 barang:<br><i>"pelanggan Budi, sales Hasan, status COD, Aqua Galon qty 2 diskon 2000"</i></p>
+            <p style="font-size:0.78rem;color:#5a7a90;text-align:left;margin-top:6px">Contoh lebih dari 1 barang (pisahkan dengan kata "dan"):<br><i>"pelanggan Budi, sales Hasan, status transfer, Aqua Galon qty 2 diskon 2000, dan Isi Ulang qty 3, dan Vit 600ml qty 1"</i></p>
           </div>`,
         showConfirmButton: false, showCancelButton: true, cancelButtonText: 'Batal', allowOutsideClick: false,
         didOpen: () => { try { rec.start(); } catch(e) { Swal.close(); } },
@@ -1783,52 +1784,102 @@
       });
       return bestScore > 0 ? best : null;
     }
+    // [NEW] Cocokkan nama sales yang diucapkan ke daftar sales yang ada
+    // (settings.salesList) - sales HARUS dipilih dari daftar (bukan teks bebas),
+    // jadi dicocokkan mirip seperti produk, bukan langsung dipakai apa adanya.
+    function _fuzzyMatchSales(text) {
+      text = (text||'').trim().toLowerCase();
+      if (!text) return null;
+      let best = null, bestScore = 0;
+      (settings.salesList||[]).forEach(s => {
+        const sl = s.toLowerCase();
+        let score = 0;
+        if (sl === text) score += 100;
+        else if (sl.includes(text) || text.includes(sl)) score += 10;
+        if (score > bestScore) { bestScore = score; best = s; }
+      });
+      return bestScore > 0 ? best : null;
+    }
+    // [NEW] Cocokkan kata status yang diucapkan ke salah satu opsi status yang
+    // valid. Dicek "belum" LEBIH DULU supaya "belum transfer"/"belum bayar"
+    // tidak salah kecocok jadi "transfer".
+    function _matchStatus(text) {
+      text = (text||'').trim().toLowerCase();
+      if (!text) return null;
+      if (text.includes('belum')) return 'belumTransfer';
+      if (text.includes('cod')) return 'cod';
+      if (text.includes('qris')) return 'qris';
+      if (text.includes('transfer')) return 'transfer';
+      return null;
+    }
+    // [NEW] Uraikan SATU segmen barang (qty & diskon lokal ke segmen itu saja),
+    // dipakai berulang untuk tiap barang kalau user sebut lebih dari 1 barang.
+    function _parseItemSegment(segText) {
+      let disc = 0;
+      const discMatch = segText.match(/(?:diskon|potongan)\s+([a-z0-9\s]+?)$/);
+      if (discMatch) { disc = _parseSpokenNumber(discMatch[1]); segText = segText.replace(discMatch[0], ' '); }
+      let qty = 0;
+      const qtyMatch = segText.match(/(?:qty|jumlah|sebanyak|banyak)\s+([a-z0-9\s]+?)$/);
+      if (qtyMatch) { qty = _parseSpokenNumber(qtyMatch[1]) || 1; segText = segText.replace(qtyMatch[0], ' '); }
+      segText = segText.replace(/\b(?:qty|jumlah|sebanyak|banyak|diskon|potongan)\b/g, ' ');
+      if (!qty) {
+        const inlineNum = segText.match(/\b(\d+)\b/);
+        if (inlineNum) { qty = parseInt(inlineNum[1]); segText = segText.replace(inlineNum[0], ' '); }
+      }
+      segText = segText.replace(/\s+/g, ' ').trim();
+      return { productText: segText, matchedProduct: _fuzzyMatchProduct(segText), qty: qty || 1, disc };
+    }
+    // [CHANGED] Sekarang mengenali Sales & Status juga (sebelumnya cuma
+    // pelanggan+barang+qty+diskon), DAN bisa mengenali LEBIH DARI 1 barang
+    // dalam satu ucapan - pisahkan tiap barang dengan kata "dan" atau koma,
+    // mis: "..., Aqua Galon qty 2, dan Isi Ulang qty 3".
     function processVoiceCommandJual(transcript) {
       const original = transcript;
       let text = transcript.toLowerCase();
-      let customer = null, custMatchFull = null, discMatchFull = null, qtyMatchFull = null;
-      const custMatch = text.match(/(?:pelanggan|customer|untuk|buat)\s+([a-z0-9\s]+?)(?:,|\s+(?:qty|jumlah|sebanyak|diskon|potongan)\b|$)/);
-      if (custMatch) { customer = custMatch[1].trim(); custMatchFull = custMatch[0]; }
-      let disc = 0;
-      const discMatch = text.match(/(?:diskon|potongan)\s+([a-z0-9\s]+?)(?:,|$)/);
-      if (discMatch) { disc = _parseSpokenNumber(discMatch[1]); discMatchFull = discMatch[0]; }
-      let qty = 0;
-      const qtyMatch = text.match(/(?:qty|jumlah|sebanyak|banyak)\s+([a-z0-9\s]+?)(?:,|\s+diskon|\s+potongan|$)/);
-      if (qtyMatch) { qty = _parseSpokenNumber(qtyMatch[1]) || 1; qtyMatchFull = qtyMatch[0]; }
-      let productText = text;
-      [custMatchFull, discMatchFull, qtyMatchFull].forEach(m => { if (m) productText = productText.replace(m, ' '); });
-      productText = productText.replace(/\b(?:qty|jumlah|sebanyak|banyak|diskon|potongan|pelanggan|customer|untuk|buat)\b/g, ' ');
-      if (!qty) {
-        const inlineNum = productText.match(/\b(\d+)\b/);
-        if (inlineNum) { qty = parseInt(inlineNum[1]); productText = productText.replace(inlineNum[0], ' '); }
-      }
-      productText = productText.replace(/\s+/g, ' ').trim();
-      const matchedProduct = _fuzzyMatchProduct(productText);
-      showVoiceCommandPreview({ original, customer, matchedProduct, qty: qty || 1, disc });
+      let customer = null;
+      const custMatch = text.match(/(?:pelanggan|customer|untuk|buat)\s+([a-z0-9\s]+?)(?:,|\s+(?:sales|status|qty|jumlah|sebanyak|diskon|potongan|dan)\b|$)/);
+      if (custMatch) { customer = custMatch[1].trim(); text = text.replace(custMatch[0], ' , '); }
+      let salesName = null;
+      const salesMatch = text.match(/\bsales\s+([a-z0-9\s]+?)(?:,|\s+(?:status|qty|jumlah|sebanyak|diskon|potongan|dan)\b|$)/);
+      if (salesMatch) { salesName = _fuzzyMatchSales(salesMatch[1].trim()); text = text.replace(salesMatch[0], ' , '); }
+      let status = null;
+      const statusMatch = text.match(/\bstatus\s+([a-z0-9\s]+?)(?:,|\s+(?:sales|qty|jumlah|sebanyak|diskon|potongan|dan)\b|$)/);
+      if (statusMatch) { status = _matchStatus(statusMatch[1].trim()); text = text.replace(statusMatch[0], ' , '); }
+      // Sisa teks dibagi jadi beberapa segmen barang - dipisah kata "dan" atau koma
+      const segments = text.split(/\bdan\b|,/).map(s => s.trim()).filter(s => s.length > 1);
+      const items = segments.map(_parseItemSegment).filter(it => it.matchedProduct);
+      showVoiceCommandPreview({ original, customer, salesName, status, items });
     }
     function showVoiceCommandPreview(parsed) {
-      const { original, customer, matchedProduct, qty, disc } = parsed;
+      const { original, customer, salesName, status, items } = parsed;
       const custExists = customer && allCustomers.some(c => c.toLowerCase() === customer.toLowerCase());
+      const statusLabel = { cod:'COD', transfer:'Transfer', qris:'QRIS', belumTransfer:'Belum Transfer' };
+      const itemsHtml = items.length ? items.map(it => `
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9">
+          <span style="font-size:0.8rem">${esc(it.matchedProduct.nama)}</span>
+          <span style="font-size:0.75rem;color:#5a7a90">qty ${it.qty}${it.disc?' · disc '+fmtRp(it.disc):''}</span>
+        </div>`).join('') : `<div style="padding:8px 0;color:#DC2626;font-size:0.78rem">Tidak ada barang yang berhasil dikenali</div>`;
       const html = `<div style="text-align:left">
         <div style="background:#F1F5F9;border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:0.72rem;color:#5a7a90"><i class="fas fa-quote-left"></i> "${esc(original)}"</div>
-        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9"><span style="color:#5a7a90;font-size:0.78rem">Pelanggan</span><span style="font-weight:700;font-size:0.82rem">${customer ? esc(customer) + (custExists ? '' : ' <span style="color:#16A34A;font-size:0.65rem">(baru, akan dibuat)</span>') : '<span style="color:#DC2626">Tidak terdengar</span>'}</span></div>
-        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9"><span style="color:#5a7a90;font-size:0.78rem">Barang</span><span style="font-weight:700;font-size:0.82rem">${matchedProduct ? esc(matchedProduct.nama) : '<span style="color:#DC2626">Tidak ditemukan</span>'}</span></div>
-        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9"><span style="color:#5a7a90;font-size:0.78rem">Qty</span><span style="font-weight:700;font-size:0.82rem">${qty}</span></div>
-        <div style="display:flex;justify-content:space-between;padding:6px 0"><span style="color:#5a7a90;font-size:0.78rem">Diskon</span><span style="font-weight:700;font-size:0.82rem">${fmtRp(disc)}</span></div>
-        <p style="font-size:0.65rem;color:#94A3B8;margin-top:10px">Periksa dulu sebelum diisi ke formulir - pengenalan suara kadang bisa salah dengar/cocok.</p>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9"><span style="color:#5a7a90;font-size:0.78rem">Pelanggan</span><span style="font-weight:700;font-size:0.82rem">${customer ? esc(customer) + (custExists ? '' : ' <span style="color:#16A34A;font-size:0.65rem">(baru, akan dibuat)</span>') : '<span style="color:#94A3B8">- (tidak disebut)</span>'}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9"><span style="color:#5a7a90;font-size:0.78rem">Sales</span><span style="font-weight:700;font-size:0.82rem">${salesName ? esc(salesName) : '<span style="color:#94A3B8">- (tidak disebut)</span>'}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9"><span style="color:#5a7a90;font-size:0.78rem">Status</span><span style="font-weight:700;font-size:0.82rem">${status ? statusLabel[status] : '<span style="color:#94A3B8">- (tidak disebut)</span>'}</span></div>
+        <div style="font-weight:700;font-size:0.78rem;color:#0D2B3E;margin:10px 0 2px">Barang (${items.length})</div>
+        ${itemsHtml}
+        <p style="font-size:0.65rem;color:#94A3B8;margin-top:10px">Periksa dulu sebelum diisi ke formulir - pengenalan suara kadang bisa salah dengar/cocok. Field yang "tidak disebut" tidak akan diubah di formulir.</p>
       </div>`;
       Swal.fire({
-        title: matchedProduct ? '✅ Berhasil Dikenali' : '⚠️ Barang Tidak Dikenali',
+        title: items.length ? '✅ Berhasil Dikenali' : '⚠️ Barang Tidak Dikenali',
         html, showCancelButton: true,
-        confirmButtonText: matchedProduct ? 'Isi ke Formulir' : '🎙️ Coba Lagi',
+        confirmButtonText: items.length ? 'Isi ke Formulir' : '🎙️ Coba Lagi',
         cancelButtonText: 'Batal'
       }).then(r => {
         if (!r.isConfirmed) return;
-        if (matchedProduct) applyVoiceCommandToForm(parsed); else startVoiceCommandJual();
+        if (items.length) applyVoiceCommandToForm(parsed); else startVoiceCommandJual();
       });
     }
     function applyVoiceCommandToForm(parsed) {
-      const { customer, matchedProduct, qty, disc } = parsed;
+      const { customer, salesName, status, items } = parsed;
       if (customer) {
         const custInput = document.getElementById('trxCust');
         if (custInput) custInput.value = customer;
@@ -1837,17 +1888,23 @@
           const dl = document.getElementById('custDatalist'); if (dl) dl.innerHTML += `<option value="${esc(customer)}">`;
         }
       }
-      let rows = document.querySelectorAll('#itemsContainer .cart-item-row');
-      let targetRow = null;
-      rows.forEach(row => { if (!targetRow && !row.querySelector('[data-field="sku"]').value.trim()) targetRow = row; });
-      if (!targetRow) { addItemRow(); rows = document.querySelectorAll('#itemsContainer .cart-item-row'); targetRow = rows[rows.length-1]; }
-      const skuInput = targetRow.querySelector('[data-field="sku"]');
-      skuInput.value = matchedProduct.sku;
-      skuInput.dispatchEvent(new Event('input')); // supaya nama & harga ikut terisi otomatis (logika sudah ada di addItemRow)
-      targetRow.querySelector('[data-field="qty"]').value = qty;
-      targetRow.querySelector('[data-field="disc"]').value = disc;
+      if (salesName) { const sel = document.getElementById('trxSales'); if (sel) sel.value = salesName; }
+      if (status) { const sel = document.getElementById('trxStatus'); if (sel) sel.value = status; }
+      // [CHANGED] Sekarang mengisi SEMUA barang yang dikenali (dulu cuma 1) -
+      // barang pertama memakai baris kosong yang ada, sisanya nambah baris baru.
+      items.forEach((it, idx) => {
+        let rows = document.querySelectorAll('#itemsContainer .cart-item-row');
+        let targetRow = null;
+        if (idx === 0) rows.forEach(row => { if (!targetRow && !row.querySelector('[data-field="sku"]').value.trim()) targetRow = row; });
+        if (!targetRow) { addItemRow(); rows = document.querySelectorAll('#itemsContainer .cart-item-row'); targetRow = rows[rows.length-1]; }
+        const skuInput = targetRow.querySelector('[data-field="sku"]');
+        skuInput.value = it.matchedProduct.sku;
+        skuInput.dispatchEvent(new Event('input')); // supaya nama & harga ikut terisi otomatis (logika sudah ada di addItemRow)
+        targetRow.querySelector('[data-field="qty"]').value = it.qty;
+        targetRow.querySelector('[data-field="disc"]').value = it.disc;
+      });
       recalcTotals();
-      Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1800, icon: 'success', title: '🎙️ Terisi otomatis!' });
+      Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1800, icon: 'success', title: `🎙️ ${items.length} barang terisi otomatis!` });
     }
 
     // ========== PENJUALAN (sama seperti sebelumnya) ==========
