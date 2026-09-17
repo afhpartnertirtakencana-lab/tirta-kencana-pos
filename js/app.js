@@ -1745,6 +1745,7 @@
       try { rec.start(); } catch(e) { restoreBtn(); }
     }
     function applyFieldVoiceResult(fieldType, transcript, row) {
+      try {
       const text = transcript.trim();
       if (fieldType === 'customer') {
         // [CHANGED] Cek dulu apakah ucapan ini cocok dengan pelanggan yang SUDAH
@@ -1791,6 +1792,10 @@
         row.querySelector('[data-field="disc"]').value = n;
         recalcTotals();
         _voiceToast('Diskon: ' + fmtRp(n));
+      }
+      } catch (err) {
+        console.error('Gagal proses perintah suara:', err);
+        _voiceToast('Gagal memproses: ' + (err.message||'error tidak dikenal'), true);
       }
     }
     function startVoiceCommandJual() {
@@ -1882,11 +1887,20 @@
         let score = 0;
         if (cLower === text) score += 100;
         else if (cLower.includes(text) || text.includes(cLower)) score += 20;
-        words.forEach(w => { if (cLower.includes(w)) score += 3; });
-        if (words.every(w => cLower.includes(w))) score += 6;
+        // [FIX] Ini akar bug "voice command pelanggan belum terbaca" - kata umum
+        // yang sering muncul di banyak nama pelanggan (mis. "Toko", "WTC")
+        // sebelumnya SENDIRIAN sudah cukup bikin skor > 0 dan otomatis "matched"
+        // ke pelanggan LAIN yang tidak ada hubungannya, menimpa nama yang
+        // sebenarnya diucapkan. Sekarang overlap kata-per-kata cuma dihitung
+        // kalau SEMUA kata yang diucapkan ketemu di nama itu (bukan sebagian),
+        // dan skor minimal untuk dianggap "cocok" dinaikkan jauh lebih tinggi -
+        // jadi cuma nama yang benar-benar sama/mengandung penuh yang otomatis
+        // dipakai; selain itu tetap dianggap pelanggan baru (lebih aman
+        // daripada salah menimpa ke pelanggan yang berbeda).
+        if (words.length > 1 && words.every(w => cLower.includes(w))) score += 15;
         if (score > bestScore) { bestScore = score; best = c; }
       });
-      return bestScore > 0 ? best : null;
+      return bestScore >= 20 ? best : null;
     }
     // [NEW] Cocokkan nama sales yang diucapkan ke daftar sales yang ada
     // (settings.salesList) - sales HARUS dipilih dari daftar (bukan teks bebas),
