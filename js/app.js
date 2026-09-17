@@ -1779,7 +1779,7 @@
           skuInput.value = matched.sku;
           skuInput.dispatchEvent(new Event('input'));
           _voiceToast('Barang: ' + matched.nama);
-        } else _voiceToast('Barang "' + text + '" tidak ditemukan', true);
+        } else _voiceToast('Barang "' + text + '" tidak ditemukan/mirip 2 barang sekaligus - coba sebut nama lebih lengkap', true);
       } else if (fieldType === 'qty') {
         if (!row) return;
         const n = _parseSpokenNumber(text) || 1;
@@ -1858,17 +1858,39 @@
       text = text.replace(/\b(\w{3,})nya\b/g, '$1').replace(/\b(nih|tuh|dong|ya|itu)\b/g, ' ').replace(/\s+/g, ' ').trim();
       const words = text.split(/\s+/).filter(w => w.length > 1);
       if (!words.length) return null;
-      let best = null, bestScore = 0;
+      const compact = text.replace(/\s+/g, '');
+      // [FIX] Bug lama: tiap kata yang cocok cuma ditambah +3 poin datar - kalau
+      // 2 produk BEDA sama-sama cuma cocok SEBAGIAN (mis. "vit galon": kata
+      // "vit" cocok ke produk Vit, kata "galon" cocok ke Aqua Galon), skornya
+      // gampang KEBETULAN SAMA, dan yang menang cuma karena urutannya duluan di
+      // data (bukan karena benar-benar lebih cocok) - ini sebabnya "Vit Galon"
+      // salah kepilih jadi "Aqua Galon", dan kenapa produk Vit sering tidak
+      // kepilih padahal namanya disebut.
+      // Sekarang pakai skor berbasis PROPORSI kata yang ketemu: produk yang
+      // SEMUA kata-nya cocok dapat skor jauh lebih tinggi (200+) yang TIDAK
+      // MUNGKIN disaingi produk yang cuma cocok sebagian (maks ~40) - jadi
+      // urutan data sama sekali tidak lagi berpengaruh ke hasil. Kalau skor
+      // TERBAIK & KEDUA TERBAIK ternyata SAMA PERSIS (benar-benar ambigu,
+      // seperti kasus "vit galon" di atas), pilih TIDAK ADA produk sama sekali
+      // - lebih aman minta ulang daripada salah pilih barang.
+      let best = null, bestScore = 0, secondScore = 0;
       products.forEach(p => {
         const nameLower = (p.nama||'').toLowerCase();
         const skuLower = (p.sku||'').toLowerCase();
         let score = 0;
-        if (skuLower === text.replace(/\s+/g,'')) score += 100;
-        if (nameLower === text) score += 50;
-        words.forEach(w => { if (nameLower.includes(w)) score += 3; if (skuLower.includes(w)) score += 2; });
-        if (words.every(w => nameLower.includes(w))) score += 6; // bonus kalau SEMUA kata yang diucapkan ketemu di nama produk
-        if (score > bestScore) { bestScore = score; best = p; }
+        if (skuLower === compact) score = 1000;
+        else if (nameLower === text) score = 500;
+        else {
+          const matchedWords = words.filter(w => nameLower.includes(w));
+          const coverage = matchedWords.length / words.length;
+          if (coverage === 1) score = 200 + words.length * 5;
+          else if (coverage > 0) score = coverage * 40;
+          words.forEach(w => { if (skuLower.includes(w)) score += 1; });
+        }
+        if (score > bestScore) { secondScore = bestScore; best = p; bestScore = score; }
+        else if (score > secondScore) { secondScore = score; }
       });
+      if (bestScore > 0 && bestScore === secondScore) return null; // ambigu - jangan asal tebak
       return bestScore > 0 ? best : null;
     }
     // [NEW] Cocokkan nama pelanggan yang diucapkan ke daftar pelanggan yang
