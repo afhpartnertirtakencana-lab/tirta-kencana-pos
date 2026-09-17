@@ -1747,13 +1747,21 @@
     function applyFieldVoiceResult(fieldType, transcript, row) {
       const text = transcript.trim();
       if (fieldType === 'customer') {
+        // [CHANGED] Cek dulu apakah ucapan ini cocok dengan pelanggan yang SUDAH
+        // ADA (walau cuma sebagian nama, mis. "Budi" -> "Budi Toko Maju") -
+        // kalau ketemu, pakai nama yang sudah ada itu (supaya tidak dobel).
+        // Kalau benar-benar tidak ada yang cocok, baru dianggap pelanggan baru.
+        const matched = _fuzzyMatchCustomer(text);
+        const finalName = matched || text;
         const custInput = document.getElementById('trxCust');
-        if (custInput) custInput.value = text;
-        if (!allCustomers.some(c => c.toLowerCase() === text.toLowerCase())) {
+        if (custInput) custInput.value = finalName;
+        if (!matched) {
           allCustomers.push(text); pelanggan = allCustomers.slice(); saveLocalData(); syncCustomersToSheet();
           const dl = document.getElementById('custDatalist'); if (dl) dl.innerHTML += `<option value="${esc(text)}">`;
+          _voiceToast('Pelanggan baru: ' + text);
+        } else {
+          _voiceToast('Pelanggan: ' + matched);
         }
-        _voiceToast('Pelanggan: ' + text);
       } else if (fieldType === 'sales') {
         const matched = _fuzzyMatchSales(text);
         if (matched) { document.getElementById('trxSales').value = matched; _voiceToast('Sales: ' + matched); }
@@ -1834,9 +1842,15 @@
     }
     // Cocokkan sisa teks (setelah kata kunci pelanggan/qty/diskon dibuang) ke
     // produk yang ada, berdasar kemiripan kata (bukan harus sama persis).
+    // [CHANGED] Diperkuat supaya cukup sebut SEBAGIAN kata saja (mis. "ulang"
+    // atau "isi ulang" cukup buat kena produk "Isi Ulang" / SKU "bst") - tidak
+    // perlu sebut nama lengkapnya. Juga membuang akhiran bicara lisan sehari-
+    // hari ("nya","dong","nih") yang sering ikut terekam suara, mis. "isi
+    // ulangnya" tetap dicocokkan sebagai "isi ulang".
     function _fuzzyMatchProduct(text) {
       text = (text||'').trim().toLowerCase();
       if (!text) return null;
+      text = text.replace(/\b(\w{3,})nya\b/g, '$1').replace(/\b(nih|tuh|dong|ya|itu)\b/g, ' ').replace(/\s+/g, ' ').trim();
       const words = text.split(/\s+/).filter(w => w.length > 1);
       if (!words.length) return null;
       let best = null, bestScore = 0;
@@ -1845,8 +1859,32 @@
         const skuLower = (p.sku||'').toLowerCase();
         let score = 0;
         if (skuLower === text.replace(/\s+/g,'')) score += 100;
+        if (nameLower === text) score += 50;
         words.forEach(w => { if (nameLower.includes(w)) score += 3; if (skuLower.includes(w)) score += 2; });
+        if (words.every(w => nameLower.includes(w))) score += 6; // bonus kalau SEMUA kata yang diucapkan ketemu di nama produk
         if (score > bestScore) { bestScore = score; best = p; }
+      });
+      return bestScore > 0 ? best : null;
+    }
+    // [NEW] Cocokkan nama pelanggan yang diucapkan ke daftar pelanggan yang
+    // SUDAH ADA - supaya sebutan sebagian nama (mis. "Budi" utk pelanggan
+    // "Budi Toko Maju") tetap kena pelanggan yang sama, BUKAN bikin pelanggan
+    // baru "Budi" yang jadi duplikat. Kalau memang tidak ketemu sama sekali
+    // (tidak ada kecocokan), baru dianggap pelanggan baru.
+    function _fuzzyMatchCustomer(text) {
+      text = (text||'').trim().toLowerCase();
+      if (!text) return null;
+      const words = text.split(/\s+/).filter(w => w.length > 1);
+      if (!words.length) return null;
+      let best = null, bestScore = 0;
+      allCustomers.forEach(c => {
+        const cLower = c.toLowerCase();
+        let score = 0;
+        if (cLower === text) score += 100;
+        else if (cLower.includes(text) || text.includes(cLower)) score += 20;
+        words.forEach(w => { if (cLower.includes(w)) score += 3; });
+        if (words.every(w => cLower.includes(w))) score += 6;
+        if (score > bestScore) { bestScore = score; best = c; }
       });
       return bestScore > 0 ? best : null;
     }
@@ -1904,7 +1942,7 @@
       let text = transcript.toLowerCase();
       let customer = null;
       const custMatch = text.match(/(?:pelanggan|customer|untuk|buat)\s+([a-z0-9\s]+?)(?:,|\s+(?:sales|status|qty|jumlah|sebanyak|diskon|potongan|dan)\b|$)/);
-      if (custMatch) { customer = custMatch[1].trim(); text = text.replace(custMatch[0], ' , '); }
+      if (custMatch) { const raw = custMatch[1].trim(); customer = _fuzzyMatchCustomer(raw) || raw; text = text.replace(custMatch[0], ' , '); }
       let salesName = null;
       const salesMatch = text.match(/\bsales\s+([a-z0-9\s]+?)(?:,|\s+(?:status|qty|jumlah|sebanyak|diskon|potongan|dan)\b|$)/);
       if (salesMatch) { salesName = _fuzzyMatchSales(salesMatch[1].trim()); text = text.replace(salesMatch[0], ' , '); }
