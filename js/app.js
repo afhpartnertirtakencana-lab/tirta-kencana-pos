@@ -1,4 +1,9 @@
-    // Sembunyikan splash setelah app siap (atau maksimal 2.2 detik), lalu hapus dari DOM
+    // [FIX] Sebelumnya splash disembunyikan maksimal 2.2 detik (atau 0.9 detik
+    // setelah window "load") - video logo (logo_reveal.mp4, durasi ~8 detik)
+    // jadi SELALU terpotong sebelum selesai diputar. Sekarang splash baru
+    // disembunyikan setelah videonya BENAR-BENAR SELESAI (event "ended").
+    // Tetap ada batas waktu maksimal sebagai jaga-jaga (mis. kalau videonya
+    // gagal diputar/diblokir browser) supaya splash tidak nyangkut selamanya.
     (function() {
       function hidePwaSplash() {
         var el = document.getElementById('pwaSplash');
@@ -7,8 +12,14 @@
         el.style.visibility = 'hidden';
         setTimeout(function() { if (el.parentNode) el.parentNode.removeChild(el); }, 550);
       }
-      setTimeout(hidePwaSplash, 2200);
-      window.addEventListener('load', function() { setTimeout(hidePwaSplash, 900); });
+      var hidden = false;
+      function hideOnce() { if (hidden) return; hidden = true; hidePwaSplash(); }
+      var vid = document.querySelector('#pwaSplash video');
+      if (vid) {
+        vid.addEventListener('ended', hideOnce);
+        vid.addEventListener('error', function() { setTimeout(hideOnce, 2200); }); // video gagal dimuat - jangan tunggu lama, langsung fallback ke gambar statis (lihat onerror di elemen video) & tutup splash lebih cepat
+      }
+      setTimeout(hideOnce, 9000); // jaga-jaga mutlak - sedikit lebih lama dari durasi video, supaya splash tidak pernah nyangkut selamanya
     })();
 
     // [NEW] Cek Transaksi Publik — kalau URL-nya ?cek=1 (atau apa saja setelah "cek="),
