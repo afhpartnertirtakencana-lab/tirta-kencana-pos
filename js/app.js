@@ -1,9 +1,7 @@
-    // [FIX] Sebelumnya splash disembunyikan maksimal 2.2 detik (atau 0.9 detik
-    // setelah window "load") - video logo (logo_reveal.mp4, durasi ~8 detik)
-    // jadi SELALU terpotong sebelum selesai diputar. Sekarang splash baru
-    // disembunyikan setelah videonya BENAR-BENAR SELESAI (event "ended").
-    // Tetap ada batas waktu maksimal sebagai jaga-jaga (mis. kalau videonya
-    // gagal diputar/diblokir browser) supaya splash tidak nyangkut selamanya.
+    // [CHANGED] Logo splash sekarang animasi SVG+CSS murni (bukan video lagi),
+    // jadi splash disembunyikan setelah waktu tetap (cukup untuk animasi
+    // cincin+tetesan air selesai sekali, ±1.3 detik) - atau lebih cepat lagi
+    // begitu window "load" selesai, mana yang lebih dulu, sama seperti sedia kala.
     (function() {
       function hidePwaSplash() {
         var el = document.getElementById('pwaSplash');
@@ -12,14 +10,8 @@
         el.style.visibility = 'hidden';
         setTimeout(function() { if (el.parentNode) el.parentNode.removeChild(el); }, 550);
       }
-      var hidden = false;
-      function hideOnce() { if (hidden) return; hidden = true; hidePwaSplash(); }
-      var vid = document.querySelector('#pwaSplash video');
-      if (vid) {
-        vid.addEventListener('ended', hideOnce);
-        vid.addEventListener('error', function() { setTimeout(hideOnce, 2200); }); // video gagal dimuat - jangan tunggu lama, langsung fallback ke gambar statis (lihat onerror di elemen video) & tutup splash lebih cepat
-      }
-      setTimeout(hideOnce, 9000); // jaga-jaga mutlak - sedikit lebih lama dari durasi video, supaya splash tidak pernah nyangkut selamanya
+      setTimeout(hidePwaSplash, 2200);
+      window.addEventListener('load', function() { setTimeout(hidePwaSplash, 900); });
     })();
 
     // [NEW] Cek Transaksi Publik — kalau URL-nya ?cek=1 (atau apa saja setelah "cek="),
