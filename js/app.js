@@ -418,7 +418,18 @@
           publicKey: { challenge: _randBytes(32), allowCredentials: [{ id: raw, type: 'public-key' }], userVerification: 'required', timeout: 60000 }
         });
         return !!assertion;
-      } catch (e) { return false; }
+      } catch (e) {
+        // [FIX] Sebelumnya error apapun didiamkan total (cuma return false) -
+        // kalau kredensial yang tersimpan sudah tidak valid lagi di perangkat
+        // (mis. sidik jari di-reset, ganti HP, atau browser/OS update), user
+        // akan terjebak selamanya di "Verifikasi gagal/dibatalkan" tanpa tahu
+        // sebabnya & tanpa jalan keluar selain "Gunakan Password". Sekarang
+        // errornya dicatat (buat didiagnosis) & kalau memang kredensialnya yang
+        // bermasalah, ditawarkan langsung untuk daftar ulang.
+        console.warn('Biometric unlock gagal:', e.name, e.message);
+        window._lastBioError = e;
+        return false;
+      }
     }
     function showBioLockScreen() {
       const el = document.getElementById('bioLockScreen');
@@ -1738,10 +1749,18 @@
       const origIcon = btnEl.innerHTML;
       btnEl.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
       btnEl.disabled = true;
-      const restoreBtn = () => { btnEl.innerHTML = origIcon; btnEl.disabled = false; };
+      let handled = false;
+      const restoreBtn = () => { handled = true; btnEl.innerHTML = origIcon; btnEl.disabled = false; };
       rec.onresult = (e) => { restoreBtn(); applyFieldVoiceResult(fieldType, e.results[0][0].transcript, row); };
       rec.onerror = () => { restoreBtn(); _voiceToast('Tidak terdengar jelas, coba lagi', true); };
       rec.onspeechend = () => rec.stop();
+      // [FIX] Sebelumnya tidak ada pengaman ini - kalau proses pengenalan suara
+      // SELESAI tanpa memicu onresult ATAUPUN onerror (bisa terjadi di sebagian
+      // browser/HP kalau suaranya kurang jelas terdengar), tombolnya tetap
+      // "berputar" & tidak bisa dipencet lagi SELAMANYA. Sekarang tombol PASTI
+      // balik ke ikon mic normal begitu proses pengenalan berakhir, apapun
+      // hasilnya - jadi selalu bisa dicoba lagi.
+      rec.onend = () => { if (!handled) restoreBtn(); };
       try { rec.start(); } catch(e) { restoreBtn(); }
     }
     function applyFieldVoiceResult(fieldType, transcript, row) {
@@ -1821,6 +1840,10 @@
       rec.onresult = (e) => { handled = true; const transcript = e.results[0][0].transcript; Swal.close(); processVoiceCommandJual(transcript); };
       rec.onerror = (e) => { if (handled) return; handled = true; Swal.close(); Swal.fire({ icon:'error', title:'Gagal Menangkap Suara', text: 'Tidak terdengar jelas, coba lagi. (' + (e.error||'error') + ')' }); };
       rec.onspeechend = () => { rec.stop(); };
+      // [FIX] Pengaman yang sama seperti mic per-kolom - kalau pengenalan
+      // selesai tanpa onresult/onerror, tutup dialog "Mendengarkan..." (jangan
+      // dibiarkan terbuka diam-diam padahal sudah tidak benar-benar mendengarkan).
+      rec.onend = () => { if (!handled) { handled = true; Swal.close(); } };
     }
     // Konversi teks angka (digit ATAU kata bahasa Indonesia sederhana) jadi angka.
     // Chrome biasanya sudah mengubah ucapan angka jadi digit sendiri, tapi kamus
