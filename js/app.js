@@ -1,7 +1,4 @@
-    // [CHANGED] Logo splash sekarang animasi SVG+CSS murni (bukan video lagi),
-    // jadi splash disembunyikan setelah waktu tetap (cukup untuk animasi
-    // cincin+tetesan air selesai sekali, ±1.3 detik) - atau lebih cepat lagi
-    // begitu window "load" selesai, mana yang lebih dulu, sama seperti sedia kala.
+    // Sembunyikan splash setelah app siap (atau maksimal 2.2 detik), lalu hapus dari DOM
     (function() {
       function hidePwaSplash() {
         var el = document.getElementById('pwaSplash');
