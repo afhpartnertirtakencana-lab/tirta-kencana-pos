@@ -1,9 +1,8 @@
-    // [FIX] Sebelumnya splash disembunyikan maksimal 2.2 detik (atau 0.9 detik
-    // setelah window "load") - video logo (logo_reveal.mp4, durasi ~8 detik)
-    // jadi SELALU terpotong sebelum selesai diputar. Sekarang splash baru
-    // disembunyikan setelah videonya BENAR-BENAR SELESAI (event "ended").
-    // Tetap ada batas waktu maksimal sebagai jaga-jaga (mis. kalau videonya
-    // gagal diputar/diblokir browser) supaya splash tidak nyangkut selamanya.
+    // [FIX] Splash disembunyikan setelah video logo (logo_reveal.mp4) BENAR-
+    // BENAR SELESAI diputar (event "ended"), bukan waktu tetap - supaya video
+    // tidak terpotong. Tetap ada batas waktu maksimal sebagai jaga-jaga (mis.
+    // kalau videonya gagal diputar/diblokir browser) supaya splash tidak
+    // nyangkut selamanya.
     (function() {
       function hidePwaSplash() {
         var el = document.getElementById('pwaSplash');
@@ -1778,21 +1777,21 @@
       try {
       const text = transcript.trim();
       if (fieldType === 'customer') {
-        // [CHANGED] Cek dulu apakah ucapan ini cocok dengan pelanggan yang SUDAH
-        // ADA (walau cuma sebagian nama, mis. "Budi" -> "Budi Toko Maju") -
-        // kalau ketemu, pakai nama yang sudah ada itu (supaya tidak dobel).
-        // Kalau benar-benar tidak ada yang cocok, baru dianggap pelanggan baru.
+        // [FIX] Sebelumnya kalau nama tidak cocok dengan pelanggan yang sudah
+        // ada, LANGSUNG dibuat pelanggan baru di database saat itu juga -
+        // padahal pengenalan suara masih sering salah dengar, jadi banyak
+        // pelanggan "sampah" hasil salah dengar ikut tersimpan permanen walau
+        // transaksinya sendiri belum tentu jadi disimpan/dibatalkan.
+        // Sekarang HANYA MENGISI kolomnya saja (persis seperti kalau diketik
+        // manual) - pelanggan baru baru benar-benar dibuat nanti saat transaksi
+        // ini disimpan (submitTrx() sudah punya logika itu sendiri), bukan di
+        // sini. Kalau ucapannya salah, tinggal dikoreksi manual di kolom
+        // sebelum disimpan, tidak ada data pelanggan yang kadung tersimpan.
         const matched = _fuzzyMatchCustomer(text);
         const finalName = matched || text;
         const custInput = document.getElementById('trxCust');
         if (custInput) custInput.value = finalName;
-        if (!matched) {
-          allCustomers.push(text); pelanggan = allCustomers.slice(); saveLocalData(); syncCustomersToSheet();
-          const dl = document.getElementById('custDatalist'); if (dl) dl.innerHTML += `<option value="${esc(text)}">`;
-          _voiceToast('Pelanggan baru: ' + text);
-        } else {
-          _voiceToast('Pelanggan: ' + matched);
-        }
+        _voiceToast(matched ? 'Pelanggan: ' + matched : 'Pelanggan: ' + text + ' (baru tersimpan saat transaksi disimpan)');
       } else if (fieldType === 'sales') {
         const matched = _fuzzyMatchSales(text);
         if (matched) { document.getElementById('trxSales').value = matched; _voiceToast('Sales: ' + matched); }
@@ -2035,7 +2034,7 @@
         </div>`).join('') : `<div style="padding:8px 0;color:#DC2626;font-size:0.78rem">Tidak ada barang yang berhasil dikenali</div>`;
       const html = `<div style="text-align:left">
         <div style="background:#F1F5F9;border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:0.72rem;color:#5a7a90"><i class="fas fa-quote-left"></i> "${esc(original)}"</div>
-        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9"><span style="color:#5a7a90;font-size:0.78rem">Pelanggan</span><span style="font-weight:700;font-size:0.82rem">${customer ? esc(customer) + (custExists ? '' : ' <span style="color:#16A34A;font-size:0.65rem">(baru, akan dibuat)</span>') : '<span style="color:#94A3B8">- (tidak disebut)</span>'}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9"><span style="color:#5a7a90;font-size:0.78rem">Pelanggan</span><span style="font-weight:700;font-size:0.82rem">${customer ? esc(customer) + (custExists ? '' : ' <span style="color:#16A34A;font-size:0.65rem">(baru - tersimpan saat transaksi disimpan)</span>') : '<span style="color:#94A3B8">- (tidak disebut)</span>'}</span></div>
         <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9"><span style="color:#5a7a90;font-size:0.78rem">Sales</span><span style="font-weight:700;font-size:0.82rem">${salesName ? esc(salesName) : '<span style="color:#94A3B8">- (tidak disebut)</span>'}</span></div>
         <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9"><span style="color:#5a7a90;font-size:0.78rem">Status</span><span style="font-weight:700;font-size:0.82rem">${status ? statusLabel[status] : '<span style="color:#94A3B8">- (tidak disebut)</span>'}</span></div>
         <div style="font-weight:700;font-size:0.78rem;color:#0D2B3E;margin:10px 0 2px">Barang (${items.length})</div>
@@ -2054,13 +2053,13 @@
     }
     function applyVoiceCommandToForm(parsed) {
       const { customer, salesName, status, items } = parsed;
+      // [FIX] Sama seperti mic per-kolom - dulu langsung bikin pelanggan baru
+      // begitu dikenali, sekarang cuma isi kolomnya saja. Pelanggan baru baru
+      // benar-benar tersimpan saat transaksi ini disimpan (submitTrx() sudah
+      // menangani itu sendiri persis seperti input manual).
       if (customer) {
         const custInput = document.getElementById('trxCust');
         if (custInput) custInput.value = customer;
-        if (!allCustomers.some(c => c.toLowerCase() === customer.toLowerCase())) {
-          allCustomers.push(customer); pelanggan = allCustomers.slice(); saveLocalData(); syncCustomersToSheet();
-          const dl = document.getElementById('custDatalist'); if (dl) dl.innerHTML += `<option value="${esc(customer)}">`;
-        }
       }
       if (salesName) { const sel = document.getElementById('trxSales'); if (sel) sel.value = salesName; }
       if (status) { const sel = document.getElementById('trxStatus'); if (sel) sel.value = status; }
@@ -2431,7 +2430,7 @@
     function _strukWaFooterLines(trxId) {
       return ['', 'Terima kasih atas pembelian Anda 🙏', 'Cetak struk, silahkan klik: https://bit.ly/4izrFGU', 'Nomor Transaksi: *' + trxId + '*'];
     }
-    function doStrukWA() { if (!_strKData) return; const trx = _strKData.trx, items = _strKData.items || []; let lines = ['🧾 *STRUK TRANSAKSI*','*'+(settings.namaToko||'Tirta Kencana')+'*','━━━━━━━━━━']; lines.push('No: *'+trx.id+'*'); lines.push('Tgl: '+fmtDate(trx.tgl)); lines.push('Pelanggan: *'+(trx.customer||'-')+'*'); if (trx.sales) lines.push('Sales: '+trx.sales); lines.push('Status: *'+(trx.status==='cod'?'COD':trx.status==='transfer'?'Transfer':trx.status==='qris'?'QRIS':'Belum Transfer')+'*'); lines.push('━━━━━━━━━━'); items.forEach(it => { const nettPer = it.nettPer !== undefined ? it.nettPer : (it.harga||0) - (it.discRpPer||0); const sub = nettPer * (it.qty||1); lines.push('- '+it.nama+' ('+it.qty+'x Rp '+Number(it.harga).toLocaleString('id-ID')+')'); if (it.discRpPer) lines.push('  Disc: -Rp '+Number(it.discRpPer).toLocaleString('id-ID')); lines.push('  = Rp '+Number(sub).toLocaleString('id-ID')); }); lines.push('━━━━━━━━━━'); lines.push('Gross : Rp '+Number(trx.gross).toLocaleString('id-ID')); if (trx.diskon) lines.push('Diskon: -Rp '+Number(trx.diskon).toLocaleString('id-ID')); if (trx.biayaJml&&trx.biayaJml>0) lines.push((trx.biayaKet||'Biaya Tambahan')+': +Rp '+Number(trx.biayaJml).toLocaleString('id-ID')); lines.push('*TOTAL : Rp '+Number(trx.nett).toLocaleString('id-ID')+'*'); lines = lines.concat(_strukWaFooterLines(trx.id)); window.open('https://wa.me/?text='+encodeURIComponent(lines.join('\n')),'_blank'); }
+    function doStrukWA() { if (!_strKData) return; const trx = _strKData.trx, items = _strKData.items || []; let lines = ['🧾 *STRUK TRANSAKSI*','*'+(settings.namaToko||'Tirta Kencana')+'*','━━━━━━━━━━━━━━━━━━━━━━']; lines.push('No: *'+trx.id+'*'); lines.push('Tgl: '+fmtDate(trx.tgl)); lines.push('Pelanggan: *'+(trx.customer||'-')+'*'); if (trx.sales) lines.push('Sales: '+trx.sales); lines.push('Status: *'+(trx.status==='cod'?'COD':trx.status==='transfer'?'Transfer':trx.status==='qris'?'QRIS':'Belum Transfer')+'*'); lines.push('━━━━━━━━━━━━━━━━━━━━━━'); items.forEach(it => { const nettPer = it.nettPer !== undefined ? it.nettPer : (it.harga||0) - (it.discRpPer||0); const sub = nettPer * (it.qty||1); lines.push('- '+it.nama+' ('+it.qty+'x Rp '+Number(it.harga).toLocaleString('id-ID')+')'); if (it.discRpPer) lines.push('  Disc: -Rp '+Number(it.discRpPer).toLocaleString('id-ID')); lines.push('  = Rp '+Number(sub).toLocaleString('id-ID')); }); lines.push('━━━━━━━━━━━━━━━━━━━━━━'); lines.push('Gross : Rp '+Number(trx.gross).toLocaleString('id-ID')); if (trx.diskon) lines.push('Diskon: -Rp '+Number(trx.diskon).toLocaleString('id-ID')); if (trx.biayaJml&&trx.biayaJml>0) lines.push((trx.biayaKet||'Biaya Tambahan')+': +Rp '+Number(trx.biayaJml).toLocaleString('id-ID')); lines.push('*TOTAL : Rp '+Number(trx.nett).toLocaleString('id-ID')+'*'); lines = lines.concat(_strukWaFooterLines(trx.id)); window.open('https://wa.me/?text='+encodeURIComponent(lines.join('\n')),'_blank'); }
     // [NEW] Sama persis isi pesannya dengan doStrukWA() di atas, bedanya dikirim
     // LANGSUNG ke nomor WA pelanggan yang bersangkutan (tersimpan/diminta sekali),
     // bukan share generik yang masih harus cari kontak manual.
@@ -2439,13 +2438,13 @@
       if (!_strKData) return;
       const trx = _strKData.trx, items = _strKData.items || [];
       if (!trx.customer) return Swal.fire('Info', 'Transaksi ini tidak punya nama pelanggan.', 'info');
-      let lines = ['🧾 *STRUK TRANSAKSI*','*'+(settings.namaToko||'Tirta Kencana')+'*','━━━━━━━━━━'];
+      let lines = ['🧾 *STRUK TRANSAKSI*','*'+(settings.namaToko||'Tirta Kencana')+'*','━━━━━━━━━━━━━━━━━━━━━━'];
       lines.push('No: *'+trx.id+'*'); lines.push('Tgl: '+fmtDate(trx.tgl)); lines.push('Pelanggan: *'+(trx.customer||'-')+'*');
       if (trx.sales) lines.push('Sales: '+trx.sales);
       lines.push('Status: *'+(trx.status==='cod'?'COD':trx.status==='transfer'?'Transfer':trx.status==='qris'?'QRIS':'Belum Transfer')+'*');
-      lines.push('━━━━━━━━━━');
+      lines.push('━━━━━━━━━━━━━━━━━━━━━━');
       items.forEach(it => { const nettPer = it.nettPer !== undefined ? it.nettPer : (it.harga||0) - (it.discRpPer||0); const sub = nettPer * (it.qty||1); lines.push('- '+it.nama+' ('+it.qty+'x Rp '+Number(it.harga).toLocaleString('id-ID')+')'); if (it.discRpPer) lines.push('  Disc: -Rp '+Number(it.discRpPer).toLocaleString('id-ID')); lines.push('  = Rp '+Number(sub).toLocaleString('id-ID')); });
-      lines.push('━━━━━━━━━━'); lines.push('Gross : Rp '+Number(trx.gross).toLocaleString('id-ID'));
+      lines.push('━━━━━━━━━━━━━━━━━━━━━━'); lines.push('Gross : Rp '+Number(trx.gross).toLocaleString('id-ID'));
       if (trx.diskon) lines.push('Diskon: -Rp '+Number(trx.diskon).toLocaleString('id-ID'));
       if (trx.biayaJml&&trx.biayaJml>0) lines.push((trx.biayaKet||'Biaya Tambahan')+': +Rp '+Number(trx.biayaJml).toLocaleString('id-ID'));
       lines.push('*TOTAL : Rp '+Number(trx.nett).toLocaleString('id-ID')+'*');
@@ -2548,7 +2547,7 @@
     }
     function doSetoranPrint() { if (!_lastSetoranPayload) return; const win = window.open('','_blank','width=420,height=700'); win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Struk Setoran</title></head><body style="margin:16px;background:#e8f2f9;display:flex;justify-content:center">'); win.document.write(buildSetoranStrukHTML(_lastSetoranPayload)); win.document.write('<script>window.onload=function(){window.print();}<\/script></body></html>'); win.document.close(); }
     function doSetoranPng() { if (!_lastSetoranPayload) return; const off = document.getElementById('strukOffscreen'); off.style.cssText = 'position:fixed;left:-9999px;top:0;pointer-events:none;z-index:-1;background:#e8f2f9;padding:20px'; _ensureLogoDataUrl(_logoUrl).then(logoData => { off.innerHTML = buildSetoranStrukHTML(_lastSetoranPayload, logoData); const el = off.querySelector('#setoran-root'); if (!el) return Swal.fire('Error','Gagal render','error'); setTimeout(() => { html2canvas(el, {backgroundColor:'#e8f2f9',scale:2.5,useCORS:true,allowTaint:true,logging:false}).then(canvas => { const a = document.createElement('a'); a.download = 'Setoran-'+(_lastSetoranPayload.sales)+'-'+(_lastSetoranPayload.tgl)+'.png'; a.href = canvas.toDataURL('image/png'); document.body.appendChild(a); a.click(); document.body.removeChild(a); off.innerHTML = ''; Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, icon: 'success', title: 'Struk setoran tersimpan' }); }).catch(err => { off.innerHTML=''; Swal.fire('Error',err.message,'error'); }); }, 400); }); }
-    function doSetoranWA() { if (!_lastSetoranPayload) return; const p = _lastSetoranPayload; let lines = ['🧾 *STRUK SETORAN*','*'+(settings.namaToko||'Tirta Kencana')+'*','━━━━━━━━━━']; lines.push('Sales: *'+p.sales+'*'); lines.push('Tgl: '+fmtDate(p.tgl)); lines.push('━━━━━━━━━━'); lines.push('Grand COD : '+fmtRp(p.grandTotal)); lines.push('Tagihan   : '+fmtRp(p.tagihan)); lines.push('Cicilan   : '+fmtRp(p.cicilan)); lines.push('Pengeluaran:'); lines.push('  Makan   : -'+fmtRp(p.makan)); lines.push('  Tips    : -'+fmtRp(p.tips)); lines.push('  Parkir  : -'+fmtRp(p.parkir)); lines.push('  Bensin  : -'+fmtRp(p.bensin)); lines.push('  Flazz   : -'+fmtRp(p.flazz)); lines.push('  Transfer: -'+fmtRp(p.transfer)); if(p.ket1) lines.push('  '+p.ket1+' : -'+fmtRp(p.jml1)); if(p.ket2) lines.push('  '+p.ket2+' : -'+fmtRp(p.jml2)); lines.push('━━━━━━━━━━'); lines.push('*TOTAL SETORAN : '+fmtRp(p.total)+'*'); lines.push('Setor      : '+fmtRp(p.setor)); lines.push('Selisih    : '+fmtRp(p.selisih)); window.open('https://wa.me/?text='+encodeURIComponent(lines.join('\n')),'_blank'); }
+    function doSetoranWA() { if (!_lastSetoranPayload) return; const p = _lastSetoranPayload; let lines = ['🧾 *STRUK SETORAN*','*'+(settings.namaToko||'Tirta Kencana')+'*','━━━━━━━━━━━━━━━━━━━━━━']; lines.push('Sales: *'+p.sales+'*'); lines.push('Tgl: '+fmtDate(p.tgl)); lines.push('━━━━━━━━━━━━━━━━━━━━━━'); lines.push('Grand COD : '+fmtRp(p.grandTotal)); lines.push('Tagihan   : '+fmtRp(p.tagihan)); lines.push('Cicilan   : '+fmtRp(p.cicilan)); lines.push('Pengeluaran:'); lines.push('  Makan   : -'+fmtRp(p.makan)); lines.push('  Tips    : -'+fmtRp(p.tips)); lines.push('  Parkir  : -'+fmtRp(p.parkir)); lines.push('  Bensin  : -'+fmtRp(p.bensin)); lines.push('  Flazz   : -'+fmtRp(p.flazz)); lines.push('  Transfer: -'+fmtRp(p.transfer)); if(p.ket1) lines.push('  '+p.ket1+' : -'+fmtRp(p.jml1)); if(p.ket2) lines.push('  '+p.ket2+' : -'+fmtRp(p.jml2)); lines.push('━━━━━━━━━━━━━━━━━━━━━━'); lines.push('*TOTAL SETORAN : '+fmtRp(p.total)+'*'); lines.push('Setor      : '+fmtRp(p.setor)); lines.push('Selisih    : '+fmtRp(p.selisih)); window.open('https://wa.me/?text='+encodeURIComponent(lines.join('\n')),'_blank'); }
 
     // ========== RIWAYAT SETORAN ==========
     let _currentSetoranHistory = [];
@@ -2664,7 +2663,15 @@
 
       // [NEW] Navbar filter sales, bisa digeser kiri-kanan (memakai class .menu-tabs/.tab yang sudah ada)
       const salesSet = [];
-      setoranHistory.forEach(s => { const nm = (s.sales||'').trim(); if (nm && !salesSet.find(x => x.toLowerCase() === nm.toLowerCase())) salesSet.push(nm); });
+      // [FIX] Sebelumnya daftar tab sales diambil MENTAH dari riwayat setoran
+      // (setoranHistory) - jadi kalau seorang sales sudah DIHAPUS dari menu
+      // User, namanya tetap muncul selamanya sebagai tab di sini (karena data
+      // setoran lamanya masih ada). Sekarang cuma sales yang MASIH AKTIF di
+      // daftar User (allUsers, role sales) yang ditampilkan sebagai tab -
+      // riwayat setorannya sendiri tetap tersimpan & tetap muncul kalau
+      // filternya "Semua", cuma tab pintasannya saja yang disembunyikan.
+      const activeSalesNames = allUsers.filter(u => u.role === 'sales').map(u => u.name.toLowerCase());
+      setoranHistory.forEach(s => { const nm = (s.sales||'').trim(); if (nm && activeSalesNames.includes(nm.toLowerCase()) && !salesSet.find(x => x.toLowerCase() === nm.toLowerCase())) salesSet.push(nm); });
       const rsNavHtml = `<div class="menu-tabs" style="border-bottom:1px solid var(--border);background:transparent">
           <button class="tab ${!_rsFilterSales?'active':''}" onclick="filterRekapSetoranBySales('')"><i class="fas fa-layer-group"></i> Semua</button>
           ${salesSet.map(nm => `<button class="tab ${_rsFilterSales.toLowerCase()===nm.toLowerCase()?'active':''}" onclick="filterRekapSetoranBySales('${esc(nm).replace(/'/g,"\\'")}')"><i class="fas fa-user"></i> ${esc(nm)}</button>`).join('')}
@@ -3216,11 +3223,11 @@
       if (!_lastPiutangCustomerPayload) return;
       const p = _lastPiutangCustomerPayload;
       const agingLabel = window._piutangAgingLabel || (() => ({label:'-'}));
-      let lines = ['📋 *REKAP PIUTANG PER CUSTOMER*', '*'+(settings.namaToko||'Tirta Kencana')+'*', '━━━━━━━━━━'];
+      let lines = ['📋 *REKAP PIUTANG PER CUSTOMER*', '*'+(settings.namaToko||'Tirta Kencana')+'*', '━━━━━━━━━━━━━━━━━━━━━━'];
       lines.push('Tanggal: ' + fmtDate(p.date));
-      lines.push('━━━━━━━━━━');
+      lines.push('━━━━━━━━━━━━━━━━━━━━━━');
       p.rows.forEach(r => { const ag = agingLabel(r.oldest); lines.push(r.customer + ': ' + fmtRp(r.total) + ' (' + r.count + 'x, ' + ag.label + ')'); });
-      lines.push('━━━━━━━━━━', '*TOTAL: ' + fmtRp(p.total) + '*');
+      lines.push('━━━━━━━━━━━━━━━━━━━━━━', '*TOTAL: ' + fmtRp(p.total) + '*');
       window.open('https://wa.me/?text=' + encodeURIComponent(lines.join('\n')), '_blank');
     }
 
@@ -3289,11 +3296,11 @@
     function doPiutangDetailWA() {
       if (!_lastPiutangDetailPayload) return;
       const p = _lastPiutangDetailPayload;
-      let lines = ['📋 *DETAIL TRANSAKSI BELUM BAYAR*', '*'+(settings.namaToko||'Tirta Kencana')+'*', '━━━━━━━━━━'];
+      let lines = ['📋 *DETAIL TRANSAKSI BELUM BAYAR*', '*'+(settings.namaToko||'Tirta Kencana')+'*', '━━━━━━━━━━━━━━━━━━━━━━'];
       lines.push('Tanggal: ' + fmtDate(p.date) + ' · ' + p.sales);
-      lines.push('━━━━━━━━━━');
+      lines.push('━━━━━━━━━━━━━━━━━━━━━━');
       p.rows.forEach(r => lines.push(r.customer + ' (' + fmtDate(r.tgl) + '): ' + fmtRp(r.nett) + ' - ' + r.aging));
-      lines.push('━━━━━━━━━━', '*TOTAL: ' + fmtRp(p.total) + '*');
+      lines.push('━━━━━━━━━━━━━━━━━━━━━━', '*TOTAL: ' + fmtRp(p.total) + '*');
       window.open('https://wa.me/?text=' + encodeURIComponent(lines.join('\n')), '_blank');
     }
 
@@ -4265,7 +4272,28 @@
     let _lastRekapPayload = null;
     function buildRekapStrukShell(jenisLabel, filterLabel, tableHtml) {
       const logoHtml = _logoUrl ? `<img src="${_logoUrl}" crossorigin="anonymous" style="width:44px;height:44px;border-radius:10px;object-fit:contain;background:#fff;padding:3px;flex-shrink:0;border:1.5px solid rgba(255,255,255,.4)">` : '<div style="width:44px;height:44px;border-radius:10px;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">📊</div>';
-      return `<div id="rekap-struk-root" style="width:480px;max-width:100%;background:#fff;border-radius:16px;overflow:hidden;font-family:'DM Sans',sans-serif;box-shadow:0 8px 32px rgba(29,111,164,.18)">
+      // [FIX] Isi tabel (tableHtml) di bawah ini adalah HTML LANGSUNG dari tampilan
+      // live halaman Rekap - dia masih pakai kelas/variabel warna tema aplikasi
+      // (mis. var(--biru-muda) di baris header tiap SKU). Kalau app-nya lagi
+      // dark mode, warna itu ikut bawaan GELAP (jadi terlihat kotak abu-abu di
+      // dalam struk yang seharusnya putih bersih). Solusinya: variabel warna
+      // tema di-DEFINISI ULANG khusus di dalam #rekap-struk-root ke versi
+      // terang tetap (diambil dari palet light-mode aplikasi sendiri) - jadi
+      // MANAPUN kelas/variabel yang dipakai tabel asalnya, hasilnya SELALU
+      // terang/bersih di dalam struk, apa pun mode aplikasi saat itu.
+      return `<div id="rekap-struk-root" style="width:480px;max-width:100%;background:#fff;border-radius:16px;overflow:hidden;font-family:'DM Sans',sans-serif;box-shadow:0 8px 32px rgba(29,111,164,.18);
+        --bg:#F3F7FD;--bg2:#FFFFFF;--card:#FFFFFF;--surface:#FFFFFF;--surface2:#F8FAFF;
+        --biru:#1E63E9;--biru2:#2F80FF;--kuning:#A87C0A;--biru-muda:#EAF2FF;--kuning-muda:#FFF6DE;
+        --border:rgba(30,99,233,0.12);--text:#16213E;--text2:#5B6B8C;--text3:#556280;
+        --merah:#EF4444;--hijau:#16A34A;--teal:#1E63E9;--warn:#F59E0B;
+        --font:'DM Sans',sans-serif;--mono:'JetBrains Mono',monospace;">
+        <style>
+          #rekap-struk-root .card { background:transparent; box-shadow:none; padding:0; border:none; }
+          #rekap-struk-root .card-title { display:none; } /* judul sudah ada di header shell sendiri, jangan dobel */
+          #rekap-struk-root table { width:100%; border-collapse:collapse; }
+          #rekap-struk-root th { background:var(--biru-muda); color:var(--text); font-size:11px; padding:6px 8px; }
+          #rekap-struk-root td { color:var(--text); font-size:11.5px; padding:5px 8px; border-bottom:1px solid var(--border); }
+        </style>
         <div style="background:linear-gradient(135deg,#1A6DB5,#2B8FDE);padding:18px 18px 14px;display:flex;align-items:center;gap:12px">${logoHtml}<div><div style="font-size:15px;font-weight:800;color:#fff;letter-spacing:-.3px">${esc(settings.namaToko||'Tirta Kencana')}</div><div style="font-size:11px;color:rgba(255,255,255,.75);margin-top:1px">${esc(jenisLabel)}</div></div></div>
         <div style="background:#EBF4FB;padding:10px 18px;font-size:11px;color:#0D2B3E">${esc(filterLabel)}</div>
         <div id="rekap-struk-body" style="padding:12px 18px;overflow:auto;max-width:100%;">${tableHtml}</div>
@@ -4328,7 +4356,7 @@
       // baris) supaya tidak perlu bikin format teks terpisah untuk tiap 10 jenis laporan.
       const tmp = document.createElement('div');
       tmp.innerHTML = _lastRekapPayload.tableHtml;
-      const lines = ['📊 *' + _lastRekapPayload.jenisLabel.toUpperCase() + '*', '*' + (settings.namaToko||'Tirta Kencana') + '*', _lastRekapPayload.filterLabel, '━━━━━━━━━━'];
+      const lines = ['📊 *' + _lastRekapPayload.jenisLabel.toUpperCase() + '*', '*' + (settings.namaToko||'Tirta Kencana') + '*', _lastRekapPayload.filterLabel, '━━━━━━━━━━━━━━━━━━━━━━'];
       tmp.querySelectorAll('table').forEach(table => {
         table.querySelectorAll('tr').forEach(tr => {
           const cells = Array.from(tr.children).map(td => td.textContent.trim()).filter(Boolean);
@@ -4389,7 +4417,7 @@
     }
     function doInputBarangPrint() { if (!_lastInputBarangStruk) return; const win = window.open('','_blank','width=420,height=700'); win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Struk Input Barang</title></head><body style="margin:16px;background:#e8f2f9;display:flex;justify-content:center">'); win.document.write(buildStrukInputBarangHTML(_lastInputBarangStruk)); win.document.write('<script>window.onload=function(){window.print();}<\/script></body></html>'); win.document.close(); }
     function doInputBarangPng() { if (!_lastInputBarangStruk) return; const off = document.getElementById('strukOffscreen'); off.style.cssText = 'position:fixed;left:-9999px;top:0;pointer-events:none;z-index:-1;background:#e8f2f9;padding:20px'; off.innerHTML = buildStrukInputBarangHTML(_lastInputBarangStruk); const el = off.querySelector('#inputbarang-root'); if (!el) return Swal.fire('Error','Gagal render','error'); setTimeout(() => { html2canvas(el, {backgroundColor:'#e8f2f9',scale:2.5,useCORS:true,allowTaint:true,logging:false}).then(canvas => { const a = document.createElement('a'); a.download = 'InputBarang-'+(_lastInputBarangStruk.id||'item')+'.png'; a.href = canvas.toDataURL('image/png'); document.body.appendChild(a); a.click(); document.body.removeChild(a); off.innerHTML = ''; Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, icon: 'success', title: 'Struk tersimpan' }); }).catch(err => { off.innerHTML=''; Swal.fire('Error',err.message,'error'); }); }, 400); }
-    function doInputBarangWA() { if (!_lastInputBarangStruk) return; const s = _lastInputBarangStruk; const disc = s.disc || 0; const netModal = (s.hargaModal - disc) * s.qty; let lines = ['📦 *INPUT BARANG*','*'+(settings.namaToko||'Tirta Kencana')+'*','━━━━━━━━━━']; lines.push('ID: *'+s.id+'*'); lines.push('Tgl: '+fmtDate(s.date||s.tgl||'')); lines.push('SKU: '+s.sku+' - '+(s.nama||'')); lines.push('Qty: '+s.qty); lines.push('Harga Modal: Rp '+Number(s.hargaModal||0).toLocaleString('id-ID')); if (disc) lines.push('Disc: -Rp '+Number(disc).toLocaleString('id-ID')); lines.push('Driver: '+(s.driver||'-')+' (Rit '+(s.rit||'-')+')'); lines.push('Status: *'+(s.status||'-').toUpperCase()+'*'); lines.push('━━━━━━━━━━'); lines.push('*NET MODAL : Rp '+Number(netModal).toLocaleString('id-ID')+'*'); window.open('https://wa.me/?text='+encodeURIComponent(lines.join('\n')),'_blank'); }
+    function doInputBarangWA() { if (!_lastInputBarangStruk) return; const s = _lastInputBarangStruk; const disc = s.disc || 0; const netModal = (s.hargaModal - disc) * s.qty; let lines = ['📦 *INPUT BARANG*','*'+(settings.namaToko||'Tirta Kencana')+'*','━━━━━━━━━━━━━━━━━━━━━━']; lines.push('ID: *'+s.id+'*'); lines.push('Tgl: '+fmtDate(s.date||s.tgl||'')); lines.push('SKU: '+s.sku+' - '+(s.nama||'')); lines.push('Qty: '+s.qty); lines.push('Harga Modal: Rp '+Number(s.hargaModal||0).toLocaleString('id-ID')); if (disc) lines.push('Disc: -Rp '+Number(disc).toLocaleString('id-ID')); lines.push('Driver: '+(s.driver||'-')+' (Rit '+(s.rit||'-')+')'); lines.push('Status: *'+(s.status||'-').toUpperCase()+'*'); lines.push('━━━━━━━━━━━━━━━━━━━━━━'); lines.push('*NET MODAL : Rp '+Number(netModal).toLocaleString('id-ID')+'*'); window.open('https://wa.me/?text='+encodeURIComponent(lines.join('\n')),'_blank'); }
 
     // ========== INPUT BARANG ==========
     function loadInputBarang() { 
@@ -4971,14 +4999,14 @@
     function doCekStockWA() {
       if (!_lastCekStockPayload) return;
       const p = _lastCekStockPayload;
-      let lines = ['🧾 *LAPORAN CEK STOCK*', '*'+(settings.namaToko||'Tirta Kencana')+'*', '━━━━━━━━━━'];
+      let lines = ['🧾 *LAPORAN CEK STOCK*', '*'+(settings.namaToko||'Tirta Kencana')+'*', '━━━━━━━━━━━━━━━━━━━━━━'];
       lines.push('Tanggal: ' + fmtDate(p.date));
-      lines.push('━━━━━━━━━━');
+      lines.push('━━━━━━━━━━━━━━━━━━━━━━');
       p.rows.forEach(r => {
         const status = r.hasVal ? (r.selisih === 0 ? '✅' : '⚠️') : '⏳';
         lines.push(status + ' ' + r.nama + ': Stock ' + r.stock + ', Cek ' + (r.hasVal ? r.cekStock : '-') + ', Selisih ' + (r.hasVal ? (r.selisih>0?'+':'')+r.selisih : '-'));
       });
-      lines.push('━━━━━━━━━━');
+      lines.push('━━━━━━━━━━━━━━━━━━━━━━');
       lines.push('✅ Cocok: ' + p.cocokCount + ' | ⚠️ Cek Lagi: ' + p.cekLagiCount + ' | Belum: ' + p.belumCount);
       window.open('https://wa.me/?text=' + encodeURIComponent(lines.join('\n')), '_blank');
     }
@@ -5211,14 +5239,14 @@
     function doCekKosonganWA() {
       if (!_lastCekKosonganPayload) return;
       const p = _lastCekKosonganPayload;
-      let lines = ['🧾 *LAPORAN CEK KOSONGAN*', '*'+(settings.namaToko||'Tirta Kencana')+'*', '━━━━━━━━━━'];
+      let lines = ['🧾 *LAPORAN CEK KOSONGAN*', '*'+(settings.namaToko||'Tirta Kencana')+'*', '━━━━━━━━━━━━━━━━━━━━━━'];
       lines.push('Tanggal: ' + fmtDate(p.date));
       lines.push('🏬 Toko: ' + p.toko + ' | 🚚 Mobil: ' + p.mobil);
       lines.push('Total Stok: ' + p.totalStok);
-      if (p.titipan.length) { lines.push('━━━━━━━━━━', '📤 Titipan:'); p.titipan.forEach(r => lines.push('• ' + (r.nama||'-') + ': ' + (r.qty||0))); }
+      if (p.titipan.length) { lines.push('━━━━━━━━━━━━━━━━━━━━━━', '📤 Titipan:'); p.titipan.forEach(r => lines.push('• ' + (r.nama||'-') + ': ' + (r.qty||0))); }
       lines.push('Total - Titipan: ' + p.stokMinusTitipan);
-      if (p.pinjaman.length) { lines.push('━━━━━━━━━━', '📥 Pinjaman:'); p.pinjaman.forEach(r => lines.push('• ' + (r.nama||'-') + ': ' + (r.qty||0))); }
-      lines.push('━━━━━━━━━━', '*TOTAL GALON: ' + p.totalGalon + '*');
+      if (p.pinjaman.length) { lines.push('━━━━━━━━━━━━━━━━━━━━━━', '📥 Pinjaman:'); p.pinjaman.forEach(r => lines.push('• ' + (r.nama||'-') + ': ' + (r.qty||0))); }
+      lines.push('━━━━━━━━━━━━━━━━━━━━━━', '*TOTAL GALON: ' + p.totalGalon + '*');
       window.open('https://wa.me/?text=' + encodeURIComponent(lines.join('\n')), '_blank');
     }
 
@@ -5589,10 +5617,10 @@
     function doPesananSalesWA() {
       if (!_lastPesananSalesPayload) return;
       const p = _lastPesananSalesPayload;
-      let lines = ['📋 *REKAP PESANAN PER SALES*', '*'+(settings.namaToko||'Tirta Kencana')+'*', '━━━━━━━━━━'];
+      let lines = ['📋 *REKAP PESANAN PER SALES*', '*'+(settings.namaToko||'Tirta Kencana')+'*', '━━━━━━━━━━━━━━━━━━━━━━'];
       lines.push('Tanggal: ' + fmtDate(p.date));
       Object.keys(p.bySales).sort().forEach(sname => {
-        lines.push('━━━━━━━━━━', '*' + sname.toUpperCase() + '*');
+        lines.push('━━━━━━━━━━━━━━━━━━━━━━', '*' + sname.toUpperCase() + '*');
         const customers = p.bySales[sname];
         Object.keys(customers).forEach(cname => {
           lines.push('_' + cname + '_');
@@ -5693,11 +5721,11 @@
     function doPesananWA() {
       if (!_lastPesananPayload) return;
       const p = _lastPesananPayload;
-      let lines = ['📦 *LAPORAN BARANG AKAN DI-ORDER*', '*'+(settings.namaToko||'Tirta Kencana')+'*', '━━━━━━━━━━'];
+      let lines = ['📦 *LAPORAN BARANG AKAN DI-ORDER*', '*'+(settings.namaToko||'Tirta Kencana')+'*', '━━━━━━━━━━━━━━━━━━━━━━'];
       lines.push('Tanggal: ' + fmtDate(p.date));
-      lines.push('━━━━━━━━━━');
+      lines.push('━━━━━━━━━━━━━━━━━━━━━━');
       p.rows.forEach(r => lines.push(r.nama + ': ' + r.order));
-      lines.push('━━━━━━━━━━', '----MAKASIH----');
+      lines.push('━━━━━━━━━━━━━━━━━━━━━━', '----MAKASIH----');
       window.open('https://wa.me/?text=' + encodeURIComponent(lines.join('\n')), '_blank');
     }
 
@@ -5955,13 +5983,13 @@
     function doTitipanWA() {
       if (!_lastTitipanPayload) return;
       const p = _lastTitipanPayload;
-      let lines = ['📦 *LAPORAN TITIPAN*', '*'+(settings.namaToko||'Tirta Kencana')+'*', '━━━━━━━━━━'];
+      let lines = ['📦 *LAPORAN TITIPAN*', '*'+(settings.namaToko||'Tirta Kencana')+'*', '━━━━━━━━━━━━━━━━━━━━━━'];
       lines.push('Tanggal: ' + fmtDate(p.date));
       lines.push('Pelanggan: *' + p.customer + '*');
-      lines.push('━━━━━━━━━━', '📋 Riwayat Hari Ini:');
+      lines.push('━━━━━━━━━━━━━━━━━━━━━━', '📋 Riwayat Hari Ini:');
       if (p.todayEntries.length === 0) lines.push('(tidak ada pergerakan)');
       else p.todayEntries.forEach(e => lines.push((e.tipe==='masuk'?'+':'-') + e.qty + ' ' + e.nama));
-      lines.push('━━━━━━━━━━', '📦 Sisa Titipan ' + p.customer + ':');
+      lines.push('━━━━━━━━━━━━━━━━━━━━━━', '📦 Sisa Titipan ' + p.customer + ':');
       p.sisaRows.forEach(r => lines.push(r.nama + ': ' + r.sisa));
       window.open('https://wa.me/?text=' + encodeURIComponent(lines.join('\n')), '_blank');
     }
@@ -6037,10 +6065,10 @@
     function doTitipanPelangganWA() {
       if (!_lastTitipanPelangganPayload) return;
       const p = _lastTitipanPelangganPayload;
-      let lines = ['📦 *REKAP TITIPAN PER PELANGGAN*', '*'+(settings.namaToko||'Tirta Kencana')+'*', '━━━━━━━━━━'];
+      let lines = ['📦 *REKAP TITIPAN PER PELANGGAN*', '*'+(settings.namaToko||'Tirta Kencana')+'*', '━━━━━━━━━━━━━━━━━━━━━━'];
       lines.push('Tanggal: ' + fmtDate(p.date));
       Object.keys(p.byCustomer).sort().forEach(cname => {
-        lines.push('━━━━━━━━━━', '*' + cname + '*');
+        lines.push('━━━━━━━━━━━━━━━━━━━━━━', '*' + cname + '*');
         const skus = p.byCustomer[cname];
         Object.keys(skus).forEach(sku => { const s = skus[sku]; lines.push(s.nama + ': ' + (s.masuk - s.keluar)); });
       });
@@ -6788,12 +6816,12 @@
       if (!_lastPelangganStrukPayload) return;
       const p = _lastPelangganStrukPayload;
       const periodeLabel = (p.stats.startDate || p.stats.endDate) ? `${p.stats.startDate?fmtDate(p.stats.startDate):'Awal'} - ${p.stats.endDate?fmtDate(p.stats.endDate):'Sekarang'}` : 'Semua Periode';
-      let lines = [`📋 *RIWAYAT PELANGGAN - ${p.name.toUpperCase()}*`, '*'+(settings.namaToko||'Tirta Kencana')+'*', '━━━━━━━━━━'];
+      let lines = [`📋 *RIWAYAT PELANGGAN - ${p.name.toUpperCase()}*`, '*'+(settings.namaToko||'Tirta Kencana')+'*', '━━━━━━━━━━━━━━━━━━━━━━'];
       lines.push('Periode: ' + periodeLabel);
       lines.push('Total Belanja: ' + fmtRp(p.stats.totalBelanja));
       lines.push('Piutang: ' + fmtRp(p.stats.totalPiutang));
       lines.push('Jumlah Transaksi: ' + p.stats.jumlahTrx);
-      lines.push('━━━━━━━━━━');
+      lines.push('━━━━━━━━━━━━━━━━━━━━━━');
       p.rows.slice(0,30).forEach(t => lines.push(fmtDate(t.tgl) + ': ' + fmtRp(t.nett||0)));
       window.open('https://wa.me/?text=' + encodeURIComponent(lines.join('\n')), '_blank');
     }
@@ -6802,12 +6830,12 @@
       if (!_lastPelangganStrukPayload) return;
       const p = _lastPelangganStrukPayload;
       const periodeLabel = (p.stats.startDate || p.stats.endDate) ? `${p.stats.startDate?fmtDate(p.stats.startDate):'Awal'} - ${p.stats.endDate?fmtDate(p.stats.endDate):'Sekarang'}` : 'Semua Periode';
-      let lines = [`📋 *RIWAYAT PELANGGAN - ${p.name.toUpperCase()}*`, '*'+(settings.namaToko||'Tirta Kencana')+'*', '━━━━━━━━━━'];
+      let lines = [`📋 *RIWAYAT PELANGGAN - ${p.name.toUpperCase()}*`, '*'+(settings.namaToko||'Tirta Kencana')+'*', '━━━━━━━━━━━━━━━━━━━━━━'];
       lines.push('Periode: ' + periodeLabel);
       lines.push('Total Belanja: ' + fmtRp(p.stats.totalBelanja));
       lines.push('Piutang: ' + fmtRp(p.stats.totalPiutang));
       lines.push('Jumlah Transaksi: ' + p.stats.jumlahTrx);
-      lines.push('━━━━━━━━━━');
+      lines.push('━━━━━━━━━━━━━━━━━━━━━━');
       p.rows.slice(0,30).forEach(t => lines.push(fmtDate(t.tgl) + ': ' + fmtRp(t.nett||0)));
       kirimWaKeNomorPelanggan(p.name, lines.join('\n'));
     }
