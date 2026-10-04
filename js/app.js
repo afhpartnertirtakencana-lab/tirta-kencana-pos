@@ -3562,26 +3562,34 @@
     // "sudah diedit tapi Total tidak ikut berubah").
     function _editTrxCalc() {
       const ctx = window._editTrxCtx;
-      const newItems = ctx.items.map((it,i) => {
-        const sel = document.getElementById('editItemSku'+i);
-        const qtyEl = document.getElementById('editItemQty'+i);
-        const discEl = document.getElementById('editItemDisc'+i);
-        const sku = sel ? sel.value : it.sku;
-        const qty = Math.max(1, parseInt(qtyEl?.value)||it.qty||1);
-        const skuChanged = sku !== it.sku;
+      // [CHANGED] Sebelumnya baris item dibaca lewat indeks tetap (editItemSku0,
+      // editItemSku1, ...) mengikuti jumlah item ASLI - jadi tidak mungkin
+      // menambah/menghapus baris. Sekarang semua baris ".edit-item-row" yang
+      // ADA di dialog saat ini dibaca langsung dari DOM (urut sesuai tampilan),
+      // dan tiap baris dicocokkan ke item aslinya lewat data-key (kalau ada) -
+      // supaya harga/modal asli tetap dipertahankan selama SKU-nya tidak diganti.
+      const rows = document.querySelectorAll('#editItemsWrap .edit-item-row');
+      const newItems = [];
+      let blankRows = 0;
+      rows.forEach(row => {
+        const sku = row.querySelector('.edit-item-sku').value;
+        if (!sku) { blankRows++; return; } // baris baru yang produknya belum dipilih
+        const orig = ctx.origByKey[row.dataset.key] || null;
+        const qty = Math.max(1, parseInt(row.querySelector('.edit-item-qty').value) || (orig && orig.qty) || 1);
+        const discRpPer = Math.max(0, parseFloat(row.querySelector('.edit-item-disc').value) || 0);
         const p = products.find(x => x.sku === sku);
-        const harga = skuChanged ? (p ? (p.jual||p.harga||0) : it.harga) : it.harga;
-        const discRpPer = Math.max(0, parseFloat(discEl?.value) || 0);
-        const modal = skuChanged ? (p ? (p.modal||0) : it.modal) : it.modal;
-        const nama = skuChanged ? (p ? p.nama : it.nama) : it.nama;
+        const keepOrig = !!orig && orig.sku === sku;
+        const harga = keepOrig ? orig.harga : (p ? (p.jual||p.harga||0) : 0);
+        const modal = keepOrig ? orig.modal : (p ? (p.modal||0) : 0);
+        const nama = keepOrig ? orig.nama : (p ? p.nama : sku);
         const nettPer = harga - discRpPer;
-        return { sku, nama, qty, harga, discRpPer, modal, nettPer, subtotal: nettPer * qty };
+        newItems.push({ sku, nama, qty, harga, discRpPer, modal, nettPer, subtotal: nettPer * qty });
       });
       const gross = newItems.reduce((s,it)=>s+(it.harga||0)*(it.qty||0),0);
       const itemDisc = newItems.reduce((s,it)=>s+(it.discRpPer||0)*(it.qty||0),0);
       const diskon = itemDisc + ctx.globalDiscPortion;
       const nett = gross - diskon + ctx.biayaJml;
-      return { items: newItems, gross, diskon, nett };
+      return { items: newItems, gross, diskon, nett, blankRows };
     }
     function _editTrxRecalc() {
       const calc = _editTrxCalc();
@@ -3589,6 +3597,42 @@
       if (gEl) gEl.textContent = fmtRp(calc.gross);
       if (dEl) dEl.textContent = fmtRp(calc.diskon);
       if (nEl) nEl.textContent = fmtRp(calc.nett);
+      const empty = document.getElementById('editItemsEmpty');
+      if (empty) empty.style.display = document.querySelectorAll('#editItemsWrap .edit-item-row').length ? 'none' : 'block';
+    }
+    // [NEW] HTML satu baris item di dialog Edit Transaksi - dipakai untuk item
+    // yang sudah ada (it = data item) maupun baris BARU yang ditambah lewat
+    // tombol "+ Item" (it = null, produk belum dipilih). Ada tombol ✕ per baris
+    // untuk menghapus item, seperti di menu Jual.
+    function _editTrxRowHtml(key, it) {
+      const opts = window._editTrxProdOpts || '';
+      let optsHtml;
+      if (it) {
+        const known = products.some(p => p.sku === it.sku);
+        optsHtml = (known ? '' : `<option value="${esc(it.sku)}" selected>${esc(it.sku)} - ${esc(it.nama||'')} (sudah tidak ada di Produk)</option>`)
+          + (known ? opts.replace(`value="${esc(it.sku)}"`, `value="${esc(it.sku)}" selected`) : opts);
+      } else {
+        optsHtml = `<option value="" selected>-- Pilih Produk --</option>` + opts;
+      }
+      return `<div class="edit-item-row" data-key="${key}" style="display:flex;gap:6px;align-items:center;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:8px 10px">
+            <select class="edit-item-sku" onchange="_editTrxRecalc()" style="flex:2;min-width:0;font-size:0.78rem;padding:7px 8px;border-radius:8px;border:1px solid #E2E8F0;background:#fff;color:#1a2332">${optsHtml}</select>
+            <input class="edit-item-qty" type="number" min="1" value="${it ? (it.qty||1) : 1}" title="Qty" oninput="_editTrxRecalc()" style="width:52px;font-size:0.78rem;padding:7px 6px;border-radius:8px;border:1px solid #E2E8F0;background:#fff;text-align:center;color:#1a2332">
+            <input class="edit-item-disc" type="number" min="0" value="${it ? (it.discRpPer||0) : 0}" title="Disc per item (Rp)" oninput="_editTrxRecalc()" style="width:76px;font-size:0.78rem;padding:7px 6px;border-radius:8px;border:1px solid #E2E8F0;background:#fff;text-align:center;color:#1a2332">
+            <button type="button" onclick="_editTrxRemoveItem(this)" title="Hapus item ini" style="width:28px;height:28px;border-radius:8px;border:none;background:#FEE2E2;color:#DC2626;cursor:pointer;flex-shrink:0;font-size:0.8rem;padding:0">✕</button>
+          </div>`;
+    }
+    function _editTrxAddItem() {
+      const ctx = window._editTrxCtx;
+      ctx.nextKey = (ctx.nextKey || 0) + 1;
+      const wrap = document.getElementById('editItemsWrap');
+      wrap.insertAdjacentHTML('beforeend', _editTrxRowHtml('n' + ctx.nextKey, null));
+      wrap.scrollTop = wrap.scrollHeight;
+      _editTrxRecalc();
+    }
+    function _editTrxRemoveItem(btn) {
+      const row = btn.closest('.edit-item-row');
+      if (row) row.remove();
+      _editTrxRecalc();
     }
     function editTrx(id) {
       // [NEW] Hanya admin yang boleh mengedit transaksi (Customer/Sales/Status/
@@ -3606,15 +3650,14 @@
       const globalDiscPortion = Math.max(0, (trx.diskon||0) - oldItemDiscTotal);
       const biayaJml = trx.biayaJml || 0;
       // [NEW] Baris editable untuk SKU, Qty, & Disc setiap item dalam transaksi -
-      // didesain ulang jadi kartu (bukan baris input polos berdempetan) supaya
-      // lebih modern & enak dibaca.
-      let prodOpts = products.map(p => `<option value="${esc(p.sku)}">${esc(p.sku)} - ${esc(p.nama)}</option>`).join('');
-      let itemsHtml = items.length ? items.map((it,i) => `
-          <div style="display:flex;gap:6px;align-items:center;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:8px 10px">
-            <select id="editItemSku${i}" onchange="_editTrxRecalc()" style="flex:2;min-width:0;font-size:0.78rem;padding:7px 8px;border-radius:8px;border:1px solid #E2E8F0;background:#fff;color:#1a2332">${prodOpts.replace(`value="${esc(it.sku)}"`, `value="${esc(it.sku)}" selected`)}</select>
-            <input id="editItemQty${i}" type="number" min="1" value="${it.qty||1}" title="Qty" oninput="_editTrxRecalc()" style="width:52px;font-size:0.78rem;padding:7px 6px;border-radius:8px;border:1px solid #E2E8F0;background:#fff;text-align:center;color:#1a2332">
-            <input id="editItemDisc${i}" type="number" min="0" value="${it.discRpPer||0}" title="Disc per item (Rp)" oninput="_editTrxRecalc()" style="width:76px;font-size:0.78rem;padding:7px 6px;border-radius:8px;border:1px solid #E2E8F0;background:#fff;text-align:center;color:#1a2332">
-          </div>`).join('') : '<div style="font-size:12px;color:#94A3B8;text-align:center;padding:16px">Tidak ada item</div>';
+      // dikemas jadi kartu (bukan baris input polos berdempetan), masing-masing
+      // punya key unik (o0, o1, ...) supaya harga/modal ASLI-nya bisa
+      // dipertahankan walau baris lain ditambah/dihapus, dan tombol ✕ untuk
+      // hapus item ini dari transaksi.
+      window._editTrxProdOpts = products.map(p => `<option value="${esc(p.sku)}">${esc(p.sku)} - ${esc(p.nama)}</option>`).join('');
+      const origByKey = {};
+      items.forEach((it,i) => { origByKey['o'+i] = it; });
+      let itemsHtml = items.length ? items.map((it,i) => _editTrxRowHtml('o'+i, it)).join('') : '';
       // [FIX] "Nett (Rp)" SEBELUMNYA adalah input manual yang HARUS diketik ulang
       // sendiri oleh admin tiap kali item/qty/disc diubah - kalau lupa, Total di
       // struk jadi tidak sinkron dengan item yang sebenarnya (persis bug yang
@@ -3622,7 +3665,7 @@
       // diganti ringkasan Gross/Diskon/TOTAL yang dihitung OTOMATIS & LANGSUNG
       // ter-update tiap kali SKU/Qty/Disc di atas diubah (lewat _editTrxRecalc()) -
       // tidak ada lagi field manual yang bisa lupa disesuaikan.
-      window._editTrxCtx = { items, globalDiscPortion, biayaJml };
+      window._editTrxCtx = { origByKey, globalDiscPortion, biayaJml, nextKey: items.length };
       // [NEW] Desain ulang total - sebelumnya cuma label+input polos bawaan
       // SweetAlert2 (kaku/kuno). Sekarang pakai header custom (avatar bulat +
       // ID transaksi), grid 2 kolom utk Customer/Sales, label berikon huruf
@@ -3649,9 +3692,10 @@
               <option value="belumTransfer" ${trx.status==='belumTransfer'?'selected':''}>Belum Transfer</option>
             </select>
           </div>
-          <div style="margin-top:16px;margin-bottom:6px"><label style="font-size:0.72rem;font-weight:800;color:#0D2B3E"><i class="fas fa-boxes" style="margin-right:5px;color:#1A6DB5"></i>Item Transaksi</label></div>
+          <div style="margin-top:16px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center"><label style="font-size:0.72rem;font-weight:800;color:#0D2B3E"><i class="fas fa-boxes" style="margin-right:5px;color:#1A6DB5"></i>Item Transaksi</label><button type="button" onclick="_editTrxAddItem()" style="display:flex;align-items:center;gap:4px;font-size:0.68rem;font-weight:700;color:#1A6DB5;background:#EAF2FF;border:1px solid #DCEAFB;border-radius:8px;padding:5px 10px;cursor:pointer"><i class="fas fa-plus"></i> Item</button></div>
           <div style="display:flex;gap:6px;font-size:0.6rem;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:.02em;padding:0 10px 4px"><span style="flex:2">Produk</span><span style="width:52px;text-align:center">Qty</span><span style="width:76px;text-align:center">Disc</span></div>
           <div id="editItemsWrap" style="max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding:2px">${itemsHtml}</div>
+          <div id="editItemsEmpty" style="display:${items.length?'none':'block'};font-size:12px;color:#94A3B8;text-align:center;padding:16px">Belum ada item - klik "+ Item" untuk menambahkan</div>
           <div style="background:linear-gradient(135deg,#EAF2FF,#F4F8FB);border:1px solid #DCEAFB;border-radius:14px;padding:14px 16px;margin-top:14px">
             <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:#5a7a90"><span>Gross</span><span id="editSumGross" style="font-family:monospace;font-weight:600;color:#0D2B3E">Rp 0</span></div>
             <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:#5a7a90;margin-top:4px"><span>Diskon</span><span id="editSumDisc" style="font-family:monospace;font-weight:600;color:#DC2626">-Rp 0</span></div>
@@ -3666,6 +3710,11 @@
         didOpen: () => _editTrxRecalc(),
         preConfirm: () => {
           const calc = _editTrxCalc();
+          // [NEW] Validasi tambahan karena sekarang item bisa ditambah/dihapus
+          // bebas - cegah simpan kalau ada baris baru yang produknya belum
+          // dipilih, atau kalau semua item malah dihapus semua.
+          if (calc.blankRows > 0) { Swal.showValidationMessage('Ada baris item yang produknya belum dipilih. Pilih produknya atau hapus barisnya (✕).'); return false; }
+          if (calc.items.length === 0) { Swal.showValidationMessage('Transaksi harus punya minimal 1 item.'); return false; }
           return {
             customer: document.getElementById('editCust').value.trim(),
             sales: document.getElementById('editSales').value.trim(),
