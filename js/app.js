@@ -5348,6 +5348,11 @@
           localStorage.setItem(PESANAN_TITIPAN_KEY, JSON.stringify(titipanFromServer));
         }
       } catch(e) { console.warn('Gagal ambil Titipan dari server:', e); }
+      // [NEW] Kolom Titipan diisi otomatis dari sisa di menu Titipan (masuk - keluar).
+      try {
+        const tl = await gasCall('getTitipanList', []);
+        if (Array.isArray(tl)) window._titipanList = tl;
+      } catch(e) { console.warn('Gagal ambil daftar Titipan:', e); }
       renderPesananPage();
     }
 
@@ -5518,7 +5523,9 @@
       // SKU yang ditampilkan = gabungan SKU dari pesanan hari ini + SKU tambahan manual
       const skusFromPesanan = [...new Set(d.entries.map(e => e.sku))];
       const extraSkus = _loadPesananExtraSkus();
-      const allSkusToShow = [...new Set([...skusFromPesanan, ...extraSkus])];
+      const titipanSisa = _titipanSisaBySku();
+      const skusTitipan = Object.keys(titipanSisa).filter(k => titipanSisa[k] > 0);
+      const allSkusToShow = [...new Set([...skusFromPesanan, ...extraSkus, ...skusTitipan])];
       if (allSkusToShow.length === 0) {
         wrap.innerHTML = `<p class="text-sm" style="padding:16px;text-align:center;color:var(--text3)">Belum ada rencana order untuk hari ini.</p>`;
         return;
@@ -5533,13 +5540,11 @@
         const nama = (stockRow && stockRow.nama) || (prod && prod.nama) || sku;
         const stock = stockRow ? stockRow.stokAkhir : 0;
         const pesananQty = pesananQtyMap[sku] || 0;
-        const titipanVal = titipanMap[sku] !== undefined ? titipanMap[sku] : '';
+        const titipanVal = titipanSisa[sku] !== undefined ? Math.max(0, titipanSisa[sku]) : '';
         const orderVal = d.orderValues[sku] !== undefined ? d.orderValues[sku] : '';
         return { sku, nama, stock, pesananQty, titipanVal, orderVal };
       }).sort((a,b) => a.nama.localeCompare(b.nama));
-      const titipanCell = r => readOnly
-        ? `<td style="text-align:center;font-family:var(--mono);color:#D97706">${r.titipanVal !== '' ? r.titipanVal : '-'}</td>`
-        : `<td style="text-align:center"><input type="number" class="pesanan-titipan-input" value="${r.titipanVal}" placeholder="-" style="width:70px;text-align:center;padding:4px 6px;border-radius:6px;border:1px solid var(--border);background:var(--surface);font-family:var(--mono);font-size:12px;color:#D97706" oninput="pesananTitipanInput('${esc(r.sku)}',this.value)"></td>`;
+      const titipanCell = r => `<td style="text-align:center;font-family:var(--mono);font-weight:700;color:#D97706" title="Otomatis dari menu Titipan">${r.titipanVal !== '' && r.titipanVal !== 0 ? r.titipanVal : '-'}</td>`;
       const orderCell = r => readOnly
         ? `<td style="text-align:center;font-family:var(--mono);font-weight:700">${r.orderVal !== '' ? r.orderVal : '-'}</td>`
         : `<td style="text-align:center"><input type="number" class="pesanan-order-input" value="${r.orderVal}" placeholder="-" style="width:70px;text-align:center;padding:4px 6px;border-radius:6px;border:1px solid var(--border);background:var(--surface);font-family:var(--mono);font-size:12px" oninput="pesananOrderInput('${esc(r.sku)}',this.value)"></td>`;
@@ -5560,6 +5565,14 @@
     // Stock) - sekali diisi, nilainya "terekam" dan tetap muncul terus di hari-hari
     // berikutnya sampai user sendiri yang mengubahnya lagi. Cocok untuk barang yang
     // rutin dititipkan ke pihak lain (jumlahnya jarang berubah harian).
+    function _titipanSisaBySku() {
+      const m = {};
+      (window._titipanList || []).forEach(e => {
+        if (!e || !e.sku) return;
+        m[e.sku] = (m[e.sku] || 0) + (e.tipe === 'masuk' ? 1 : -1) * (Number(e.qty) || 0);
+      });
+      return m;
+    }
     const PESANAN_TITIPAN_KEY = 'tirtaPesananTitipanMap';
     function _loadPesananTitipanMap() { try { return JSON.parse(localStorage.getItem(PESANAN_TITIPAN_KEY) || '{}'); } catch(e) { return {}; } }
     function _savePesananTitipanMap(map) {
