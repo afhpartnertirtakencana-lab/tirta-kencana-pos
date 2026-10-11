@@ -2162,49 +2162,58 @@
       _currentTrxId = trxIdVal;
       document.getElementById('contentArea').innerHTML = `
         <datalist id="productDatalist">${datalistOptions}</datalist>
+        <div class="jx">
+        <div class="jx-hero">
+          <div class="jx-hero-txt">
+            <div class="jx-hero-eyebrow"><i class="fas fa-cash-register"></i> Penjualan</div>
+            <div class="jx-hero-title">Buat Invoice</div>
+          </div>
+          <div class="jx-hero-side">
+            <div class="jx-idpill"><span>ID</span><input id="trxId" readonly value="${trxIdVal}"></div>
+            <button type="button" class="jx-voice" onclick="startVoiceCommandJual()"><i class="fas fa-microphone"></i> Perintah Suara</button>
+          </div>
+        </div>
         <div class="jual-two-col">
-        <div class="card jual-col-left"><div class="card-title"><i class="fas fa-cash-register"></i> Buat Invoice</div>
-        <!-- [NEW] Perintah Suara - isi pelanggan/barang/qty/disc dengan ucapkan
-             saja, lihat startVoiceCommandJual() untuk detail cara kerjanya. -->
-        <button type="button" class="btn btn-outline btn-block" onclick="startVoiceCommandJual()" style="margin-bottom:10px;border-color:#EF4444;color:#EF4444"><i class="fas fa-microphone"></i> 🎙️ Perintah Suara</button>
-        <div class="form-group"><label>ID Transaksi</label><input id="trxId" readonly style="font-family:var(--mono)" value="${trxIdVal}"></div>
-        <div class="flex-row"><div class="form-group col-1"><label>Tanggal</label><input type="date" id="trxTgl"></div><div class="form-group col-1"><label>Pelanggan *</label><div style="display:flex;gap:4px"><input id="trxCust" placeholder="Nama pelanggan" list="custDatalist" autocomplete="off" style="flex:1;min-width:0"><button type="button" onclick="startFieldVoiceInput('customer', this)" title="Isi dengan suara" style="${MIC_BTN_STYLE}"><i class="fas fa-microphone"></i></button></div><datalist id="custDatalist">${cDatalist}</datalist></div></div>
-        <div class="flex-row"><div class="form-group col-1"><label>Sales *</label><div style="display:flex;gap:4px"><select id="trxSales" style="flex:1;min-width:0">${sOpts}</select><button type="button" onclick="startFieldVoiceInput('sales', this)" title="Isi dengan suara" style="${MIC_BTN_STYLE}"><i class="fas fa-microphone"></i></button></div></div><div class="form-group col-1"><label>Status</label><div style="display:flex;gap:4px"><select id="trxStatus" style="flex:1;min-width:0"><option value="">-- Pilih --</option><option value="belumTransfer">Belum Transfer</option><option value="cod">COD</option><option value="transfer">Transfer</option><option value="qris">QRIS</option></select><button type="button" onclick="startFieldVoiceInput('status', this)" title="Isi dengan suara" style="${MIC_BTN_STYLE}"><i class="fas fa-microphone"></i></button></div></div></div>
-        <div class="form-group"><label>Diskon Global (Rp)</label><input type="number" id="trxDiscGlobal" placeholder="0" min="0" oninput="recalcTotals()"></div>
-        </div>
-        <div class="card jual-col-right"><div class="card-title"><i class="fas fa-box-open"></i> Item</div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><strong style="font-size:0.8rem">📦 Item</strong><div style="display:flex;gap:4px"><button class="btn btn-scan btn-sm" onclick="openScanner('trx')">📷 Scan</button><button class="btn btn-outline btn-sm" onclick="addItemRow()">+ Item</button></div></div>
-        <div id="itemsContainer"></div>
-        <div class="card" style="margin-top:8px;padding:10px 14px;background:var(--biru-muda)">
-          <div style="font-size:0.72rem;font-weight:700;color:var(--biru);margin-bottom:8px;letter-spacing:.5px">➕ BIAYA TAMBAHAN</div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
-            <button type="button" class="btn btn-sm btn-outline" style="font-size:0.65rem;padding:3px 8px" onclick="setBiayaTambahan('ongkir',5000)">🚚 Ongkir</button>
-            <button type="button" class="btn btn-sm btn-outline" style="font-size:0.65rem;padding:3px 8px" onclick="setBiayaTambahan('tips',2000)">💰 Tips</button>
-            <button type="button" class="btn btn-sm btn-outline" style="font-size:0.65rem;padding:3px 8px" onclick="setBiayaTambahan('parkir',2000)">🅿️ Parkir</button>
-            <button type="button" class="btn btn-sm btn-ghost" style="font-size:0.65rem;padding:3px 8px" onclick="setBiayaTambahan('',0)">✕ Kosong</button>
+        <div class="jx-card jual-col-left">
+          <div class="jx-sec"><span class="jx-sec-ic"><i class="fas fa-user-tag"></i></span>Info Transaksi</div>
+          <div class="jx-grid2">
+            <div class="form-group"><label>Tanggal</label><input type="date" id="trxTgl"></div>
+            <div class="form-group"><label>Status</label><div class="jx-inrow"><select id="trxStatus"><option value="">-- Pilih --</option><option value="belumTransfer">Belum Transfer</option><option value="cod">COD</option><option value="transfer">Transfer</option><option value="qris">QRIS</option></select><button type="button" class="jx-mic" onclick="startFieldVoiceInput('status', this)" title="Isi dengan suara" style="${MIC_BTN_STYLE}"><i class="fas fa-microphone"></i></button></div></div>
           </div>
-          <div style="display:flex;gap:8px;align-items:center">
-            <input type="text" id="biayaKet" placeholder="Keterangan" value="" oninput="recalcTotals()" style="flex:1;font-size:0.75rem;padding:5px 8px;border-radius:8px;border:1px solid var(--border);background:var(--card)">
-            <input type="number" id="biayaJml" placeholder="Jumlah" min="0" oninput="recalcTotals()" style="width:90px;font-size:0.75rem;padding:5px 8px;border-radius:8px;border:1px solid var(--border);background:var(--card)">
+          <div class="form-group"><label>Pelanggan *</label><div class="jx-inrow"><input id="trxCust" placeholder="Nama pelanggan" list="custDatalist" autocomplete="off"><button type="button" class="jx-mic" onclick="startFieldVoiceInput('customer', this)" title="Isi dengan suara" style="${MIC_BTN_STYLE}"><i class="fas fa-microphone"></i></button></div><datalist id="custDatalist">${cDatalist}</datalist></div>
+          <div class="jx-grid2">
+            <div class="form-group"><label>Sales *</label><div class="jx-inrow"><select id="trxSales">${sOpts}</select><button type="button" class="jx-mic" onclick="startFieldVoiceInput('sales', this)" title="Isi dengan suara" style="${MIC_BTN_STYLE}"><i class="fas fa-microphone"></i></button></div></div>
+            <div class="form-group"><label>Diskon Global (Rp)</label><input type="number" id="trxDiscGlobal" placeholder="0" min="0" oninput="recalcTotals()"></div>
           </div>
         </div>
-        <div class="total-box"><div class="flex-between"><span>Gross</span><span id="sumGross" style="font-family:var(--mono)">Rp 0</span></div><div class="flex-between"><span>Diskon</span><span id="sumDisc" style="font-family:var(--mono);color:var(--merah)">Rp 0</span></div><div class="flex-between" id="sumBiayaRow" style="display:none"><span id="sumBiayaLabel">Biaya Tambahan</span><span id="sumBiaya" style="font-family:var(--mono);color:var(--hijau)">Rp 0</span></div><div class="flex-between" style="font-size:1.1rem;font-weight:800"><span>TOTAL NETT</span><span id="sumNett" style="font-family:var(--mono);color:var(--biru)">Rp 0</span></div></div>
-        <div class="card" style="margin-top:8px;padding:12px 14px;background:var(--surface2);border:1px solid var(--border)">
-          <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:8px">📸 FOTO KIRIMAN (Opsional)</div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-            <label style="cursor:pointer;display:flex;align-items:center;gap:6px;background:var(--biru-muda);color:var(--biru);padding:8px 14px;border-radius:10px;font-size:0.75rem;font-weight:700;transition:0.2s" onmouseover="this.style.background='rgba(26,109,181,0.15)'" onmouseout="this.style.background='var(--biru-muda)'">
-              <i class="fas fa-camera"></i> Kamera
-              <input type="file" accept="image/*" capture="environment" style="display:none" onchange="uploadFotoKiriman(this)">
-            </label>
-            <label style="cursor:pointer;display:flex;align-items:center;gap:6px;background:var(--biru-muda);color:var(--biru);padding:8px 14px;border-radius:10px;font-size:0.75rem;font-weight:700;transition:0.2s" onmouseover="this.style.background='rgba(26,109,181,0.15)'" onmouseout="this.style.background='var(--biru-muda)'">
-              <i class="fas fa-images"></i> Galeri
-              <input type="file" accept="image/*" style="display:none" onchange="uploadFotoKiriman(this)">
-            </label>
-            <button class="btn btn-sm btn-ghost" style="font-size:0.7rem" onclick="showFotoBukti(_currentTrxId,'Foto Kiriman '+_currentTrxId)">🖼 Lihat Foto</button>
-            <span id="fotoKirimanStatus" style="font-size:0.7rem;color:var(--text3);margin-left:auto"></span>
+        <div class="jx-card jual-col-right">
+          <div class="jx-sec"><span class="jx-sec-ic"><i class="fas fa-box-open"></i></span>Item Barang<div class="jx-sec-actions"><button class="jx-btn scan" onclick="openScanner('trx')"><i class="fas fa-barcode"></i> Scan</button><button class="jx-btn add" onclick="addItemRow()"><i class="fas fa-plus"></i> Item</button></div></div>
+          <div id="itemsContainer"></div>
+          <div class="jx-extra">
+            <div class="jx-extra-h"><i class="fas fa-circle-plus"></i> Biaya Tambahan</div>
+            <div class="jx-chips">
+              <button type="button" class="jx-chip" onclick="setBiayaTambahan('ongkir',5000)">🚚 Ongkir</button>
+              <button type="button" class="jx-chip" onclick="setBiayaTambahan('tips',2000)">💰 Tips</button>
+              <button type="button" class="jx-chip" onclick="setBiayaTambahan('parkir',2000)">🅿️ Parkir</button>
+              <button type="button" class="jx-chip ghost" onclick="setBiayaTambahan('',0)">✕ Kosong</button>
+            </div>
+            <div class="jx-extra-in">
+              <input type="text" id="biayaKet" placeholder="Keterangan" value="" oninput="recalcTotals()">
+              <input type="number" id="biayaJml" placeholder="Jumlah" min="0" oninput="recalcTotals()">
+            </div>
           </div>
+          <div class="total-box jx-total"><div class="flex-between jx-trow"><span>Gross</span><span id="sumGross">Rp 0</span></div><div class="flex-between jx-trow"><span>Diskon</span><span id="sumDisc" class="jx-neg">Rp 0</span></div><div class="flex-between jx-trow" id="sumBiayaRow" style="display:none"><span id="sumBiayaLabel">Biaya Tambahan</span><span id="sumBiaya" class="jx-pos">Rp 0</span></div><div class="flex-between jx-nett"><span>TOTAL NETT</span><span id="sumNett">Rp 0</span></div></div>
+          <div class="jx-foto">
+            <div class="jx-foto-h"><i class="fas fa-camera"></i> Foto Kiriman <small>(opsional)</small></div>
+            <div class="jx-foto-row">
+              <label class="jx-btn soft"><i class="fas fa-camera"></i> Kamera<input type="file" accept="image/*" capture="environment" style="display:none" onchange="uploadFotoKiriman(this)"></label>
+              <label class="jx-btn soft"><i class="fas fa-images"></i> Galeri<input type="file" accept="image/*" style="display:none" onchange="uploadFotoKiriman(this)"></label>
+              <button class="jx-btn soft" onclick="showFotoBukti(_currentTrxId,'Foto Kiriman '+_currentTrxId)"><i class="fas fa-image"></i> Lihat</button>
+              <span id="fotoKirimanStatus" class="jx-foto-st"></span>
+            </div>
+          </div>
+          <div class="jx-actions"><button class="jx-reset" onclick="resetTrx()"><i class="fas fa-rotate-left"></i> Reset</button><div class="slide-confirm" id="slideConfirmTrx" style="flex:2"><div class="slide-confirm-fill" id="slideConfirmFill"></div><div class="slide-confirm-text" id="slideConfirmText">💾 Geser untuk Simpan &amp; Struk</div><div class="slide-confirm-thumb" id="slideConfirmThumb"><i class="fas fa-chevron-right"></i></div></div></div>
         </div>
-        <div style="display:flex;gap:8px"><button class="btn btn-secondary" style="flex:1" onclick="resetTrx()">Reset</button><div class="slide-confirm" id="slideConfirmTrx" style="flex:2"><div class="slide-confirm-fill" id="slideConfirmFill"></div><div class="slide-confirm-text" id="slideConfirmText">💾 Geser untuk Simpan &amp; Struk</div><div class="slide-confirm-thumb" id="slideConfirmThumb"><i class="fas fa-chevron-right"></i></div></div></div>
         </div>
         </div>`;
       ensureJualTwoColStyles();
@@ -2370,12 +2379,17 @@
       const div = document.createElement('div');
       div.className = 'cart-item-row';
       div.innerHTML = `
-        <div style="display:flex;gap:2px;flex:2;min-width:100px"><input class="cart-item-select" data-field="sku" placeholder="SKU" list="productDatalist" value="${skuVal||''}" autocomplete="off" style="flex:1;min-width:0"><button type="button" onclick="startFieldVoiceInput('sku', this)" title="Isi barang dengan suara" style="${MIC_BTN_STYLE}"><i class="fas fa-microphone"></i></button></div>
-        <input class="cart-nama" data-field="nama" readonly placeholder="Nama" style="width:110px;background:var(--biru-muda);font-size:0.7rem;text-align:center;border:1px solid var(--border);border-radius:8px;padding:6px 4px;">
-        <div style="display:flex;gap:2px"><input class="cart-qty" data-field="qty" type="number" min="1" placeholder="0" style="width:55px"><button type="button" onclick="startFieldVoiceInput('qty', this)" title="Isi qty dengan suara" style="${MIC_BTN_STYLE}"><i class="fas fa-microphone"></i></button></div>
-        <input class="cart-disc" data-field="harga" type="number" min="0" placeholder="Harga" value="" style="width:70px">
-        <div style="display:flex;gap:2px"><input class="cart-disc" data-field="disc" type="number" min="0" placeholder="Disc" value="" style="width:55px"><button type="button" onclick="startFieldVoiceInput('disc', this)" title="Isi diskon dengan suara" style="${MIC_BTN_STYLE}"><i class="fas fa-microphone"></i></button></div>
-        <button class="btn btn-danger btn-sm" onclick="this.parentElement.remove();recalcTotals()">✕</button>`;
+        <div class="jx-r1">
+          <div class="jx-sku"><i class="fas fa-barcode"></i><input class="cart-item-select" data-field="sku" placeholder="Kode / SKU" list="productDatalist" value="${skuVal||''}" autocomplete="off"><button type="button" class="jx-mic" onclick="startFieldVoiceInput('sku', this)" title="Isi barang dengan suara" style="${MIC_BTN_STYLE}"><i class="fas fa-microphone"></i></button></div>
+          <button class="jx-del" onclick="this.closest('.cart-item-row').remove();recalcTotals()" title="Hapus item"><i class="fas fa-trash-can"></i></button>
+        </div>
+        <input class="cart-nama" data-field="nama" readonly placeholder="Nama barang otomatis terisi">
+        <div class="jx-r3">
+          <label><span>Qty</span><div class="jx-inrow"><input class="cart-qty" data-field="qty" type="number" min="1" placeholder="0"><button type="button" class="jx-mic" onclick="startFieldVoiceInput('qty', this)" title="Isi qty dengan suara" style="${MIC_BTN_STYLE}"><i class="fas fa-microphone"></i></button></div></label>
+          <label><span>Harga</span><input class="cart-disc" data-field="harga" type="number" min="0" placeholder="0" value=""></label>
+          <label><span>Disc</span><div class="jx-inrow"><input class="cart-disc" data-field="disc" type="number" min="0" placeholder="0" value=""><button type="button" class="jx-mic" onclick="startFieldVoiceInput('disc', this)" title="Isi diskon dengan suara" style="${MIC_BTN_STYLE}"><i class="fas fa-microphone"></i></button></div></label>
+        </div>
+        <div class="jx-subrow"><span>Subtotal</span><b class="jx-sub">Rp 0</b></div>`;
       const skuInput = div.querySelector('[data-field="sku"]');
       const namaInput = div.querySelector('[data-field="nama"]');
       const hargaInput = div.querySelector('[data-field="harga"]');
@@ -2396,7 +2410,8 @@
     function fillRowBySku(row, sku) { const p = products.find(x => String(x.sku).toLowerCase() === sku.toLowerCase()); if (!p) return; row.querySelector('[data-field="sku"]').value = p.sku; row.querySelector('[data-field="harga"]').value = p.jual || p.harga || 0; const namaInput = row.querySelector('[data-field="nama"]'); if (namaInput) namaInput.value = p.nama; recalcTotals(); }
     function getItems() { const rows = document.querySelectorAll('#itemsContainer .cart-item-row'); const items = []; rows.forEach(row => { const sku = row.querySelector('[data-field="sku"]')?.value.trim() || ''; const qty = parseInt(row.querySelector('[data-field="qty"]')?.value) || 1; const harga = parseFloat(row.querySelector('[data-field="harga"]')?.value) || 0; const disc = parseFloat(row.querySelector('[data-field="disc"]')?.value) || 0; const p = products.find(x => x.sku === sku); const modal = p ? (p.modal || 0) : 0; const nettPer = harga - disc; if (sku || p) items.push({ sku, nama: p?.nama || sku, qty, harga, discRpPer: disc, modal, nettPer, subtotal: nettPer * qty }); }); return items; }
     function setBiayaTambahan(ket, jml) { const elKet = document.getElementById('biayaKet'); const elJml = document.getElementById('biayaJml'); if (elKet) elKet.value = ket; if (elJml) elJml.value = jml; recalcTotals(); }
-    function recalcTotals() { const items = getItems(); const gross = items.reduce((s,it) => s + it.harga * it.qty, 0); const iDisc = items.reduce((s,it) => s + it.discRpPer * it.qty, 0); const gDisc = parseFloat(document.getElementById('trxDiscGlobal')?.value) || 0; const biayaJml = parseFloat(document.getElementById('biayaJml')?.value) || 0; const biayaKet = document.getElementById('biayaKet')?.value.trim() || ''; document.getElementById('sumGross').textContent = fmtRp(gross); document.getElementById('sumDisc').textContent = fmtRp(iDisc + gDisc); const rowBiaya = document.getElementById('sumBiayaRow'); if (rowBiaya) { if (biayaJml > 0) { rowBiaya.style.display = ''; if (document.getElementById('sumBiayaLabel')) document.getElementById('sumBiayaLabel').textContent = biayaKet || 'Biaya Tambahan'; if (document.getElementById('sumBiaya')) document.getElementById('sumBiaya').textContent = fmtRp(biayaJml); } else { rowBiaya.style.display = 'none'; } } document.getElementById('sumNett').textContent = fmtRp(gross - iDisc - gDisc + biayaJml); }
+    function _jxUpdateSubs() { document.querySelectorAll('#itemsContainer .cart-item-row').forEach(r => { const q = parseInt(r.querySelector('[data-field="qty"]')?.value) || 0, h = parseFloat(r.querySelector('[data-field="harga"]')?.value) || 0, d = parseFloat(r.querySelector('[data-field="disc"]')?.value) || 0; const el = r.querySelector('.jx-sub'); if (el) el.textContent = fmtRp(Math.max(0,(h - d) * q)); }); }
+    function recalcTotals() { try { _jxUpdateSubs(); } catch(e) {} const items = getItems(); const gross = items.reduce((s,it) => s + it.harga * it.qty, 0); const iDisc = items.reduce((s,it) => s + it.discRpPer * it.qty, 0); const gDisc = parseFloat(document.getElementById('trxDiscGlobal')?.value) || 0; const biayaJml = parseFloat(document.getElementById('biayaJml')?.value) || 0; const biayaKet = document.getElementById('biayaKet')?.value.trim() || ''; document.getElementById('sumGross').textContent = fmtRp(gross); document.getElementById('sumDisc').textContent = fmtRp(iDisc + gDisc); const rowBiaya = document.getElementById('sumBiayaRow'); if (rowBiaya) { if (biayaJml > 0) { rowBiaya.style.display = ''; if (document.getElementById('sumBiayaLabel')) document.getElementById('sumBiayaLabel').textContent = biayaKet || 'Biaya Tambahan'; if (document.getElementById('sumBiaya')) document.getElementById('sumBiaya').textContent = fmtRp(biayaJml); } else { rowBiaya.style.display = 'none'; } } document.getElementById('sumNett').textContent = fmtRp(gross - iDisc - gDisc + biayaJml); }
     function resetTrx() { loadPenjualan(); }
     async function submitTrx() {
       const id = document.getElementById('trxId').value.trim(), tgl = document.getElementById('trxTgl').value, customer = document.getElementById('trxCust').value.trim(), sales = document.getElementById('trxSales').value, status = document.getElementById('trxStatus').value, gDisc = parseFloat(document.getElementById('trxDiscGlobal').value) || 0, items = getItems();
