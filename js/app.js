@@ -2886,7 +2886,7 @@
         <div class="tx-hero">
           <div class="tx-hero-top"><div><div class="tx-eyebrow"><i class="fas fa-list"></i> Transaksi</div><div class="tx-hero-sub" id="txHeroCount">0 transaksi</div></div><div class="tx-hero-actions"><button class="tx-hbtn" onclick="exportExcelTransaksi(document.getElementById('trxSearch').value?null:localDateStr())"><i class="fas fa-file-excel"></i> Excel</button><button class="tx-hbtn" onclick="showEditLog()"><i class="fas fa-clock-rotate-left"></i> Log Edit</button></div></div>
           <div class="tx-hero-val" id="txHeroTotal">Rp 0</div>
-          <div class="tx-hero-lbl">Total Nett (sesuai filter)</div>
+          <div class="tx-hero-lbl">Total Nett Hari Ini</div>
           <div class="tx-stats" id="txStats"></div>
         </div>
         <div class="tx-filter"><div class="tx-search"><i class="fas fa-magnifying-glass"></i><input id="trxSearch" class="form-control" placeholder="Cari ID / pelanggan…" oninput="filterTrx()"></div><select id="trxFilterStatus" class="form-control" onchange="filterTrx()"><option value="">Semua Status</option><option value="cod">COD</option><option value="transfer">Transfer</option><option value="qris">QRIS</option><option value="belumtransfer">Belum Transfer</option></select><select id="trxFilterSales" class="form-control" onchange="filterTrx()">${salesOpts}</select></div>
@@ -2894,10 +2894,12 @@
         </div>`;
       renderTrxTable();
     }
-    function _txUpdateHero(list) {
+    function _txUpdateHero() {
+      // Banner HANYA menampilkan data transaksi tanggal hari ini (tidak ikut filter/pencarian)
+      const list = allTrxList.filter(t => (t.tgl||'').substring(0,10) === localDateStr());
       const tot = list.reduce((a,t)=>a+(t.nett||0),0);
       const el = document.getElementById('txHeroTotal'); if (el) el.textContent = fmtRp(tot);
-      const c = document.getElementById('txHeroCount'); if (c) c.textContent = list.length + ' transaksi';
+      const c = document.getElementById('txHeroCount'); if (c) c.textContent = list.length + ' transaksi · ' + fmtDate(localDateStr());
       const st = document.getElementById('txStats'); if (!st) return;
       const defs = [['cod','COD','fa-hand-holding-usd'],['transfer','Transfer','fa-university'],['qris','QRIS','fa-qrcode'],['belumTransfer','Belum','fa-clock']];
       st.innerHTML = defs.map(([k,l,ic]) => { const rows = list.filter(t => t.status === k); return `<div class="tx-stat-i ${k}"><i class="fas ${ic}"></i><div><b>${rows.length}</b><span>${l}</span></div></div>`; }).join('');
@@ -4123,21 +4125,25 @@
         { val:'belum_transfer',       label:'Belum Transfer' },
         { val:'laporan_per_sales',    label:'Laporan per Sales' },
       ].map(o => `<option value="${o.val}" ${_rekapJenis===o.val?'selected':''}>${o.label}</option>`).join('');
-      document.getElementById('contentArea').innerHTML = `
-        <div class="card">
-          <div class="card-title"><i class="fas fa-chart-bar"></i> Laporan</div>
+      document.getElementById('contentArea').innerHTML = `<div class="rk">
+        <div class="rk-hero">
+          <div class="rk-hero-top"><div><div class="rk-eyebrow"><i class="fas fa-chart-bar"></i> Rekap Penjualan</div><div class="rk-hero-sub" id="rkHeroSub">Pilih laporan lalu tekan Tampilkan</div></div>
+            <div class="rk-hero-actions"><button class="rk-hbtn" onclick="showRekapStrukModal()"><i class="fas fa-print"></i> Cetak</button><button class="rk-hbtn" onclick="exportExcelRekap(document.getElementById('rekapJenis').value,document.getElementById('rekapTgl').value,document.getElementById('rekapSales').value)"><i class="fas fa-file-excel"></i> Excel</button></div></div>
+          <div class="rk-hero-val" id="rkHeroVal">Rp 0</div>
+          <div class="rk-hero-lbl" id="rkHeroLbl">Total Nett</div>
+        </div>
+        <div class="rk-panel">
           <div class="form-group"><label>Jenis Laporan</label>
             <select id="rekapJenis" onchange="_rekapJenis=this.value">${jenisOpts}</select>
           </div>
-          <div class="flex-row" style="flex-wrap:wrap;gap:8px;">
-            <div class="form-group col-1" style="margin:0"><label>Tanggal</label><input type="date" id="rekapTgl"></div>
-            <div class="form-group col-1" style="margin:0"><label>Sales</label><select id="rekapSales">${sOpts}</select></div>
-            <button class="btn btn-primary" onclick="doRekap()" style="height:44px;align-self:flex-end">📊 Tampilkan</button>
-            <button class="btn btn-outline" onclick="showRekapStrukModal()" style="height:44px;align-self:flex-end;font-size:0.72rem">🖨️ Cetak</button>
-            <button class="btn btn-outline" onclick="exportExcelRekap(document.getElementById('rekapJenis').value,document.getElementById('rekapTgl').value,document.getElementById('rekapSales').value)" style="height:44px;align-self:flex-end;font-size:0.72rem">📥 Excel</button>
+          <div class="rk-row">
+            <div class="form-group"><label>Tanggal</label><input type="date" id="rekapTgl"></div>
+            <div class="form-group"><label>Sales</label><select id="rekapSales">${sOpts}</select></div>
           </div>
+          <button class="rk-go" onclick="doRekap()"><i class="fas fa-chart-pie"></i> Tampilkan Laporan</button>
         </div>
-        <div id="rekapContent"><div class="text-center text-sm" style="padding:40px">Pilih laporan &amp; filter lalu klik Tampilkan</div></div>`;
+        <div id="rekapContent"><div class="rk-empty"><i class="fas fa-chart-simple"></i><div>Pilih laporan &amp; filter lalu klik Tampilkan</div></div></div>
+        </div>`;
       document.getElementById('rekapTgl').value = localDateStr();
       document.getElementById('rekapJenis').value = _rekapJenis;
     }
@@ -4163,8 +4169,15 @@
       let filtered = allTrxList.filter(t => (t.tgl||'').substring(0,10) === tgl);
       if (salesFilter) filtered = filtered.filter(t => (t.sales||'').toLowerCase().trim() === salesFilter.toLowerCase().trim());
 
+      const _rkSet = (list) => { try {
+        const v = document.getElementById('rkHeroVal'), sb = document.getElementById('rkHeroSub'), lb = document.getElementById('rkHeroLbl');
+        if (v) v.textContent = fmtRp(list.reduce((a,t)=>a+(t.nett||0),0));
+        if (sb) sb.textContent = list.length + ' transaksi · ' + fmtDate(tgl) + (salesFilter ? ' · ' + salesFilter : ' · Semua Sales');
+        if (lb) lb.textContent = 'Total Nett';
+      } catch(e) {} };
+      _rkSet(filtered);
       if (!filtered.length) {
-        document.getElementById('rekapContent').innerHTML = '<div class="card"><p class="text-center text-sm">Tidak ada transaksi pada tanggal ini</p></div>';
+        document.getElementById('rekapContent').innerHTML = '<div class="rk-empty"><i class="fas fa-inbox"></i><div>Tidak ada transaksi pada tanggal ini</div></div>';
         return;
       }
 
