@@ -1474,7 +1474,10 @@
       document.getElementById('bnavMoreBackdrop').classList.remove('open');
     }
     function navigateTo(p) { currentPage = p; document.body.setAttribute('data-page', p); renderMenuTabs(); renderBottomNav(); renderContent(); }
-    function renderContent() { switch (currentPage) { case 'dashboard': loadDashboard(); break; case 'penjualan': loadPenjualan(); break; case 'transaksi': loadTransaksi(); break; case 'rekap': loadRekap(); break; case 'rekapinput': loadRekapInput(); break; case 'setoran': loadSetoran(); break; case 'rekapsetoran': loadRekapSetoran(); break; case 'inputbarang': loadInputBarang(); break; case 'stockbarang': loadStockBarang(); break; case 'cekstock': loadCekStock(); break; case 'cekkosongan': loadCekKosongan(); break; case 'pesanan': loadPesanan(); break; case 'titipan': loadTitipan(); break; case 'produk': loadProduk(); break; case 'pelanggan': loadPelanggan(); break; case 'pengaturan': loadPengaturan(); break; case 'pengaturanUser': loadPengaturanUser(); break; case 'grafik': loadGrafik(); break; case 'piutang': loadPiutang(); break; case 'laporanbulanan': loadLaporanBulanan(); break; case 'googlesheets': loadGoogleSheets(); break; } }
+    function _pgHero(icon, title, sub, val, lbl) {
+      return `<div class="pg-hero"><div class="pg-hero-eyebrow"><i class="fas ${icon}"></i> ${title}</div><div class="pg-hero-sub">${sub||''}</div>${val !== undefined && val !== null ? `<div class="pg-hero-val">${val}</div><div class="pg-hero-lbl">${lbl||''}</div>` : ''}</div>`;
+    }
+    function renderContent() { try { document.getElementById('contentArea').setAttribute('data-page', currentPage); } catch(e) {} switch (currentPage) { case 'dashboard': loadDashboard(); break; case 'penjualan': loadPenjualan(); break; case 'transaksi': loadTransaksi(); break; case 'rekap': loadRekap(); break; case 'rekapinput': loadRekapInput(); break; case 'setoran': loadSetoran(); break; case 'rekapsetoran': loadRekapSetoran(); break; case 'inputbarang': loadInputBarang(); break; case 'stockbarang': loadStockBarang(); break; case 'cekstock': loadCekStock(); break; case 'cekkosongan': loadCekKosongan(); break; case 'pesanan': loadPesanan(); break; case 'titipan': loadTitipan(); break; case 'produk': loadProduk(); break; case 'pelanggan': loadPelanggan(); break; case 'pengaturan': loadPengaturan(); break; case 'pengaturanUser': loadPengaturanUser(); break; case 'grafik': loadGrafik(); break; case 'piutang': loadPiutang(); break; case 'laporanbulanan': loadLaporanBulanan(); break; case 'googlesheets': loadGoogleSheets(); break; } }
 
     // ========== DASHBOARD (MENU UTAMA) ==========
     function loadDashboard() {
@@ -2785,13 +2788,15 @@
       if (!_pgKeep) pgReset('rs');
       const _pg = pgSlice(rowsWithIdx, 'rs', 30);
       window._pgRerender_rs = () => renderRekapSetoranTable(true);
-      const _rsTotSetor = rowsWithIdx.reduce((a,r)=>a+(Number(r.s.setor)||0),0), _rsTotSelisih = rowsWithIdx.reduce((a,r)=>a+(Number(r.s.selisih)||0),0), _rsTotCod = rowsWithIdx.reduce((a,r)=>a+(Number(r.s.grandTotal)||0),0);
+      // Banner HANYA menampilkan setoran tanggal hari ini (tidak ikut filter sales/tanggal)
+      const _rsToday = setoranHistory.filter(s => (s.tgl||'').substring(0,10) === localDateStr());
+      const _rsTotSetor = _rsToday.reduce((a,s)=>a+(Number(s.setor)||0),0), _rsTotSelisih = _rsToday.reduce((a,s)=>a+(Number(s.selisih)||0),0), _rsTotCod = _rsToday.reduce((a,s)=>a+(Number(s.grandTotal)||0),0);
       document.getElementById('contentArea').innerHTML = `<div class="rsp">
         <div class="rsp-hero">
-          <div class="rsp-hero-top"><div><div class="rsp-eyebrow"><i class="fas fa-table"></i> Rekap Setoran</div><div class="rsp-hero-sub">${rowsWithIdx.length} data${_rsFilterSales ? ' · ' + esc(_rsFilterSales) : ' · Semua Sales'}${_rsFilterDate ? ' · ' + fmtDate(_rsFilterDate) : ' · Semua Tanggal'}</div></div>
+          <div class="rsp-hero-top"><div><div class="rsp-eyebrow"><i class="fas fa-table"></i> Rekap Setoran</div><div class="rsp-hero-sub">${_rsToday.length} setoran · ${esc(fmtDate(localDateStr()))} (hari ini)</div></div>
             <div class="rsp-hero-actions"><button class="rsp-hbtn" onclick="loadRekapSetoran()"><i class="fas fa-sync"></i> Refresh</button><button class="rsp-hbtn" onclick="showSetoranEditLog()"><i class="fas fa-clipboard-list"></i> Log Edit</button></div></div>
           <div class="rsp-hero-val">${fmtRp(_rsTotSetor)}</div>
-          <div class="rsp-hero-lbl">Total Setor</div>
+          <div class="rsp-hero-lbl">Total Setor Hari Ini</div>
           <div class="rsp-chips"><div class="rsp-chip"><span>Grand COD</span><b>${fmtRp(_rsTotCod)}</b></div><div class="rsp-chip ${_rsTotSelisih<0?'neg':''}"><span>Selisih</span><b>${fmtRp(_rsTotSelisih)}</b></div></div>
         </div>
         <div class="card rsp-card" style="padding:0;overflow:hidden">
@@ -4698,6 +4703,7 @@
       const today = localDateStr();
       _sbSelectedSkus = new Set(_loadSbSkuFilter()); // [NEW] pulihkan pilihan SKU tersimpan, bukan reset ke "Semua SKU"
       document.getElementById('contentArea').innerHTML = `
+        ${_pgHero('fa-warehouse','Stock Barang', esc(fmtDate(today)), undefined)}
         <div class="card">
           <div class="card-title"><i class="fas fa-warehouse"></i> Stock Barang</div>
           <div class="flex-row mb-2" style="gap:8px;flex-wrap:wrap;align-items:flex-end">
@@ -4968,6 +4974,7 @@
       const checkedSet = new Set(prefill || _loadCekStockSkus());
       const allSkus = products.slice().sort((a,b) => (a.nama||'').localeCompare(b.nama||''));
       document.getElementById('contentArea').innerHTML = `
+        ${_pgHero('fa-clipboard-check','Cek Stock','Pilih barang yang mau dicek')}
         <div class="card">
           <div class="card-title"><i class="fas fa-clipboard-check"></i> Cek Stock - Pilih SKU</div>
           <p class="text-sm" style="color:var(--text3);margin:0 0 10px">Pilih SKU/barang mana saja yang mau dicek stok fisiknya. Setelah disimpan, hanya SKU yang dipilih yang akan muncul di tabel Cek Stock.</p>
@@ -5019,6 +5026,7 @@
       const cekLagiCount = rows.filter(r => savedValues[r.sku] !== undefined && savedValues[r.sku] !== '' && (Number(savedValues[r.sku]) - r.stock) !== 0).length;
       const belumCount = rows.length - cocokCount - cekLagiCount;
       document.getElementById('contentArea').innerHTML = `
+        ${_pgHero('fa-clipboard-check','Cek Stock', esc(fmtDate(today)))}
         <div class="card">
           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px">
             <div class="card-title" style="margin:0"><i class="fas fa-clipboard-check"></i> Cek Stock - ${esc(fmtDate(today))}</div>
@@ -5277,6 +5285,7 @@
       const diffHtml = tYst.totalGalon === 0 && yd.toko==='' && yd.mobil==='' ? '' :
         `<span style="font-size:0.72rem;font-weight:700;color:${diff===0?'#16A34A':(diff>0?'#3B82F6':'#EF4444')};margin-left:8px">${diff===0?'(sama dgn kemarin)':(diff>0?'▲ +'+diff+' dari kemarin':'▼ '+diff+' dari kemarin')}</span>`;
       document.getElementById('contentArea').innerHTML = `
+        ${_pgHero('fa-recycle','Cek Kosongan', esc(fmtDate(today)) + ' · bandingkan dengan kemarin', tToday.totalGalon, 'Total Galon Hari Ini')}
         <div class="jual-two-col">
         <div class="card jual-col-left">
           <div class="card-title"><i class="fas fa-recycle"></i> Kosongan Kemarin (${esc(fmtDate(yesterdayStr))})</div>
@@ -5509,6 +5518,7 @@
       // "kelihatan tapi ternyata bisa dipencet" untuk driver.
       if (currentUser?.role === 'driver') {
         document.getElementById('contentArea').innerHTML = `
+          ${_pgHero('fa-clipboard-list','Pesanan', esc(fmtDate(today)) + ' · hanya lihat')}
           <div class="card">
             <div class="card-title"><i class="fas fa-truck-loading"></i> Rencana Order (${esc(fmtDate(today))})</div>
             <p class="text-sm" style="color:var(--text3);margin-bottom:10px"><i class="fas fa-lock"></i> Halaman ini hanya untuk dilihat - tidak bisa ditambah atau diedit.</p>
@@ -5550,6 +5560,7 @@
 
       document.getElementById('contentArea').innerHTML = `
         <datalist id="pesProductDatalist">${productOpts}</datalist>
+        ${_pgHero('fa-clipboard-list','Pesanan', esc(fmtDate(today)), (d.entries||[]).length, 'Pesanan Hari Ini')}
         <div class="card">
           <div class="card-title"><i class="fas fa-plus-circle"></i> Input Pesanan</div>
           <div class="flex-row">
@@ -5991,6 +6002,7 @@
 
       document.getElementById('contentArea').innerHTML = `
         <datalist id="titProductDatalist">${productOpts}</datalist>
+        ${_pgHero('fa-people-carry-box','Titipan', esc(fmtDate(today)), (()=>{ const m=_titipanSisaBySku(); return Object.values(m).filter(v=>v>0).reduce((a,v)=>a+v,0); })(), 'Total Sisa Titipan')}
         <div class="card">
           <div class="card-title"><i class="fas fa-plus-circle"></i> Input Titipan</div>
           <div class="flex-row">
