@@ -1217,3 +1217,121 @@ body.light-mode .dx-menu .menu-circle-item:hover .menu-circle { border-color:#00
 .dx-hero-time { font-family:var(--mono); font-size:1.25rem; font-weight:900; line-height:1.1; letter-spacing:.5px; }
 .dx-hero-tz { font-size:0.58rem; font-weight:700; opacity:.85; margin-top:1px; }
 body .dx-menu .menu-circle::after { border-radius:18px !important; box-shadow:none !important; }
+
+/* ================================================================
+   MENU JUAL — tampilan azure blue (scope .jx)
+   ================================================================ */
+.jx { max-width:1100px; margin:0 auto; }
+.jx-hero { position:relative; overflow:hidden; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; padding:16px 18px; margin-bottom:14px; border-radius:22px; color:#fff;
+  background: radial-gradient(120% 160% at 100% 0%, #3DB7FF 0%, rgba(61,183,255,0) 55%), linear-gradient(135deg,#0A4FA8 0%,#0078D4 60%,#1E96F0 100%);
+  box-shadow:0 12px 30px rgba(0,120,212,0.32), inset 0 1px 0 rgba(255,255,255,0.25); }
+.jx-hero::after { content:''; position:absolute; right:-30px; bottom:-50px; width:170px; height:170px; border-radius:50%; background:rgba(255,255,255,0.08); pointer-events:none; }
+.jx-hero-eyebrow { font-size:0.66rem; font-weight:700; letter-spacing:1px; text-transform:uppercase; opacity:.85; }
+.jx-hero-title { font-size:1.35rem; font-weight:900; margin-top:2px; }
+.jx-hero-side { position:relative; z-index:1; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.jx-idpill { display:flex; align-items:center; gap:6px; padding:5px 10px; border-radius:99px; background:rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.28); font-size:0.62rem; font-weight:800; letter-spacing:.5px; }
+.jx .jx-idpill input { width:130px; padding:0 !important; border:none !important; background:transparent !important; color:#fff !important; font-family:var(--mono); font-size:0.7rem; font-weight:700; box-shadow:none !important; }
+.jx-voice { display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:99px; border:none; cursor:pointer; background:#fff; color:#0067B8; font-weight:800; font-size:0.72rem; box-shadow:0 4px 12px rgba(0,40,100,0.25); transition:transform .15s; }
+.jx-voice:active { transform:scale(.96); } .jx-voice i { color:#EF4444; }
+
+.jx-card { background:linear-gradient(160deg,rgba(0,120,212,0.18),rgba(0,40,90,0.55)); border:1px solid rgba(41,168,255,0.22); border-radius:20px; padding:14px; box-shadow:0 6px 22px rgba(0,0,0,0.22); }
+.jx-sec { display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:800; color:var(--text); margin-bottom:12px; }
+.jx-sec-ic { width:28px; height:28px; border-radius:9px; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#0078D4,#29A8FF); color:#fff; font-size:0.75rem; box-shadow:0 4px 10px rgba(0,120,212,0.4); }
+.jx-sec-actions { margin-left:auto; display:flex; gap:6px; }
+.jx-grid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+@media (max-width:420px){ .jx-grid2 { grid-template-columns:1fr; gap:0; } }
+.jx .form-group label { font-size:0.64rem; font-weight:800; letter-spacing:.4px; text-transform:uppercase; color:var(--text2); }
+.jx input, .jx select { border-radius:12px; border:1px solid rgba(41,168,255,0.28); background:rgba(0,30,70,0.55); color:var(--text); }
+.jx input:focus, .jx select:focus { outline:none; border-color:#29A8FF; box-shadow:0 0 0 3px rgba(41,168,255,0.22); }
+.jx-inrow { display:flex; gap:6px; align-items:center; }
+.jx-inrow > input, .jx-inrow > select { flex:1; min-width:0; }
+.jx .jx-mic { width:30px !important; height:30px !important; border-radius:50% !important; background:rgba(41,168,255,0.16) !important; color:#5CC0FF !important; font-size:0.72rem !important; transition:transform .15s, background .15s; }
+.jx .jx-mic:hover { background:rgba(41,168,255,0.3) !important; } .jx .jx-mic:active { transform:scale(.9); }
+
+.jx-btn { display:inline-flex; align-items:center; gap:6px; padding:7px 12px; border-radius:11px; border:none; cursor:pointer; font-size:0.7rem; font-weight:800; transition:transform .15s, filter .15s; }
+.jx-btn:active { transform:scale(.95); }
+.jx-btn.scan { background:rgba(41,168,255,0.16); color:#5CC0FF; border:1px solid rgba(41,168,255,0.35); }
+.jx-btn.add { background:linear-gradient(135deg,#0078D4,#29A8FF); color:#fff; box-shadow:0 4px 12px rgba(0,120,212,0.4); }
+.jx-btn.soft { background:rgba(41,168,255,0.14); color:#5CC0FF; }
+
+/* Baris item = kartu */
+.jx .cart-item-row { display:block; padding:12px; margin-bottom:10px; border-radius:16px; background:rgba(0,30,70,0.45); border:1px solid rgba(41,168,255,0.2); position:relative; }
+.jx .cart-item-row::before { content:''; position:absolute; left:0; top:14px; bottom:14px; width:3px; border-radius:3px; background:linear-gradient(180deg,#29A8FF,#0078D4); }
+.jx-r1 { display:flex; gap:8px; align-items:center; margin-bottom:8px; }
+.jx-sku { flex:1; display:flex; align-items:center; gap:8px; min-width:0; }
+.jx-sku > i { color:#29A8FF; }
+.jx-sku input { flex:1; min-width:0; font-weight:700; }
+.jx-del { width:34px; height:34px; border-radius:11px; border:none; cursor:pointer; background:rgba(239,68,68,0.14); color:#F87171; flex-shrink:0; }
+.jx-del:active { transform:scale(.92); }
+.jx .cart-nama { width:100% !important; box-sizing:border-box; margin-bottom:8px; text-align:left !important; padding:8px 10px !important; font-size:0.74rem !important; font-weight:700; color:#5CC0FF !important; background:rgba(41,168,255,0.10) !important; border:1px dashed rgba(41,168,255,0.3) !important; border-radius:10px !important; }
+.jx-r3 { display:grid; grid-template-columns:1fr 1.2fr 1fr; gap:8px; }
+.jx-r3 label { display:block; margin:0; }
+.jx-r3 label > span { display:block; font-size:0.58rem; font-weight:800; letter-spacing:.5px; text-transform:uppercase; color:var(--text3); margin-bottom:3px; }
+.jx-r3 input { width:100% !important; box-sizing:border-box; text-align:center; padding:7px 4px; font-family:var(--mono); font-weight:700; }
+.jx-r3 .jx-inrow input { width:auto !important; }
+@media (max-width:380px){ .jx-r3 .jx-mic { display:none; } }
+.jx-subrow { display:flex; justify-content:space-between; align-items:center; margin-top:8px; padding-top:8px; border-top:1px dashed rgba(41,168,255,0.25); font-size:0.7rem; color:var(--text2); font-weight:700; }
+.jx-sub { font-family:var(--mono); font-size:0.82rem; color:#5CC0FF; }
+
+/* Biaya tambahan */
+.jx-extra { margin-top:6px; padding:12px; border-radius:16px; background:rgba(41,168,255,0.08); border:1px solid rgba(41,168,255,0.2); }
+.jx-extra-h { font-size:0.68rem; font-weight:800; letter-spacing:.5px; text-transform:uppercase; color:#5CC0FF; margin-bottom:8px; }
+.jx-chips { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
+.jx-chip { padding:6px 12px; border-radius:99px; border:1px solid rgba(41,168,255,0.35); background:rgba(41,168,255,0.12); color:#5CC0FF; font-size:0.7rem; font-weight:700; cursor:pointer; }
+.jx-chip:active { transform:scale(.95); } .jx-chip.ghost { border-color:rgba(255,255,255,0.18); background:transparent; color:var(--text3); }
+.jx-extra-in { display:flex; gap:8px; } .jx-extra-in input { padding:8px 10px; font-size:0.75rem; } .jx-extra-in input:first-child { flex:1; min-width:0; } .jx-extra-in input:last-child { width:110px; }
+
+/* Total */
+.jx .jx-total { text-align:left; margin:12px 0; padding:14px 16px; border-radius:18px; border:none; color:#fff;
+  background: radial-gradient(120% 160% at 100% 0%, #3DB7FF 0%, rgba(61,183,255,0) 55%), linear-gradient(135deg,#0A4FA8,#0078D4); box-shadow:0 10px 24px rgba(0,120,212,0.35); }
+.jx-trow { font-size:0.78rem; font-weight:600; opacity:.92; margin-bottom:4px; } .jx-trow span:last-child { font-family:var(--mono); }
+.jx .jx-neg, .jx .jx-pos { color:#fff !important; }
+.jx-nett { margin-top:8px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.3); font-size:0.78rem; font-weight:800; letter-spacing:.8px; }
+.jx .jx-nett #sumNett { font-family:var(--mono); font-size:1.5rem; font-weight:900; color:#fff !important; letter-spacing:-.3px; }
+
+/* Foto kiriman */
+.jx-foto { padding:12px; border-radius:16px; background:rgba(0,30,70,0.4); border:1px solid rgba(41,168,255,0.18); margin-bottom:12px; }
+.jx-foto-h { font-size:0.68rem; font-weight:800; letter-spacing:.5px; text-transform:uppercase; color:var(--text2); margin-bottom:8px; } .jx-foto-h small { text-transform:none; letter-spacing:0; font-weight:600; color:var(--text3); }
+.jx-foto-row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; } .jx-foto-st { margin-left:auto; font-size:0.68rem; color:var(--text3); }
+.jx-actions { display:flex; gap:8px; align-items:center; }
+.jx-reset { flex:1; height:46px; border-radius:23px; border:1px solid rgba(41,168,255,0.35); background:rgba(41,168,255,0.1); color:#5CC0FF; font-weight:800; font-size:0.75rem; cursor:pointer; }
+.jx-reset:active { transform:scale(.96); }
+.jx .slide-confirm { background:rgba(41,168,255,0.14); border:1px solid rgba(41,168,255,0.35); }
+.jx .slide-confirm-fill { background:linear-gradient(135deg,#0078D4,#29A8FF); }
+.jx .slide-confirm-text { color:#8FD3FF; } .jx .slide-confirm-thumb { color:#0078D4; }
+@media (min-width:860px){ .jx .jual-two-col { grid-template-columns:380px 1fr; } }
+
+/* Light mode */
+body.light-mode .jx-card { background:#fff; border:1px solid rgba(0,120,212,0.14); box-shadow:0 6px 20px rgba(0,90,180,0.10); }
+body.light-mode .jx input, body.light-mode .jx select { background:#F4F9FF; border-color:rgba(0,120,212,0.25); color:#0F2A4A; }
+body.light-mode .jx .form-group label, body.light-mode .jx-r3 label > span { color:#4B6585 !important; }
+body.light-mode .jx-sec, body.light-mode .jx-foto-h { color:#0F2A4A; }
+body.light-mode .jx .jx-mic { background:#E6F3FF !important; color:#0067B8 !important; }
+body.light-mode .jx-btn.scan, body.light-mode .jx-btn.soft, body.light-mode .jx-chip, body.light-mode .jx-reset { background:#E6F3FF; color:#0067B8; border-color:rgba(0,120,212,0.25); }
+body.light-mode .jx-chip.ghost { background:#fff; color:#6B84A0; }
+body.light-mode .jx .cart-item-row { background:#F7FBFF; border-color:rgba(0,120,212,0.16); }
+body.light-mode .jx .cart-nama { color:#0067B8 !important; background:#EAF4FF !important; border-color:rgba(0,120,212,0.3) !important; }
+body.light-mode .jx-sub, body.light-mode .jx-extra-h { color:#0067B8; }
+body.light-mode .jx-subrow { color:#4B6585; border-top-color:rgba(0,120,212,0.2); }
+body.light-mode .jx-extra, body.light-mode .jx-foto { background:#F2F8FF; border-color:rgba(0,120,212,0.16); }
+body.light-mode .jx-del { background:#FEE2E2; color:#DC2626; }
+body.light-mode .jx .slide-confirm { background:#E6F3FF; border-color:rgba(0,120,212,0.3); }
+body.light-mode .jx .slide-confirm-text { color:#0067B8; }
+body.light-mode .jx .jx-idpill input { color:#fff !important; }
+body.light-mode .jx .jx-total, body.light-mode .jx .total-box.jx-total { background: radial-gradient(120% 160% at 100% 0%, #3DB7FF 0%, rgba(61,183,255,0) 55%), linear-gradient(135deg,#0A4FA8,#0078D4) !important; color:#fff !important; }
+body.light-mode .jx .jx-nett #sumNett { color:#fff !important; }
+.jx-r3 { grid-template-columns:repeat(3,minmax(0,1fr)); }
+.jx-r3 label { min-width:0; }
+.jx-r3 .jx-inrow { gap:4px; }
+.jx-r3 .jx-mic { width:26px !important; height:26px !important; font-size:0.62rem !important; }
+.jx-r3 input { padding-left:2px; padding-right:2px; }
+.jx-reset { flex:0 0 84px; }
+.jx-actions .slide-confirm { flex:1 !important; min-width:0; }
+.jx .slide-confirm-text { font-size:0.72rem; padding:0 12px 0 52px; }
+/* timpa aturan lama baris item (desktop) */
+.jx #itemsContainer .cart-item-select[data-field="sku"] { flex:1 1 auto !important; min-width:0 !important; width:auto !important; font-size:0.8rem; padding:8px 10px; }
+.jx #itemsContainer .cart-nama { flex:none !important; width:100% !important; min-width:0 !important; }
+.jx #itemsContainer .cart-qty, .jx #itemsContainer .cart-disc { flex:1 1 auto !important; width:auto !important; min-width:0; }
+.jx #itemsContainer .cart-item-row { display:block !important; }
+.jx #itemsContainer .jx-r3 label > input { width:100% !important; flex:none !important; box-sizing:border-box; }
+.jx #itemsContainer .jx-r3 .jx-inrow > input { width:auto !important; flex:1 1 0 !important; min-width:0 !important; }
