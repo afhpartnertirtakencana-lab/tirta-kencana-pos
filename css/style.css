@@ -1594,3 +1594,52 @@ body.light-mode .rsp .rsp-table .btn-outline { color:#0067B8; border-color:rgba(
 .rsp .rsp-card input[type="date"] { border-radius:99px; border:1px solid rgba(41,168,255,0.3); background:rgba(0,30,70,0.55); color:var(--text); padding:6px 12px !important; }
 body.light-mode .rsp .rsp-card input[type="date"] { background:#F4F9FF; color:#0F2A4A; }
 body.light-mode .rsp .rsp-card .tab:not(.active) { background:#E6F3FF !important; color:#0067B8 !important; }
+
+/* ================================================================
+   STOCK · CEK STOCK · CEK KOSONGAN · PESANAN · TITIPAN — azure blue
+   (diterapkan lewat atribut data-page pada #contentArea)
+   ================================================================ */
+.pg-hero { position:relative; overflow:hidden; border-radius:22px; padding:16px 18px; margin-bottom:12px; color:#fff;
+  background: radial-gradient(120% 160% at 100% 0%, #3DB7FF 0%, rgba(61,183,255,0) 55%), linear-gradient(135deg,#0A4FA8 0%,#0078D4 60%,#1E96F0 100%);
+  box-shadow:0 12px 30px rgba(0,120,212,0.32), inset 0 1px 0 rgba(255,255,255,0.25); }
+.pg-hero::after { content:''; position:absolute; right:-30px; bottom:-60px; width:180px; height:180px; border-radius:50%; background:rgba(255,255,255,0.08); pointer-events:none; }
+.pg-hero-eyebrow { position:relative; font-size:0.72rem; font-weight:800; letter-spacing:1px; text-transform:uppercase; opacity:.95; }
+.pg-hero-sub { position:relative; font-size:0.7rem; opacity:.88; margin-top:2px; }
+.pg-hero-val { position:relative; font-family:var(--mono); font-size:1.9rem; font-weight:900; margin-top:10px; letter-spacing:-.5px; }
+.pg-hero-lbl { position:relative; font-size:0.66rem; opacity:.85; }
+
+:is(#contentArea[data-page="stockbarang"],#contentArea[data-page="cekstock"],#contentArea[data-page="cekkosongan"],#contentArea[data-page="pesanan"],#contentArea[data-page="titipan"]) { }
+#contentArea:is([data-page="stockbarang"],[data-page="cekstock"],[data-page="cekkosongan"],[data-page="pesanan"],[data-page="titipan"]) .card {
+  background:linear-gradient(160deg,rgba(0,120,212,0.16),rgba(0,40,90,0.5)); border:1px solid rgba(41,168,255,0.22); border-radius:20px; box-shadow:0 6px 20px rgba(0,0,0,0.2); }
+#contentArea:is([data-page="stockbarang"],[data-page="cekstock"],[data-page="cekkosongan"],[data-page="pesanan"],[data-page="titipan"]) .card-title { display:flex; align-items:center; gap:8px; font-weight:800; color:var(--text); }
+#contentArea:is([data-page="stockbarang"],[data-page="cekstock"],[data-page="cekkosongan"],[data-page="pesanan"],[data-page="titipan"]) .card-title > i:first-child { width:28px; height:28px; border-radius:9px; display:inline-flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#0078D4,#29A8FF); color:#fff !important; font-size:0.72rem; box-shadow:0 4px 10px rgba(0,120,212,0.4); flex-shrink:0; }
+#contentArea:is([data-page="stockbarang"],[data-page="cekstock"],[data-page="cekkosongan"],[data-page="pesanan"],[data-page="titipan"]) .form-group label { font-size:0.64rem; font-weight:800; letter-spacing:.4px; text-transform:uppercase; color:var(--text2); }
+#contentArea:is([data-page="stockbarang"],[data-page="cekstock"],[data-page="cekkosongan"],[data-page="pesanan"],[data-page="titipan"]) input:not([type="checkbox"]):not([type="radio"]),
+#contentArea:is([data-page="stockbarang"],[data-page="cekstock"],[data-page="cekkosongan"],[data-page="pesanan"],[data-page="titipan"]) select { border-radius:12px; border:1px solid rgba(41,168,255,0.28); background:rgba(0,30,70,0.55); color:var(--text); }
+#contentArea:is([data-page="stockbarang"],[data-page="cekstock"],[data-page="cekkosongan"],[data-page="pesanan"],[data-page="titipan"]) input:focus,
+#contentArea:is([data-page="stockbarang"],[data-page="cekstock"],[data-page="cekkosongan"],[data-page="pesanan"],[data-page="titipan"]) select:focus { outline:none; border-color:#29A8FF; box-shadow:0 0 0 3px rgba(41,168,255,0.22); }
+#contentArea:is([data-page="stockbarang"],[data-page="cekstock"],[data-page="cekkosongan"],[data-page="pesanan"],[data-page="titipan"]) th { background:rgba(41,168,255,0.16) !important; color:#5CC0FF !important; font-size:0.62rem; letter-spacing:.6px; text-transform:uppercase; border:none; }
+#contentArea:is([data-page="stockbarang"],[data-page="cekstock"],[data-page="cekkosongan"],[data-page="pesanan"],[data-page="titipan"]) td { border-bottom:1px solid rgba(41,168,255,0.12); }
+#contentArea:is([data-page="stockbarang"],[data-page="cekstock"],[data-page="cekkosongan"],[data-page="pesanan"],[data-page="titipan"]) .btn-primary { background:linear-gradient(135deg,#0078D4,#29A8FF); border:none; color:#fff; border-radius:12px; font-weight:800; box-shadow:0 6px 16px rgba(0,120,212,0.35); }
+#contentArea:is([data-page="stockbarang"],[data-page="cekstock"],[data-page="cekkosongan"],[data-page="pesanan"],[data-page="titipan"]) .btn-outline { border-color:rgba(41,168,255,0.4); color:#5CC0FF; border-radius:12px; font-weight:700; }
+#contentArea:is([data-page="stockbarang"],[data-page="cekstock"],[data-page="cekkosongan"],[data-page="pesanan"],[data-page="titipan"]) .btn-ghost { border-radius:12px; }
+#contentArea:is([data-page="stockbarang"],[data-page="cekstock"],[data-page="cekkosongan"],[data-page="pesanan"],[data-page="titipan"]) .total-box { background:linear-gradient(135deg,#0A4FA8,#0078D4); border:none; color:#fff; border-radius:16px; box-shadow:0 8px 20px rgba(0,120,212,0.3); text-align:left; }
+#contentArea:is([data-page="stockbarang"],[data-page="cekstock"],[data-page="cekkosongan"],[data-page="pesanan"],[data-page="titipan"]) .total-box [style*="color"] { color:#fff !important; }
+#contentArea:is([data-page="stockbarang"],[data-page="cekstock"],[data-page="cekkosongan"],[data-page="pesanan"],[data-page="titipan"]) .slide-confirm { background:rgba(41,168,255,0.14); border-color:rgba(41,168,255,0.35); }
+#contentArea:is([data-page="stockbarang"],[data-page="cekstock"],[data-page="cekkosongan"],[data-page="pesanan"],[data-page="titipan"]) .slide-confirm-fill { background:linear-gradient(135deg,#0078D4,#29A8FF); }
+#contentArea:is([data-page="stockbarang"],[data-page="cekstock"],[data-page="cekkosongan"],[data-page="pesanan"],[data-page="titipan"]) .slide-confirm-text { color:#8FD3FF; }
+body:not(.light-mode) #contentArea:is([data-page="stockbarang"],[data-page="cekstock"],[data-page="cekkosongan"],[data-page="pesanan"],[data-page="titipan"]) [style*="color:var(--biru)"] { color:#8FD3FF !important; }
+#contentArea:is([data-page="stockbarang"],[data-page="cekstock"],[data-page="cekkosongan"],[data-page="pesanan"],[data-page="titipan"]) tr[style*="background:var(--biru-muda)"] td { background:rgba(41,168,255,0.14) !important; }
+
+/* Light mode */
+body.light-mode #contentArea:is([data-page="stockbarang"],[data-page="cekstock"],[data-page="cekkosongan"],[data-page="pesanan"],[data-page="titipan"]) .card { background:#fff; border-color:rgba(0,120,212,0.14); box-shadow:0 6px 20px rgba(0,90,180,0.10); }
+body.light-mode #contentArea:is([data-page="stockbarang"],[data-page="cekstock"],[data-page="cekkosongan"],[data-page="pesanan"],[data-page="titipan"]) input:not([type="checkbox"]):not([type="radio"]),
+body.light-mode #contentArea:is([data-page="stockbarang"],[data-page="cekstock"],[data-page="cekkosongan"],[data-page="pesanan"],[data-page="titipan"]) select { background:#F4F9FF; border-color:rgba(0,120,212,0.25); color:#0F2A4A; }
+body.light-mode #contentArea:is([data-page="stockbarang"],[data-page="cekstock"],[data-page="cekkosongan"],[data-page="pesanan"],[data-page="titipan"]) .form-group label { color:#4B6585 !important; }
+body.light-mode #contentArea:is([data-page="stockbarang"],[data-page="cekstock"],[data-page="cekkosongan"],[data-page="pesanan"],[data-page="titipan"]) th { background:#E6F3FF !important; color:#0067B8 !important; }
+body.light-mode #contentArea:is([data-page="stockbarang"],[data-page="cekstock"],[data-page="cekkosongan"],[data-page="pesanan"],[data-page="titipan"]) td { border-bottom-color:rgba(0,120,212,0.12); }
+body.light-mode #contentArea:is([data-page="stockbarang"],[data-page="cekstock"],[data-page="cekkosongan"],[data-page="pesanan"],[data-page="titipan"]) .btn-outline { color:#0067B8; border-color:rgba(0,120,212,0.35); }
+body.light-mode #contentArea:is([data-page="stockbarang"],[data-page="cekstock"],[data-page="cekkosongan"],[data-page="pesanan"],[data-page="titipan"]) .slide-confirm { background:#E6F3FF; }
+body.light-mode #contentArea:is([data-page="stockbarang"],[data-page="cekstock"],[data-page="cekkosongan"],[data-page="pesanan"],[data-page="titipan"]) .slide-confirm-text { color:#0067B8; }
+body.light-mode #contentArea:is([data-page="stockbarang"],[data-page="cekstock"],[data-page="cekkosongan"],[data-page="pesanan"],[data-page="titipan"]) tr[style*="background:var(--biru-muda)"] td { background:#EAF4FF !important; }
+body.light-mode #contentArea:is([data-page="stockbarang"],[data-page="cekstock"],[data-page="cekkosongan"],[data-page="pesanan"],[data-page="titipan"]) .total-box { background:linear-gradient(135deg,#0A4FA8,#0078D4) !important; color:#fff !important; }
