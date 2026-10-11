@@ -6415,6 +6415,38 @@
       loadStockBarang();
     }
 
+    // [FIX ROLLOVER] Hitung stok awal hari ini PER SKU dari baris stok TERAKHIR sebelum hari ini
+    // (bukan hanya "kemarin"), lalu teruskan hari-hari kosong di antaranya (masuk kiriman - keluar penjualan).
+    // Sebelumnya rollover gagal total ("Tidak ada data") kalau kemarin tidak ada baris stok
+    // (hari libur / belum di-rollover kemarin), dan SKU yang tidak punya baris kemarin terlewat.
+    function _addDaysStr(ds, n) { const p = ds.split('-').map(Number); const d = new Date(p[0], p[1]-1, p[2]+n, 12, 0, 0); return localDateStr(d); }
+    async function buildRolloverData(today) {
+      const latest = new Map(); // sku -> baris terakhir (tanggal < today)
+      _stockBarangAll.forEach(d => {
+        const dt = (d.date||'').substring(0,10); const sku = d.sku;
+        if (!dt || !sku || dt >= today) return;
+        const cur = latest.get(sku);
+        if (!cur || dt >= cur._dt) latest.set(sku, { ...d, _dt: dt });
+      });
+      if (!latest.size) return { rows: [], srcDates: [] };
+      const minDate = [...latest.values()].reduce((m, r) => r._dt < m ? r._dt : m, today);
+      const dates = []; for (let ds = minDate; ds < today; ds = _addDaysStr(ds, 1)) dates.push(ds);
+      await ensureTrxItemsForDates(dates);
+      const keluarMap = buildKeluarMapFromTrx(dates);
+      const kirimanOf = (dt, sku) => stockInHistory.filter(s => (s.date||s.tgl||'').substring(0,10) === dt && s.sku === sku && (s.status||'').toLowerCase() === 'kiriman').reduce((a, s) => a + (Number(s.qty)||0), 0);
+      const hasRec = (dt, sku) => stockInHistory.some(s => (s.date||s.tgl||'').substring(0,10) === dt && s.sku === sku);
+      const rows = []; const srcDates = new Set();
+      latest.forEach((d, sku) => {
+        const dt = d._dt;
+        const masuk = hasRec(dt, sku) ? kirimanOf(dt, sku) : (Number(d.masuk)||0);
+        let stok = (Number(d.stokAwal)||0) + masuk - (keluarMap.get(dt + '|' + sku) || 0);
+        for (let x = _addDaysStr(dt, 1); x < today; x = _addDaysStr(x, 1)) stok += kirimanOf(x, sku) - (keluarMap.get(x + '|' + sku) || 0);
+        srcDates.add(dt);
+        rows.push({ date: today, sku, nama: d.nama, stokAwal: stok, masuk: 0, keluar: 0, _src: dt });
+      });
+      rows.sort((a, b) => String(a.sku).localeCompare(String(b.sku)));
+      return { rows, srcDates: [...srcDates].sort() };
+    }
     async function rolloverStokAwal() {
       const today = localDateStr();
       // Hitung kemarin (lokal)
@@ -6450,32 +6482,18 @@
         if (!konfirm.isConfirmed) return;
       }
 
-      // Ambil data kemarin dari _stockBarangAll
-      const dataKemarin = _stockBarangAll.filter(d => (d.date||'').substring(0,10) === kemarin);
-      if (!dataKemarin.length) {
-        return Swal.fire('Tidak ada data', `Tidak ada data stock untuk tanggal kemarin (${kemarin}). Pastikan data kemarin sudah ada di sistem.`, 'warning');
+      const built = await buildRolloverData(today);
+      const rolloverData = built.rows;
+      if (!rolloverData.length) {
+        return Swal.fire('Tidak ada data', 'Belum ada data stock sebelum hari ini untuk di-rollover. Isi dulu data stock hari sebelumnya.', 'warning');
       }
-
-      // Hitung stok akhir kemarin (dengan koreksi dari stockInHistory lokal)
-      // [FIX] Sebelumnya pakai d.keluar||0 mentah dari Sheets (selalu 0, sama seperti bug di
-      // doStockBarang() yang sudah diperbaiki). Sekarang pakai keluar dari transaksi penjualan
-      // (allTrxList) lewat helper yang sama: ensureTrxItemsForDates() + buildKeluarMapFromTrx().
-      await ensureTrxItemsForDates([kemarin]);
-      const keluarMapKemarin = buildKeluarMapFromTrx([kemarin]);
-      const rolloverData = dataKemarin.map(d => {
-        const recordsForDate = stockInHistory.filter(s => (s.date||s.tgl||'').substring(0,10) === kemarin && s.sku === d.sku);
-        const localMasuk = recordsForDate.filter(s => (s.status||'').toLowerCase() === 'kiriman').reduce((sum, s) => sum + (s.qty||0), 0);
-        const masuk = recordsForDate.length > 0 ? localMasuk : (d.masuk||0);
-        const keluarKemarin = keluarMapKemarin.get(kemarin + '|' + d.sku) || 0;
-        const stokAkhirKemarin = (d.stokAwal||0) + masuk - keluarKemarin;
-        return { date: today, sku: d.sku, nama: d.nama, stokAwal: stokAkhirKemarin, masuk: 0, keluar: 0 };
-      });
+      const srcLabel = built.srcDates.length === 1 ? built.srcDates[0] : (built.srcDates[built.srcDates.length-1] + ' (terakhir)');
 
       // Preview ke user
       const previewRows = rolloverData.map(r => `<tr><td style="font-family:var(--mono);font-size:11px">${esc(r.sku)}</td><td>${esc(r.nama)}</td><td style="text-align:right;font-weight:700;color:var(--biru)">${r.stokAwal}</td></tr>`).join('');
       const konfirmFinal = await Swal.fire({
         title: `🔄 Rollover Stok ke ${today}`,
-        html: `<p style="font-size:13px;margin-bottom:10px">Stok akhir <b>${kemarin}</b> → Stok awal <b>${today}</b></p><div style="max-height:250px;overflow-y:auto"><table style="width:100%;font-size:12px;border-collapse:collapse"><thead><tr><th style="text-align:left;padding:4px 8px;background:#EAF4FD;color:#1A6DB5">SKU</th><th style="text-align:left;padding:4px 8px;background:#EAF4FD;color:#1A6DB5">Nama</th><th style="text-align:right;padding:4px 8px;background:#EAF4FD;color:#1A6DB5">Stok Awal Baru</th></tr></thead><tbody>${previewRows}</tbody></table></div>`,
+        html: `<p style="font-size:13px;margin-bottom:10px">Stok akhir <b>${srcLabel}</b> → Stok awal <b>${today}</b></p><div style="max-height:250px;overflow-y:auto"><table style="width:100%;font-size:12px;border-collapse:collapse"><thead><tr><th style="text-align:left;padding:4px 8px;background:#EAF4FD;color:#1A6DB5">SKU</th><th style="text-align:left;padding:4px 8px;background:#EAF4FD;color:#1A6DB5">Nama</th><th style="text-align:right;padding:4px 8px;background:#EAF4FD;color:#1A6DB5">Stok Awal Baru</th></tr></thead><tbody>${previewRows}</tbody></table></div>`,
         icon: 'question', showCancelButton: true, confirmButtonText: '✅ Simpan Rollover', cancelButtonText: 'Batal', width: '500px'
       });
       if (!konfirmFinal.isConfirmed) return;
@@ -6484,11 +6502,12 @@
       let berhasil = 0, gagal = 0; const gagalSkus = [];
       for (const r of rolloverData) {
         try {
-          await gasCall('updateStockAwal', [r], 0);
+          const { _src, ...pl } = r;
+          await gasCall('updateStockAwal', [pl], 0);
           berhasil++;
         } catch(e) {
           console.warn('Gagal rollover SKU', r.sku, e);
-          enqueueSync('updateStockAwal', [r], 'Rollover ' + r.sku); // [NEW] tidak hilang - masuk antrian
+          enqueueSync('updateStockAwal', [{ date:r.date, sku:r.sku, nama:r.nama, stokAwal:r.stokAwal, masuk:0, keluar:0 }], 'Rollover ' + r.sku); // [NEW] tidak hilang - masuk antrian
           gagal++;
           gagalSkus.push(r.sku);
         }
@@ -6530,29 +6549,17 @@
         try {
           const freshStock = await gasCall('getStockBarang', []);
           if (Array.isArray(freshStock)) _stockBarangAll = freshStock;
-        } catch(e) { console.warn('[AutoRollover] Gagal ambil stock terbaru, pakai cache lokal:', e.message); }
+        } catch(e) { console.warn('[AutoRollover] Gagal ambil stock terbaru:', e.message); return false; }
         await syncStockHistoryFromGAS();
 
-        // Jangan timpa kalau stok hari ini sudah ada (mis. sudah pernah di-rollover)
-        const dataHariIni = _stockBarangAll.filter(d => (d.date||'').substring(0,10) === today);
-        if (dataHariIni.length > 0) { console.log('[AutoRollover] Stok hari ini sudah ada, dilewati.'); return; }
-
-        const dataKemarin = _stockBarangAll.filter(d => (d.date||'').substring(0,10) === kemarin);
-        if (!dataKemarin.length) { console.log('[AutoRollover] Tidak ada data stok kemarin, dilewati.'); return; }
-
-        await ensureTrxItemsForDates([kemarin]);
-        const keluarMapKemarin = buildKeluarMapFromTrx([kemarin]);
-        const rolloverData = dataKemarin.map(d => {
-          const recordsForDate = stockInHistory.filter(s => (s.date||s.tgl||'').substring(0,10) === kemarin && s.sku === d.sku);
-          const localMasuk = recordsForDate.filter(s => (s.status||'').toLowerCase() === 'kiriman').reduce((sum, s) => sum + (s.qty||0), 0);
-          const masuk = recordsForDate.length > 0 ? localMasuk : (d.masuk||0);
-          const keluarKemarin = keluarMapKemarin.get(kemarin + '|' + d.sku) || 0;
-          const stokAkhirKemarin = (d.stokAwal||0) + masuk - keluarKemarin;
-          return { date: today, sku: d.sku, nama: d.nama, stokAwal: stokAkhirKemarin, masuk: 0, keluar: 0 };
-        });
+        // Hanya SKU yang BELUM punya baris hari ini yang di-rollover (tidak menimpa yang sudah ada)
+        const sudahAda = new Set(_stockBarangAll.filter(d => (d.date||'').substring(0,10) === today).map(d => d.sku));
+        const built = await buildRolloverData(today);
+        const rolloverData = built.rows.filter(r => !sudahAda.has(r.sku));
+        if (!rolloverData.length) { console.log('[AutoRollover] Tidak ada SKU yang perlu di-rollover.'); return true; }
 
         let jumlah = 0;
-        for (const r of rolloverData) { enqueueSync('updateStockAwal', [r], 'AutoRollover ' + r.sku); jumlah++; }
+        for (const r of rolloverData) { enqueueSync('updateStockAwal', [{ date:r.date, sku:r.sku, nama:r.nama, stokAwal:r.stokAwal, masuk:0, keluar:0 }], 'AutoRollover ' + r.sku); jumlah++; }
         console.log(`[AutoRollover] ${jumlah} SKU dimasukkan ke antrian sync.`);
 
         // [FIX] Kode lama membaca variabel `berhasil`/`gagal` yang TIDAK PERNAH dideklarasikan
@@ -6570,7 +6577,8 @@
             Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:3000, icon:'success', title:`Rollover stok otomatis (${today}): ${jumlah} SKU dimasukkan ke antrian sync` });
           }
         }
-      } catch(e) { console.warn('[AutoRollover] Error:', e); }
+        return true;
+      } catch(e) { console.warn('[AutoRollover] Error:', e); return false; }
     }
 
     // [BUGFIX] Sebelumnya hanya jalan kalau app KEBETULAN lagi terbuka PERSIS jam
@@ -6591,8 +6599,9 @@
         const todayStr = localDateStr();
         const lastRun = localStorage.getItem('tirtaLastAutoRollover');
         if (lastRun !== todayStr) {
-          localStorage.setItem('tirtaLastAutoRollover', todayStr);
-          autoRolloverStokAwal();
+          if (window._autoRollBusy) return;
+          window._autoRollBusy = true;
+          autoRolloverStokAwal().then(ok => { if (ok) localStorage.setItem('tirtaLastAutoRollover', todayStr); }).finally(() => { window._autoRollBusy = false; });
         }
       };
       checkAndRun();
