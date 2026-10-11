@@ -1335,3 +1335,6 @@ body.light-mode .jx .jx-nett #sumNett { color:#fff !important; }
 .jx #itemsContainer .cart-item-row { display:block !important; }
 .jx #itemsContainer .jx-r3 label > input { width:100% !important; flex:none !important; box-sizing:border-box; }
 .jx #itemsContainer .jx-r3 .jx-inrow > input { width:auto !important; flex:1 1 0 !important; min-width:0 !important; }
+/* ID transaksi di banner: menang atas aturan global input[readonly] (light mode) */
+body .jx .jx-idpill input[readonly], body.light-mode .jx .jx-idpill input[readonly] { background:transparent !important; color:#fff !important; -webkit-text-fill-color:#fff; border:none !important; box-shadow:none !important; }
+body.light-mode .jx .jx-idpill { background:rgba(255,255,255,0.22); }
