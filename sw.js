@@ -9,7 +9,7 @@
    - Bump CACHE_VERSION on every deploy so old caches are purged on activate.
 */
 
-const CACHE_VERSION = 'tk-pos-v5';
+const CACHE_VERSION = 'tk-pos-v7';
 const APP_SHELL = [
   './index.html',
   './css/style.css',
@@ -48,7 +48,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   event.respondWith(
-    fetch(req)
+    fetch(req, { cache: 'no-store' })
       .then((res) => {
         const copy = res.clone();
         caches.open(CACHE_VERSION).then((cache) => cache.put(req, copy)).catch(() => {});
