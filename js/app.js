@@ -3516,8 +3516,15 @@
             <div class="form-group col-1" style="margin:0"><label>Sales (khusus Transaksi &amp; Setoran)</label><select id="lapBulananSales">${sOpts}</select></div>
             <button class="btn btn-primary" onclick="tampilkanLaporanBulanan()" style="height:44px;align-self:flex-end">📊 Tampilkan</button>
             <button class="btn btn-outline" onclick="exportLaporanBulananExcel()" style="height:44px;align-self:flex-end">📥 Export Excel</button>
+            </div>
+          <div style="margin-top:12px;padding:10px 12px;border:1px dashed rgba(239,68,68,.55);border-radius:12px;background:rgba(239,68,68,.06)">
+            <div style="font-size:0.7rem;font-weight:800;color:#EF4444;margin-bottom:6px"><i class="fas fa-triangle-exclamation"></i> ZONA HAPUS DATA</div>
+            <div class="flex-row" style="gap:8px;flex-wrap:wrap;align-items:flex-end">
             <div class="form-group col-1" style="margin:0"><label>Hapus Apa?</label><select id="lapBulananHapusTarget"><option value="transaksi">Transaksi / Jual</option><option value="input">Input Barang</option><option value="keduanya">Transaksi/Jual + Input Barang</option></select></div>
             <button class="btn btn-danger" onclick="hapusDataBulanan()" style="height:44px;align-self:flex-end"><i class="fas fa-trash"></i> Hapus</button>
+            </div>
+          </div>
+          <div style="display:none">
           </div>
           <div style="background:#FFF7E6;border:1px solid #FFE2A8;border-radius:8px;padding:8px 12px;font-size:11px;color:#92660A;margin-top:10px">
             <i class="fas fa-info-circle"></i> Pilih dulu data yang mau dihapus di dropdown "Hapus Apa?" (Transaksi/Jual, Input Barang, atau keduanya), lalu klik Hapus. Data yang dihapus akan terhapus di aplikasi maupun di Google Sheets. Data <b>Setoran</b> pada bulan tersebut TIDAK ikut terhapus oleh tombol ini sama sekali (fitur hapus Setoran belum tersedia di backend) — Setoran tetap ditampilkan di laporan ini hanya untuk dilihat/diexport.
@@ -8280,6 +8287,8 @@ if ('serviceWorker' in navigator) {
       if (currentPage === 'inputbarang') h = _pgHero('fa-boxes-packing', 'Input Barang', esc(fmtDate(t)));
       else if (currentPage === 'produk') h = _pgHero('fa-cubes', 'Master Produk', 'Daftar barang & harga', products.length, 'Total Produk');
       else if (currentPage === 'pelanggan') h = _pgHero('fa-address-book', 'Pelanggan', 'Data pelanggan toko', (allCustomers && allCustomers.length) || (pelanggan||[]).length, 'Total Pelanggan');
+      else if (currentPage === 'grafik') h = _pgHero('fa-chart-line', 'Grafik Penjualan', 'Tren harian, mingguan & bulanan');
+      else if (currentPage === 'laporanbulanan') h = _pgHero('fa-calendar-days', 'Laporan Bulanan', 'Ringkasan penjualan, input barang & setoran');
       else if (currentPage === 'pengaturan') h = _pgHero('fa-gear', 'Pengaturan', 'Info toko, struk & pengguna');
       if (h) el.insertAdjacentHTML('afterbegin', h);
     } catch(e) { console.warn('hero extra:', e); }
