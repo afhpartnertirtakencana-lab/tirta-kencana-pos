@@ -1643,3 +1643,7 @@ body.light-mode #contentArea:is([data-page="stockbarang"],[data-page="cekstock"]
 body.light-mode #contentArea:is([data-page="stockbarang"],[data-page="cekstock"],[data-page="cekkosongan"],[data-page="pesanan"],[data-page="titipan"]) .slide-confirm-text { color:#0067B8; }
 body.light-mode #contentArea:is([data-page="stockbarang"],[data-page="cekstock"],[data-page="cekkosongan"],[data-page="pesanan"],[data-page="titipan"]) tr[style*="background:var(--biru-muda)"] td { background:#EAF4FF !important; }
 body.light-mode #contentArea:is([data-page="stockbarang"],[data-page="cekstock"],[data-page="cekkosongan"],[data-page="pesanan"],[data-page="titipan"]) .total-box { background:linear-gradient(135deg,#0A4FA8,#0078D4) !important; color:#fff !important; }
+
+/* Pelanggan: tombol aksi boleh turun baris di layar sempit supaya tidak terpotong */
+body[data-page="pelanggan"] #pelangganTbody td:last-child { white-space:normal; min-width:150px; }
+body[data-page="pelanggan"] #pelangganTbody td:last-child .btn { margin:2px; }
