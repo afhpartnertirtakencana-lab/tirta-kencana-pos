@@ -1647,3 +1647,9 @@ body.light-mode #contentArea:is([data-page="stockbarang"],[data-page="cekstock"]
 /* Pelanggan: tombol aksi boleh turun baris di layar sempit supaya tidak terpotong */
 body[data-page="pelanggan"] #pelangganTbody td:last-child { white-space:normal; min-width:150px; }
 body[data-page="pelanggan"] #pelangganTbody td:last-child .btn { margin:2px; }
+
+/* Input Barang: baris item rapi (SKU penuh di atas; Qty / Modal / Disc / ✕ satu baris) */
+#inputItemsContainer .cart-item-row { display:grid !important; grid-template-columns:1fr 1fr 1fr auto; gap:8px; align-items:center; padding:12px; border-radius:16px; }
+#inputItemsContainer .cart-item-row select { grid-column:1 / -1; width:100% !important; min-width:0; flex:none !important; }
+#inputItemsContainer .cart-item-row input { width:100% !important; min-width:0; text-align:center; }
+#inputItemsContainer .cart-item-row .btn { height:40px; width:40px; padding:0; }
