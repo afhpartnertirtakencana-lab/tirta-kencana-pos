@@ -378,7 +378,17 @@
       // terverifikasi (Android/iOS App Link) - kalau app WhatsApp terpasang, link ini
       // akan langsung membuka APP-nya (bukan browser/WhatsApp Web), tanpa perlu
       // akal-akalan intent:// atau custom scheme lagi.
-      window.open('https://wa.me/6288211058000', '_blank');
+      // [NEW] Di Android: buka app WhatsApp langsung lewat intent (tanpa tab browser baru),
+      // sehingga kalau WhatsApp sudah ada di panel split screen / app pair, cukup naik ke depan.
+      // Kalau app tidak terbuka (bukan Android / WhatsApp belum terpasang), fallback ke wa.me.
+      const fallback = () => window.open('https://wa.me/6288211058000', '_blank');
+      if (/Android/i.test(navigator.userAgent)) {
+        let left = false;
+        const onHide = () => { if (document.hidden) left = true; };
+        document.addEventListener('visibilitychange', onHide);
+        window.location.href = 'intent:#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=com.whatsapp;end';
+        setTimeout(() => { document.removeEventListener('visibilitychange', onHide); if (!left && !document.hidden) fallback(); }, 1500);
+      } else fallback();
     }
 
     function isBiometricSupported() {
