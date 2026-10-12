@@ -3030,6 +3030,11 @@
     // ========== GRAFIK ==========
     let _grafikChart = null;
     function loadGrafik() {
+      if (typeof Chart === 'undefined') {
+        document.getElementById('contentArea').innerHTML = '<div class="card" style="text-align:center;padding:30px"><i class="fas fa-wifi" style="font-size:2rem;color:var(--text3)"></i><p style="margin:10px 0">Library grafik belum termuat (butuh internet).</p><button class="btn btn-primary" onclick="loadGrafik()"><i class="fas fa-rotate"></i> Coba Lagi</button></div>';
+        if (!window._chartRetry) { window._chartRetry = true; const sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js'; sc.onload = () => { if (currentPage === 'grafik') loadGrafik(); }; sc.onerror = () => { window._chartRetry = false; }; document.head.appendChild(sc); }
+        return;
+      }
       document.getElementById('contentArea').innerHTML = `
         <div class="card">
           <div class="card-title"><i class="fas fa-chart-line"></i> Grafik Penjualan</div>
@@ -5979,8 +5984,28 @@
       for (let i = 0; i < sku.length; i++) hash = (hash * 31 + sku.charCodeAt(i)) % palette.length;
       return palette[Math.abs(hash) % palette.length];
     }
+    // [NEW] Filter SKU menu Titipan (disimpan di perangkat ini)
+    const TIT_SKU_FILTER_KEY = 'tirtaTitipanSkuFilter';
+    function _titFilterGet() { try { return new Set(JSON.parse(localStorage.getItem(TIT_SKU_FILTER_KEY) || '[]')); } catch(e) { return new Set(); } }
+    function _titFilterSet(arr) { try { localStorage.setItem(TIT_SKU_FILTER_KEY, JSON.stringify(arr)); } catch(e) {} }
+    async function titipanOpenSkuFilter() {
+      const all = window._titipanList || [];
+      const map = {}; all.forEach(e => { if (e.sku) map[e.sku] = e.nama || ''; });
+      const skus = Object.keys(map).sort((a,b) => (map[a]||'').localeCompare(map[b]||''));
+      if (!skus.length) return Swal.fire({ icon:'info', title:'Belum ada data titipan' });
+      const sel = _titFilterGet();
+      const html = `<div style="display:flex;gap:6px;margin-bottom:8px"><button type="button" class="btn btn-sm btn-outline" onclick="document.querySelectorAll('.titf-cb').forEach(c=>c.checked=true)">Pilih Semua</button><button type="button" class="btn btn-sm btn-ghost" onclick="document.querySelectorAll('.titf-cb').forEach(c=>c.checked=false)">Kosongkan</button></div>
+        <div style="max-height:320px;overflow-y:auto;text-align:left;border:1px solid #d6e4f5;border-radius:10px">${skus.map(k => `<label style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid #e6eef9;cursor:pointer;font-size:13px"><input type="checkbox" class="titf-cb" value="${esc(k)}" ${(sel.size===0||sel.has(k))?'checked':''} style="width:auto"><b style="font-family:monospace;font-size:11px;min-width:56px">${esc(k)}</b><span>${esc(map[k])}</span></label>`).join('')}</div>`;
+      const r = await Swal.fire({ title:'Filter SKU Titipan', html, showCancelButton:true, confirmButtonText:'Terapkan', cancelButtonText:'Batal', width:'460px' });
+      if (!r.isConfirmed) return;
+      const chosen = [...document.querySelectorAll('.titf-cb')].filter(c => c.checked).map(c => c.value);
+      _titFilterSet(chosen.length === skus.length ? [] : chosen);
+      renderTitipanPage();
+    }
+    function titipanResetSkuFilter() { _titFilterSet([]); renderTitipanPage(); }
     function renderTitipanPage() {
-      const list = window._titipanList;
+      const _titSel = _titFilterGet();
+      const list = (window._titipanList || []).filter(e => _titSel.size === 0 || _titSel.has(e.sku));
       const today = localDateStr();
       const productOpts = products.map(p => `<option value="${esc(p.sku)}">${esc(p.sku)} - ${esc(p.nama)}</option>`).join('');
       const custDatalist = allCustomers.map(c => `<option value="${esc(c)}">`).join('');
@@ -6012,7 +6037,11 @@
 
       document.getElementById('contentArea').innerHTML = `
         <datalist id="titProductDatalist">${productOpts}</datalist>
-        ${_pgHero('fa-people-carry-box','Titipan', esc(fmtDate(today)), (()=>{ const m=_titipanSisaBySku(); return Object.values(m).filter(v=>v>0).reduce((a,v)=>a+v,0); })(), 'Total Sisa Titipan')}
+        ${_pgHero('fa-people-carry-box','Titipan', esc(fmtDate(today)), (()=>{ const m=_titipanSisaBySku(); return Object.entries(m).filter(([k,v])=>v>0 && (_titSel.size===0||_titSel.has(k))).reduce((a,[k,v])=>a+v,0); })(), 'Total Sisa Titipan')}
+        <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:12px 16px">
+          <div style="font-size:0.8rem;font-weight:700"><i class="fas fa-filter" style="color:var(--biru)"></i> Filter SKU: <span style="font-weight:600;color:var(--text2)">${_titSel.size === 0 ? 'Semua SKU' : (_titSel.size === 1 ? esc([..._titSel][0]) : _titSel.size + ' SKU dipilih')}</span></div>
+          <div style="display:flex;gap:6px"><button class="btn btn-sm btn-primary" onclick="titipanOpenSkuFilter()"><i class="fas fa-sliders"></i> Pilih SKU</button>${_titSel.size ? '<button class="btn btn-sm btn-ghost" onclick="titipanResetSkuFilter()">Reset</button>' : ''}</div>
+        </div>
         <div class="card">
           <div class="card-title"><i class="fas fa-plus-circle"></i> Input Titipan</div>
           <div class="flex-row">
@@ -6746,7 +6775,7 @@
             </div>
           </div>
           <div class="form-group" style="margin:8px 0 0;position:relative;">
-            <input id="prodSearchBox" placeholder="Cari SKU / nama / barcode produk..." autocomplete="off" oninput="filterProdukSearch()" style="padding-left:34px">
+            <input id="prodSearchBox" placeholder="Cari SKU / nama / barcode produk..." autocomplete="off" oninput="filterProdukSearch()" style="padding-left:38px !important">
             <i class="fas fa-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:0.85rem"></i>
           </div>
         </div>
@@ -6898,7 +6927,7 @@
           <td class="fw-bold">${esc(c)}</td>
           <td style="text-align:center;font-family:var(--mono)">${jumlahTrx || '-'}</td>
           <td style="text-align:right;font-family:var(--mono);font-weight:700;color:${piutang>0?'var(--merah)':'var(--text3)'}">${piutang>0?fmtRp(piutang):'-'}</td>
-          <td style="display:flex;gap:3px"><button class="btn btn-sm btn-outline" onclick="showPelangganDetail('${esc(c).replace(/'/g,"\\'")}')" title="Lihat riwayat & piutang"><i class="fas fa-eye"></i></button><button class="btn btn-sm btn-outline" onclick="editCustomerPhone('${esc(c).replace(/'/g,"\\'")}')" title="Atur nomor WA"><i class="fas fa-phone"></i></button><button class="btn btn-sm btn-outline" onclick="editCustomerAddress('${esc(c).replace(/'/g,"\\'")}')" title="Atur alamat"><i class="fas fa-map-marker-alt"></i></button><button class="btn btn-sm btn-outline" onclick="openCustomerAddressInMaps('${esc(c).replace(/'/g,"\\'")}')" title="Buka di Google Maps"><i class="fas fa-location-arrow"></i></button><button class="btn btn-sm btn-danger" onclick="deletePelanggan(${i})">🗑</button></td>
+          <td style="display:flex;gap:3px;flex-wrap:wrap;min-width:120px"><button class="btn btn-sm btn-outline" onclick="showPelangganDetail('${esc(c).replace(/'/g,"\\'")}')" title="Lihat riwayat & piutang"><i class="fas fa-eye"></i></button><button class="btn btn-sm btn-outline" onclick="editCustomerPhone('${esc(c).replace(/'/g,"\\'")}')" title="Atur nomor WA"><i class="fas fa-phone"></i></button><button class="btn btn-sm btn-outline" onclick="editCustomerAddress('${esc(c).replace(/'/g,"\\'")}')" title="Atur alamat"><i class="fas fa-map-marker-alt"></i></button><button class="btn btn-sm btn-outline" onclick="openCustomerAddressInMaps('${esc(c).replace(/'/g,"\\'")}')" title="Buka di Google Maps"><i class="fas fa-location-arrow"></i></button><button class="btn btn-sm btn-danger" onclick="deletePelanggan(${i})">🗑</button></td>
         </tr>`;
       }).join('');
     }
@@ -8238,3 +8267,21 @@ if ('serviceWorker' in navigator) {
     }
   })();
   
+// [NEW] Hero banner seragam (azure) untuk halaman Input Barang, Produk, Pelanggan, Pengaturan
+(function(){
+  const __rc = renderContent;
+  renderContent = function() {
+    __rc.apply(this, arguments);
+    try {
+      const el = document.getElementById('contentArea');
+      if (!el || el.querySelector('.pg-hero')) return;
+      const t = localDateStr();
+      let h = '';
+      if (currentPage === 'inputbarang') h = _pgHero('fa-boxes-packing', 'Input Barang', esc(fmtDate(t)));
+      else if (currentPage === 'produk') h = _pgHero('fa-cubes', 'Master Produk', 'Daftar barang & harga', products.length, 'Total Produk');
+      else if (currentPage === 'pelanggan') h = _pgHero('fa-address-book', 'Pelanggan', 'Data pelanggan toko', (allCustomers && allCustomers.length) || (pelanggan||[]).length, 'Total Pelanggan');
+      else if (currentPage === 'pengaturan') h = _pgHero('fa-gear', 'Pengaturan', 'Info toko, struk & pengguna');
+      if (h) el.insertAdjacentHTML('afterbegin', h);
+    } catch(e) { console.warn('hero extra:', e); }
+  };
+})();
