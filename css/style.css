@@ -1782,3 +1782,24 @@ body.light-mode .side-brand span { color:#0078D4; }
   .side-hide { flex:none; width:32px !important; height:32px !important; margin-left:0 !important; }
 }
 @media (min-width:768px) { .side-brand { font-size:1.04rem !important; } .side-head { gap:10px; } }
+
+/* ===== Baris Menu (web & tablet): semua kontrol seragam 40px, simetris, satu gaya azure ===== */
+@media (min-width:768px) {
+  .menu-row { gap:8px !important; align-items:center; }
+  .menu-row .side-fab, .menu-row .dash-fab, .menu-row .nav-bar button, .menu-row #syncStatus {
+    height:40px !important; min-height:40px; box-sizing:border-box; border-radius:13px !important; line-height:1; display:inline-flex !important; align-items:center; justify-content:center; margin:0 !important; }
+  .menu-row .side-fab { padding:0 18px !important; gap:9px; font-size:.86rem; }
+  .menu-row .dash-fab, .menu-row .nav-bar button { width:40px !important; min-width:40px; padding:0 !important; font-size:1.02rem !important; }
+  .menu-row .nav-bar button, .menu-row #syncStatus { background:rgba(41,168,255,.13) !important; border:1px solid rgba(41,168,255,.38) !important; color:#8FD3FF !important; box-shadow:none !important; backdrop-filter:none; }
+  .menu-row .nav-bar button:hover { background:rgba(41,168,255,.26) !important; }
+  .menu-row .nav-bar button .notif-badge { top:-5px; right:-5px; }
+  .menu-row #syncStatus { padding:0 14px !important; font-size:.72rem !important; font-weight:700; border-radius:13px !important; width:auto; }
+  .menu-row .nav-bar > div:last-child { gap:8px !important; flex-wrap:nowrap !important; align-items:center; }
+  .menu-row .nav-bar .btn-logout { background:rgba(255,80,110,.14) !important; border-color:rgba(255,80,110,.45) !important; color:#FF8AA5 !important; }
+  .menu-row .nav-bar button[onclick*="openWhatsAppApp"] { color:#34D399 !important; border-color:rgba(52,211,153,.45) !important; background:rgba(52,211,153,.12) !important; }
+  .menu-row .nav-bar .user-info { display:none !important; }
+  body.light-mode .menu-row .nav-bar button, body.light-mode .menu-row #syncStatus { background:#fff !important; border-color:rgba(0,120,212,.28) !important; color:#0067B8 !important; }
+  body.light-mode .menu-row .nav-bar .btn-logout { background:#FFF1F4 !important; border-color:rgba(220,38,38,.35) !important; color:#DC2626 !important; }
+  body.light-mode .menu-row .nav-bar button[onclick*="openWhatsAppApp"] { background:#ECFDF5 !important; border-color:rgba(5,150,105,.4) !important; color:#059669 !important; }
+}
+@media (min-width:768px) { body .menu-row .nav-bar, body.light-mode .menu-row .nav-bar { border:0 !important; border-bottom:0 !important; box-shadow:none !important; background:transparent !important; } .menu-row { border-bottom:0; } }
