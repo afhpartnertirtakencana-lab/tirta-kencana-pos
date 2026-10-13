@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Tirta Kencana">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css?v=20261012d">
+  <link rel="stylesheet" href="css/style.css?v=20261013b">
   <style>
     /* [PERF] Optimasi scroll untuk HP RAM kecil.
        - overscroll-behavior-y:contain menahan efek "rubber-band" pantulan browser
@@ -291,6 +291,8 @@
     <!-- [NEW] Sapaan "Hello, {nama}" - khusus tampilan mobile (disembunyikan di
          tablet/web lewat CSS, isinya diisi JS di showMainApp()). -->
     <div class="mobile-greeting" id="mobileGreeting">Hello, <span id="mobileGreetName">User</span></div>
+    <div class="menu-row">
+    <button type="button" class="side-fab" onclick="toggleSidebar()" title="Menu" aria-label="Menu"><i class="fas fa-bars"></i><span>Menu</span></button>
     <div class="nav-bar">
       <div class="user-info"><div class="avatar" id="userAvatar">A</div><div><div style="font-size:0.75rem;font-weight:600;" id="displayName">Admin</div><span class="role-tag" id="displayRole">ADMIN</span></div><button class="btn-refresh" onclick="navigateTo('dashboard')" title="Ke Dashboard" style="margin-left:6px"><i class="fas fa-chart-pie"></i></button></div>
       <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
@@ -303,7 +305,11 @@
         <button class="btn-logout" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i></button>
       </div>
     </div>
+    </div>
+    <div class="side-scrim" onclick="toggleSidebar(false)"></div>
+    <div class="menu-toggle-bar"><button type="button" class="menu-toggle-btn" id="menuToggleBtn" onclick="toggleMenuTabs()" aria-label="Buka menu"><span class="mt-ic"><i class="fas fa-grip"></i></span><span class="mt-txt">Menu</span><span class="mt-cur" id="menuToggleLabel"></span><i class="fas fa-chevron-down mt-chev"></i></button></div>
     <div class="menu-tabs-wrap">
+      <div class="side-head"><img id="sideLogo" alt=""><div class="side-brand">Tirta <span>Kencana</span></div><button type="button" class="side-hide" onclick="toggleSidebar(false)" title="Sembunyikan menu"><i class="fas fa-angles-left"></i></button></div>
       <button type="button" class="menu-tabs-arrow menu-tabs-arrow-left" onclick="document.getElementById('menuTabs').scrollBy({left:-140,behavior:'smooth'})" aria-label="Geser ke kiri"><i class="fas fa-chevron-left"></i></button>
       <div class="menu-tabs" id="menuTabs"></div>
       <button type="button" class="menu-tabs-arrow menu-tabs-arrow-right" onclick="document.getElementById('menuTabs').scrollBy({left:140,behavior:'smooth'})" aria-label="Geser ke kanan"><i class="fas fa-chevron-right"></i></button>
@@ -341,6 +347,6 @@
     <div id="sbSkuCheckList" style="max-height:50vh;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;border:1px solid var(--border);border-radius:10px;padding:4px 0;"></div>
     <button class="btn btn-primary btn-block mt-2" onclick="closeSbSkuModal();doStockBarang()"><i class="fas fa-check"></i> Terapkan</button>
   </div></div></div>
-  <script src="js/app.js?v=20261012d" defer></script>
+  <script src="js/app.js?v=20261013b" defer></script>
 </body>
 </html>
