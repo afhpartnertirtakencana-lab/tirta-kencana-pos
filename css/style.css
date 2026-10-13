@@ -1669,7 +1669,7 @@ body[data-page="pelanggan"] #pelangganTbody td:last-child .btn { margin:2px; }
   .side-brand { font-weight:800; font-size:1.05rem; color:#fff; white-space:nowrap; }
   .side-brand span { color:#FFD54A; }
   .side-hide { margin-left:auto; width:34px; height:34px; border-radius:11px; border:1px solid rgba(41,168,255,.35); background:rgba(41,168,255,.12); color:#8FD3FF; cursor:pointer; font-size:.8rem; }
-  .menu-tabs-wrap .menu-tabs { flex:1; flex-direction:column !important; flex-wrap:nowrap !important; align-items:stretch; overflow-x:hidden !important; overflow-y:auto; gap:2px !important; padding:4px 12px 16px !important; background:transparent !important; border:0 !important; backdrop-filter:none !important; touch-action:pan-y; }
+  .menu-tabs-wrap .menu-tabs { flex:1; justify-content:flex-start !important; align-content:flex-start !important; flex-direction:column !important; flex-wrap:nowrap !important; align-items:stretch; overflow-x:hidden !important; overflow-y:auto; gap:2px !important; padding:4px 12px 16px !important; background:transparent !important; border:0 !important; backdrop-filter:none !important; touch-action:pan-y; }
   .menu-tabs-wrap .menu-tabs .tab { display:flex !important; flex-direction:row !important; align-items:center; justify-content:flex-start !important; text-align:left !important; gap:12px !important; width:100% !important; min-width:0 !important; height:auto !important;
     padding:7px 12px !important; border-radius:12px !important; font-size:.84rem !important; font-weight:700; white-space:nowrap; text-align:left; background:transparent !important; border:1px solid transparent !important; box-shadow:none !important; color:#BFE3FF !important; animation:none !important; }
   .menu-tabs-wrap .menu-tabs .tab i { width:22px; text-align:center; font-size:1rem !important; margin:0 !important; }
@@ -1755,3 +1755,30 @@ body.light-mode .side-brand span { color:#0078D4; }
 }
 /* Jam & tanggal di banner disembunyikan di semua ukuran layar */
 #headerDateTime, .header-datetime { display:none !important; }
+
+/* Sidebar: kepala bergaya banner (logo & tulisan lebih tegas), daftar menu diberi jarak dari kepala */
+.dash-fab { display:none; }
+@media (min-width:768px) {
+  .side-head { position:relative; gap:12px; padding:16px 14px 14px !important; margin:0 0 8px; background:linear-gradient(120deg,#0A4FA8,#0078D4 60%,#29A8FF); box-shadow:0 6px 18px rgba(0,60,140,.35); }
+  .side-head img { width:54px !important; height:54px !important; border:3px solid #fff !important; box-shadow:0 0 0 2px rgba(41,168,255,.6), 0 6px 14px rgba(0,20,60,.45); image-rendering:-webkit-optimize-contrast; }
+  .side-brand { font-size:1.28rem !important; font-weight:900 !important; letter-spacing:.2px; color:#fff !important; text-shadow:0 2px 6px rgba(0,0,0,.35); }
+  .side-brand span { color:#FFD54A !important; }
+  body.light-mode .side-brand { color:#fff !important; }
+  body.light-mode .side-brand span { color:#FFD54A !important; }
+  .side-hide { background:rgba(255,255,255,.2) !important; border-color:rgba(255,255,255,.4) !important; color:#fff !important; }
+  .menu-tabs-wrap .menu-tabs { padding-top:10px !important; scroll-padding-top:12px; }
+  .menu-tabs-wrap .menu-tabs .tab-sec:first-child { margin-top:4px; }
+  .dash-fab { display:inline-grid; place-items:center; flex:none; width:40px; height:40px; border-radius:13px; cursor:pointer; color:#8FD3FF; font-size:1rem;
+    background:rgba(41,168,255,.14); border:1px solid rgba(41,168,255,.4); }
+  .dash-fab:hover { background:rgba(41,168,255,.26); color:#fff; }
+  .dash-fab.active { background:linear-gradient(135deg,#0078D4,#29A8FF); color:#fff; border-color:transparent; box-shadow:0 6px 16px rgba(0,120,212,.4); }
+  body.light-mode .dash-fab { background:#fff; color:#0067B8; border-color:rgba(0,120,212,.3); }
+  body.light-mode .dash-fab.active { background:linear-gradient(135deg,#0078D4,#29A8FF); color:#fff; }
+}
+
+@media (min-width:768px) {
+  .side-head img { width:50px !important; height:50px !important; }
+  .side-brand { font-size:1.12rem !important; flex:1; min-width:0; white-space:nowrap; }
+  .side-hide { flex:none; width:32px !important; height:32px !important; margin-left:0 !important; }
+}
+@media (min-width:768px) { .side-brand { font-size:1.04rem !important; } .side-head { gap:10px; } }
