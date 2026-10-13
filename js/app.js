@@ -1390,6 +1390,7 @@
              <button class="tab ${currentPage==='pengaturanUser'?'active':''}" onclick="navigateTo('pengaturanUser')"><i class="fas fa-cog"></i> Atur</button>`;
       }
       document.getElementById('menuTabs').innerHTML = h; _sideInit();
+      try { const ds = document.getElementById('dashShortcut'); if (ds) ds.classList.toggle('active', currentPage === 'dashboard'); } catch(e) {}
       try { const act = document.querySelector('#menuTabs .tab.active'); const lb = document.getElementById('menuToggleLabel'); if (lb) lb.innerHTML = act ? act.innerHTML : '<i class="fas fa-bars"></i> Menu'; } catch(e) {}
     }
 
