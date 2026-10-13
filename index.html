@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Tirta Kencana">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css?v=20261013b">
+  <link rel="stylesheet" href="css/style.css?v=20261013c">
   <style>
     /* [PERF] Optimasi scroll untuk HP RAM kecil.
        - overscroll-behavior-y:contain menahan efek "rubber-band" pantulan browser
@@ -293,6 +293,7 @@
     <div class="mobile-greeting" id="mobileGreeting">Hello, <span id="mobileGreetName">User</span></div>
     <div class="menu-row">
     <button type="button" class="side-fab" onclick="toggleSidebar()" title="Menu" aria-label="Menu"><i class="fas fa-bars"></i><span>Menu</span></button>
+    <button type="button" class="dash-fab" id="dashShortcut" onclick="navigateTo('dashboard')" title="Dashboard" aria-label="Dashboard"><i class="fas fa-chart-pie"></i></button>
     <div class="nav-bar">
       <div class="user-info"><div class="avatar" id="userAvatar">A</div><div><div style="font-size:0.75rem;font-weight:600;" id="displayName">Admin</div><span class="role-tag" id="displayRole">ADMIN</span></div><button class="btn-refresh" onclick="navigateTo('dashboard')" title="Ke Dashboard" style="margin-left:6px"><i class="fas fa-chart-pie"></i></button></div>
       <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
@@ -347,6 +348,6 @@
     <div id="sbSkuCheckList" style="max-height:50vh;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;border:1px solid var(--border);border-radius:10px;padding:4px 0;"></div>
     <button class="btn btn-primary btn-block mt-2" onclick="closeSbSkuModal();doStockBarang()"><i class="fas fa-check"></i> Terapkan</button>
   </div></div></div>
-  <script src="js/app.js?v=20261013b" defer></script>
+  <script src="js/app.js?v=20261013c" defer></script>
 </body>
 </html>
