@@ -1653,3 +1653,105 @@ body[data-page="pelanggan"] #pelangganTbody td:last-child .btn { margin:2px; }
 #inputItemsContainer .cart-item-row select { grid-column:1 / -1; width:100% !important; min-width:0; flex:none !important; }
 #inputItemsContainer .cart-item-row input { width:100% !important; min-width:0; text-align:center; }
 #inputItemsContainer .cart-item-row .btn { height:40px; width:40px; padding:0; }
+
+/* ===== MENU: HP (<768px) = tampilan lama (grid ikon selalu terlihat) ===== */
+.menu-toggle-bar, .side-fab, .side-scrim, .side-head, .tab-sec { display:none; }
+
+/* ===== MENU: Tablet & Web (>=768px) = SIDEBAR yang bisa disembunyikan ===== */
+@media (min-width:768px) {
+  .menu-tabs-wrap { position:fixed !important; left:0; top:0; bottom:0; width:248px; z-index:950; display:flex !important; flex-direction:column; align-items:stretch;
+    transform:translateX(-102%); transition:transform .28s cubic-bezier(.2,.8,.2,1);
+    background:linear-gradient(180deg,#05244F,#031A3A); border-right:1px solid rgba(41,168,255,.28); box-shadow:12px 0 40px rgba(0,10,40,.45); }
+  body.side-open .menu-tabs-wrap { transform:none; }
+  .menu-tabs-arrow { display:none !important; }
+  .side-head { display:flex; align-items:center; gap:10px; padding:14px 14px 10px; flex:none; }
+  .side-head img { width:40px; height:40px; border-radius:50%; background:#fff; object-fit:cover; border:2px solid #29A8FF; flex:none; }
+  .side-brand { font-weight:800; font-size:1.05rem; color:#fff; white-space:nowrap; }
+  .side-brand span { color:#FFD54A; }
+  .side-hide { margin-left:auto; width:34px; height:34px; border-radius:11px; border:1px solid rgba(41,168,255,.35); background:rgba(41,168,255,.12); color:#8FD3FF; cursor:pointer; font-size:.8rem; }
+  .menu-tabs-wrap .menu-tabs { flex:1; flex-direction:column !important; flex-wrap:nowrap !important; align-items:stretch; overflow-x:hidden !important; overflow-y:auto; gap:2px !important; padding:4px 12px 16px !important; background:transparent !important; border:0 !important; backdrop-filter:none !important; touch-action:pan-y; }
+  .menu-tabs-wrap .menu-tabs .tab { display:flex !important; flex-direction:row !important; align-items:center; justify-content:flex-start !important; text-align:left !important; gap:12px !important; width:100% !important; min-width:0 !important; height:auto !important;
+    padding:7px 12px !important; border-radius:12px !important; font-size:.84rem !important; font-weight:700; white-space:nowrap; text-align:left; background:transparent !important; border:1px solid transparent !important; box-shadow:none !important; color:#BFE3FF !important; animation:none !important; }
+  .menu-tabs-wrap .menu-tabs .tab i { width:22px; text-align:center; font-size:1rem !important; margin:0 !important; }
+  .menu-tabs-wrap .menu-tabs .tab:hover { background:rgba(41,168,255,.14) !important; color:#fff !important; }
+  .menu-tabs-wrap .menu-tabs .tab.active { background:linear-gradient(135deg,#0078D4,#29A8FF) !important; color:#fff !important; box-shadow:0 6px 16px rgba(0,120,212,.4) !important; }
+  .menu-tabs-wrap .menu-tabs .tab-sec { display:block; font-size:.62rem; letter-spacing:1.2px; font-weight:800; color:#5CC0FF; margin:9px 10px 3px; }
+  .side-fab { display:inline-flex; align-items:center; gap:8px; align-self:flex-start; margin:2px 0 8px 18px; padding:8px 16px; border-radius:14px; cursor:pointer; color:#fff; font-family:inherit; font-size:.82rem; font-weight:800;
+    background:linear-gradient(135deg,#0078D4,#29A8FF); border:1px solid rgba(143,211,255,.5); box-shadow:0 6px 16px rgba(0,120,212,.4); }
+  .side-fab i { font-size:.95rem; }
+  /* tablet: sidebar menimpa konten + latar gelap */
+  .side-scrim { display:block; position:fixed; inset:0; z-index:940; background:rgba(0,10,30,.55); backdrop-filter:blur(2px); opacity:0; pointer-events:none; transition:opacity .25s; }
+  body.side-open .side-scrim { opacity:1; pointer-events:auto; }
+  /* light mode */
+  body.light-mode .menu-tabs-wrap { background:#fff; border-right-color:rgba(0,120,212,.2); box-shadow:12px 0 40px rgba(0,60,140,.18); }
+  body.light-mode .side-brand { color:#0A4FA8; }
+  body.light-mode .menu-tabs-wrap .menu-tabs .tab { color:#0B3A6A !important; }
+  body.light-mode .menu-tabs-wrap .menu-tabs .tab:hover { background:#EAF4FF !important; color:#0067B8 !important; }
+  body.light-mode .menu-tabs-wrap .menu-tabs .tab.active { color:#fff !important; }
+  body.light-mode .menu-tabs-wrap .menu-tabs .tab-sec { color:#0067B8; }
+  body.light-mode .side-hide { color:#0067B8; background:#EAF4FF; }
+}
+/* layar lebar: sidebar menetap & konten bergeser (tanpa latar gelap) */
+@media (min-width:1100px) {
+  .side-scrim { display:none !important; }
+  body.side-open .app-container { margin-left:268px !important; margin-right:auto !important; max-width:min(1000px, calc(100vw - 290px)) !important; }
+}
+
+/* ===== Edit Transaksi (SweetAlert) - tema azure blue, isi/fungsi tidak berubah ===== */
+.swal2-popup.etx-popup { border-radius:26px !important; overflow:hidden; background:linear-gradient(180deg,#06295A,#041F45) !important; color:#E8F4FF !important; border:1px solid rgba(41,168,255,.38); box-shadow:0 30px 70px rgba(0,10,40,.55) !important; }
+.etx-popup .swal2-html-container { margin:0 !important; padding:0 !important; overflow:visible; color:inherit !important; }
+.etx-popup .etx-head { display:flex; align-items:center; gap:12px; margin:0 -22px 16px; padding:18px 22px; color:#fff; background:linear-gradient(120deg,#0A4FA8,#0078D4 60%,#29A8FF); }
+.etx-popup .etx-av { width:46px; height:46px; border-radius:50%; display:grid; place-items:center; background:rgba(255,255,255,.2); font-size:19px; flex:none; }
+.etx-popup .etx-title { font-size:1.1rem; font-weight:800; }
+.etx-popup .etx-id { font-size:.72rem; opacity:.85; font-family:monospace; margin-top:2px; }
+.etx-popup label { color:#5CC0FF !important; }
+.etx-popup label i { color:#5CC0FF !important; }
+.etx-popup select, .etx-popup input { background:rgba(0,30,70,.6) !important; border:1px solid rgba(41,168,255,.32) !important; color:#E8F4FF !important; border-radius:12px !important; }
+.etx-popup select option { background:#06295A; color:#E8F4FF; }
+.etx-popup select:focus, .etx-popup input:focus { outline:none; border-color:#29A8FF !important; box-shadow:0 0 0 3px rgba(41,168,255,.25); }
+.etx-popup .edit-item-row { background:rgba(0,30,70,.5) !important; border:1px solid rgba(41,168,255,.24) !important; border-radius:16px !important; position:relative; padding-left:14px !important; }
+.etx-popup .edit-item-row::before { content:''; position:absolute; left:0; top:10px; bottom:10px; width:3px; border-radius:3px; background:linear-gradient(180deg,#29A8FF,#0078D4); }
+.etx-popup .edit-item-row button { background:rgba(255,80,110,.18) !important; color:#FF8AA5 !important; border-radius:10px !important; }
+.etx-popup div[style*="color:#0D2B3E"], .etx-popup span[style*="color:#0D2B3E"], .etx-popup label[style*="color:#0D2B3E"] { color:#E8F4FF !important; }
+.etx-popup div[style*="color:#5a7a90"], .etx-popup span[style*="color:#5a7a90"] { color:#8FD3FF !important; }
+.etx-popup div[style*="color:#94A3B8"], .etx-popup span[style*="color:#94A3B8"] { color:#7FB4DD !important; }
+.etx-popup button[onclick*="_editTrxAddItem"] { background:linear-gradient(135deg,#0078D4,#29A8FF) !important; color:#fff !important; border:0 !important; border-radius:999px !important; padding:6px 14px !important; box-shadow:0 4px 12px rgba(0,120,212,.4); }
+.etx-popup div[style*="EAF2FF"] { background:linear-gradient(135deg,rgba(0,120,212,.38),rgba(41,168,255,.14)) !important; border:1px solid rgba(41,168,255,.38) !important; border-radius:16px !important; }
+.etx-popup div[style*="height:1px"] { background:rgba(143,211,255,.28) !important; }
+.etx-popup #editSumNett { color:#FFD54A !important; }
+.etx-popup #editSumDisc { color:#FF8AA5 !important; }
+.etx-popup .swal2-actions { margin:16px 0 0 !important; gap:10px; }
+.etx-popup .swal2-validation-message { background:rgba(255,80,110,.15); color:#FFB3C4; }
+.swal2-popup.etx-popup .swal2-confirm.etx-confirm { background:linear-gradient(135deg,#0078D4,#29A8FF) !important; border-radius:14px !important; font-weight:800 !important; padding:12px 22px !important; box-shadow:0 6px 16px rgba(0,120,212,.45) !important; }
+.swal2-popup.etx-popup .swal2-cancel.etx-cancel { background:transparent !important; color:#8FD3FF !important; border:1px solid rgba(41,168,255,.4) !important; border-radius:14px !important; font-weight:800 !important; padding:12px 22px !important; }
+/* mode terang */
+body.light-mode .swal2-popup.etx-popup { background:#fff !important; color:#0B2A4A !important; border-color:rgba(0,120,212,.25); }
+body.light-mode .etx-popup label, body.light-mode .etx-popup label i { color:#0067B8 !important; }
+body.light-mode .etx-popup select, body.light-mode .etx-popup input { background:#F3F9FF !important; border-color:rgba(0,120,212,.25) !important; color:#0B2A4A !important; }
+body.light-mode .etx-popup select option { background:#fff; color:#0B2A4A; }
+body.light-mode .etx-popup .edit-item-row { background:#F7FBFF !important; border-color:rgba(0,120,212,.2) !important; }
+body.light-mode .etx-popup div[style*="color:#0D2B3E"], body.light-mode .etx-popup span[style*="color:#0D2B3E"], body.light-mode .etx-popup label[style*="color:#0D2B3E"] { color:#0B2A4A !important; }
+body.light-mode .etx-popup div[style*="color:#5a7a90"], body.light-mode .etx-popup span[style*="color:#5a7a90"] { color:#2F6FA8 !important; }
+body.light-mode .etx-popup div[style*="color:#94A3B8"], body.light-mode .etx-popup span[style*="color:#94A3B8"] { color:#6B8FB0 !important; }
+body.light-mode .etx-popup div[style*="EAF2FF"] { background:linear-gradient(135deg,#E3F1FF,#F2F9FF) !important; border-color:rgba(0,120,212,.25) !important; }
+body.light-mode .etx-popup #editSumNett { color:#0067B8 !important; }
+body.light-mode .etx-popup div[style*="height:1px"] { background:rgba(0,120,212,.2) !important; }
+body.light-mode .swal2-popup.etx-popup .swal2-cancel.etx-cancel { color:#0067B8 !important; }
+body.light-mode .side-brand span { color:#0078D4; }
+
+/* Baris Menu + ikon kecil (HP: tidak berpengaruh) */
+.menu-row { display:contents; }
+@media (min-width:768px) {
+  .menu-row { display:flex; align-items:center; gap:10px; padding:2px 14px 10px 18px; flex:none; }
+  .menu-row .side-fab { margin:0 !important; flex:none; }
+  .menu-row .nav-bar { flex:1; min-width:0; padding:0 !important; background:transparent !important; border:0 !important; box-shadow:none !important; justify-content:flex-end; }
+  .menu-row .nav-bar > div:last-child { justify-content:flex-end; flex-wrap:wrap; }
+}
+
+/* Web & tablet: tanpa widget jam/tanggal di banner & tanpa tulisan "Terima kasih" di bawah */
+@media (min-width:768px) {
+  #headerDateTime, .header-datetime { display:none !important; }
+  .app-container .bottom-bar { display:none !important; }
+}
+/* Jam & tanggal di banner disembunyikan di semua ukuran layar */
+#headerDateTime, .header-datetime { display:none !important; }
