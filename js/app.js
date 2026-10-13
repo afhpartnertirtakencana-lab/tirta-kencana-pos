@@ -1346,22 +1346,27 @@
     function renderMenuTabs() {
       let h = ''; const r = currentUser?.role;
       if (r === 'admin') {
-        h = `<button class="tab ${currentPage==='dashboard'?'active':''}" onclick="navigateTo('dashboard')"><i class="fas fa-chart-pie"></i> Dashboard</button>
+        h = `<div class="tab-sec">UTAMA</div>
+             <button class="tab ${currentPage==='dashboard'?'active':''}" onclick="navigateTo('dashboard')"><i class="fas fa-chart-pie"></i> Dashboard</button>
              <button class="tab ${currentPage==='penjualan'?'active':''}" onclick="navigateTo('penjualan')"><i class="fas fa-cash-register"></i> Jual</button>
              <button class="tab ${currentPage==='transaksi'?'active':''}" onclick="navigateTo('transaksi')"><i class="fas fa-list"></i> Transaksi</button>
              <button class="tab ${currentPage==='rekap'?'active':''}" onclick="navigateTo('rekap')"><i class="fas fa-chart-bar"></i> Rekap</button>
              <button class="tab ${currentPage==='rekapinput'?'active':''}" onclick="navigateTo('rekapinput')"><i class="fas fa-boxes"></i> Rekap Input</button>
+             <div class="tab-sec">KEUANGAN</div>
              <button class="tab ${currentPage==='setoran'?'active':''}" onclick="navigateTo('setoran')"><i class="fas fa-money-bill-wave"></i> Setoran</button>
              <button class="tab ${currentPage==='rekapsetoran'?'active':''}" onclick="navigateTo('rekapsetoran')"><i class="fas fa-table"></i> Rekap Setoran</button>
+             <div class="tab-sec">STOK & BARANG</div>
              <button class="tab ${currentPage==='inputbarang'?'active':''}" onclick="navigateTo('inputbarang')"><i class="fas fa-boxes"></i> Input</button>
              <button class="tab ${currentPage==='stockbarang'?'active':''}" onclick="navigateTo('stockbarang')"><i class="fas fa-warehouse"></i> Stock</button>
              <button class="tab ${currentPage==='cekstock'?'active':''}" onclick="navigateTo('cekstock')"><i class="fas fa-clipboard-check"></i> Cek Stock</button>
              <button class="tab ${currentPage==='cekkosongan'?'active':''}" onclick="navigateTo('cekkosongan')"><i class="fas fa-recycle"></i> Cek Kosongan</button>
              <button class="tab ${currentPage==='pesanan'?'active':''}" onclick="navigateTo('pesanan')"><i class="fas fa-clipboard-list"></i> Pesanan</button>
              <button class="tab ${currentPage==='titipan'?'active':''}" onclick="navigateTo('titipan')"><i class="fas fa-people-carry-box"></i> Titipan</button>
+             <div class="tab-sec">DATA</div>
              <button class="tab ${currentPage==='produk'?'active':''}" onclick="navigateTo('produk')"><i class="fas fa-cubes"></i> Produk</button>
              <button class="tab ${currentPage==='pelanggan'?'active':''}" onclick="navigateTo('pelanggan')"><i class="fas fa-address-book"></i> Pelanggan</button>
-             <button class="tab ${currentPage==='pengaturan'?'active':''}" onclick="navigateTo('grafik')"><i class="fas fa-chart-line"></i> Grafik</button>
+             <div class="tab-sec">LAPORAN</div>
+             <button class="tab ${currentPage==='grafik'?'active':''}" onclick="navigateTo('grafik')"><i class="fas fa-chart-line"></i> Grafik</button>
              <button class="tab ${currentPage==='piutang'?'active':''}" onclick="navigateTo('piutang')"><i class="fas fa-file-invoice-dollar"></i> Piutang</button>
              <button class="tab ${currentPage==='laporanbulanan'?'active':''}" onclick="navigateTo('laporanbulanan')"><i class="fas fa-calendar-alt"></i> Laporan Bulanan</button>
              <button class="tab ${currentPage==='pengaturan'?'active':''}" onclick="navigateTo('pengaturan')"><i class="fas fa-cog"></i> Atur</button>`;
@@ -1384,7 +1389,8 @@
              <button class="tab ${currentPage==='pesanan'?'active':''}" onclick="navigateTo('pesanan')"><i class="fas fa-eye"></i> Pesanan</button>
              <button class="tab ${currentPage==='pengaturanUser'?'active':''}" onclick="navigateTo('pengaturanUser')"><i class="fas fa-cog"></i> Atur</button>`;
       }
-      document.getElementById('menuTabs').innerHTML = h;
+      document.getElementById('menuTabs').innerHTML = h; _sideInit();
+      try { const act = document.querySelector('#menuTabs .tab.active'); const lb = document.getElementById('menuToggleLabel'); if (lb) lb.innerHTML = act ? act.innerHTML : '<i class="fas fa-bars"></i> Menu'; } catch(e) {}
     }
 
     // ========== MENU BAWAH (BOTTOM NAV) - KHUSUS TAMPILAN MOBILE ==========
@@ -1483,7 +1489,33 @@
       document.getElementById('bnavMoreSheet').classList.remove('open');
       document.getElementById('bnavMoreBackdrop').classList.remove('open');
     }
-    function navigateTo(p) { currentPage = p; document.body.setAttribute('data-page', p); renderMenuTabs(); renderBottomNav(); renderContent(); }
+    function toggleMenuTabs(force) { const w = document.querySelector('.menu-tabs-wrap'), b = document.getElementById('menuToggleBtn'); if (!w) return; const open = (typeof force === 'boolean') ? force : !w.classList.contains('open'); w.classList.toggle('open', open); if (b) b.classList.toggle('open', open); }
+    // Sidebar harus di luar #mainApp (yang punya backdrop-filter + overflow:hidden sehingga
+    // elemen position:fixed di dalamnya ikut terpotong). Di >=768px dipindah ke <body>,
+    // di HP dikembalikan ke posisi semula (tampilan lama).
+    function _sideRelocate() {
+      const wrap = document.querySelector('.menu-tabs-wrap'), fab = null, scrim = document.querySelector('.side-scrim');
+      if (!wrap) return;
+      if (!window._sideAnchor) { window._sideAnchor = document.createComment('side-anchor'); wrap.parentNode.insertBefore(window._sideAnchor, wrap); }
+      const wide = window.innerWidth >= 768;
+      if (wide && wrap.parentNode !== document.body) { [wrap, fab, scrim].forEach(el => el && document.body.appendChild(el)); }
+      else if (!wide && wrap.parentNode === document.body && window._sideAnchor.parentNode) { const p = window._sideAnchor.parentNode; p.insertBefore(wrap, window._sideAnchor.nextSibling); if (fab) p.insertBefore(fab, wrap); if (scrim) p.insertBefore(scrim, wrap); }
+    }
+    function _sideInit() {
+      _sideRelocate();
+      try { const lg = document.getElementById('sideLogo'), src = document.getElementById('logoImg'); if (lg && src && src.src && !lg.src) lg.src = src.src; } catch(e) {}
+      let saved = null; try { saved = localStorage.getItem('tirtaSideOpen'); } catch(e) {}
+      const open = window.innerWidth >= 1100 ? saved !== '0' : false;
+      document.body.classList.toggle('side-open', open);
+    }
+    function toggleSidebar(force) {
+      const open = (typeof force === 'boolean') ? force : !document.body.classList.contains('side-open');
+      document.body.classList.toggle('side-open', open);
+      if (open) { const mt = document.getElementById('menuTabs'); if (mt) mt.scrollTop = 0; }
+      try { if (window.innerWidth >= 1100) localStorage.setItem('tirtaSideOpen', open ? '1' : '0'); } catch(e) {}
+    }
+    window.addEventListener('resize', () => { _sideRelocate(); if (window.innerWidth < 1100) document.body.classList.remove('side-open'); });
+    function navigateTo(p) { toggleMenuTabs(false); if (window.innerWidth < 1100) document.body.classList.remove('side-open'); currentPage = p; document.body.setAttribute('data-page', p); renderMenuTabs(); renderBottomNav(); renderContent(); }
     function _pgHero(icon, title, sub, val, lbl) {
       return `<div class="pg-hero"><div class="pg-hero-eyebrow"><i class="fas ${icon}"></i> ${title}</div><div class="pg-hero-sub">${sub||''}</div>${val !== undefined && val !== null ? `<div class="pg-hero-val">${val}</div><div class="pg-hero-lbl">${lbl||''}</div>` : ''}</div>`;
     }
@@ -3817,10 +3849,9 @@
       // panel ringkasan gradien biru senada tema aplikasi.
       Swal.fire({
         html: `<div style="text-align:left;font-family:inherit">
-          <div style="text-align:center;margin-bottom:14px">
-            <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#1A6DB5,#2F80FF);display:flex;align-items:center;justify-content:center;margin:0 auto 8px;box-shadow:0 6px 16px rgba(26,109,181,.3)"><i class="fas fa-receipt" style="color:#fff;font-size:20px"></i></div>
-            <div style="font-size:1.05rem;font-weight:800;color:#0D2B3E">Edit Transaksi</div>
-            <div style="font-size:0.72rem;color:#94A3B8;font-family:monospace;margin-top:2px">${esc(trx.id)}</div>
+          <div class="etx-head">
+            <div class="etx-av"><i class="fas fa-pen-to-square"></i></div>
+            <div><div class="etx-title">Edit Transaksi</div><div class="etx-id">${esc(trx.id)}</div></div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
             <div><label style="font-size:0.64rem;font-weight:700;color:#5a7a90;text-transform:uppercase;letter-spacing:.03em;display:block;margin-bottom:4px"><i class="fas fa-user" style="margin-right:4px"></i>Customer</label>
@@ -3847,7 +3878,8 @@
             <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:0.85rem;font-weight:800;color:#0D2B3E">TOTAL</span><span id="editSumNett" style="font-family:monospace;font-weight:800;font-size:1.2rem;color:#1A6DB5">Rp 0</span></div>
           </div>
         </div>`,
-        width: '520px', padding: '28px 24px',
+        width: '540px', padding: '0 22px 22px',
+        customClass: { popup: 'etx-popup', confirmButton: 'etx-confirm', cancelButton: 'etx-cancel' },
         showCancelButton: true, confirmButtonText: '💾 Simpan Perubahan', cancelButtonText: 'Batal',
         confirmButtonColor: '#1A6DB5', cancelButtonColor: '#94A3B8',
         buttonsStyling: true,
