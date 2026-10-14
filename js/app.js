@@ -1795,34 +1795,50 @@
           </div>
         </div>`;
     }
-    function _dxCard(title, rightTxt, body, accent) {
-      accent = accent || '#0078D4';
-      return `<div style="background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.07);margin-bottom:10px;overflow:hidden;text-align:left">
-        <div style="background:linear-gradient(135deg,${accent},#29A8FF);padding:8px 12px;display:flex;align-items:center;gap:8px">
-          <div style="font-weight:700;color:#fff;font-size:.8rem;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${title}</div>
-          <span style="background:rgba(255,255,255,.25);color:#fff;padding:2px 8px;border-radius:6px;font-size:.68rem;font-weight:700;white-space:nowrap">${rightTxt}</span>
-        </div><div style="padding:8px 12px;color:#0F2A4A">${body}</div></div>`;
-    }
-    function _dxLine(l, r, bold) {
-      return `<div style="display:flex;justify-content:space-between;gap:8px;font-size:.75rem;padding:2px 0;${bold?'font-weight:800;color:#0067B8;':''}"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis">${l}</span><span style="white-space:nowrap">${r}</span></div>`;
-    }
-    function _dxSwal(title, html) {
-      Swal.fire({ title, html: `<div style="max-height:62vh;overflow:auto;padding:2px">${html}</div>`, showConfirmButton:true, confirmButtonText:'Tutup', confirmButtonColor:'#0078D4', width:Math.min(520, window.innerWidth-24) });
+    // ===== Popup detail dashboard (desain azure: banner, kartu ringkas, daftar rapi) =====
+    function _dxPop(o) {
+      const stats = (o.stats||[]).map(x => `<div class="dxp-stat"><div class="dxp-stat-v">${x.v}</div><div class="dxp-stat-l">${x.l}</div></div>`).join('');
+      const secs = (o.sections||[]).map(sec => {
+        const rows = (sec.rows||[]).map((r,i) => `<div class="dxp-row">
+            <div class="dxp-no">${i+1}</div>
+            <div class="dxp-main"><div class="dxp-name">${r.n}</div>${r.sub?`<div class="dxp-sub">${r.sub}</div>`:''}</div>
+            <div class="dxp-val"><span class="dxp-pill">${r.q}</span>${r.v?`<span class="dxp-amt">${r.v}</span>`:''}</div>
+          </div>`).join('');
+        return `<div class="dxp-sec ${sec.tone||''}">
+          ${sec.title ? `<div class="dxp-sec-h"><span>${sec.title}</span>${sec.badge?`<em>${sec.badge}</em>`:''}</div>` : ''}
+          <div class="dxp-rows">${rows || '<div class="dxp-empty">Tidak ada data</div>'}</div>
+          ${sec.total ? `<div class="dxp-total"><span>${sec.total.l}</span><b>${sec.total.v}</b></div>` : ''}
+        </div>`;
+      }).join('');
+      Swal.fire({
+        html: `<div class="dxp">
+          <div class="dxp-head"><div class="dxp-ic"><i class="fas ${o.icon||'fa-chart-pie'}"></i></div>
+            <div class="dxp-ht"><div class="dxp-title">${o.title}</div><div class="dxp-hs">${o.sub||''}</div></div>
+            <button type="button" class="dxp-x" onclick="Swal.close()" aria-label="Tutup"><i class="fas fa-xmark"></i></button></div>
+          ${stats ? `<div class="dxp-stats">${stats}</div>` : ''}
+          <div class="dxp-body">${secs}</div></div>`,
+        showConfirmButton:false, padding:0, width:Math.min(480, window.innerWidth-20), customClass:{ popup:'dxp-popup', htmlContainer:'dxp-hc' }
+      });
     }
     function showDxRekapInput() {
-      const inp = _dxInputToday(_dxToday());
-      if (!inp.length) return _dxSwal('Rekap Input Hari Ini', '<div style="padding:24px;text-align:center;color:#6B84A0;font-size:.8rem">Belum ada input hari ini</div>');
+      const today = _dxToday();
+      const inp = _dxInputToday(today);
       const g = {};
+      let tq = 0, tn = 0;
       inp.forEach(s => {
         const k = (s.driver||'—') + '|' + (s.rit||'') + '|' + (s.status||'');
-        if (!g[k]) g[k] = { driver:s.driver||'—', rit:s.rit, status:s.status, items:[], qty:0, net:0 };
-        g[k].items.push(s); g[k].qty += (s.qty||0); g[k].net += (s.qty||0)*((s.hargaModal||0)-(s.disc||0));
+        if (!g[k]) g[k] = { driver:s.driver||'—', rit:s.rit, status:s.status, rows:[], qty:0, net:0 };
+        const n = (s.qty||0)*((s.hargaModal||0)-(s.disc||0));
+        g[k].rows.push({ n:esc(s.nama||s.sku||'—'), q:(s.qty||0)+' pcs', v:fmtRp(n) });
+        g[k].qty += (s.qty||0); g[k].net += n; tq += (s.qty||0); tn += n;
       });
-      _dxSwal('Rekap Input Hari Ini', Object.values(g).map(x => _dxCard(
-        esc(x.driver) + (x.rit ? ' · Rit '+esc(String(x.rit)) : ''),
-        x.status==='titipan'?'Titipan':'Kiriman',
-        x.items.map(s => _dxLine(esc(s.nama||s.sku||'—'), (s.qty||0)+' pcs')).join('') + _dxLine('Total '+x.qty+' pcs', fmtRp(x.net), true),
-        x.status==='titipan'?'#7C3AED':'#0078D4')).join(''));
+      const secs = Object.values(g).map(x => ({
+        title: '<i class="fas fa-truck"></i> ' + esc(x.driver) + (x.rit ? ' · Rit '+esc(String(x.rit)) : ''),
+        badge: x.status==='titipan' ? 'Titipan' : 'Kiriman', tone: x.status==='titipan' ? 'ungu' : '',
+        rows: x.rows, total: { l:'Total '+x.qty+' pcs', v:fmtRp(x.net) } }));
+      _dxPop({ icon:'fa-boxes', title:'Rekap Input Hari Ini', sub: esc(fmtDate(today)),
+        stats: [{ l:'Nilai Modal', v:fmtRp(tn) }, { l:'Total Qty', v:tq+' pcs' }, { l:'Input', v:Object.keys(g).length }],
+        sections: secs });
     }
     function showDxSkuDetail(name) {
       const today = _dxToday(), per = {};
@@ -1833,17 +1849,20 @@
         const n = (it.qty||0)*((it.harga||0)-(it.discRpPer||0));
         per[c].qty += (it.qty||0); per[c].nett += n; tq += (it.qty||0); tn += n;
       }));
-      const rows = Object.entries(per).sort((a,b)=>b[1].qty-a[1].qty);
-      _dxSwal(esc(name), _dxCard('Pembeli hari ini', rows.length+' customer', rows.map(r=>_dxLine(esc(r[0]), r[1].qty+' pcs · '+fmtRp(r[1].nett))).join('') + _dxLine('Total '+tq+' pcs', fmtRp(tn), true)));
+      const rows = Object.entries(per).sort((a,b)=>b[1].qty-a[1].qty).map(r => ({ n:esc(r[0]), q:r[1].qty+' pcs', v:fmtRp(r[1].nett) }));
+      _dxPop({ icon:'fa-cube', title:esc(name), sub:'Rekap SKU · ' + esc(fmtDate(today)),
+        stats: [{ l:'Terjual', v:tq+' pcs' }, { l:'Nilai', v:fmtRp(tn) }, { l:'Customer', v:rows.length }],
+        sections: [{ title:'Pembeli hari ini', badge:rows.length+' customer', rows, total:{ l:'Total '+tq+' pcs', v:fmtRp(tn) } }] });
     }
     function showDxCustDetail(name) {
       const today = _dxToday();
       const trx = allTrxList.filter(t => (t.tgl||'').substring(0,10) === today && (t.customer||'—') === name);
-      const per = {}; let tn = 0;
-      trx.forEach(t => { tn += (t.nett||0); (t.items||[]).forEach(it => { const k = it.nama||it.sku||'—'; if (!per[k]) per[k] = { qty:0, nett:0 }; per[k].qty += (it.qty||0); per[k].nett += (it.qty||0)*((it.harga||0)-(it.discRpPer||0)); }); });
-      const rows = Object.entries(per).sort((a,b)=>b[1].qty-a[1].qty);
-      const body = (rows.length ? rows.map(r=>_dxLine(esc(r[0]), r[1].qty+' pcs · '+fmtRp(r[1].nett))).join('') : '<div style="font-size:.74rem;color:#6B84A0">Rincian item belum dimuat</div>') + _dxLine(trx.length+' transaksi', fmtRp(tn), true);
-      _dxSwal(esc(name), _dxCard('Pembelian hari ini', trx.length+' transaksi', body));
+      const per = {}; let tn = 0, tq = 0;
+      trx.forEach(t => { tn += (t.nett||0); (t.items||[]).forEach(it => { const k = it.nama||it.sku||'—'; if (!per[k]) per[k] = { qty:0, nett:0 }; per[k].qty += (it.qty||0); tq += (it.qty||0); per[k].nett += (it.qty||0)*((it.harga||0)-(it.discRpPer||0)); }); });
+      const rows = Object.entries(per).sort((a,b)=>b[1].qty-a[1].qty).map(r => ({ n:esc(r[0]), q:r[1].qty+' pcs', v:fmtRp(r[1].nett) }));
+      _dxPop({ icon:'fa-user', title:esc(name), sub:'Rekap Customer · ' + esc(fmtDate(today)),
+        stats: [{ l:'Total Nett', v:fmtRp(tn) }, { l:'Transaksi', v:trx.length }, { l:'Qty', v:tq+' pcs' }],
+        sections: [{ title:'Barang dibeli', badge:rows.length+' SKU', rows, total:{ l:trx.length+' transaksi', v:fmtRp(tn) } }] });
     }
 
     function showDashboardPiutangDetail() {
