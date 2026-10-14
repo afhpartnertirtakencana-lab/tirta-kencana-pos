@@ -9,7 +9,7 @@
    - Bump CACHE_VERSION on every deploy so old caches are purged on activate.
 */
 
-const CACHE_VERSION = 'tk-pos-v13';
+const CACHE_VERSION = 'tk-pos-v14';
 const APP_SHELL = [
   './index.html',
   './css/style.css',
