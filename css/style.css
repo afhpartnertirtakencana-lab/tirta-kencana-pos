@@ -1803,3 +1803,32 @@ body.light-mode .side-brand span { color:#0078D4; }
   body.light-mode .menu-row .nav-bar button[onclick*="openWhatsAppApp"] { background:#ECFDF5 !important; border-color:rgba(5,150,105,.4) !important; color:#059669 !important; }
 }
 @media (min-width:768px) { body .menu-row .nav-bar, body.light-mode .menu-row .nav-bar { border:0 !important; border-bottom:0 !important; box-shadow:none !important; background:transparent !important; } .menu-row { border-bottom:0; } }
+
+/* ===== Dashboard rekap + shortcut + light-mode sidebar fix ===== */
+.dx-click { cursor:pointer; }
+.dx-panel.dx-click:hover { border-color:rgba(41,168,255,.55); }
+.dx-chev-s { font-size:.65rem; color:var(--az-3); flex:none; }
+.dx-ri-total { font-family:var(--mono); font-size:1.5rem; font-weight:900; color:var(--text); margin:2px 0 8px; }
+.dx-ri-chips { display:flex; flex-wrap:wrap; gap:6px; }
+.dx-ri-chips span { font-size:.66rem; font-weight:700; padding:3px 9px; border-radius:20px; background:rgba(41,168,255,.16); color:var(--az-3); }
+.dx-scroll { max-height:260px; overflow:auto; padding-right:2px; }
+.dx-rank.dx-click { padding:4px 4px; margin-bottom:5px; border-radius:10px; }
+.dx-rank.dx-click:hover { background:rgba(41,168,255,.1); }
+.dx-rank-sub { font-size:.64rem; color:var(--text3); margin-top:1px; }
+.dx-grid-rekap { grid-template-columns:1fr; margin-top:10px; }
+@media (min-width:900px){ .dx-grid-rekap { grid-template-columns:repeat(3,1fr); } }
+body.light-mode .dx-ri-total { color:#0F2A4A; }
+body.light-mode .dx-ri-chips span { background:#E6F3FF; color:#0067B8; }
+body.light-mode .dx-rank.dx-click:hover { background:#EAF4FF; }
+.sc-fab { display:none !important; }
+@media (min-width:768px) {
+  .menu-row .sc-fab { display:inline-grid !important; }
+  .menu-row .sc-fab[style*="display: none"] { display:none !important; }
+  /* sidebar light mode: item aktif tetap biru + teks putih (termasuk saat hover/fokus) */
+  body.light-mode .menu-tabs-wrap .menu-tabs .tab.active,
+  body.light-mode .menu-tabs-wrap .menu-tabs .tab.active:hover,
+  body.light-mode .menu-tabs-wrap .menu-tabs .tab.active:focus,
+  body.light-mode .menu-tabs-wrap .menu-tabs .tab.active:active { background:linear-gradient(135deg,#0078D4,#29A8FF) !important; color:#fff !important; border-color:transparent !important; box-shadow:0 6px 16px rgba(0,120,212,.35) !important; }
+  body.light-mode .menu-tabs-wrap .menu-tabs .tab.active i,
+  body.light-mode .menu-tabs-wrap .menu-tabs .tab.active span { color:#fff !important; }
+}
