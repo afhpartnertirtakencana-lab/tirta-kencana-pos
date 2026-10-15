@@ -2497,39 +2497,131 @@
     }
 
     // ========== STRUK (sama seperti sebelumnya) ==========
+    // ============================================================
+    // KIT STRUK (desain azure seperti popup detail): banner gradient + kartu ringkas
+    // melayang + seksi bernomor + bar total. Semua inline-style (aman untuk html2canvas).
+    // ============================================================
+    const _RC_T = {
+      blue:   { a0:'#0A4FA8', a1:'#0078D4', a2:'#29A8FF', tint:'#EAF4FF', tx:'#0067B8', chip:'#E6F3FF' },
+      amber:  { a0:'#B45309', a1:'#F59E0B', a2:'#FCD34D', tint:'#FFF6E5', tx:'#B45309', chip:'#FFEFCC' },
+      indigo: { a0:'#3730A3', a1:'#6366F1', a2:'#A5B4FC', tint:'#EEF0FF', tx:'#4F46E5', chip:'#E3E6FF' },
+      red:    { a0:'#B91C1C', a1:'#EF4444', a2:'#FCA5A5', tint:'#FDECEC', tx:'#DC2626', chip:'#FFE0E0' },
+      green:  { a0:'#047857', a1:'#10B981', a2:'#6EE7B7', tint:'#E8FAF2', tx:'#047857', chip:'#D5F5E6' },
+      purple: { a0:'#5B21B6', a1:'#7C3AED', a2:'#C4B5FD', tint:'#F1ECFF', tx:'#6D28D9', chip:'#E7DEFF' },
+      teal:   { a0:'#0E7490', a1:'#06B6D4', a2:'#67E8F9', tint:'#E6F9FD', tx:'#0E7490', chip:'#D0F3FA' }
+    };
+    function _rcT(t) { return _RC_T[t] || _RC_T.blue; }
+    function _rcRp(n) { return 'Rp ' + Number(n || 0).toLocaleString('id-ID'); }
+    function _rcLogo(lo) {
+      const src = lo || _logoUrl;
+      return src
+        ? `<img src="${src}" style="width:56px;height:56px;border-radius:50%;object-fit:cover;background:#fff;border:2.5px solid rgba(255,255,255,.85);flex-shrink:0">`
+        : `<div style="width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.22);border:2px solid rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🏪</div>`;
+    }
+    function _rcRoot(id, w, inner) {
+      return `<div id="${id}" style="width:${w}px;background:#F4F8FD;border-radius:20px;overflow:hidden;font-family:'DM Sans',Arial,sans-serif;color:#0F2A4A;box-shadow:0 10px 36px rgba(0,60,140,.22)">${inner}</div>`;
+    }
+    // o: { tone, title, sub, icon (FontAwesome class), logo }
+    function _rcHead(o) {
+      const t = _rcT(o.tone);
+      return `<div style="background:linear-gradient(120deg,${t.a0},${t.a1} 55%,${t.a2});padding:16px 18px 40px;color:#fff">
+        <div style="display:flex;align-items:center;gap:11px">${_rcLogo(o.logo)}
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center"><div style="font-size:17px;font-weight:800;letter-spacing:-.3px;line-height:1.15">${esc(settings.namaToko||'Tirta Kencana')}</div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:.9px;line-height:1.25;opacity:.95;margin-top:2px">WTC MANGGA 2</div><div style="font-size:9.5px;font-weight:500;letter-spacing:.5px;line-height:1.25;opacity:.85;margin-top:1px;margin-bottom:6px">LANTAI UG BLOK A /53</div></div>
+          ${o.icon?`<div style="width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0"><i class="fas ${o.icon}"></i></div>`:''}</div>
+        <div style="margin-top:14px;font-size:19px;font-weight:800;letter-spacing:-.3px;line-height:1.2">${o.title||''}</div>
+        ${o.sub?`<div style="font-size:11px;opacity:.88;margin-top:3px">${o.sub}</div>`:''}</div>`;
+    }
+    // stats: [{l, v}]
+    function _rcStats(stats, tone) {
+      const t = _rcT(tone);
+      return `<div style="display:flex;gap:8px;padding:0 14px;margin-top:-24px;position:relative">${stats.map(x => `<div style="flex:1;min-width:0;background:#fff;border-radius:14px;padding:10px 4px;text-align:center;box-shadow:0 6px 16px rgba(0,60,140,.14)"><div style="font-size:12px;font-weight:800;color:${t.tx};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:'JetBrains Mono',Tahoma,monospace">${x.v}</div><div style="font-size:8.5px;font-weight:700;color:#6B84A0;text-transform:uppercase;letter-spacing:.6px;margin-top:3px">${x.l}</div></div>`).join('')}</div>`;
+    }
+    function _rcBody(inner) { return `<div style="padding:14px">${inner}</div>`; }
+    // kartu info: pasangan label/nilai
+    function _rcInfo(pairs, tone) {
+      const t = _rcT(tone);
+      return `<div style="background:#fff;border-radius:16px;border:1px solid ${t.chip};box-shadow:0 2px 10px rgba(0,40,100,.06);padding:11px 14px;margin-bottom:12px;display:flex;flex-wrap:wrap;gap:8px 0">${pairs.map(p => `<div style="width:${p.full?'100%':'50%'};min-width:0;${p.right?'text-align:right;':''}"><div style="font-size:8.5px;font-weight:700;color:#6B84A0;text-transform:uppercase;letter-spacing:.7px">${p.l}</div><div style="font-size:12px;font-weight:700;color:${p.c||'#0F2A4A'};margin-top:1px;word-break:break-word">${p.v}</div></div>`).join('')}</div>`;
+    }
+    // baris: {n, sub, q (pill), v (nominal kecil di bawah pill)}
+    function _rcRow(i, r, tone) {
+      const t = _rcT(tone);
+      return `<div style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px dashed ${t.chip}">
+        <div style="width:24px;height:24px;flex-shrink:0;border-radius:8px;background:${t.chip};color:${t.tx};font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center">${r.no || (i + 1)}</div>
+        <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;color:#0F2A4A;line-height:1.3">${r.n}</div>${r.sub ? `<div style="font-size:10px;color:#6B84A0;margin-top:1px;line-height:1.35">${r.sub}</div>` : ''}</div>
+        ${(r.q || r.v) ? `<div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:2px">${r.q ? `<span style="font-size:10.5px;font-weight:800;color:${r.qc || t.tx};background:${r.qbg || t.chip};padding:3px 9px;border-radius:20px;white-space:nowrap;line-height:1.5;display:inline-block">${r.q}</span>` : ''}${r.v ? `<span style="font-size:10.5px;font-weight:700;color:#4B6584;font-family:'JetBrains Mono',Tahoma,monospace;white-space:nowrap">${r.v}</span>` : ''}</div>` : ''}
+      </div>`;
+    }
+    // s: {title (html), badge, rows:[...], total:{l,v}, tone, note}
+    function _rcSec(s) {
+      const t = _rcT(s.tone);
+      const rows = (s.rows || []).map((r, i) => _rcRow(i, r, s.tone)).join('') || '<div style="padding:16px;text-align:center;font-size:11px;color:#6B84A0">Tidak ada data</div>';
+      return `<div style="background:#fff;border-radius:16px;border:1px solid ${t.chip};box-shadow:0 2px 10px rgba(0,40,100,.07);margin-bottom:12px;overflow:hidden">
+        ${s.title ? `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;background:${t.tint};border-bottom:1px solid ${t.chip}"><span style="font-size:11.5px;font-weight:800;color:#0B3A6A;min-width:0">${s.title}</span>${s.badge ? `<span style="font-size:9.5px;font-weight:800;color:#fff;background:${t.a1};padding:3px 10px;border-radius:20px;white-space:nowrap">${s.badge}</span>` : ''}</div>` : ''}
+        ${rows}
+        ${s.total ? `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:linear-gradient(120deg,${t.a0},${t.a1});color:#fff;font-size:11.5px;font-weight:800"><span>${s.total.l}</span><span style="font-size:13px;font-family:'JetBrains Mono',Tahoma,monospace">${s.total.v}</span></div>` : ''}
+      </div>`;
+    }
+    // ringkasan baris label/nilai (gross, diskon, dst) + total besar
+    function _rcSum(lines, total, tone) {
+      const t = _rcT(tone);
+      return `<div style="background:#fff;border-radius:16px;border:1px solid ${t.chip};box-shadow:0 2px 10px rgba(0,40,100,.07);margin-bottom:12px;overflow:hidden">
+        ${lines.length ? `<div style="padding:10px 14px">${lines.map(l => `<div style="display:flex;justify-content:space-between;font-size:11.5px;color:#4B6584;padding:2px 0"><span>${l.l}</span><span style="font-family:'JetBrains Mono',Tahoma,monospace;font-weight:700;color:${l.c || '#0F2A4A'}">${l.v}</span></div>`).join('')}</div>` : ''}
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:linear-gradient(120deg,${t.a0},${t.a1});color:#fff"><span style="font-size:12px;font-weight:800;letter-spacing:.6px">${total.l}</span><span style="font-size:17px;font-weight:800;font-family:'JetBrains Mono',Tahoma,monospace">${total.v}</span></div></div>`;
+    }
+    function _rcFoot(text) {
+      return `<div style="text-align:center;padding:12px 18px 14px;font-size:11px;font-weight:600;color:#4B6584;border-top:1px dashed #C9DDF2">${esc(text || settings.bottomLine || 'Terima kasih telah berbelanja!')}</div>`;
+    }
+    function _rcCard(inner) { return `<div style="background:#fff;border-radius:16px;border:1px solid #D5E6F7;box-shadow:0 2px 10px rgba(0,40,100,.06);padding:12px 14px;margin-bottom:12px">${inner}</div>`; }
+
     function buildStrukHTML(data) {
       const trx = data.trx, items = data.items || [];
       const ns = (trx.status||'').toLowerCase().replace(/\s/g,'');
       const now = new Date();
       const timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
-      const logoHtml = _logoUrl ? `<img src="${_logoUrl}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;background:#fff;flex-shrink:0;border:2px solid rgba(255,255,255,.6)">` : '<div style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🏪</div>';
-
-      let itemRows = '';
+      const tone = { cod:'amber', transfer:'blue', qris:'indigo', belumtransfer:'red' }[ns] || 'red';
+      const stLabel = ns==='cod'?'COD':ns==='transfer'?'Transfer':ns==='qris'?'QRIS':'Belum Bayar';
+      const t = _rcT(tone);
+      let totalQty = 0;
+      let rows = [];
       if (data._loading) {
-        itemRows = `<tr><td colspan="2" style="text-align:center;padding:16px;color:#7BAAC4;font-size:12px"><i class="fas fa-spinner fa-spin"></i> Memuat detail item...</td></tr>`;
-      } else if (items.length === 0) {
-        itemRows = '<tr><td colspan="2" style="text-align:center;padding:12px;color:var(--text3)">Detail item tidak tersedia</td></tr>';
-      } else {
-        items.forEach(it => {
+        rows = [{ n:'<span style="color:#6B84A0;font-weight:600">Memuat detail item…</span>' }];
+      } else if (items.length) {
+        rows = items.map(it => {
           const nettPer = it.nettPer !== undefined ? it.nettPer : (it.harga||0) - (it.discRpPer||0);
-          const sub = nettPer * (it.qty||1);
-          itemRows += `<tr style="border-bottom:1px dashed #C5DFF0"><td style="padding:7px 0;vertical-align:top"><div style="font-weight:600;font-size:12px;color:#0D2B3E">${esc(it.nama||'-')}</div><div style="font-size:10.5px;color:#7BAAC4;margin-top:1px">${it.sku?esc(it.sku)+' · ':''}${it.qty} × Rp ${Number(it.harga).toLocaleString('id-ID')}${it.discRpPer?' <span style="color:#1D6FA4">(-Rp '+Number(it.discRpPer).toLocaleString('id-ID')+')</span>':''}</div></div><td style="padding:7px 0;text-align:right;font-weight:700;font-size:12px;color:#0D2B3E;white-space:nowrap;vertical-align:top;font-family:Tahoma,Arial,sans-serif">Rp ${Number(sub).toLocaleString('id-ID')}</div></tr>`;
+          totalQty += (it.qty||0);
+          return { n:esc(it.nama||'-'),
+            sub: (it.sku?esc(it.sku)+' · ':'') + (it.qty||0) + ' × ' + _rcRp(it.harga) + (it.discRpPer?' <span style="color:'+t.tx+'">(-'+_rcRp(it.discRpPer)+')</span>':''),
+            q:(it.qty||0)+' pcs', v:_rcRp(nettPer*(it.qty||1)) };
         });
+      } else {
+        rows = [{ n:'<span style="color:#6B84A0;font-weight:600">Detail item tidak tersedia</span>' }];
       }
 
-      let bankHtml = '';
+      let payHtml = '';
       if (ns === 'transfer') {
         [settings.bank1, settings.bank2].forEach(bk => {
           if (!bk || !bk.nama) return;
-          bankHtml += `<div style="background:#EBF4FB;border:1px solid #C5DFF0;border-radius:10px;padding:10px 14px;margin-bottom:6px"><div style="font-size:12px;font-weight:700;color:#0D2B3E;margin-bottom:4px">${esc(bk.nama)}</div>${bk.norek?`<div style="font-family:Tahoma,Arial,sans-serif;font-size:14px;font-weight:800;color:#1D6FA4;letter-spacing:.5px">${esc(bk.norek)}</div>`:''}<div style="font-size:10.5px;color:#3D6880;margin-top:2px">a.n. <b>${esc(bk.penerima||'-')}</b></div></div>`;
+          payHtml += _rcCard(`<div style="font-size:8.5px;font-weight:700;color:#6B84A0;text-transform:uppercase;letter-spacing:.7px">Transfer ke</div><div style="font-size:12px;font-weight:800;color:#0F2A4A;margin-top:2px">${esc(bk.nama)}</div>${bk.norek?`<div style="font-family:'JetBrains Mono',Tahoma,monospace;font-size:16px;font-weight:800;color:${t.tx};letter-spacing:.5px;margin-top:2px">${esc(bk.norek)}</div>`:''}<div style="font-size:10.5px;color:#4B6584;margin-top:2px">a.n. <b>${esc(bk.penerima||'-')}</b></div>`);
         });
       }
-      let qrisHtml = '';
       if (ns === 'qris' && _qrisUrl) {
-        qrisHtml = `<div style="text-align:center;margin:0 0 14px"><div style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#7BAAC4;margin-bottom:10px">Scan QRIS</div><img src="${_qrisUrl}" style="width:160px;height:160px;object-fit:contain;border-radius:12px;border:1.5px solid #C5DFF0;background:#fff;padding:8px"></div>`;
+        payHtml += _rcCard(`<div style="text-align:center"><div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#6B84A0;margin-bottom:8px">Scan QRIS</div><img src="${_qrisUrl}" style="width:170px;height:170px;object-fit:contain;border-radius:12px;border:1.5px solid ${t.chip};background:#fff;padding:8px"></div>`);
       }
 
-      return `<div id="struk-root" style="width:360px;background:#fff;border-radius:16px;overflow:hidden;font-family:'DM Sans',sans-serif;box-shadow:0 8px 32px rgba(29,111,164,.18)"><div style="background:linear-gradient(135deg,#1A6DB5,#2B8FDE);padding:18px 18px 14px;display:flex;align-items:center;gap:12px">${logoHtml}<div><div style="font-size:15px;font-weight:800;color:#fff;letter-spacing:-.3px">${esc(settings.namaToko||'Tirta Kencana')}</div>${settings.tagline?`<div style="font-size:11px;color:rgba(255,255,255,.75);margin-top:1px">${esc(settings.tagline)}</div>`:''}${settings.alamat?`<div style="font-size:10px;color:rgba(255,255,255,.6);margin-top:2px">${esc(settings.alamat)}</div>`:''}</div></div><div style="background:#EBF4FB;padding:10px 18px;display:flex;justify-content:space-between;align-items:center;font-size:11px"><div><div style="color:#7BAAC4;font-weight:700;text-transform:uppercase;letter-spacing:.8px;font-size:9px">No Transaksi</div><div style="font-weight:700;color:#1D6FA4;font-family:'JetBrains Mono',monospace;font-size:11px">${esc(trx.id)}</div></div><div style="text-align:right"><div style="color:#7BAAC4;font-weight:700;text-transform:uppercase;letter-spacing:.8px;font-size:9px">Tanggal · Waktu</div><div style="font-weight:600;color:#0D2B3E;font-size:11px">${fmtDate(trx.tgl)} · ${timeStr}</div></div></div><div style="padding:14px 18px"><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;background:#F0F6FB;border-radius:10px;padding:10px 12px"><div><div style="font-size:9px;color:#7BAAC4;font-weight:700;text-transform:uppercase;letter-spacing:.8px">Pelanggan</div><div style="font-size:12px;font-weight:700;color:#0D2B3E">${esc(trx.customer||'-')}</div></div><div style="text-align:right"><div style="font-size:9px;color:#7BAAC4;font-weight:700;text-transform:uppercase;letter-spacing:.8px">Sales</div><div style="font-size:12px;font-weight:700;color:#1D6FA4">${esc(trx.sales||'—')}</div></div><div style="grid-column:1/-1"><div style="font-size:9px;color:#7BAAC4;font-weight:700;text-transform:uppercase;letter-spacing:.8px">Status</div><div style="margin-top:3px">${(()=>{const cm={cod:'#F59E0B',transfer:'#1A6DB5',qris:'#6366F1',belumtransfer:'#EF4444'};return `<span style="display:inline-block;padding:2px 10px;border-radius:99px;font-size:10.5px;font-weight:700;background:${(cm[ns]||'#EF4444')+'22'};color:${cm[ns]||'#EF4444'}">${ns==='cod'?'COD':ns==='transfer'?'Transfer':ns==='qris'?'QRIS':'Belum Transfer'}</span>`;})()}</div></div></div><div style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#7BAAC4;margin-bottom:8px">Item Pembelian</div><table style="width:100%;border-collapse:collapse"><tbody>${itemRows}</tbody></table><div style="margin-top:12px;padding-top:12px;border-top:1.5px dashed #C5DFF0"><div style="display:flex;justify-content:space-between;font-size:12px;color:#7BAAC4;margin-bottom:4px"><span>Gross</span><span style="font-family:Tahoma,Arial,sans-serif">Rp ${Number(trx.gross||0).toLocaleString('id-ID')}</span></div>${trx.diskon?`<div style="display:flex;justify-content:space-between;font-size:12px;color:#7BAAC4;margin-bottom:4px"><span>Diskon</span><span style="font-family:Tahoma,Arial,sans-serif;color:#1D6FA4">-Rp ${Number(trx.diskon).toLocaleString('id-ID')}</span></div>`:''}${(trx.biayaJml&&trx.biayaJml>0)?`<div style="display:flex;justify-content:space-between;font-size:12px;color:#7BAAC4;margin-bottom:4px"><span>${esc(trx.biayaKet||'Biaya Tambahan')}</span><span style="font-family:Tahoma,Arial,sans-serif;color:#16A34A">+Rp ${Number(trx.biayaJml).toLocaleString('id-ID')}</span></div>`:''}<div style="display:flex;justify-content:space-between;font-size:15px;font-weight:800;color:#0D2B3E;margin-top:6px"><span>TOTAL</span><span style="color:#1A6DB5;font-family:Tahoma,Arial,sans-serif">Rp ${Number(trx.nett||0).toLocaleString('id-ID')}</span></div></div></div>${bankHtml||qrisHtml?`<div style="padding:0 18px 14px">${bankHtml}${qrisHtml}</div>`:''}<div style="background:#EBF4FB;padding:12px 18px;text-align:center;font-size:11.5px;color:#3D6880;font-weight:600;border-top:1px dashed #C5DFF0">${esc(settings.bottomLine||'Terima kasih telah berbelanja!')}</div></div>`;
+      const lines = [{ l:'Gross', v:_rcRp(trx.gross||0) }];
+      if (trx.diskon) lines.push({ l:'Diskon', v:'-'+_rcRp(trx.diskon), c:t.tx });
+      if (trx.biayaJml && trx.biayaJml > 0) lines.push({ l:esc(trx.biayaKet||'Biaya Tambahan'), v:'+'+_rcRp(trx.biayaJml), c:'#16A34A' });
+
+      return _rcRoot('struk-root', 360,
+        _rcHead({ tone, icon:'fa-receipt', title:'Struk Penjualan', sub:`<span style="font-family:'JetBrains Mono',Tahoma,monospace">${esc(trx.id)}</span> · ${esc(fmtDate(trx.tgl))} · ${timeStr}` }) +
+        _rcStats([{ l:'Total', v:_rcRp(trx.nett||0) }, { l:'Qty', v: totalQty ? totalQty+' pcs' : '-' }, { l:'Status', v:stLabel }], tone) +
+        _rcBody(
+          _rcInfo([{ l:'Pelanggan', v:esc(trx.customer||'-') }, { l:'Sales', v:esc(trx.sales||'—'), c:t.tx, right:true }], tone) +
+          _rcSec({ tone, title:'<i class="fas fa-basket-shopping" style="color:'+t.a1+';margin-right:5px"></i>Item Pembelian', badge: items.length ? items.length+' item' : '', rows }) +
+          _rcSum(lines, { l:'TOTAL', v:_rcRp(trx.nett||0) }, tone) +
+          payHtml) +
+        _rcFoot(settings.bottomLine));
     }
 
     function showStrukModal() { if (!_strKData) return; const html = buildStrukHTML(_strKData); document.getElementById('strukContent').innerHTML = `<div class="modal-header"><h2>🧾 Struk</h2><button class="modal-close" onclick="closeStruk()">✕</button></div><div class="action-grid"><div class="action-card" onclick="doStrukPrint()"><div style="font-size:28px">🖨️</div><div style="font-size:13px;font-weight:700">Print</div></div><div class="action-card" onclick="doStrukPng()"><div style="font-size:28px">📥</div><div style="font-size:13px;font-weight:700">Download PNG</div></div><div class="action-card" onclick="doStrukWA()"><div style="font-size:28px">💬</div><div style="font-size:13px;font-weight:700">WhatsApp</div></div><div class="action-card" onclick="doStrukWaPelanggan()"><div style="font-size:28px">📤</div><div style="font-size:13px;font-weight:700">Kirim ke Pelanggan</div></div><div class="action-card" onclick="document.getElementById('fotoInputStruk').click()"><div style="font-size:28px">📸</div><div style="font-size:13px;font-weight:700">Upload Foto</div></div><div class="action-card" onclick="showFotoBukti('${_strKData?.id||''}','Struk ${_strKData?.id||''}')"><div style="font-size:28px">🖼</div><div style="font-size:13px;font-weight:700">Lihat Foto</div></div></div><input type="file" id="fotoInputStruk" accept="image/*" capture="environment" style="display:none" onchange="uploadFotoBukti('${_strKData?.id||''}','transfer',this)"><div style="border:1px solid var(--border);border-radius:14px;overflow:auto;max-height:480px;background:#e8f2f9;padding:14px"><div style="width:360px;margin:0 auto">${html}</div></div>`; document.getElementById('strukModal').classList.add('show'); }
@@ -2565,7 +2657,7 @@
       document.getElementById('strukModal').classList.add('show');
     }
     function closeStruk() { document.getElementById('strukModal').classList.remove('show'); }
-    function doStrukPrint() { if (!_strKData) return; const win = window.open('','_blank','width=420,height=700'); win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Struk</title></head><body style="margin:16px;background:#e8f2f9;display:flex;justify-content:center">'); win.document.write(buildStrukHTML(_strKData)); win.document.write('<script>window.onload=function(){window.print();}<\/script></body></html>'); win.document.close(); }
+    function doStrukPrint() { if (!_strKData) return; const win = window.open('','_blank','width=420,height=700'); win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"><title>Struk</title></head><body style="margin:16px;background:#e8f2f9;display:flex;justify-content:center">'); win.document.write(buildStrukHTML(_strKData)); win.document.write('<script>window.onload=function(){window.print();}<\/script></body></html>'); win.document.close(); }
     function doStrukPng() { if (!_strKData) return; const off = document.getElementById('strukOffscreen'); off.style.cssText = 'position:fixed;left:-9999px;top:0;pointer-events:none;z-index:-1;background:#e8f2f9;padding:20px'; const ns = (_strKData.trx.status||'').toLowerCase(); const render = () => { off.innerHTML = buildStrukHTML(_strKData); const el = off.querySelector('#struk-root'); if (!el) return Swal.fire('Error','Gagal render','error'); setTimeout(() => { html2canvas(el, {backgroundColor:'#e8f2f9',scale:2.5,useCORS:true,allowTaint:true,logging:false}).then(canvas => { const a = document.createElement('a'); a.download = 'Struk-'+(_strKData.trx.id||'trx')+'.png'; a.href = canvas.toDataURL('image/png'); document.body.appendChild(a); a.click(); document.body.removeChild(a); off.innerHTML = ''; Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, icon: 'success', title: 'Struk tersimpan' }); }).catch(err => { off.innerHTML=''; Swal.fire('Error',err.message,'error'); }); }, 400); }; if (ns === 'qris' && _qrisUrl && _qrisUrl.indexOf('data:') !== 0) { _ensureQrisDataUrl(_qrisUrl).then(dataUrl => { const orig = _qrisUrl; _qrisUrl = dataUrl || ''; render(); _qrisUrl = orig; if (!dataUrl) Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 4500, icon: 'warning', title: 'Gambar QRIS gagal disertakan di PNG. Upload ulang QRIS lewat menu Pengaturan agar selalu muncul saat download.' }); }); } else { render(); } }
     // [NEW] Footer pesan struk WA - dipakai baik oleh "WhatsApp" (share generik)
     // maupun "Kirim ke Pelanggan" (langsung ke nomor), supaya isinya konsisten.
@@ -2690,7 +2782,32 @@
       } catch(e) { Swal.fire('Error',e.message,'error'); } 
     }
 
-    function buildSetoranStrukHTML(payload, logoOverride) { const now = new Date(); const timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0'); const _logo = (logoOverride !== undefined ? logoOverride : _logoUrl); const logoHtml = _logo ? `<img src="${_logo}" crossorigin="anonymous" style="width:48px;height:48px;border-radius:50%;object-fit:cover;background:#fff;flex-shrink:0;border:2px solid rgba(255,255,255,.6)">` : '<div style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🏪</div>'; return `<div id="setoran-root" style="width:360px;background:#fff;border-radius:16px;overflow:hidden;font-family:'DM Sans',sans-serif;box-shadow:0 8px 32px rgba(29,111,164,.18)"><div style="background:linear-gradient(135deg,#1A6DB5,#2B8FDE);padding:18px 18px 14px;display:flex;align-items:center;gap:12px">${logoHtml}<div><div style="font-size:15px;font-weight:800;color:#fff;letter-spacing:-.3px">${esc(settings.namaToko||'Tirta Kencana')}</div>${settings.tagline?`<div style="font-size:11px;color:rgba(255,255,255,.75);margin-top:1px">${esc(settings.tagline)}</div>`:''}${settings.alamat?`<div style="font-size:10px;color:rgba(255,255,255,.6);margin-top:2px">${esc(settings.alamat)}</div>`:''}</div></div><div style="background:#EBF4FB;padding:10px 18px;display:flex;justify-content:space-between;align-items:center;font-size:11px"><div><div style="color:#7BAAC4;font-weight:700;text-transform:uppercase;letter-spacing:.8px;font-size:9px">Setoran Sales</div><div style="font-weight:700;color:#1D6FA4;font-size:13px">${esc(payload.sales)}</div></div><div style="text-align:right"><div style="color:#7BAAC4;font-weight:700;text-transform:uppercase;letter-spacing:.8px;font-size:9px">Tanggal · Waktu</div><div style="font-weight:600;color:#0D2B3E;font-size:11px">${fmtDate(payload.tgl)} · ${timeStr}</div></div></div><div style="padding:14px 18px"><table style="width:100%;border-collapse:collapse;margin-bottom:12px"><tr><td style="padding:6px 0;font-size:12px;color:#4A6882">Grand Total COD</div><td style="text-align:right;font-weight:600;font-size:12px;color:#0D2B3E">${fmtRp(payload.grandTotal)}</div></tr><tr><td style="padding:6px 0;font-size:12px;color:#4A6882">Tagihan</div><td style="text-align:right;font-weight:600;font-size:12px;color:#0D2B3E">${fmtRp(payload.tagihan)}</div></tr><tr><td style="padding:6px 0;font-size:12px;color:#4A6882">Cicilan</div><td style="text-align:right;font-weight:600;font-size:12px;color:#16A34A">${fmtRp(payload.cicilan)}</div></tr><tr style="border-bottom:1px dashed #C5DFF0"><td colspan="2" style="padding:6px 0;font-size:10px;font-weight:700;color:#7BAAC4">Pengeluaran</div></tr><tr><td style="padding:6px 0;font-size:12px;color:#4A6882">Makan</div><td style="text-align:right;font-size:12px;color:#DC2626">-${fmtRp(payload.makan)}</div></tr><tr><td style="padding:6px 0;font-size:12px;color:#4A6882">Tips</div><td style="text-align:right;font-size:12px;color:#DC2626">-${fmtRp(payload.tips)}</div></tr><tr><td style="padding:6px 0;font-size:12px;color:#4A6882">Parkir</div><td style="text-align:right;font-size:12px;color:#DC2626">-${fmtRp(payload.parkir)}</div></tr><tr><td style="padding:6px 0;font-size:12px;color:#4A6882">Bensin</div><td style="text-align:right;font-size:12px;color:#DC2626">-${fmtRp(payload.bensin)}</div></tr><tr><td style="padding:6px 0;font-size:12px;color:#4A6882">Flazz</div><td style="text-align:right;font-size:12px;color:#DC2626">-${fmtRp(payload.flazz)}</div></tr><tr><td style="padding:6px 0;font-size:12px;color:#4A6882">Transfer</div><td style="text-align:right;font-size:12px;color:#DC2626">-${fmtRp(payload.transfer)}</div></tr>${payload.ket1?`<tr><td style="padding:6px 0;font-size:12px;color:#4A6882">${esc(payload.ket1)}</div><td style="text-align:right;font-size:12px;color:#DC2626">-${fmtRp(payload.jml1)}</div></tr>`:''}${payload.ket2?`<tr><td style="padding:6px 0;font-size:12px;color:#4A6882">${esc(payload.ket2)}</div><td style="text-align:right;font-size:12px;color:#DC2626">-${fmtRp(payload.jml2)}</div></td>`:''}</table><div style="border-top:1.5px dashed #C5DFF0;padding-top:10px;display:flex;justify-content:space-between;font-size:13px;font-weight:800;color:#0D2B3E"><span>TOTAL SETORAN</span><span style="color:#1A6DB5">${fmtRp(payload.total)}</span></div><div style="display:flex;justify-content:space-between;font-size:13px;color:#4A6882;margin-top:4px"><span>Setor</span><span style="font-weight:600">${fmtRp(payload.setor)}</span></div><div style="display:flex;justify-content:space-between;font-size:13px;font-weight:800;margin-top:2px;color:${payload.selisih>=0?'#16A34A':'#DC2626'}"><span>SELISIH</span><span>${fmtRp(payload.selisih)}</span></div></div><div style="background:#EBF4FB;padding:12px 18px;text-align:center;font-size:11.5px;color:#3D6880;font-weight:600;border-top:1px dashed #C5DFF0">${esc(settings.bottomLine||'Terima kasih telah berbelanja!')}</div></div>`; }
+    function buildSetoranStrukHTML(payload, logoOverride) {
+      const now = new Date(); const timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+      const p = payload, tone = 'green', t = _rcT(tone);
+      const R = (n) => _rcRp(n);
+      const income = [
+        { n:'Grand Total COD', q:R(p.grandTotal) },
+        { n:'Tagihan', q:R(p.tagihan) },
+        { n:'Cicilan', q:R(p.cicilan), qc:'#047857' }
+      ];
+      const exp = [['Makan',p.makan],['Tips',p.tips],['Parkir',p.parkir],['Bensin',p.bensin],['Flazz',p.flazz],['Transfer',p.transfer]];
+      if (p.ket1) exp.push([esc(p.ket1), p.jml1]);
+      if (p.ket2) exp.push([esc(p.ket2), p.jml2]);
+      let totalExp = 0; exp.forEach(e => totalExp += (e[1]||0));
+      const expRows = exp.map(e => ({ n:e[0], q:'-'+R(e[1]), qc:'#DC2626', qbg:'#FFE8E8' }));
+      const selOk = (p.selisih||0) >= 0;
+      return _rcRoot('setoran-root', 360,
+        _rcHead({ tone, icon:'fa-money-bill-wave', logo:logoOverride, title:'Struk Setoran', sub: esc(p.sales) + ' · ' + esc(fmtDate(p.tgl)) + ' · ' + timeStr }) +
+        _rcStats([{ l:'Total Setoran', v:R(p.total) }, { l:'Setor', v:R(p.setor) }, { l:'Selisih', v:R(p.selisih) }], tone) +
+        _rcBody(
+          _rcInfo([{ l:'Sales', v:esc(p.sales) }, { l:'Tanggal', v:esc(fmtDate(p.tgl)), right:true }], tone) +
+          _rcSec({ tone, title:'<i class="fas fa-arrow-trend-up" style="color:'+t.a1+';margin-right:5px"></i>Pendapatan', badge:'Masuk', rows:income }) +
+          _rcSec({ tone:'red', title:'<i class="fas fa-arrow-trend-down" style="color:#EF4444;margin-right:5px"></i>Pengeluaran', badge:exp.length+' pos', rows:expRows, total:{ l:'Total Pengeluaran', v:'-'+R(totalExp) } }) +
+          _rcSum([{ l:'Setor', v:R(p.setor) }, { l:'Selisih', v:R(p.selisih), c: selOk ? '#047857' : '#DC2626' }], { l:'TOTAL SETORAN', v:R(p.total) }, tone)) +
+        _rcFoot(settings.bottomLine));
+    }
+
     function showSetoranStrukModal(payload) { const html = buildSetoranStrukHTML(payload); const setoranKey = (payload.sales||'')+'_'+(payload.tgl||''); document.getElementById('strukContent').innerHTML = `<div class="modal-header"><h2>🧾 Struk Setoran</h2><button class="modal-close" onclick="closeStruk()">✕</button></div><div class="action-grid"><div class="action-card" onclick="doSetoranPrint()"><div>🖨️</div><div>Print</div></div><div class="action-card" onclick="doSetoranPng()"><div>📥</div><div>Download PNG</div></div><div class="action-card" onclick="doSetoranWA()"><div>💬</div><div>WhatsApp</div></div><div class="action-card" onclick="document.getElementById('fotoInputSetoran').click()"><div>📸</div><div>Upload Foto</div></div><div class="action-card" onclick="showFotoBukti('${setoranKey}','Setoran ${setoranKey}')"><div>🖼</div><div>Lihat Foto</div></div></div><input type="file" id="fotoInputSetoran" accept="image/*" capture="environment" style="display:none" onchange="uploadFotoBukti('${setoranKey}','setoran',this)"><div style="text-align:center;max-height:70vh;overflow:auto;background:#e8f2f9;border-radius:14px;padding:10px"><img src="" id="setoranStrukImg" style="max-width:100%;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.1)" alt="Struk Setoran"></div>`; document.getElementById('strukModal').classList.add('show');
       setTimeout(() => {
         _ensureLogoDataUrl(_logoUrl).then(logoData => {
@@ -2699,7 +2816,7 @@
         });
       }, 100);
     }
-    function doSetoranPrint() { if (!_lastSetoranPayload) return; const win = window.open('','_blank','width=420,height=700'); win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Struk Setoran</title></head><body style="margin:16px;background:#e8f2f9;display:flex;justify-content:center">'); win.document.write(buildSetoranStrukHTML(_lastSetoranPayload)); win.document.write('<script>window.onload=function(){window.print();}<\/script></body></html>'); win.document.close(); }
+    function doSetoranPrint() { if (!_lastSetoranPayload) return; const win = window.open('','_blank','width=420,height=700'); win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"><title>Struk Setoran</title></head><body style="margin:16px;background:#e8f2f9;display:flex;justify-content:center">'); win.document.write(buildSetoranStrukHTML(_lastSetoranPayload)); win.document.write('<script>window.onload=function(){window.print();}<\/script></body></html>'); win.document.close(); }
     function doSetoranPng() { if (!_lastSetoranPayload) return; const off = document.getElementById('strukOffscreen'); off.style.cssText = 'position:fixed;left:-9999px;top:0;pointer-events:none;z-index:-1;background:#e8f2f9;padding:20px'; _ensureLogoDataUrl(_logoUrl).then(logoData => { off.innerHTML = buildSetoranStrukHTML(_lastSetoranPayload, logoData); const el = off.querySelector('#setoran-root'); if (!el) return Swal.fire('Error','Gagal render','error'); setTimeout(() => { html2canvas(el, {backgroundColor:'#e8f2f9',scale:2.5,useCORS:true,allowTaint:true,logging:false}).then(canvas => { const a = document.createElement('a'); a.download = 'Setoran-'+(_lastSetoranPayload.sales)+'-'+(_lastSetoranPayload.tgl)+'.png'; a.href = canvas.toDataURL('image/png'); document.body.appendChild(a); a.click(); document.body.removeChild(a); off.innerHTML = ''; Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, icon: 'success', title: 'Struk setoran tersimpan' }); }).catch(err => { off.innerHTML=''; Swal.fire('Error',err.message,'error'); }); }, 400); }); }
     function doSetoranWA() { if (!_lastSetoranPayload) return; const p = _lastSetoranPayload; let lines = ['🧾 *STRUK SETORAN*','*'+(settings.namaToko||'Tirta Kencana')+'*','━━━━━━━━━━━━━━━━━━━━━━']; lines.push('Sales: *'+p.sales+'*'); lines.push('Tgl: '+fmtDate(p.tgl)); lines.push('━━━━━━━━━━━━━━━━━━━━━━'); lines.push('Grand COD : '+fmtRp(p.grandTotal)); lines.push('Tagihan   : '+fmtRp(p.tagihan)); lines.push('Cicilan   : '+fmtRp(p.cicilan)); lines.push('Pengeluaran:'); lines.push('  Makan   : -'+fmtRp(p.makan)); lines.push('  Tips    : -'+fmtRp(p.tips)); lines.push('  Parkir  : -'+fmtRp(p.parkir)); lines.push('  Bensin  : -'+fmtRp(p.bensin)); lines.push('  Flazz   : -'+fmtRp(p.flazz)); lines.push('  Transfer: -'+fmtRp(p.transfer)); if(p.ket1) lines.push('  '+p.ket1+' : -'+fmtRp(p.jml1)); if(p.ket2) lines.push('  '+p.ket2+' : -'+fmtRp(p.jml2)); lines.push('━━━━━━━━━━━━━━━━━━━━━━'); lines.push('*TOTAL SETORAN : '+fmtRp(p.total)+'*'); lines.push('Setor      : '+fmtRp(p.setor)); lines.push('Selisih    : '+fmtRp(p.selisih)); window.open('https://wa.me/?text='+encodeURIComponent(lines.join('\n')),'_blank'); }
 
@@ -3351,21 +3468,16 @@
       showPiutangCustomerStrukModal(_lastPiutangCustomerPayload);
     }
     function buildPiutangCustomerStrukHTML(payload, logoOverride) {
-      const now = new Date();
-      const timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
-      const _logo = (logoOverride !== undefined ? logoOverride : _logoUrl);
-      const logoHtml = _logo ? `<img src="${_logo}" crossorigin="anonymous" style="width:48px;height:48px;border-radius:50%;object-fit:cover;background:#fff;flex-shrink:0;border:2px solid rgba(255,255,255,.6)">` : '<div style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🏪</div>';
+      const now = new Date(); const timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
       const agingLabel = window._piutangAgingLabel || (() => ({label:'-'}));
-      const rowsHtml = payload.rows.map(r => { const ag = agingLabel(r.oldest); return `<tr style="border-bottom:1px solid #EEF4F9"><td style="padding:6px 0;font-size:11.5px;color:#0D2B3E">${esc(r.customer)}<div style="font-size:9px;color:#94A3B8">${r.count} transaksi · ${esc(ag.label)}</div></td><td style="text-align:right;font-size:12px;font-weight:800;font-family:monospace;color:#DC2626">${fmtRp(r.total)}</td></tr>`; }).join('');
-      return `<div id="piutang-cust-root" style="width:380px;background:#fff;border-radius:16px;overflow:hidden;font-family:'DM Sans',sans-serif;box-shadow:0 8px 32px rgba(29,111,164,.18)">
-        <div style="background:linear-gradient(135deg,#DC2626,#EF4444);padding:18px 18px 14px;display:flex;align-items:center;gap:12px">${logoHtml}<div><div style="font-size:15px;font-weight:800;color:#fff;letter-spacing:-.3px">${esc(settings.namaToko||'Tirta Kencana')}</div><div style="font-size:11px;color:rgba(255,255,255,.75);margin-top:1px">Rekap Piutang per Customer</div></div></div>
-        <div style="background:#FEF2F2;padding:10px 18px;font-size:11px;color:#0D2B3E"><b>${fmtDate(payload.date)}</b> · ${timeStr} · ${payload.rows.length} customer</div>
-        <div style="padding:12px 18px">
-          <table style="width:100%;border-collapse:collapse">${rowsHtml.startsWith('<tr') ? `<tbody>${rowsHtml}</tbody>` : rowsHtml}</table>
-          <div style="border-top:1.5px dashed #FCA5A5;margin-top:10px;padding-top:10px;display:flex;justify-content:space-between;font-size:13px;font-weight:900;color:#DC2626"><span>TOTAL PIUTANG</span><span style="font-family:monospace">${fmtRp(payload.total)}</span></div>
-        </div>
-        <div style="background:#FEF2F2;padding:12px 18px;text-align:center;font-size:11.5px;color:#7F1D1D;font-weight:600;border-top:1px dashed #FCA5A5">${esc(settings.bottomLine||'Terima kasih!')}</div>
-      </div>`;
+      const tone = 'red';
+      const rows = payload.rows.map(r => { const ag = agingLabel(r.oldest); return { n:esc(r.customer), sub:r.count+' transaksi · tertua '+esc(ag.label), q:fmtRp(r.total) }; });
+      const trxCount = payload.rows.reduce((a,r)=>a+(r.count||0),0);
+      return _rcRoot('piutang-cust-root', 380,
+        _rcHead({ tone, icon:'fa-file-invoice-dollar', logo:logoOverride, title:'Rekap Piutang per Customer', sub: esc(fmtDate(payload.date)) + ' · ' + timeStr }) +
+        _rcStats([{ l:'Total Piutang', v:fmtRp(payload.total) }, { l:'Customer', v:payload.rows.length }, { l:'Transaksi', v:trxCount }], tone) +
+        _rcBody(_rcSec({ tone, title:'<i class="fas fa-users" style="color:#EF4444;margin-right:5px"></i>Belum Bayar', badge:payload.rows.length+' customer', rows, total:{ l:'TOTAL PIUTANG', v:fmtRp(payload.total) } })) +
+        _rcFoot(settings.bottomLine || 'Terima kasih!'));
     }
     function showPiutangCustomerStrukModal(payload) {
       const html = buildPiutangCustomerStrukHTML(payload);
@@ -3375,7 +3487,7 @@
     function doPiutangCustomerPrint() {
       if (!_lastPiutangCustomerPayload) return;
       const win = window.open('', '_blank', 'width=420,height=700');
-      win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Rekap Piutang per Customer</title></head><body style="margin:16px;background:#e8f2f9;display:flex;justify-content:center">');
+      win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"><title>Rekap Piutang per Customer</title></head><body style="margin:16px;background:#e8f2f9;display:flex;justify-content:center">');
       win.document.write(buildPiutangCustomerStrukHTML(_lastPiutangCustomerPayload));
       win.document.write('<script>window.onload=function(){window.print();}<\/script></body></html>');
       win.document.close();
@@ -3426,20 +3538,14 @@
       showPiutangDetailStrukModal(_lastPiutangDetailPayload);
     }
     function buildPiutangDetailStrukHTML(payload, logoOverride) {
-      const now = new Date();
-      const timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
-      const _logo = (logoOverride !== undefined ? logoOverride : _logoUrl);
-      const logoHtml = _logo ? `<img src="${_logo}" crossorigin="anonymous" style="width:48px;height:48px;border-radius:50%;object-fit:cover;background:#fff;flex-shrink:0;border:2px solid rgba(255,255,255,.6)">` : '<div style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🏪</div>';
-      const rowsHtml = payload.rows.map(r => `<tr style="border-bottom:1px solid #EEF4F9"><td style="padding:6px 0;font-size:11px;color:#0D2B3E">${esc(r.customer)}<div style="font-size:9px;color:#94A3B8">${esc(fmtDate(r.tgl))} · ${esc(r.sales||'-')} · ${esc(r.aging)}</div></td><td style="text-align:right;font-size:12px;font-weight:800;font-family:monospace;color:#DC2626">${fmtRp(r.nett)}</td></tr>`).join('');
-      return `<div id="piutang-detail-root" style="width:380px;background:#fff;border-radius:16px;overflow:hidden;font-family:'DM Sans',sans-serif;box-shadow:0 8px 32px rgba(29,111,164,.18)">
-        <div style="background:linear-gradient(135deg,#DC2626,#EF4444);padding:18px 18px 14px;display:flex;align-items:center;gap:12px">${logoHtml}<div><div style="font-size:15px;font-weight:800;color:#fff;letter-spacing:-.3px">${esc(settings.namaToko||'Tirta Kencana')}</div><div style="font-size:11px;color:rgba(255,255,255,.75);margin-top:1px">Detail Transaksi Belum Bayar</div></div></div>
-        <div style="background:#FEF2F2;padding:10px 18px;font-size:11px;color:#0D2B3E"><b>${fmtDate(payload.date)}</b> · ${timeStr} · ${esc(payload.sales)} · ${payload.rows.length} transaksi</div>
-        <div style="padding:12px 18px">
-          <table style="width:100%;border-collapse:collapse">${rowsHtml.startsWith('<tr') ? `<tbody>${rowsHtml}</tbody>` : rowsHtml}</table>
-          <div style="border-top:1.5px dashed #FCA5A5;margin-top:10px;padding-top:10px;display:flex;justify-content:space-between;font-size:13px;font-weight:900;color:#DC2626"><span>TOTAL</span><span style="font-family:monospace">${fmtRp(payload.total)}</span></div>
-        </div>
-        <div style="background:#FEF2F2;padding:12px 18px;text-align:center;font-size:11.5px;color:#7F1D1D;font-weight:600;border-top:1px dashed #FCA5A5">${esc(settings.bottomLine||'Terima kasih!')}</div>
-      </div>`;
+      const now = new Date(); const timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+      const tone = 'red';
+      const rows = payload.rows.map(r => ({ n:esc(r.customer), sub:esc(fmtDate(r.tgl))+' · '+esc(r.sales||'-')+' · '+esc(r.aging), q:fmtRp(r.nett) }));
+      return _rcRoot('piutang-detail-root', 380,
+        _rcHead({ tone, icon:'fa-receipt', logo:logoOverride, title:'Detail Transaksi Belum Bayar', sub: esc(fmtDate(payload.date)) + ' · ' + timeStr + ' · ' + esc(payload.sales) }) +
+        _rcStats([{ l:'Total', v:fmtRp(payload.total) }, { l:'Transaksi', v:payload.rows.length }, { l:'Sales', v:esc(payload.sales) }], tone) +
+        _rcBody(_rcSec({ tone, title:'<i class="fas fa-list" style="color:#EF4444;margin-right:5px"></i>Daftar Transaksi', badge:payload.rows.length+' transaksi', rows, total:{ l:'TOTAL', v:fmtRp(payload.total) } })) +
+        _rcFoot(settings.bottomLine || 'Terima kasih!'));
     }
     function showPiutangDetailStrukModal(payload) {
       const html = buildPiutangDetailStrukHTML(payload);
@@ -3449,7 +3555,7 @@
     function doPiutangDetailPrint() {
       if (!_lastPiutangDetailPayload) return;
       const win = window.open('', '_blank', 'width=420,height=700');
-      win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Detail Transaksi Belum Bayar</title></head><body style="margin:16px;background:#e8f2f9;display:flex;justify-content:center">');
+      win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"><title>Detail Transaksi Belum Bayar</title></head><body style="margin:16px;background:#e8f2f9;display:flex;justify-content:center">');
       win.document.write(buildPiutangDetailStrukHTML(_lastPiutangDetailPayload));
       win.document.write('<script>window.onload=function(){window.print();}<\/script></body></html>');
       win.document.close();
@@ -4519,33 +4625,37 @@
     // transaksi) karena beberapa jenis rekap punya banyak kolom (mis. per SKU/per Customer).
     let _lastRekapPayload = null;
     function buildRekapStrukShell(jenisLabel, filterLabel, tableHtml) {
-      const logoHtml = _logoUrl ? `<img src="${_logoUrl}" crossorigin="anonymous" style="width:44px;height:44px;border-radius:50%;object-fit:cover;background:#fff;flex-shrink:0;border:2px solid rgba(255,255,255,.6)">` : '<div style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">📊</div>';
-      // [FIX] Isi tabel (tableHtml) di bawah ini adalah HTML LANGSUNG dari tampilan
-      // live halaman Rekap - dia masih pakai kelas/variabel warna tema aplikasi
-      // (mis. var(--biru-muda) di baris header tiap SKU). Kalau app-nya lagi
-      // dark mode, warna itu ikut bawaan GELAP (jadi terlihat kotak abu-abu di
-      // dalam struk yang seharusnya putih bersih). Solusinya: variabel warna
-      // tema di-DEFINISI ULANG khusus di dalam #rekap-struk-root ke versi
-      // terang tetap (diambil dari palet light-mode aplikasi sendiri) - jadi
-      // MANAPUN kelas/variabel yang dipakai tabel asalnya, hasilnya SELALU
-      // terang/bersih di dalam struk, apa pun mode aplikasi saat itu.
-      return `<div id="rekap-struk-root" style="width:480px;max-width:100%;background:#fff;border-radius:16px;overflow:hidden;font-family:'DM Sans',sans-serif;box-shadow:0 8px 32px rgba(29,111,164,.18);
+      // Isi tabel = HTML langsung dari halaman Rekap (memakai kelas/variabel tema aplikasi).
+      // Variabel warna di-DEFINISI ULANG ke palet terang tetap di dalam #rekap-struk-root,
+      // jadi hasil PNG selalu terang/bersih walau aplikasi sedang dark mode.
+      const head = _rcHead({ tone:'blue', icon:'fa-chart-column', title:esc(jenisLabel), sub:esc(filterLabel) });
+      const css = `<style>
+          #rekap-struk-root .card { background:#fff; border:1px solid #E6F3FF; border-radius:16px; box-shadow:0 2px 10px rgba(0,40,100,.07); padding:0; margin:0 0 12px; overflow:hidden; }
+          #rekap-struk-root .card-title { display:block; margin:0; padding:10px 14px; font-size:11.5px; font-weight:800; color:#0B3A6A; background:#EAF4FF; border-bottom:1px solid #E6F3FF; }
+          #rekap-struk-root .card-title i { color:#0078D4; margin-right:6px; }
+          #rekap-struk-root .table-wrap { overflow:visible; padding:0; }
+          #rekap-struk-root table { width:100%; border-collapse:collapse; }
+          #rekap-struk-root th { background:#F4F9FF; color:#4B6584; font-size:9.5px; font-weight:800; text-transform:uppercase; letter-spacing:.5px; padding:8px 10px; text-align:left; border-bottom:1px solid #E6F3FF; }
+          #rekap-struk-root td { color:#0F2A4A; font-size:11.5px; padding:8px 10px; border-bottom:1px dashed #E1EEFB; }
+          #rekap-struk-root tr:last-child td { border-bottom:0; }
+          #rekap-struk-root .summary-box { margin:0; padding:10px 12px; border-radius:14px; background:#EAF4FF; text-align:center; border:1px solid #D5E9FB; }
+          #rekap-struk-root .card > .flex-row { display:flex; padding:12px 14px; box-sizing:border-box; } #rekap-struk-root .flex-row .summary-box { flex:1; }
+          #rekap-struk-root .text-center { text-align:center; padding:12px; }
+          #rekap-struk-root span.text-sm { display:none; }
+          #rekap-struk-root .card > .flex-between { display:flex; justify-content:space-between; align-items:center; margin:0 !important; padding:10px 14px; background:linear-gradient(120deg,#0A4FA8,#0078D4); color:#fff !important; font-size:12px; }
+          #rekap-struk-root .card > .flex-between span { color:#fff !important; }
+          #rekap-struk-root .flex-between { display:flex; justify-content:space-between; align-items:center; }
+        </style>`;
+      return `<div id="rekap-struk-root" style="width:480px;max-width:100%;background:#F4F8FD;border-radius:20px;overflow:hidden;font-family:'DM Sans',Arial,sans-serif;color:#0F2A4A;box-shadow:0 10px 36px rgba(0,60,140,.22);
         --bg:#F3F7FD;--bg2:#FFFFFF;--card:#FFFFFF;--surface:#FFFFFF;--surface2:#F8FAFF;
         --biru:#1E63E9;--biru2:#2F80FF;--kuning:#A87C0A;--biru-muda:#EAF2FF;--kuning-muda:#FFF6DE;
         --border:rgba(30,99,233,0.12);--text:#16213E;--text2:#5B6B8C;--text3:#556280;
         --merah:#EF4444;--hijau:#16A34A;--teal:#1E63E9;--warn:#F59E0B;
         --font:'DM Sans',sans-serif;--mono:'JetBrains Mono',monospace;">
-        <style>
-          #rekap-struk-root .card { background:transparent; box-shadow:none; padding:0; border:none; }
-          #rekap-struk-root .card-title { display:none; } /* judul sudah ada di header shell sendiri, jangan dobel */
-          #rekap-struk-root table { width:100%; border-collapse:collapse; }
-          #rekap-struk-root th { background:var(--biru-muda); color:var(--text); font-size:11px; padding:6px 8px; }
-          #rekap-struk-root td { color:var(--text); font-size:11.5px; padding:5px 8px; border-bottom:1px solid var(--border); }
-        </style>
-        <div style="background:linear-gradient(135deg,#1A6DB5,#2B8FDE);padding:18px 18px 14px;display:flex;align-items:center;gap:12px">${logoHtml}<div><div style="font-size:15px;font-weight:800;color:#fff;letter-spacing:-.3px">${esc(settings.namaToko||'Tirta Kencana')}</div><div style="font-size:11px;color:rgba(255,255,255,.75);margin-top:1px">${esc(jenisLabel)}</div></div></div>
-        <div style="background:#EBF4FB;padding:10px 18px;font-size:11px;color:#0D2B3E">${esc(filterLabel)}</div>
-        <div id="rekap-struk-body" style="padding:12px 18px;overflow:auto;max-width:100%;">${tableHtml}</div>
-        <div style="background:#EBF4FB;padding:12px 18px;text-align:center;font-size:11.5px;color:#3D6880;font-weight:600;border-top:1px dashed #C5DFF0">${esc(settings.bottomLine||'Terima kasih!')}</div>
+        ${css}
+        ${head}
+        <div id="rekap-struk-body" style="padding:14px;margin-top:-22px;position:relative;max-width:100%;">${tableHtml}</div>
+        ${_rcFoot(settings.bottomLine)}
       </div>`;
     }
     function showRekapStrukModal() {
@@ -4567,7 +4677,7 @@
     function doRekapPrint() {
       if (!_lastRekapPayload) return;
       const win = window.open('', '_blank', 'width=520,height:700'.replace('height:700','height=700'));
-      win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + esc(_lastRekapPayload.jenisLabel) + ' - ' + esc(settings.namaToko||'Tirta Kencana') + '</title>');
+      win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"><title>' + esc(_lastRekapPayload.jenisLabel) + ' - ' + esc(settings.namaToko||'Tirta Kencana') + '</title>');
       // <base> + link stylesheet: shell tableHtml-nya masih pakai var(--biru) dkk dari
       // style.css utama (aman karena preview & PNG di atas jalan di dokumen yang sama dengan
       // aplikasi), tapi jendela print ini dokumen KOSONG baru, jadi perlu di-link manual supaya
@@ -4667,8 +4777,17 @@
     function buildStrukInputBarangHTML(s) {
       const disc = s.disc || 0;
       const netModal = (s.hargaModal - disc) * s.qty;
-      const logoHtml = _logoUrl ? `<img src="${_logoUrl}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;background:#fff;flex-shrink:0;border:2px solid rgba(255,255,255,.6)">` : '<div style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">📦</div>';
-      return `<div id="inputbarang-root" style="width:360px;background:#fff;border-radius:16px;overflow:hidden;font-family:'DM Sans',sans-serif;box-shadow:0 8px 32px rgba(29,111,164,.18)"><div style="background:linear-gradient(135deg,#1A6DB5,#2B8FDE);padding:18px 18px 14px;display:flex;align-items:center;gap:12px">${logoHtml}<div><div style="font-size:15px;font-weight:800;color:#fff;letter-spacing:-.3px">${esc(settings.namaToko||'Tirta Kencana')}</div>${settings.tagline?`<div style="font-size:11px;color:rgba(255,255,255,.75);margin-top:1px">${esc(settings.tagline)}</div>`:''}</div></div><div style="background:#EBF4FB;padding:10px 18px;display:flex;justify-content:space-between;align-items:center;font-size:11px"><div><div style="color:#7BAAC4;font-weight:700;text-transform:uppercase;letter-spacing:.8px;font-size:9px">Input Barang</div><div style="font-weight:700;color:#1D6FA4;font-size:13px">${esc(s.id||'')}</div></div><div style="text-align:right"><div style="color:#7BAAC4;font-weight:700;text-transform:uppercase;letter-spacing:.8px;font-size:9px">Tanggal</div><div style="font-weight:600;color:#0D2B3E;font-size:11px">${fmtDate(s.date||s.tgl||'')}</div></div></div><div style="padding:14px 18px"><table style="width:100%;border-collapse:collapse;margin-bottom:12px"><tr><td style="padding:6px 0;font-size:12px;color:#4A6882">SKU</td><td style="text-align:right;font-weight:600;font-size:12px;color:#0D2B3E">${esc(s.sku||'-')}</td></tr><tr><td style="padding:6px 0;font-size:12px;color:#4A6882">Nama</td><td style="text-align:right;font-weight:600;font-size:12px;color:#0D2B3E">${esc(s.nama||'-')}</td></tr><tr><td style="padding:6px 0;font-size:12px;color:#4A6882">Qty</td><td style="text-align:right;font-weight:600;font-size:12px;color:#0D2B3E">${s.qty||0}</td></tr><tr><td style="padding:6px 0;font-size:12px;color:#4A6882">Harga Modal</td><td style="text-align:right;font-size:12px;color:#0D2B3E">${fmtRp(s.hargaModal)}</td></tr><tr><td style="padding:6px 0;font-size:12px;color:#4A6882">Disc</td><td style="text-align:right;font-size:12px;color:#DC2626">-${fmtRp(disc)}</td></tr><tr><td style="padding:6px 0;font-size:12px;color:#4A6882">Driver</td><td style="text-align:right;font-size:12px;color:#0D2B3E">${esc(s.driver||'-')}</td></tr><tr><td style="padding:6px 0;font-size:12px;color:#4A6882">Rit</td><td style="text-align:right;font-size:12px;color:#0D2B3E">${esc(s.rit||'-')}</td></tr><tr><td style="padding:6px 0;font-size:12px;color:#4A6882">Status</td><td style="text-align:right;font-size:12px;font-weight:700;color:${(s.status||'').toLowerCase()==='kiriman'?'#16A34A':'#D97706'}">${esc((s.status||'-').toUpperCase())}</td></tr></table><div style="border-top:1.5px dashed #C5DFF0;padding-top:10px;display:flex;justify-content:space-between;font-size:13px;font-weight:800;color:#0D2B3E"><span>NET MODAL</span><span style="color:#1A6DB5">${fmtRp(netModal)}</span></div></div><div style="background:#EBF4FB;padding:12px 18px;text-align:center;font-size:11.5px;color:#3D6880;font-weight:600;border-top:1px dashed #C5DFF0">${esc(settings.bottomLine||'Terima kasih!')}</div></div>`;
+      const tit = (s.status||'').toLowerCase() === 'titipan';
+      const tone = tit ? 'purple' : 'blue', t = _rcT(tone);
+      return _rcRoot('inputbarang-root', 360,
+        _rcHead({ tone, icon:'fa-boxes', title:'Struk Input Barang', sub:`<span style="font-family:'JetBrains Mono',Tahoma,monospace">${esc(s.id||'')}</span> · ${esc(fmtDate(s.date||s.tgl||''))}` }) +
+        _rcStats([{ l:'Net Modal', v:_rcRp(netModal) }, { l:'Qty', v:(s.qty||0)+' pcs' }, { l:'Status', v:esc((s.status||'-').toUpperCase()) }], tone) +
+        _rcBody(
+          _rcInfo([{ l:'Driver', v:esc(s.driver||'-') }, { l:'Rit', v:esc(String(s.rit||'-')), c:t.tx, right:true }], tone) +
+          _rcSec({ tone, title:'<i class="fas fa-box-open" style="color:'+t.a1+';margin-right:5px"></i>Barang Masuk', badge:'1 item',
+            rows:[{ n:esc(s.nama||'-'), sub:esc(s.sku||'-')+' · '+(s.qty||0)+' × '+_rcRp(s.hargaModal)+(disc?' <span style="color:'+t.tx+'">(-'+_rcRp(disc)+')</span>':''), q:(s.qty||0)+' pcs', v:_rcRp(netModal) }] }) +
+          _rcSum([{ l:'Harga Modal', v:_rcRp(s.hargaModal) }, { l:'Disc / pcs', v:'-'+_rcRp(disc), c:t.tx }], { l:'NET MODAL', v:_rcRp(netModal) }, tone)) +
+        _rcFoot(settings.bottomLine || 'Terima kasih!'));
     }
 
     function cetakStrukInputBarang(id) {
@@ -4679,7 +4798,7 @@
       document.getElementById('strukContent').innerHTML = `<div class="modal-header"><h2>🧾 Struk Input Barang</h2><button class="modal-close" onclick="closeStruk()">✕</button></div><div class="action-grid"><div class="action-card" onclick="doInputBarangPrint()"><div style="font-size:28px">🖨️</div><div style="font-size:13px;font-weight:700">Print</div></div><div class="action-card" onclick="doInputBarangPng()"><div style="font-size:28px">📥</div><div style="font-size:13px;font-weight:700">Download PNG</div></div><div class="action-card" onclick="doInputBarangWA()"><div style="font-size:28px">💬</div><div style="font-size:13px;font-weight:700">WhatsApp</div></div><div class="action-card" onclick="document.getElementById('fotoInputBarangStruk').click()"><div style="font-size:28px">📸</div><div style="font-size:13px;font-weight:700">Upload Foto</div></div><div class="action-card" onclick="showFotoBukti('${esc(s.id).replace(/'/g,"\\'")}','Input Barang ${esc(s.id).replace(/'/g,"\\'")}')"><div style="font-size:28px">🖼</div><div style="font-size:13px;font-weight:700">Lihat Foto</div></div></div><input type="file" id="fotoInputBarangStruk" accept="image/*" capture="environment" style="display:none" onchange="uploadFotoBukti('${esc(s.id).replace(/'/g,"\\'")}','inputbarang',this)"><div style="border:1px solid var(--border);border-radius:14px;overflow:auto;max-height:480px;background:#e8f2f9;padding:14px"><div style="width:360px;margin:0 auto">${html}</div></div>`;
       document.getElementById('strukModal').classList.add('show');
     }
-    function doInputBarangPrint() { if (!_lastInputBarangStruk) return; const win = window.open('','_blank','width=420,height=700'); win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Struk Input Barang</title></head><body style="margin:16px;background:#e8f2f9;display:flex;justify-content:center">'); win.document.write(buildStrukInputBarangHTML(_lastInputBarangStruk)); win.document.write('<script>window.onload=function(){window.print();}<\/script></body></html>'); win.document.close(); }
+    function doInputBarangPrint() { if (!_lastInputBarangStruk) return; const win = window.open('','_blank','width=420,height=700'); win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"><title>Struk Input Barang</title></head><body style="margin:16px;background:#e8f2f9;display:flex;justify-content:center">'); win.document.write(buildStrukInputBarangHTML(_lastInputBarangStruk)); win.document.write('<script>window.onload=function(){window.print();}<\/script></body></html>'); win.document.close(); }
     function doInputBarangPng() { if (!_lastInputBarangStruk) return; const off = document.getElementById('strukOffscreen'); off.style.cssText = 'position:fixed;left:-9999px;top:0;pointer-events:none;z-index:-1;background:#e8f2f9;padding:20px'; off.innerHTML = buildStrukInputBarangHTML(_lastInputBarangStruk); const el = off.querySelector('#inputbarang-root'); if (!el) return Swal.fire('Error','Gagal render','error'); setTimeout(() => { html2canvas(el, {backgroundColor:'#e8f2f9',scale:2.5,useCORS:true,allowTaint:true,logging:false}).then(canvas => { const a = document.createElement('a'); a.download = 'InputBarang-'+(_lastInputBarangStruk.id||'item')+'.png'; a.href = canvas.toDataURL('image/png'); document.body.appendChild(a); a.click(); document.body.removeChild(a); off.innerHTML = ''; Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, icon: 'success', title: 'Struk tersimpan' }); }).catch(err => { off.innerHTML=''; Swal.fire('Error',err.message,'error'); }); }, 400); }
     function doInputBarangWA() { if (!_lastInputBarangStruk) return; const s = _lastInputBarangStruk; const disc = s.disc || 0; const netModal = (s.hargaModal - disc) * s.qty; let lines = ['📦 *INPUT BARANG*','*'+(settings.namaToko||'Tirta Kencana')+'*','━━━━━━━━━━━━━━━━━━━━━━']; lines.push('ID: *'+s.id+'*'); lines.push('Tgl: '+fmtDate(s.date||s.tgl||'')); lines.push('SKU: '+s.sku+' - '+(s.nama||'')); lines.push('Qty: '+s.qty); lines.push('Harga Modal: Rp '+Number(s.hargaModal||0).toLocaleString('id-ID')); if (disc) lines.push('Disc: -Rp '+Number(disc).toLocaleString('id-ID')); lines.push('Driver: '+(s.driver||'-')+' (Rit '+(s.rit||'-')+')'); lines.push('Status: *'+(s.status||'-').toUpperCase()+'*'); lines.push('━━━━━━━━━━━━━━━━━━━━━━'); lines.push('*NET MODAL : Rp '+Number(netModal).toLocaleString('id-ID')+'*'); window.open('https://wa.me/?text='+encodeURIComponent(lines.join('\n')),'_blank'); }
 
@@ -5205,30 +5324,20 @@
       showCekStockStrukModal(_lastCekStockPayload);
     }
     function buildCekStockStrukHTML(payload, logoOverride) {
-      const now = new Date();
-      const timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
-      const _logo = (logoOverride !== undefined ? logoOverride : _logoUrl);
-      const logoHtml = _logo ? `<img src="${_logo}" crossorigin="anonymous" style="width:48px;height:48px;border-radius:50%;object-fit:cover;background:#fff;flex-shrink:0;border:2px solid rgba(255,255,255,.6)">` : '<div style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🏪</div>';
-      const rowsHtml = payload.rows.map(r => {
-        const statusColor = r.hasVal ? (r.selisih === 0 ? '#16A34A' : '#DC2626') : '#94A3B8';
-        return `<tr style="border-bottom:1px solid #EEF4F9"><td style="padding:6px 0;font-size:11px;color:#0D2B3E">${esc(r.nama)}<div style="font-size:9px;color:#94A3B8;font-family:monospace">${esc(r.sku)}</div></td><td style="text-align:center;font-size:11px;color:#4A6882;font-family:monospace">${r.stock}</td><td style="text-align:center;font-size:11px;color:#4A6882;font-family:monospace">${r.hasVal ? r.cekStock : '-'}</td><td style="text-align:center;font-size:11px;font-weight:700;font-family:monospace;color:${statusColor}">${r.hasVal ? (r.selisih>0?'+':'')+r.selisih : '-'}</td></tr>`;
-      }).join('');
-      return `<div id="cekstock-root" style="width:380px;background:#fff;border-radius:16px;overflow:hidden;font-family:'DM Sans',sans-serif;box-shadow:0 8px 32px rgba(29,111,164,.18)">
-        <div style="background:linear-gradient(135deg,#1A6DB5,#2B8FDE);padding:18px 18px 14px;display:flex;align-items:center;gap:12px">${logoHtml}<div><div style="font-size:15px;font-weight:800;color:#fff;letter-spacing:-.3px">${esc(settings.namaToko||'Tirta Kencana')}</div><div style="font-size:11px;color:rgba(255,255,255,.75);margin-top:1px">Laporan Cek Stock</div></div></div>
-        <div style="background:#EBF4FB;padding:10px 18px;font-size:11px;color:#0D2B3E"><b>${fmtDate(payload.date)}</b> · ${timeStr} · ${payload.rows.length} SKU</div>
-        <div style="padding:12px 18px">
-          <table style="width:100%;border-collapse:collapse">
-            <thead><tr style="border-bottom:1.5px solid #C5DFF0"><th style="text-align:left;font-size:9px;color:#7BAAC4;padding-bottom:6px;text-transform:uppercase">Barang</th><th style="font-size:9px;color:#7BAAC4;padding-bottom:6px;text-transform:uppercase">Stock</th><th style="font-size:9px;color:#7BAAC4;padding-bottom:6px;text-transform:uppercase">Cek</th><th style="font-size:9px;color:#7BAAC4;padding-bottom:6px;text-transform:uppercase">Selisih</th></tr></thead>
-            <tbody>${rowsHtml}</tbody>
-          </table>
-          <div style="border-top:1.5px dashed #C5DFF0;margin-top:10px;padding-top:10px;display:flex;justify-content:space-between;font-size:11px;font-weight:700">
-            <span style="color:#16A34A">✅ Cocok: ${payload.cocokCount}</span>
-            <span style="color:#F59E0B">⚠️ Cek Lagi: ${payload.cekLagiCount}</span>
-            <span style="color:#94A3B8">Belum: ${payload.belumCount}</span>
-          </div>
-        </div>
-        <div style="background:#EBF4FB;padding:12px 18px;text-align:center;font-size:11.5px;color:#3D6880;font-weight:600;border-top:1px dashed #C5DFF0">${esc(settings.bottomLine||'Terima kasih!')}</div>
-      </div>`;
+      const now = new Date(); const timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+      const tone = 'teal';
+      const rows = payload.rows.map(r => {
+        const ok = r.hasVal && r.selisih === 0;
+        const q = r.hasVal ? (ok ? 'Cocok' : (r.selisih>0?'+':'')+r.selisih) : 'Belum';
+        return { n:esc(r.nama), sub:esc(r.sku), q,
+          qc: r.hasVal ? (ok ? '#047857' : '#DC2626') : '#6B84A0', qbg: r.hasVal ? (ok ? '#D5F5E6' : '#FFE0E0') : '#EAF0F6',
+          v:'Stock '+r.stock+' · Cek '+(r.hasVal ? r.cekStock : '-') };
+      });
+      return _rcRoot('cekstock-root', 380,
+        _rcHead({ tone, icon:'fa-clipboard-check', logo:logoOverride, title:'Laporan Cek Stock', sub: esc(fmtDate(payload.date)) + ' · ' + timeStr + ' · ' + payload.rows.length + ' SKU' }) +
+        _rcStats([{ l:'Cocok', v:payload.cocokCount }, { l:'Cek Lagi', v:payload.cekLagiCount }, { l:'Belum', v:payload.belumCount }], tone) +
+        _rcBody(_rcSec({ tone, title:'<i class="fas fa-boxes-stacked" style="color:#06B6D4;margin-right:5px"></i>Hasil Pengecekan', badge:payload.rows.length+' SKU', rows })) +
+        _rcFoot(settings.bottomLine || 'Terima kasih!'));
     }
     function showCekStockStrukModal(payload) {
       const html = buildCekStockStrukHTML(payload);
@@ -5238,7 +5347,7 @@
     function doCekStockPrint() {
       if (!_lastCekStockPayload) return;
       const win = window.open('', '_blank', 'width=420,height=700');
-      win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Struk Cek Stock</title></head><body style="margin:16px;background:#e8f2f9;display:flex;justify-content:center">');
+      win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"><title>Struk Cek Stock</title></head><body style="margin:16px;background:#e8f2f9;display:flex;justify-content:center">');
       win.document.write(buildCekStockStrukHTML(_lastCekStockPayload));
       win.document.write('<script>window.onload=function(){window.print();}<\/script></body></html>');
       win.document.close();
@@ -5443,33 +5552,22 @@
       showCekKosonganStrukModal(_lastCekKosonganPayload);
     }
     function buildCekKosonganStrukHTML(payload, logoOverride) {
-      const now = new Date();
-      const timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
-      const _logo = (logoOverride !== undefined ? logoOverride : _logoUrl);
-      const logoHtml = _logo ? `<img src="${_logo}" crossorigin="anonymous" style="width:48px;height:48px;border-radius:50%;object-fit:cover;background:#fff;flex-shrink:0;border:2px solid rgba(255,255,255,.6)">` : '<div style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🏪</div>';
-      const rowLine = (label, val, bold) => `<tr style="border-bottom:1px solid #EEF4F9"><td style="padding:5px 0;font-size:11.5px;color:#0D2B3E;${bold?'font-weight:700':''}">${esc(label)}</td><td style="text-align:right;padding:5px 0;font-size:11.5px;font-family:monospace;color:#0D2B3E;${bold?'font-weight:700':''}">${val}</td></tr>`;
-      let rows = '';
-      rows += rowLine('🏬 Galon Kosong Toko', payload.toko);
-      rows += rowLine('🚚 Galon Kosong Mobil', payload.mobil);
-      rows += rowLine('Total Stok', payload.totalStok, true);
-      if (payload.titipan.length) {
-        rows += `<tr><td colspan="2" style="padding:8px 0 2px;font-size:10px;font-weight:700;color:#1A6DB5;text-transform:uppercase">Titipan</td></tr>`;
-        payload.titipan.forEach(r => { rows += rowLine('• ' + (r.nama||'-'), r.qty||0); });
-      }
-      rows += rowLine('Total - Titipan', payload.stokMinusTitipan, true);
-      if (payload.pinjaman.length) {
-        rows += `<tr><td colspan="2" style="padding:8px 0 2px;font-size:10px;font-weight:700;color:#D97706;text-transform:uppercase">Pinjaman</td></tr>`;
-        payload.pinjaman.forEach(r => { rows += rowLine('• ' + (r.nama||'-'), r.qty||0); });
-      }
-      return `<div id="cekkosongan-root" style="width:380px;background:#fff;border-radius:16px;overflow:hidden;font-family:'DM Sans',sans-serif;box-shadow:0 8px 32px rgba(29,111,164,.18)">
-        <div style="background:linear-gradient(135deg,#1A6DB5,#2B8FDE);padding:18px 18px 14px;display:flex;align-items:center;gap:12px">${logoHtml}<div><div style="font-size:15px;font-weight:800;color:#fff;letter-spacing:-.3px">${esc(settings.namaToko||'Tirta Kencana')}</div><div style="font-size:11px;color:rgba(255,255,255,.75);margin-top:1px">Laporan Cek Kosongan</div></div></div>
-        <div style="background:#EBF4FB;padding:10px 18px;font-size:11px;color:#0D2B3E"><b>${fmtDate(payload.date)}</b> · ${timeStr}</div>
-        <div style="padding:12px 18px">
-          <table style="width:100%;border-collapse:collapse">${rows}</table>
-          <div style="border-top:1.5px dashed #C5DFF0;margin-top:10px;padding-top:10px;display:flex;justify-content:space-between;font-size:13px;font-weight:900;color:#16A34A"><span>TOTAL GALON</span><span style="font-family:monospace">${payload.totalGalon}</span></div>
-        </div>
-        <div style="background:#EBF4FB;padding:12px 18px;text-align:center;font-size:11.5px;color:#3D6880;font-weight:600;border-top:1px dashed #C5DFF0">${esc(settings.bottomLine||'Terima kasih!')}</div>
-      </div>`;
+      const now = new Date(); const timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+      const tone = 'green', t = _rcT(tone);
+      const main = [
+        { n:'🏬 Galon Kosong Toko', q:String(payload.toko) },
+        { n:'🚚 Galon Kosong Mobil', q:String(payload.mobil) },
+        { no:'Σ', n:'Total Stok', q:String(payload.totalStok), qbg:t.a1, qc:'#fff' }
+      ];
+      let secs = _rcSec({ tone, title:'<i class="fas fa-recycle" style="color:'+t.a1+';margin-right:5px"></i>Galon Kosong', rows:main });
+      if (payload.titipan.length) secs += _rcSec({ tone:'indigo', title:'<i class="fas fa-people-carry-box" style="color:#6366F1;margin-right:5px"></i>Titipan', badge:payload.titipan.length+' pelanggan', rows:payload.titipan.map(r => ({ n:esc(r.nama||'-'), q:String(r.qty||0) })) });
+      secs += _rcSec({ tone, rows:[{ no:'=', n:'<b>Total − Titipan</b>', q:String(payload.stokMinusTitipan), qbg:t.a1, qc:'#fff' }] });
+      if (payload.pinjaman.length) secs += _rcSec({ tone:'amber', title:'<i class="fas fa-hand-holding" style="color:#F59E0B;margin-right:5px"></i>Pinjaman', badge:payload.pinjaman.length+' pelanggan', rows:payload.pinjaman.map(r => ({ n:esc(r.nama||'-'), q:String(r.qty||0) })) });
+      return _rcRoot('cekkosongan-root', 380,
+        _rcHead({ tone, icon:'fa-recycle', logo:logoOverride, title:'Laporan Cek Kosongan', sub: esc(fmtDate(payload.date)) + ' · ' + timeStr }) +
+        _rcStats([{ l:'Total Galon', v:payload.totalGalon }, { l:'Toko', v:payload.toko }, { l:'Mobil', v:payload.mobil }], tone) +
+        _rcBody(secs + _rcSum([], { l:'TOTAL GALON', v:String(payload.totalGalon) }, tone)) +
+        _rcFoot(settings.bottomLine || 'Terima kasih!'));
     }
     function showCekKosonganStrukModal(payload) {
       const html = buildCekKosonganStrukHTML(payload);
@@ -5479,7 +5577,7 @@
     function doCekKosonganPrint() {
       if (!_lastCekKosonganPayload) return;
       const win = window.open('', '_blank', 'width=420,height=700');
-      win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Struk Cek Kosongan</title></head><body style="margin:16px;background:#e8f2f9;display:flex;justify-content:center">');
+      win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"><title>Struk Cek Kosongan</title></head><body style="margin:16px;background:#e8f2f9;display:flex;justify-content:center">');
       win.document.write(buildCekKosonganStrukHTML(_lastCekKosonganPayload));
       win.document.write('<script>window.onload=function(){window.print();}<\/script></body></html>');
       win.document.close();
@@ -5840,29 +5938,28 @@
       showPesananSalesStrukModal(_lastPesananSalesPayload);
     }
     function buildPesananSalesStrukHTML(payload, logoOverride) {
-      const now = new Date();
-      const timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
-      const _logo = (logoOverride !== undefined ? logoOverride : _logoUrl);
-      const logoHtml = _logo ? `<img src="${_logo}" crossorigin="anonymous" style="width:48px;height:48px;border-radius:50%;object-fit:cover;background:#fff;flex-shrink:0;border:2px solid rgba(255,255,255,.6)">` : '<div style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🏪</div>';
+      const now = new Date(); const timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+      const tone = 'blue', t = _rcT(tone);
       const salesNames = Object.keys(payload.bySales).sort();
-      const blocksHtml = salesNames.map(sname => {
+      let totalQty = 0, totalCust = 0;
+      const blocks = salesNames.map(sname => {
         const customers = payload.bySales[sname];
         const custNames = Object.keys(customers);
-        return `<div style="margin-bottom:14px">
-          <div style="background:#1A6DB5;color:#fff;padding:7px 10px;border-radius:6px;font-weight:800;font-size:13px;text-align:center;margin-bottom:8px">${esc(sname).toUpperCase()}</div>
-          ${custNames.map(cname => `
-            <div style="margin-bottom:9px;padding-left:4px">
-              <div style="font-weight:700;font-size:13px;color:#1A6DB5;margin-bottom:3px">${esc(cname)}</div>
-              <table style="width:auto;border-collapse:collapse;margin-left:8px">${customers[cname].map(it => `<tr><td style="width:auto;font-size:13.5px;color:#0D2B3E;padding:1.5px 10px 1.5px 0;border-bottom:none;white-space:nowrap">${esc(it.nama||it.sku)}</td><td style="width:auto;font-size:13.5px;color:#0D2B3E;font-family:monospace;font-weight:700;text-align:right;padding:1.5px 0;border-bottom:none;white-space:nowrap">${it.qty}</td></tr>`).join('')}</table>
-            </div>`).join('')}
-        </div>`;
+        let sq = 0;
+        const custHtml = custNames.map(cname => {
+          let cq = 0;
+          const rows = customers[cname].map(it => { cq += (it.qty||0); return { n:esc(it.nama||it.sku), q:String(it.qty) }; });
+          sq += cq;
+          return _rcSec({ tone, title:'<i class="fas fa-store" style="color:'+t.a1+';margin-right:5px"></i>'+esc(cname), badge:cq+' pcs', rows });
+        }).join('');
+        totalQty += sq; totalCust += custNames.length;
+        return `<div style="display:flex;align-items:center;justify-content:space-between;margin:4px 2px 8px;padding:9px 14px;border-radius:14px;background:linear-gradient(120deg,${t.a0},${t.a1});color:#fff;font-weight:800;font-size:12px"><span><i class="fas fa-user-tie" style="margin-right:7px"></i>${esc(sname).toUpperCase()}</span><span style="font-family:'JetBrains Mono',Tahoma,monospace">${sq} pcs</span></div>` + custHtml;
       }).join('');
-      return `<div id="pesanan-sales-root" style="width:380px;background:#fff;border-radius:16px;overflow:hidden;font-family:'DM Sans',sans-serif;box-shadow:0 8px 32px rgba(29,111,164,.18)">
-        <div style="background:linear-gradient(135deg,#1A6DB5,#2B8FDE);padding:18px 18px 14px;display:flex;align-items:center;gap:12px">${logoHtml}<div><div style="font-size:15px;font-weight:800;color:#fff;letter-spacing:-.3px">${esc(settings.namaToko||'Tirta Kencana')}</div><div style="font-size:11px;color:rgba(255,255,255,.75);margin-top:1px">Rekap Pesanan per Sales</div></div></div>
-        <div style="background:#EBF4FB;padding:10px 18px;font-size:11px;color:#0D2B3E"><b>${fmtDate(payload.date)}</b> · ${timeStr}</div>
-        <div style="padding:12px 18px">${blocksHtml}</div>
-        <div style="background:#EBF4FB;padding:12px 18px;text-align:center;font-size:11.5px;color:#3D6880;font-weight:600;border-top:1px dashed #C5DFF0">${esc(settings.bottomLine||'Terima kasih!')}</div>
-      </div>`;
+      return _rcRoot('pesanan-sales-root', 380,
+        _rcHead({ tone, icon:'fa-clipboard-list', logo:logoOverride, title:'Rekap Pesanan per Sales', sub: esc(fmtDate(payload.date)) + ' · ' + timeStr }) +
+        _rcStats([{ l:'Total Qty', v:totalQty+' pcs' }, { l:'Sales', v:salesNames.length }, { l:'Customer', v:totalCust }], tone) +
+        _rcBody(blocks || _rcSec({ tone, rows:[] })) +
+        _rcFoot(settings.bottomLine || 'Terima kasih!'));
     }
     function showPesananSalesStrukModal(payload) {
       const html = buildPesananSalesStrukHTML(payload);
@@ -5872,7 +5969,7 @@
     function doPesananSalesPrint() {
       if (!_lastPesananSalesPayload) return;
       const win = window.open('', '_blank', 'width=420,height=700');
-      win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Rekap Pesanan per Sales</title></head><body style="margin:16px;background:#e8f2f9;display:flex;justify-content:center">');
+      win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"><title>Rekap Pesanan per Sales</title></head><body style="margin:16px;background:#e8f2f9;display:flex;justify-content:center">');
       win.document.write(buildPesananSalesStrukHTML(_lastPesananSalesPayload));
       win.document.write('<script>window.onload=function(){window.print();}<\/script></body></html>');
       win.document.close();
@@ -5951,22 +6048,15 @@
       showPesananStrukModal(_lastPesananPayload);
     }
     function buildPesananStrukHTML(payload, logoOverride) {
-      const now = new Date();
-      const timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
-      const _logo = (logoOverride !== undefined ? logoOverride : _logoUrl);
-      const logoHtml = _logo ? `<img src="${_logo}" crossorigin="anonymous" style="width:48px;height:48px;border-radius:50%;object-fit:cover;background:#fff;flex-shrink:0;border:2px solid rgba(255,255,255,.6)">` : '<div style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🏪</div>';
-      const rowsHtml = payload.rows.map(r => `<tr style="border-bottom:1px solid #EEF4F9"><td style="padding:7px 0;font-size:12.5px;color:#0D2B3E">${esc(r.nama)}</td><td style="text-align:center;font-size:14px;font-weight:800;color:#1A6DB5;font-family:monospace">${r.order}</td></tr>`).join('');
-      return `<div id="pesanan-root" style="width:380px;background:#fff;border-radius:16px;overflow:hidden;font-family:'DM Sans',sans-serif;box-shadow:0 8px 32px rgba(29,111,164,.18)">
-        <div style="background:linear-gradient(135deg,#1A6DB5,#2B8FDE);padding:18px 18px 14px;display:flex;align-items:center;gap:12px">${logoHtml}<div><div style="font-size:15px;font-weight:800;color:#fff;letter-spacing:-.3px">${esc(settings.namaToko||'Tirta Kencana')}</div><div style="font-size:11px;color:rgba(255,255,255,.75);margin-top:1px">Laporan Barang Akan Di-Order</div></div></div>
-        <div style="background:#EBF4FB;padding:10px 18px;font-size:11px;color:#0D2B3E"><b>${fmtDate(payload.date)}</b> · ${timeStr} · ${payload.rows.length} item</div>
-        <div style="padding:12px 18px">
-          <table style="width:100%;border-collapse:collapse">
-            <thead><tr style="border-bottom:1.5px solid #C5DFF0"><th style="text-align:left;font-size:9px;color:#7BAAC4;padding-bottom:6px;text-transform:uppercase">Barang</th><th style="font-size:9px;color:#7BAAC4;padding-bottom:6px;text-transform:uppercase">Order</th></tr></thead>
-            <tbody>${rowsHtml}</tbody>
-          </table>
-        </div>
-        <div style="background:#EBF4FB;padding:12px 18px;text-align:center;font-size:11.5px;color:#3D6880;font-weight:600;border-top:1px dashed #C5DFF0">----MAKASIH----</div>
-      </div>`;
+      const now = new Date(); const timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+      const tone = 'amber', t = _rcT(tone);
+      const totalOrder = payload.rows.reduce((a,r)=>a+(Number(r.order)||0),0);
+      const rows = payload.rows.map(r => ({ n:esc(r.nama), q:String(r.order) }));
+      return _rcRoot('pesanan-root', 380,
+        _rcHead({ tone, icon:'fa-cart-flatbed', logo:logoOverride, title:'Barang Akan Di-Order', sub: esc(fmtDate(payload.date)) + ' · ' + timeStr }) +
+        _rcStats([{ l:'Item', v:payload.rows.length }, { l:'Total Order', v:totalOrder }], tone) +
+        _rcBody(_rcSec({ tone, title:'<i class="fas fa-list-check" style="color:'+t.a1+';margin-right:5px"></i>Daftar Order', badge:payload.rows.length+' item', rows, total:{ l:'TOTAL ORDER', v:String(totalOrder) } })) +
+        _rcFoot('----MAKASIH----'));
     }
     function showPesananStrukModal(payload) {
       const html = buildPesananStrukHTML(payload);
@@ -5976,7 +6066,7 @@
     function doPesananPrint() {
       if (!_lastPesananPayload) return;
       const win = window.open('', '_blank', 'width=420,height=700');
-      win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laporan Order</title></head><body style="margin:16px;background:#e8f2f9;display:flex;justify-content:center">');
+      win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"><title>Laporan Order</title></head><body style="margin:16px;background:#e8f2f9;display:flex;justify-content:center">');
       win.document.write(buildPesananStrukHTML(_lastPesananPayload));
       win.document.write('<script>window.onload=function(){window.print();}<\/script></body></html>');
       win.document.close();
@@ -6234,26 +6324,19 @@
       showTitipanStrukModal(_lastTitipanPayload);
     };
     function buildTitipanStrukHTML(payload, logoOverride) {
-      const now = new Date();
-      const timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
-      const _logo = (logoOverride !== undefined ? logoOverride : _logoUrl);
-      const logoHtml = _logo ? `<img src="${_logo}" crossorigin="anonymous" style="width:48px;height:48px;border-radius:50%;object-fit:cover;background:#fff;flex-shrink:0;border:2px solid rgba(255,255,255,.6)">` : '<div style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🏪</div>';
-      const riwayatHtml = payload.todayEntries.length === 0
-        ? `<div style="text-align:center;color:#94A3B8;font-size:11px;padding:8px 0">Tidak ada pergerakan hari ini</div>`
-        : payload.todayEntries.map(e => `<tr style="border-bottom:1px solid #EEF4F9"><td style="padding:5px 0;font-size:11px;color:#0D2B3E">${esc(e.nama)}</td><td style="text-align:center;font-size:12px;font-weight:800;font-family:monospace;color:${e.tipe==='masuk'?'#16A34A':'#DC2626'}">${e.tipe==='masuk'?'+':'-'}${e.qty}</td></tr>`).join('');
-      const sisaHtml = payload.sisaRows.map(r => `<tr style="border-bottom:1px solid #EEF4F9"><td style="padding:5px 0;font-size:11px;color:#0D2B3E">${esc(r.nama)}</td><td style="text-align:center;font-size:12px;font-weight:800;font-family:monospace;color:${r.sisa<0?'#DC2626':'#16A34A'}">${r.sisa}</td></tr>`).join('');
-      return `<div id="titipan-root" style="width:380px;background:#fff;border-radius:16px;overflow:hidden;font-family:'DM Sans',sans-serif;box-shadow:0 8px 32px rgba(29,111,164,.18)">
-        <div style="background:linear-gradient(135deg,#1A6DB5,#2B8FDE);padding:18px 18px 14px;display:flex;align-items:center;gap:12px">${logoHtml}<div><div style="font-size:15px;font-weight:800;color:#fff;letter-spacing:-.3px">${esc(settings.namaToko||'Tirta Kencana')}</div><div style="font-size:11px;color:rgba(255,255,255,.75);margin-top:1px">Laporan Titipan</div></div></div>
-        <div style="background:#EBF4FB;padding:10px 18px;font-size:11px;color:#0D2B3E"><b>${fmtDate(payload.date)}</b> · ${timeStr}</div>
-        <div style="padding:12px 18px">
-          <div style="font-size:10px;font-weight:700;color:#1A6DB5;text-transform:uppercase;text-align:center">📋 Riwayat Hari Ini</div>
-          <div style="text-align:center;font-size:13px;font-weight:800;color:#0D2B3E;margin:3px 0 10px">${esc(payload.customer)}</div>
-          <table style="width:100%;border-collapse:collapse;margin-bottom:12px">${riwayatHtml.startsWith('<tr') ? `<tbody>${riwayatHtml}</tbody>` : riwayatHtml}</table>
-          <div style="font-size:10px;font-weight:700;color:#1A6DB5;text-transform:uppercase;margin-bottom:4px;border-top:1.5px dashed #C5DFF0;padding-top:10px">📦 Sisa Titipan ${esc(payload.customer)}</div>
-          <table style="width:100%;border-collapse:collapse"><tbody>${sisaHtml}</tbody></table>
-        </div>
-        <div style="background:#EBF4FB;padding:12px 18px;text-align:center;font-size:11.5px;color:#3D6880;font-weight:600;border-top:1px dashed #C5DFF0">${esc(settings.bottomLine||'Terima kasih!')}</div>
-      </div>`;
+      const now = new Date(); const timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+      const tone = 'indigo', t = _rcT(tone);
+      const mv = payload.todayEntries.map(e => { const masuk = e.tipe==='masuk'; return { n:esc(e.nama), q:(masuk?'+':'-')+e.qty, qc:masuk?'#047857':'#DC2626', qbg:masuk?'#D5F5E6':'#FFE0E0' }; });
+      const sisa = payload.sisaRows.map(r => ({ n:esc(r.nama), q:String(r.sisa), qc:r.sisa<0?'#DC2626':'#047857', qbg:r.sisa<0?'#FFE0E0':'#D5F5E6' }));
+      const totalSisa = payload.sisaRows.reduce((a,r)=>a+(r.sisa||0),0);
+      return _rcRoot('titipan-root', 380,
+        _rcHead({ tone, icon:'fa-people-carry-box', logo:logoOverride, title:'Laporan Titipan', sub: esc(payload.customer) + ' · ' + esc(fmtDate(payload.date)) + ' · ' + timeStr }) +
+        _rcStats([{ l:'Pergerakan', v:payload.todayEntries.length }, { l:'SKU Titipan', v:payload.sisaRows.length }, { l:'Total Sisa', v:totalSisa }], tone) +
+        _rcBody(
+          _rcInfo([{ l:'Pelanggan', v:esc(payload.customer), full:true }], tone) +
+          _rcSec({ tone, title:'<i class="fas fa-clock-rotate-left" style="color:'+t.a1+';margin-right:5px"></i>Riwayat Hari Ini', badge:payload.todayEntries.length+' entri', rows: mv.length ? mv : [{ n:'<span style="color:#6B84A0;font-weight:600">Tidak ada pergerakan hari ini</span>' }] }) +
+          _rcSec({ tone:'purple', title:'<i class="fas fa-boxes-stacked" style="color:#7C3AED;margin-right:5px"></i>Sisa Titipan', badge:payload.sisaRows.length+' SKU', rows:sisa, total:{ l:'TOTAL SISA', v:String(totalSisa) } })) +
+        _rcFoot(settings.bottomLine || 'Terima kasih!'));
     }
     function showTitipanStrukModal(payload) {
       const html = buildTitipanStrukHTML(payload);
@@ -6263,7 +6346,7 @@
     function doTitipanPrint() {
       if (!_lastTitipanPayload) return;
       const win = window.open('', '_blank', 'width=420,height=700');
-      win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Sisa Titipan</title></head><body style="margin:16px;background:#e8f2f9;display:flex;justify-content:center">');
+      win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"><title>Sisa Titipan</title></head><body style="margin:16px;background:#e8f2f9;display:flex;justify-content:center">');
       win.document.write(buildTitipanStrukHTML(_lastTitipanPayload));
       win.document.write('<script>window.onload=function(){window.print();}<\/script></body></html>');
       win.document.close();
@@ -6318,24 +6401,21 @@
       showTitipanPelangganStrukModal(_lastTitipanPelangganPayload);
     }
     function buildTitipanPelangganStrukHTML(payload, logoOverride) {
-      const now = new Date();
-      const timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
-      const _logo = (logoOverride !== undefined ? logoOverride : _logoUrl);
-      const logoHtml = _logo ? `<img src="${_logo}" crossorigin="anonymous" style="width:48px;height:48px;border-radius:50%;object-fit:cover;background:#fff;flex-shrink:0;border:2px solid rgba(255,255,255,.6)">` : '<div style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🏪</div>';
+      const now = new Date(); const timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+      const tone = 'purple', t = _rcT(tone);
       const custNames = Object.keys(payload.byCustomer).sort();
-      const blocksHtml = custNames.map(cname => {
-        const skus = payload.byCustomer[cname];
-        return `<div style="margin-bottom:10px">
-          <div style="background:#1A6DB5;color:#fff;padding:5px 10px;border-radius:6px;font-weight:800;font-size:11px;margin-bottom:4px">${esc(cname)}</div>
-          ${Object.keys(skus).map(sku => { const s = skus[sku]; const sisa = s.masuk - s.keluar; return `<div style="display:flex;justify-content:space-between;font-size:11px;color:#0D2B3E;padding:2px 0 2px 6px"><span>${esc(s.nama)}</span><span style="font-family:monospace;font-weight:700;color:${sisa<0?'#DC2626':'#16A34A'}">${sisa}</span></div>`; }).join('')}
-        </div>`;
+      let grand = 0;
+      const secs = custNames.map(cname => {
+        const skus = payload.byCustomer[cname]; let tot = 0;
+        const rows = Object.keys(skus).map(k => { const x = skus[k]; const sisa = x.masuk - x.keluar; tot += sisa; return { n:esc(x.nama), q:String(sisa), qc:sisa<0?'#DC2626':'#047857', qbg:sisa<0?'#FFE0E0':'#D5F5E6' }; });
+        grand += tot;
+        return _rcSec({ tone, title:'<i class="fas fa-store" style="color:'+t.a1+';margin-right:5px"></i>'+esc(cname), badge:rows.length+' SKU', rows, total:{ l:'Total Sisa', v:String(tot) } });
       }).join('');
-      return `<div id="titipan-pelanggan-root" style="width:380px;background:#fff;border-radius:16px;overflow:hidden;font-family:'DM Sans',sans-serif;box-shadow:0 8px 32px rgba(29,111,164,.18)">
-        <div style="background:linear-gradient(135deg,#1A6DB5,#2B8FDE);padding:18px 18px 14px;display:flex;align-items:center;gap:12px">${logoHtml}<div><div style="font-size:15px;font-weight:800;color:#fff;letter-spacing:-.3px">${esc(settings.namaToko||'Tirta Kencana')}</div><div style="font-size:11px;color:rgba(255,255,255,.75);margin-top:1px">Rekap Titipan per Pelanggan</div></div></div>
-        <div style="background:#EBF4FB;padding:10px 18px;font-size:11px;color:#0D2B3E"><b>${fmtDate(payload.date)}</b> · ${timeStr}</div>
-        <div style="padding:12px 18px">${blocksHtml}</div>
-        <div style="background:#EBF4FB;padding:12px 18px;text-align:center;font-size:11.5px;color:#3D6880;font-weight:600;border-top:1px dashed #C5DFF0">${esc(settings.bottomLine||'Terima kasih!')}</div>
-      </div>`;
+      return _rcRoot('titipan-pelanggan-root', 380,
+        _rcHead({ tone, icon:'fa-people-carry-box', logo:logoOverride, title:'Rekap Titipan per Pelanggan', sub: esc(fmtDate(payload.date)) + ' · ' + timeStr }) +
+        _rcStats([{ l:'Pelanggan', v:custNames.length }, { l:'Total Sisa', v:grand }], tone) +
+        _rcBody(secs || _rcSec({ tone, rows:[] })) +
+        _rcFoot(settings.bottomLine || 'Terima kasih!'));
     }
     function showTitipanPelangganStrukModal(payload) {
       const html = buildTitipanPelangganStrukHTML(payload);
@@ -6345,7 +6425,7 @@
     function doTitipanPelangganPrint() {
       if (!_lastTitipanPelangganPayload) return;
       const win = window.open('', '_blank', 'width=420,height=700');
-      win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Rekap Titipan per Pelanggan</title></head><body style="margin:16px;background:#e8f2f9;display:flex;justify-content:center">');
+      win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"><title>Rekap Titipan per Pelanggan</title></head><body style="margin:16px;background:#e8f2f9;display:flex;justify-content:center">');
       win.document.write(buildTitipanPelangganStrukHTML(_lastTitipanPelangganPayload));
       win.document.write('<script>window.onload=function(){window.print();}<\/script></body></html>');
       win.document.close();
@@ -7073,28 +7153,23 @@
     function buildPelangganStrukHTML(payload, logoOverride) {
       const { name, rows, stats } = payload;
       const periodeLabel = (stats.startDate || stats.endDate) ? `${stats.startDate ? fmtDate(stats.startDate) : 'Awal'} – ${stats.endDate ? fmtDate(stats.endDate) : 'Sekarang'}` : 'Semua Periode';
-      const _logo = (logoOverride !== undefined ? logoOverride : _logoUrl);
-      const logoHtml = _logo ? `<img src="${_logo}" crossorigin="anonymous" style="width:44px;height:44px;border-radius:50%;object-fit:cover;background:#fff;flex-shrink:0;border:2px solid rgba(255,255,255,.6)">` : '<div style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">👤</div>';
+      const tone = 'blue', t = _rcT(tone);
       const statusLabel = { cod:'COD', transfer:'Transfer', qris:'QRIS', belumTransfer:'Belum Bayar' };
-      const rowsHtml = rows.map(t => {
-        const items = t.items || [];
+      const stCol = { cod:['#B45309','#FFEFCC'], transfer:['#0067B8','#E6F3FF'], qris:['#4F46E5','#E3E6FF'], belumTransfer:['#DC2626','#FFE0E0'] };
+      const trows = rows.map(tx => {
+        const items = tx.items || [];
         const isum = items.length ? (items.length > 1 ? `${esc(items[0].nama||items[0].sku||'-')} +${items.length-1} lainnya` : esc(items[0].nama||items[0].sku||'-')) : '-';
-        return `<tr style="border-bottom:1px solid #EEF4F9"><td style="padding:6px 0;font-size:11px;color:#0D2B3E">${fmtDate(t.tgl)}<div style="font-size:9.5px;color:#94A3B8">${isum} · ${statusLabel[t.status]||t.status||'-'}</div></td><td style="text-align:right;font-size:11.5px;font-weight:800;font-family:monospace;color:#0D2B3E">${fmtRp(t.nett||0)}</td></tr>`;
-      }).join('');
-      return `<div id="pelanggan-struk-root" style="width:380px;background:#fff;border-radius:16px;overflow:hidden;font-family:'DM Sans',sans-serif;box-shadow:0 8px 32px rgba(29,111,164,.18)">
-        <div style="background:linear-gradient(135deg,#1A6DB5,#2F80FF);padding:18px 18px 14px;display:flex;align-items:center;gap:12px">${logoHtml}<div><div style="font-size:15px;font-weight:800;color:#fff;letter-spacing:-.3px">${esc(name)}</div><div style="font-size:11px;color:rgba(255,255,255,.75);margin-top:1px">${esc(settings.namaToko||'Tirta Kencana')} · Riwayat Pelanggan</div></div></div>
-        <div style="background:#EAF2FF;padding:10px 18px;font-size:11px;color:#0D2B3E">Periode: <b>${periodeLabel}</b></div>
-        <div style="padding:12px 18px">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-            <div style="background:#F4F8FB;border-radius:10px;padding:8px 10px"><div style="font-size:9.5px;color:#5a7a90">Total Belanja</div><div style="font-weight:800;font-size:13px;color:#1A6DB5;font-family:monospace">${fmtRp(stats.totalBelanja)}</div></div>
-            <div style="background:${stats.totalPiutang>0?'#FEECEC':'#F4F8FB'};border-radius:10px;padding:8px 10px"><div style="font-size:9.5px;color:#5a7a90">Piutang</div><div style="font-weight:800;font-size:13px;color:${stats.totalPiutang>0?'#DC2626':'#1A6DB5'};font-family:monospace">${fmtRp(stats.totalPiutang)}</div></div>
-            <div style="background:#F4F8FB;border-radius:10px;padding:8px 10px"><div style="font-size:9.5px;color:#5a7a90">Jumlah Transaksi</div><div style="font-weight:800;font-size:13px;color:#0D2B3E">${stats.jumlahTrx}</div></div>
-            <div style="background:#F4F8FB;border-radius:10px;padding:8px 10px"><div style="font-size:9.5px;color:#5a7a90">Rata-rata</div><div style="font-weight:800;font-size:13px;color:#0D2B3E;font-family:monospace">${fmtRp(stats.rataRata)}</div></div>
-          </div>
-          <table style="width:100%;border-collapse:collapse">${rowsHtml}</table>
-        </div>
-        <div style="background:#EAF2FF;padding:12px 18px;text-align:center;font-size:11px;color:#0D2B3E;font-weight:600;border-top:1px dashed #BFDBFE">${esc(settings.bottomLine||'Terima kasih!')}</div>
-      </div>`;
+        const c = stCol[tx.status] || ['#6B84A0','#EAF0F6'];
+        return { n:esc(fmtDate(tx.tgl)), sub:isum, q:fmtRp(tx.nett||0), qc:c[0], qbg:c[1], v:esc(statusLabel[tx.status]||tx.status||'-') };
+      });
+      const piu = stats.totalPiutang > 0;
+      return _rcRoot('pelanggan-struk-root', 380,
+        _rcHead({ tone, icon:'fa-user', logo:logoOverride, title:esc(name), sub:'Riwayat Pelanggan · '+esc(periodeLabel) }) +
+        _rcStats([{ l:'Total Belanja', v:fmtRp(stats.totalBelanja) }, { l:'Transaksi', v:stats.jumlahTrx }, { l:'Rata-rata', v:fmtRp(stats.rataRata) }], tone) +
+        _rcBody(
+          (piu ? _rcSum([], { l:'PIUTANG', v:fmtRp(stats.totalPiutang) }, 'red') : '') +
+          _rcSec({ tone, title:'<i class="fas fa-receipt" style="color:'+t.a1+';margin-right:5px"></i>Riwayat Transaksi', badge:rows.length+' transaksi', rows:trows, total:{ l:'TOTAL BELANJA', v:fmtRp(stats.totalBelanja) } })) +
+        _rcFoot(settings.bottomLine || 'Terima kasih!'));
     }
     function showPelangganStrukModal(payload) {
       const html = buildPelangganStrukHTML(payload);
@@ -7104,7 +7179,7 @@
     function doPelangganStrukPrint() {
       if (!_lastPelangganStrukPayload) return;
       const win = window.open('', '_blank', 'width=420,height=700');
-      win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Riwayat Pelanggan</title></head><body style="margin:16px;background:#e8f2f9;display:flex;justify-content:center">');
+      win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"><title>Riwayat Pelanggan</title></head><body style="margin:16px;background:#e8f2f9;display:flex;justify-content:center">');
       win.document.write(buildPelangganStrukHTML(_lastPelangganStrukPayload));
       win.document.write('<script>window.onload=function(){window.print();}<\/script></body></html>');
       win.document.close();
