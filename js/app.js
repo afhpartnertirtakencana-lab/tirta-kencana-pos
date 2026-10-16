@@ -3421,36 +3421,30 @@
       let salesOpts='<option value="">Semua Sales</option>';
       (settings.salesList||[]).forEach(s=>{salesOpts+=`<option value="${esc(s)}">${esc(s)}</option>`;});
 
-      document.getElementById('contentArea').innerHTML=`
-        <div class="card card-piutang-total" style="background:linear-gradient(135deg,#EF4444,#DC2626);color:#fff">
-          <div style="font-size:0.7rem;font-weight:700;opacity:.8;letter-spacing:.5px">TOTAL PIUTANG BELUM BAYAR</div>
-          <div style="font-size:1.6rem;font-weight:900;font-family:var(--mono);margin-top:4px">${fmtRp(totalPiutang)}</div>
-          <div style="font-size:0.72rem;opacity:.8;margin-top:4px">${piutang.length} transaksi · ${custRows.length} customer</div>
-          <button class="btn" onclick="exportPiutangExcel()" style="margin-top:10px;background:#fff;color:#DC2626;font-size:0.7rem;padding:5px 12px;border-radius:8px;font-weight:700">📥 Export Excel</button>
+      const _agCol = { hijau:'#16A34A', kuning:'#D97706', orange:'#EA580C', merah:'#DC2626' };
+      const oldestAll = piutang.length ? agingLabel(piutang[0].tgl||today) : {label:'-'};
+      document.getElementById('contentArea').innerHTML=`<div class="tx pt">
+        <div class="tx-hero pt-hero">
+          <div class="tx-hero-top"><div><div class="tx-eyebrow"><i class="fas fa-file-invoice-dollar"></i> Piutang</div><div class="tx-hero-sub">Belum bayar · semua tanggal</div></div><div class="tx-hero-actions"><button class="tx-hbtn" onclick="exportPiutangExcel()"><i class="fas fa-file-excel"></i> Excel</button></div></div>
+          <div class="tx-hero-val">${fmtRp(totalPiutang)}</div>
+          <div class="tx-hero-lbl">Total Piutang Belum Bayar</div>
+          <div class="tx-stats pt-stats">
+            <div class="tx-stat-i"><i class="fas fa-users"></i><div><b>${custRows.length}</b><span>Customer</span></div></div>
+            <div class="tx-stat-i"><i class="fas fa-receipt"></i><div><b>${piutang.length}</b><span>Transaksi</span></div></div>
+            <div class="tx-stat-i"><i class="fas fa-hourglass-half"></i><div><b>${piutang.length ? Math.max(0,Math.floor((new Date(today)-new Date(piutang[0].tgl||today))/86400000)) : 0} hr</b><span>Terlama</span></div></div>
+          </div>
         </div>
 
-        <div class="card" style="margin-top:8px">
-          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-            <div class="card-title" style="margin:0"><i class="fas fa-users"></i> Rekap per Customer</div>
-            <button class="btn btn-sm btn-primary" onclick="cetakPiutangCustomer()"><i class="fas fa-receipt"></i> Cetak</button>
-          </div>
-          <div class="table-wrap"><table><thead><tr><th>Customer</th><th style="text-align:right">Total</th><th style="text-align:right">Jml Trx</th><th>Terlama</th></tr></thead><tbody>
-          ${custRows.map(r=>{const ag=agingLabel(r.oldest);return`<tr><td style="font-weight:600">${esc(r.customer)}</td><td style="text-align:right;font-family:var(--mono);color:var(--merah);font-weight:700">${fmtRp(r.total)}</td><td style="text-align:right">${r.count}</td><td><span style="background:var(--${ag.cls}-muda,#FEF9C3);color:var(--${ag.cls},#92400E);padding:2px 7px;border-radius:6px;font-size:0.68rem;font-weight:700">${ag.label}</span></td></tr>`;}).join('')}
-          </tbody></table></div>
-        </div>
+        <div class="pt-sec-h"><div class="pt-sec-t"><i class="fas fa-users"></i> Rekap per Customer</div><button class="btn btn-sm btn-primary" onclick="cetakPiutangCustomer()"><i class="fas fa-receipt"></i> Cetak</button></div>
+        <div class="card tx-card" style="padding:0;overflow:hidden"><div class="table-wrap"><table class="tx-table pt-table"><thead><tr><th>Customer</th><th style="text-align:right">Jml Trx</th><th style="text-align:right">Total</th><th>Terlama</th></tr></thead><tbody>
+          ${custRows.length ? custRows.map(r=>{const ag=agingLabel(r.oldest);return`<tr class="tx-row pt-row"><td data-label="Customer" class="pt-name">${esc(r.customer)}</td><td data-label="Jml Trx" class="pt-cnt">${r.count} transaksi</td><td data-label="Total" class="pt-total">${fmtRp(r.total)}</td><td data-label="Terlama" class="pt-age"><span style="color:${_agCol[ag.cls]||'#D97706'};font-weight:800">${ag.label}</span></td></tr>`;}).join('') : '<tr><td colspan="4" class="text-center text-sm" style="padding:28px">Tidak ada piutang 🎉</td></tr>'}
+        </tbody></table></div></div>
 
-        <div class="card" style="margin-top:8px">
-          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-            <div class="card-title" style="margin:0"><i class="fas fa-list"></i> Detail Transaksi Belum Bayar</div>
-            <button class="btn btn-sm btn-primary" onclick="cetakPiutangDetail()"><i class="fas fa-receipt"></i> Cetak</button>
-          </div>
-          <div class="flex-row" style="gap:8px;margin-bottom:8px">
-            <select id="piutangSales" onchange="filterPiutangTable()" style="padding:6px 10px;border-radius:8px;border:1px solid var(--border);font-size:0.75rem;background:var(--surface);color:var(--text)">${salesOpts}</select>
-          </div>
-          <div class="tw-scroll-toolbar"><span>Geser tabel</span><button type="button" class="tw-scroll-arrow" onclick="document.getElementById('piutangTableWrap').scrollBy({left:-140,behavior:'smooth'})" aria-label="Geser ke kiri"><i class="fas fa-chevron-left"></i></button><button type="button" class="tw-scroll-arrow" onclick="document.getElementById('piutangTableWrap').scrollBy({left:140,behavior:'smooth'})" aria-label="Geser ke kanan"><i class="fas fa-chevron-right"></i></button></div>
-          <div class="table-wrap" id="piutangTableWrap"><table><thead><tr><th>Tgl</th><th>Customer</th><th>Sales</th><th style="text-align:right">Nett</th><th>Aging</th><th>Aksi</th></tr></thead>
-          <tbody id="piutangTbody"></tbody></table></div>
-        </div>`;
+        <div class="pt-sec-h"><div class="pt-sec-t"><i class="fas fa-list"></i> Detail Transaksi Belum Bayar</div><button class="btn btn-sm btn-primary" onclick="cetakPiutangDetail()"><i class="fas fa-receipt"></i> Cetak</button></div>
+        <div class="tx-filter pt-filter"><select id="piutangSales" class="form-control" onchange="filterPiutangTable()">${salesOpts}</select></div>
+        <div class="card tx-card" style="padding:0;overflow:hidden"><div class="table-wrap" id="piutangTableWrap"><table class="tx-table pt-table pt-dtable"><thead><tr><th>Tgl</th><th>Customer</th><th>Sales</th><th style="text-align:right">Nett</th><th>Aging</th><th>Aksi</th></tr></thead>
+          <tbody id="piutangTbody"></tbody></table></div></div>
+      </div>`;
 
       window._piutangData = piutang;
       window._piutangCustRows = custRows;
@@ -3597,7 +3591,7 @@
       const today = localDateStr();
       function agingLabel(tgl) { const diff=Math.floor((new Date(today)-new Date(tgl))/(1000*60*60*24)); if(diff===0)return{label:'Hari ini',color:'#16A34A'}; if(diff<=7)return{label:`${diff} hari`,color:'#D97706'}; if(diff<=30)return{label:`${diff} hari`,color:'#EA580C'}; return{label:`${diff} hari ⚠️`,color:'#DC2626'}; }
       const tbody = document.getElementById('piutangTbody');
-      if (tbody) tbody.innerHTML = rows.map(t=>{const ag=agingLabel(t.tgl||'');return`<tr><td style="font-size:0.72rem">${fmtDate(t.tgl)}</td><td>${esc(t.customer)}</td><td>${esc(t.sales||'-')}</td><td style="text-align:right;font-family:var(--mono);font-weight:700;color:var(--merah)">${fmtRp(t.nett||0)}</td><td><span style="color:${ag.color};font-weight:700;font-size:0.7rem">${ag.label}</span></td><td><div style="display:flex;flex-direction:row;gap:4px;flex-wrap:nowrap"><button class="btn btn-sm btn-outline" style="font-size:0.62rem;padding:3px 8px;white-space:nowrap" onclick="cetakUlangStruk('${esc(t.id).replace(/'/g,"\\'")}')">🧾 Cetak</button><button class="btn btn-sm btn-primary" style="font-size:0.62rem;padding:3px 8px;white-space:nowrap" onclick="tandaiLunas('${t.id}')">✅ Lunas</button></div></td></tr>`;}).join('');
+      if (tbody) tbody.innerHTML = rows.length ? rows.map(t=>{const ag=agingLabel(t.tgl||'');const _id=String(t.id).replace(/'/g,"\\'");return`<tr class="tx-row pt-row"><td data-label="Tgl" class="pt-tgl">${fmtDate(t.tgl)}</td><td data-label="Customer" class="pt-cust">${esc(t.customer)}</td><td data-label="Sales" class="pt-sales">${esc(t.sales||'-')}</td><td data-label="Nett" class="pt-nett">${fmtRp(t.nett||0)}</td><td data-label="Aging" class="pt-age"><span style="color:${ag.color};font-weight:800">${ag.label}</span></td><td data-label="" class="pt-act"><button class="btn btn-sm btn-outline" onclick="cetakUlangStruk('${_id}')">🧾 Cetak</button><button class="btn btn-sm btn-primary" onclick="tandaiLunas('${_id}')">✅ Lunas</button></td></tr>`;}).join('') : '<tr><td colspan="6" class="text-center text-sm" style="padding:28px">Tidak ada transaksi</td></tr>';
     }
 
     function _selectClayPay(el, val) {
