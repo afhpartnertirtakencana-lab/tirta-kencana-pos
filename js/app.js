@@ -2269,7 +2269,7 @@
               <span id="fotoKirimanStatus" class="jx-foto-st"></span>
             </div>
           </div>
-          <div class="jx-actions"><button class="jx-reset" onclick="resetTrx()"><i class="fas fa-rotate-left"></i> Reset</button><div class="slide-confirm" id="slideConfirmTrx" style="flex:2"><div class="slide-confirm-fill" id="slideConfirmFill"></div><div class="slide-confirm-text" id="slideConfirmText">💾 Geser untuk Simpan &amp; Struk</div><div class="slide-confirm-thumb" id="slideConfirmThumb"><i class="fas fa-chevron-right"></i></div></div></div>
+          <div class="jx-actions"><button class="jx-reset" onclick="resetTrx()"><i class="fas fa-rotate-left"></i> Reset</button><div class="slide-confirm" id="slideConfirmTrx" style="flex:2"><div class="slide-confirm-fill" id="slideConfirmFill"></div><div class="slide-confirm-text" id="slideConfirmText"><span class="sc-t-slide">💾 Geser untuk Simpan &amp; Struk</span><span class="sc-t-click">💾 Simpan &amp; Struk</span></div><div class="slide-confirm-thumb" id="slideConfirmThumb"><i class="fas fa-chevron-right"></i></div></div></div>
         </div>
         </div>
         </div>`;
@@ -2283,7 +2283,7 @@
       initSlideConfirm('slideConfirmTrx', async () => {
         try { await submitTrx(); }
         finally { const el = document.getElementById('slideConfirmTrx'); if (el && el._slideReset) el._slideReset(); }
-      });
+      }, { clickOnWide: true });
     }
 
     // ========== SLIDE-TO-CONFIRM (generik, bisa dipakai di tombol lain) ==========
@@ -2304,6 +2304,17 @@
         .slide-confirm.confirmed .slide-confirm-thumb{color:#16A34A;}
         @keyframes slideConfirmHint{0%,100%{transform:translateX(0)}50%{transform:translateX(6px)}}
         .slide-confirm:not(.dragging):not(.confirmed) .slide-confirm-thumb i{display:inline-block;animation:slideConfirmHint 1.4s ease-in-out infinite;}
+        .slide-confirm .sc-t-click{display:none;}
+        @media (min-width:768px){
+          .slide-confirm.click-mode{cursor:pointer;background:linear-gradient(135deg,#0078D4,#29A8FF) !important;border-color:transparent !important;box-shadow:0 6px 16px rgba(0,120,212,.35);transition:transform .12s ease,box-shadow .12s ease,filter .12s;}
+          .slide-confirm.click-mode:hover{filter:brightness(1.07);box-shadow:0 8px 20px rgba(0,120,212,.45);}
+          .slide-confirm.click-mode:active{transform:scale(.98);}
+          .slide-confirm.click-mode .slide-confirm-thumb,.slide-confirm.click-mode .slide-confirm-fill{display:none !important;}
+          .slide-confirm.click-mode .sc-t-slide{display:none;}
+          .slide-confirm.click-mode .sc-t-click{display:inline;}
+          .slide-confirm.click-mode .slide-confirm-text{opacity:1 !important;padding:0 !important;color:#fff !important;font-size:.84rem !important;}
+          .slide-confirm.click-mode.confirmed{background:linear-gradient(135deg,#16A34A,#22C55E) !important;pointer-events:none;}
+        }
         /* [NEW] Di dark mode, teks yang pakai warna var(--biru) (ID transaksi, Nett, dan
            angka-angka "penting" lain di banyak tabel di seluruh app) itu biru tua -
            kontrasnya bagus di atas latar putih (mode terang), tapi jadi susah kebaca di
@@ -2351,9 +2362,11 @@
       document.head.appendChild(style);
     })();
 
-    function initSlideConfirm(containerId, onConfirm) {
+    function initSlideConfirm(containerId, onConfirm, opts) {
+      opts = opts || {};
       const el = document.getElementById(containerId);
       if (!el) return;
+      if (opts.clickOnWide) el.classList.add('click-mode');
       const thumb = el.querySelector('.slide-confirm-thumb');
       const fill = el.querySelector('.slide-confirm-fill');
       const text = el.querySelector('.slide-confirm-text');
@@ -2412,6 +2425,16 @@
       }
       thumb.addEventListener('pointerup', endDrag);
       thumb.addEventListener('pointercancel', endDrag);
+      // Web & tablet (>=768px): cukup KLIK tombol, tidak perlu digeser.
+      if (opts.clickOnWide) {
+        el.addEventListener('click', () => {
+          if (window.innerWidth < 768 || confirmed || dragging) return;
+          confirmed = true;
+          el.classList.add('confirmed');
+          thumb.innerHTML = '<i class="fas fa-check"></i>';
+          setTimeout(() => onConfirm(), 120);
+        });
+      }
     }
 
     // [NEW] Layout 2 kolom untuk menu Jual di layar lebar (web/tablet) - "Buat Invoice"
