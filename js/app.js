@@ -1369,6 +1369,8 @@
              <button class="tab ${currentPage==='grafik'?'active':''}" onclick="navigateTo('grafik')"><i class="fas fa-chart-line"></i> Grafik</button>
              <button class="tab ${currentPage==='piutang'?'active':''}" onclick="navigateTo('piutang')"><i class="fas fa-file-invoice-dollar"></i> Piutang</button>
              <button class="tab ${currentPage==='laporanbulanan'?'active':''}" onclick="navigateTo('laporanbulanan')"><i class="fas fa-calendar-alt"></i> Laporan Bulanan</button>
+             <button class="tab ${currentPage==='profit'?'active':''}" onclick="navigateTo('profit')"><i class="fas fa-sack-dollar"></i> Profit</button>
+             <button class="tab ${currentPage==='auditlog'?'active':''}" onclick="navigateTo('auditlog')"><i class="fas fa-shield-halved"></i> Backup &amp; Audit</button>
              <button class="tab ${currentPage==='pengaturan'?'active':''}" onclick="navigateTo('pengaturan')"><i class="fas fa-cog"></i> Atur</button>`;
       } else if (r === 'sales') {
         h = `<button class="tab ${currentPage==='dashboard'?'active':''}" onclick="navigateTo('dashboard')"><i class="fas fa-chart-pie"></i> Dashboard</button>
@@ -1424,6 +1426,8 @@
           { page:'grafik', label:'Grafik', icon:'fa-chart-line' },
           { page:'piutang', label:'Piutang', icon:'fa-file-invoice-dollar' },
           { page:'laporanbulanan', label:'Laporan Bulanan', icon:'fa-calendar-alt' },
+          { page:'profit', label:'Profit', icon:'fa-sack-dollar' },
+          { page:'auditlog', label:'Backup & Audit', icon:'fa-shield-halved' },
           { page:'googlesheets', label:'Google Sheets', icon:'fa-table-cells' },
           { page:'pengaturan', label:'Atur', icon:'fa-cog' },
         ]
@@ -1520,7 +1524,7 @@
     function _pgHero(icon, title, sub, val, lbl) {
       return `<div class="pg-hero"><div class="pg-hero-eyebrow"><i class="fas ${icon}"></i> ${title}</div><div class="pg-hero-sub">${sub||''}</div>${val !== undefined && val !== null ? `<div class="pg-hero-val">${val}</div><div class="pg-hero-lbl">${lbl||''}</div>` : ''}</div>`;
     }
-    function renderContent() { try { document.getElementById('contentArea').setAttribute('data-page', currentPage); } catch(e) {} switch (currentPage) { case 'dashboard': loadDashboard(); break; case 'penjualan': loadPenjualan(); break; case 'transaksi': loadTransaksi(); break; case 'rekap': loadRekap(); break; case 'rekapinput': loadRekapInput(); break; case 'setoran': loadSetoran(); break; case 'rekapsetoran': loadRekapSetoran(); break; case 'inputbarang': loadInputBarang(); break; case 'stockbarang': loadStockBarang(); break; case 'cekstock': loadCekStock(); break; case 'cekkosongan': loadCekKosongan(); break; case 'pesanan': loadPesanan(); break; case 'titipan': loadTitipan(); break; case 'produk': loadProduk(); break; case 'pelanggan': loadPelanggan(); break; case 'pengaturan': loadPengaturan(); break; case 'pengaturanUser': loadPengaturanUser(); break; case 'grafik': loadGrafik(); break; case 'piutang': loadPiutang(); break; case 'laporanbulanan': loadLaporanBulanan(); break; case 'googlesheets': loadGoogleSheets(); break; } }
+    function renderContent() { try { document.getElementById('contentArea').setAttribute('data-page', currentPage); } catch(e) {} switch (currentPage) { case 'dashboard': loadDashboard(); break; case 'penjualan': loadPenjualan(); break; case 'transaksi': loadTransaksi(); break; case 'rekap': loadRekap(); break; case 'rekapinput': loadRekapInput(); break; case 'setoran': loadSetoran(); break; case 'rekapsetoran': loadRekapSetoran(); break; case 'inputbarang': loadInputBarang(); break; case 'stockbarang': loadStockBarang(); break; case 'cekstock': loadCekStock(); break; case 'cekkosongan': loadCekKosongan(); break; case 'pesanan': loadPesanan(); break; case 'titipan': loadTitipan(); break; case 'produk': loadProduk(); break; case 'pelanggan': loadPelanggan(); break; case 'pengaturan': loadPengaturan(); break; case 'pengaturanUser': loadPengaturanUser(); break; case 'grafik': loadGrafik(); break; case 'piutang': loadPiutang(); break; case 'laporanbulanan': loadLaporanBulanan(); break; case 'profit': loadProfit(); break; case 'auditlog': loadAuditLog(); break; case 'googlesheets': loadGoogleSheets(); break; } }
 
     // ========== DASHBOARD (MENU UTAMA) ==========
     function loadDashboard() {
@@ -3668,6 +3672,130 @@
     // CATATAN PENTING: GAS belum punya fungsi deleteSetoran, jadi data Setoran TIDAK dihapus
     // oleh tombol hapus bulanan ini — hanya ditampilkan untuk keperluan laporan/export.
     let _lapBulananYM = ''; // format 'YYYY-MM', bulan yang sedang dipilih
+
+    // ========== LAPORAN PROFIT ==========
+    let _profitFrom = '', _profitTo = '';
+    function loadProfit() {
+      const t = localDateStr();
+      _profitFrom = _profitFrom || t.substring(0,8) + '01';
+      _profitTo = _profitTo || t;
+      document.getElementById('contentArea').innerHTML = `
+        <div class="card">
+          <div class="card-title"><i class="fas fa-sack-dollar"></i> Laporan Profit</div>
+          <div class="flex-row" style="gap:8px;flex-wrap:wrap">
+            <div class="form-group col-1" style="margin:0"><label>Dari</label><input type="date" id="pfFrom" value="${_profitFrom}"></div>
+            <div class="form-group col-1" style="margin:0"><label>Sampai</label><input type="date" id="pfTo" value="${_profitTo}"></div>
+            <button class="btn btn-primary" onclick="tampilkanProfit()" style="height:44px;align-self:flex-end">📊 Tampilkan</button>
+          </div>
+          <div class="flex-row" style="gap:6px;flex-wrap:wrap;margin-top:8px">
+            <button class="btn btn-sm btn-outline" onclick="profitPreset('today')">Hari ini</button>
+            <button class="btn btn-sm btn-outline" onclick="profitPreset('week')">7 hari</button>
+            <button class="btn btn-sm btn-outline" onclick="profitPreset('month')">Bulan ini</button>
+            <button class="btn btn-sm btn-outline" onclick="profitPreset('lastmonth')">Bulan lalu</button>
+          </div>
+        </div>
+        <div id="profitOut"></div>`;
+      tampilkanProfit();
+    }
+    function profitPreset(k) {
+      const now = new Date(); let a, b = localDateStr(now);
+      if (k === 'today') a = b;
+      else if (k === 'week') { const d = new Date(now); d.setDate(d.getDate()-6); a = localDateStr(d); }
+      else if (k === 'month') a = b.substring(0,8) + '01';
+      else { const f = new Date(now.getFullYear(), now.getMonth()-1, 1), l = new Date(now.getFullYear(), now.getMonth(), 0); a = localDateStr(f); b = localDateStr(l); }
+      document.getElementById('pfFrom').value = a; document.getElementById('pfTo').value = b;
+      tampilkanProfit();
+    }
+    async function tampilkanProfit() {
+      const from = document.getElementById('pfFrom')?.value, to = document.getElementById('pfTo')?.value;
+      const out = document.getElementById('profitOut'); if (!out) return;
+      if (!from || !to || from > to) { out.innerHTML = '<div class="card text-center text-sm">Rentang tanggal tidak valid.</div>'; return; }
+      _profitFrom = from; _profitTo = to;
+      const dates = []; for (let d = new Date(from + 'T00:00:00'); localDateStr(d) <= to && dates.length < 93; d.setDate(d.getDate()+1)) dates.push(localDateStr(d));
+      out.innerHTML = '<div class="card text-center text-sm" style="padding:28px"><i class="fas fa-spinner fa-spin"></i> Menghitung profit…</div>';
+      try { await ensureTrxItemsForDates(dates); } catch(e) { console.warn('profit items:', e); }
+      const trxs = allTrxList.filter(t => { const d = (t.tgl||'').substring(0,10); return d >= from && d <= to; });
+      const bySku = {}, bySales = {}, byCust = {};
+      let omzet = 0, rev = 0, cost = 0, noModal = 0, noItems = 0, qtyAll = 0;
+      const add = (m, k, r, c, q) => { const o = m[k] || (m[k] = { rev:0, cost:0, qty:0 }); o.rev += r; o.cost += c; o.qty += q; };
+      trxs.forEach(t => {
+        omzet += (t.nett||0);
+        const its = Array.isArray(t.items) ? t.items : [];
+        if (!its.length) { noItems++; return; }
+        its.forEach(it => {
+          const q = it.qty||0, np = it.nettPer !== undefined ? it.nettPer : ((it.harga||0) - (it.discRpPer||0));
+          const r = np*q, c = (it.modal||0)*q;
+          if (!(it.modal > 0)) noModal++;
+          rev += r; cost += c; qtyAll += q;
+          add(bySku, (it.nama || it.sku || '-'), r, c, q);
+          add(bySales, (t.sales || 'Tanpa Sales'), r, c, q);
+          add(byCust, (t.customer || '-'), r, c, q);
+        });
+      });
+      const profit = rev - cost, margin = rev > 0 ? (profit / rev * 100) : 0;
+      const tbl = (title, icon, m, limit) => {
+        const rows = Object.entries(m).map(([k,v]) => ({ k, ...v, p: v.rev - v.cost })).sort((a,b) => b.p - a.p).slice(0, limit || 999);
+        if (!rows.length) return '';
+        return `<div class="card" style="padding:0;overflow:hidden"><div style="padding:12px 14px;font-weight:800;font-size:.85rem"><i class="fas ${icon}" style="color:var(--accent,#0EA5E9);margin-right:6px"></i>${title}</div><div class="table-wrap"><table><thead><tr><th>Nama</th><th style="text-align:right">Qty</th><th style="text-align:right">Omzet</th><th style="text-align:right">Profit</th><th style="text-align:right">Margin</th></tr></thead><tbody>${rows.map(r => `<tr><td style="font-weight:600">${esc(r.k)}</td><td style="text-align:right;font-family:var(--mono)">${r.qty}</td><td style="text-align:right;font-family:var(--mono)">${fmtRp(r.rev)}</td><td style="text-align:right;font-family:var(--mono);font-weight:800;color:${r.p<0?'#DC2626':'#16A34A'}">${fmtRp(r.p)}</td><td style="text-align:right;font-family:var(--mono)">${r.rev>0?(r.p/r.rev*100).toFixed(1):'0.0'}%</td></tr>`).join('')}</tbody></table></div></div>`;
+      };
+      const stat = (l, v, c) => `<div style="flex:1;min-width:130px;padding:12px;border-radius:14px;background:rgba(14,165,233,.10);border:1px solid rgba(14,165,233,.25)"><div style="font-size:.6rem;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--text3)">${l}</div><div style="font-family:var(--mono);font-weight:900;font-size:1.05rem;margin-top:3px;color:${c||'inherit'}">${v}</div></div>`;
+      let warn = '';
+      if (noItems) warn += `<div style="margin-top:10px;font-size:.72rem;color:#D97706">⚠️ ${noItems} transaksi tanpa detail item tidak ikut dihitung profitnya.</div>`;
+      if (noModal) warn += `<div style="margin-top:6px;font-size:.72rem;color:#D97706">⚠️ ${noModal} baris item belum punya harga modal (dianggap Rp 0) — profit bisa terlalu besar. Lengkapi modal di Master Produk.</div>`;
+      out.innerHTML = `<div class="card">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">${stat('Omzet (Nett)', fmtRp(omzet))}${stat('Modal', fmtRp(cost))}${stat('Profit', fmtRp(profit), profit<0?'#DC2626':'#16A34A')}${stat('Margin', margin.toFixed(1)+'%')}</div>
+        <div style="margin-top:8px;font-size:.7rem;color:var(--text3)">${fmtDate(from)} – ${fmtDate(to)} · ${trxs.length} transaksi · ${qtyAll} pcs. Profit dihitung dari item (harga nett − modal); diskon/biaya tambahan tingkat transaksi tidak ikut.</div>${warn}</div>
+        ${tbl('Profit per SKU', 'fa-box', bySku)}${tbl('Profit per Sales', 'fa-user-tie', bySales)}${tbl('Top 15 Customer', 'fa-users', byCust, 15)}`;
+    }
+
+    // ========== BACKUP & AUDIT LOG ==========
+    const _AUDIT_LBL = { deleteTrx:'Hapus transaksi', updateStatus:'Ubah status transaksi', deleteInputBarang:'Hapus input barang', updateInputBarang:'Ubah input barang', updateStockAwal:'Ubah stok awal', updateStockRow:'Ubah stok', saveUser:'Simpan user', deleteUser:'Hapus user', saveSettings:'Simpan pengaturan', cleanupDuplicateMasterStock:'Bersihkan duplikat stok', saveDrivers:'Simpan driver', deleteFoto:'Hapus foto', deleteTitipanEntry:'Hapus titipan', backupNow:'Backup manual', dailyBackup:'Backup harian' };
+    let _auditRows = [];
+    function loadAuditLog() {
+      document.getElementById('contentArea').innerHTML = `
+        <div class="card">
+          <div class="card-title"><i class="fas fa-database"></i> Backup Data</div>
+          <div class="text-sm" style="color:var(--text3);margin-bottom:10px">Backup otomatis berjalan tiap malam (~23.30) ke folder Drive “Backup Tirta Kencana”, 30 salinan terakhir disimpan. Anda juga bisa membuat salinan sekarang.</div>
+          <button class="btn btn-primary btn-block" id="btnBackupNow" onclick="backupNowUI()"><i class="fas fa-cloud-arrow-up"></i> Backup Sekarang</button>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden">
+          <div class="flex-between" style="padding:12px 14px"><div style="font-weight:800;font-size:.85rem"><i class="fas fa-clipboard-list" style="margin-right:6px"></i>Audit Log <span class="text-sm" style="color:var(--text3);font-weight:600">(300 terbaru)</span></div><button class="btn btn-sm btn-outline" onclick="refreshAuditLog()"><i class="fas fa-rotate"></i></button></div>
+          <div id="auditList" class="text-sm text-center" style="padding:24px;color:var(--text3)"><i class="fas fa-spinner fa-spin"></i> Memuat…</div>
+        </div>`;
+      refreshAuditLog();
+    }
+    async function refreshAuditLog() {
+      const el = document.getElementById('auditList'); if (!el) return;
+      el.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memuat…';
+      try {
+        const rows = await gasCall('getAuditLog', [], 0);
+        _auditRows = Array.isArray(rows) ? rows : [];
+        if (!_auditRows.length) { el.innerHTML = 'Belum ada catatan.'; return; }
+        el.style.padding = '0'; el.style.textAlign = 'left';
+        el.innerHTML = _auditRows.map((r,i) => { const bad = /^DITOLAK|^GAGAL/.test(r.hasil||''); return `<div onclick="showAuditDetail(${i})" style="display:flex;gap:10px;align-items:center;padding:10px 14px;border-top:1px solid rgba(128,150,180,.18);cursor:pointer"><div style="width:8px;height:8px;border-radius:50%;flex:none;background:${bad?'#DC2626':'#16A34A'}"></div><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:.82rem">${esc(_AUDIT_LBL[r.aksi]||r.aksi)}${bad?` <span style="color:#DC2626;font-size:.68rem">· ${esc(r.hasil)}</span>`:''}</div><div style="font-size:.68rem;color:var(--text3)">${esc(r.user||'-')} (${esc(r.role||'-')}) · ${esc(r.waktu)}</div></div><i class="fas fa-chevron-right" style="font-size:.7rem;color:var(--text3)"></i></div>`; }).join('');
+      } catch(e) {
+        el.innerHTML = '<div style="color:#DC2626">Gagal memuat: ' + esc(e.message||String(e)) + '</div><div style="margin-top:6px">Pastikan backend sudah di-deploy versi terbaru &amp; Anda login sebagai admin.</div>';
+      }
+    }
+    function showAuditDetail(i) {
+      const r = _auditRows[i]; if (!r) return;
+      const pretty = v => { try { return JSON.stringify(JSON.parse(v), null, 2); } catch(e) { return v || '-'; } };
+      Swal.fire({ title: esc(_AUDIT_LBL[r.aksi]||r.aksi), width: 560, confirmButtonText: 'Tutup',
+        html: `<div style="text-align:left;font-size:.78rem"><div><b>${esc(r.user||'-')}</b> (${esc(r.role||'-')}) · ${esc(r.waktu)} · ${esc(r.hasil)}</div><div style="margin-top:8px;font-weight:800">Argumen</div><pre style="white-space:pre-wrap;word-break:break-all;max-height:160px;overflow:auto;background:rgba(128,150,180,.14);padding:8px;border-radius:8px">${esc(pretty(r.args))}</pre>${r.before?`<div style="font-weight:800">Data sebelum diubah/dihapus</div><pre style="white-space:pre-wrap;word-break:break-all;max-height:200px;overflow:auto;background:rgba(220,38,38,.10);padding:8px;border-radius:8px">${esc(pretty(r.before))}</pre>`:''}</div>` });
+    }
+    async function backupNowUI() {
+      const c = await Swal.fire({ title:'Backup sekarang?', text:'Seluruh Google Sheet akan disalin ke Drive.', icon:'question', showCancelButton:true, confirmButtonText:'Ya, backup' });
+      if (!c.isConfirmed) return;
+      const btn = document.getElementById('btnBackupNow'); if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Membuat backup…'; }
+      try {
+        const r = await gasCall('backupNow', [], 0);
+        Swal.fire({ icon:'success', title:'Backup berhasil', html:`<div style="font-size:.85rem">${esc(r?.name||'')}<br><span style="color:#6B84A0">Tersimpan ${r?.kept||'?'} salinan</span></div>` });
+      } catch(e) {
+        Swal.fire({ icon:'error', title:'Backup gagal / belum selesai', text:(e.message||String(e)) + ' — cek folder “Backup Tirta Kencana” di Drive, mungkin tetap berhasil.' });
+      }
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-cloud-arrow-up"></i> Backup Sekarang'; }
+      refreshAuditLog();
+    }
 
     function loadLaporanBulanan() {
       const now = new Date();
@@ -7270,6 +7398,7 @@
           <div class="section-title">🚚 Driver</div><div class="tag-list" id="driverTagList"></div><div class="flex-row mt-2"><input id="newDriverName" placeholder="Nama driver baru" style="flex:1"><button class="btn btn-primary btn-sm" onclick="addDriverName()">+ Tambah</button></div>
           <div class="section-title">👥 Users</div><div id="userList" class="mb-2"></div><div class="flex-row"><input id="newUserName" placeholder="Nama" style="flex:1"><select id="newUserRole" style="width:100px"><option value="admin">Admin</option><option value="sales">Sales</option><option value="driver">Driver</option></select><input id="newUserPass" placeholder="Password" style="flex:1"><button class="btn btn-primary btn-sm" onclick="addUser()">+ Tambah</button></div>
           <button class="btn btn-primary btn-block mt-2" onclick="savePengaturan()">💾 Simpan Pengaturan</button>
+          <div class="section-title">🛡️ Keamanan Data</div><div class="flex-row mb-2"><button class="btn btn-outline" style="flex:1" onclick="navigateTo('auditlog')"><i class="fas fa-shield-halved"></i> Backup &amp; Audit Log</button><button class="btn btn-outline" style="flex:1" onclick="navigateTo('profit')"><i class="fas fa-sack-dollar"></i> Laporan Profit</button></div>
           <div class="section-title">🔗 Google Apps Script URL</div>
           <div class="form-group"><label>URL GAS (Google Apps Script)</label><input id="setGasUrl" placeholder="https://script.google.com/macros/s/..." style="font-size:0.65rem"></div>
           <div class="flex-row"><button class="btn btn-primary" style="flex:1" onclick="saveGasUrl()"><i class="fas fa-link"></i> Simpan URL</button><button class="btn btn-outline btn-sm" onclick="testGasConnection()"><i class="fas fa-plug"></i> Test Koneksi</button></div>
@@ -8426,6 +8555,8 @@ if ('serviceWorker' in navigator) {
       else if (currentPage === 'grafik') h = _pgHero('fa-chart-line', 'Grafik Penjualan', 'Tren harian, mingguan & bulanan');
       else if (currentPage === 'laporanbulanan') h = _pgHero('fa-calendar-days', 'Laporan Bulanan', 'Ringkasan penjualan, input barang & setoran');
       else if (currentPage === 'pengaturan') h = _pgHero('fa-gear', 'Pengaturan', 'Info toko, struk & pengguna');
+      else if (currentPage === 'profit') h = _pgHero('fa-sack-dollar', 'Laporan Profit', 'Untung per SKU, sales & customer');
+      else if (currentPage === 'auditlog') h = _pgHero('fa-shield-halved', 'Backup & Audit', 'Cadangan data & jejak aktivitas');
       if (h) el.insertAdjacentHTML('afterbegin', h);
     } catch(e) { console.warn('hero extra:', e); }
   };
