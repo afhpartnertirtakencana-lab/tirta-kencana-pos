@@ -1639,6 +1639,7 @@
               ${rankList(prodRank, v => v + ' pcs', prodRank.length ? prodRank[0][1] : 0)}
             </div>
           </div>
+          <div id="dxLowStock"></div>
           ${_dxRekapPanels(today, todayTx)}
         `;
       }
@@ -1648,6 +1649,7 @@
       // tab menu (desktop), jadi tidak perlu duplikasi di sini.
 
       document.getElementById('contentArea').innerHTML = h;
+      try { _dxLoadLowStock(); } catch(e) {}
       // Lengkapi item transaksi hari ini (sekali) agar rekap SKU/Customer akurat
       if (role !== 'driver' && !window._dxItemsLoading) {
         const need = allTrxList.some(t => (t.tgl||'').substring(0,10) === today && !(Array.isArray(t.items) && t.items.length));
@@ -3151,7 +3153,7 @@
     }
     function pgGoto(key, page) { _pgState[key] = page; const fn = window['_pgRerender_' + key]; if (typeof fn === 'function') fn(); }
 
-    function renderTrxTable(filtered = allTrxList, _pgKeep = false) { const tb = document.getElementById('trxTbody'); if (!tb) return; try { _txUpdateHero(filtered); } catch(e) {} if (!_pgKeep) pgReset('trx'); window._pgRerender_trx = () => renderTrxTable(filtered, true); if (!filtered.length) { tb.innerHTML = '<tr><td colspan="9" class="text-center text-sm" style="padding:32px">Tidak ada transaksi</td></tr>'; const pb0 = document.getElementById('trxPaginationBar'); if (pb0) pb0.innerHTML = ''; return; } try { _txUpdateHero(filtered); } catch(e) {} const _pg = pgSlice(filtered, 'trx', 25); const pb = document.getElementById('trxPaginationBar'); if (pb) pb.innerHTML = pgBar('trx', _pg.page, _pg.totalPages, _pg.total, _pg.pageSize); const _isAdmin = currentUser?.role === 'admin'; tb.innerHTML = _pg.items.map(t => `<tr class="tx-row st-${esc(t.status||'')}"><td data-label="ID" class="tx-id">${esc(t.id)}</td><td data-label="Tanggal" class="tx-tgl">${fmtDate(t.tgl)}</td><td data-label="Customer" class="tx-cust">${esc(t.customer||'-')}</td><td data-label="Sales" class="tx-sales">${esc(t.sales||'-')}</td><td data-label="Gross" class="tx-num">${fmtRp(t.gross)}</td><td data-label="Diskon" class="tx-num tx-disc">${fmtRp(t.diskon)}</td><td data-label="Nett" class="tx-nett">${fmtRp(t.nett)}</td><td data-label="Status" class="tx-stat"><select class="form-control tx-sel" onchange="updateTrxStatus('${esc(t.id).replace(/'/g,"\\'")}', this.value)"><option value="cod" ${t.status==='cod'?'selected':''}>COD</option><option value="transfer" ${t.status==='transfer'?'selected':''}>Transfer</option><option value="qris" ${t.status==='qris'?'selected':''}>QRIS</option><option value="belumTransfer" ${t.status==='belumTransfer'?'selected':''}>Belum</option></select></td><td data-label="" class="tx-act"><button class="btn btn-sm btn-primary" onclick="cetakUlangStruk('${esc(t.id).replace(/'/g,"\\'")}')">🧾 Cetak</button>${_isAdmin ? `<button class="btn btn-sm btn-outline" onclick="editTrx('${esc(t.id).replace(/'/g,"\\'")}')">✏️</button>` : ''}<button class="btn btn-sm btn-danger" onclick="deleteTrx('${esc(t.id).replace(/'/g,"\\'")}')">🗑</button></td></tr>`).join(''); }
+    function renderTrxTable(filtered = allTrxList, _pgKeep = false) { const tb = document.getElementById('trxTbody'); if (!tb) return; try { _txUpdateHero(filtered); } catch(e) {} if (!_pgKeep) pgReset('trx'); window._pgRerender_trx = () => renderTrxTable(filtered, true); if (!filtered.length) { tb.innerHTML = '<tr><td colspan="9" class="text-center text-sm" style="padding:32px">Tidak ada transaksi</td></tr>'; const pb0 = document.getElementById('trxPaginationBar'); if (pb0) pb0.innerHTML = ''; return; } try { _txUpdateHero(filtered); } catch(e) {} const _pg = pgSlice(filtered, 'trx', 25); const pb = document.getElementById('trxPaginationBar'); if (pb) pb.innerHTML = pgBar('trx', _pg.page, _pg.totalPages, _pg.total, _pg.pageSize); const _isAdmin = currentUser?.role === 'admin'; tb.innerHTML = _pg.items.map(t => `<tr class="tx-row st-${esc(t.status||'')}"><td data-label="ID" class="tx-id">${esc(t.id)}</td><td data-label="Tanggal" class="tx-tgl">${fmtDate(t.tgl)}</td><td data-label="Customer" class="tx-cust">${esc(t.customer||'-')}</td><td data-label="Sales" class="tx-sales">${esc(t.sales||'-')}</td><td data-label="Gross" class="tx-num">${fmtRp(t.gross)}</td><td data-label="Diskon" class="tx-num tx-disc">${fmtRp(t.diskon)}</td><td data-label="Nett" class="tx-nett">${fmtRp(t.nett)}</td><td data-label="Status" class="tx-stat"><select class="form-control tx-sel" onchange="updateTrxStatus('${esc(t.id).replace(/'/g,"\\'")}', this.value)"><option value="cod" ${t.status==='cod'?'selected':''}>COD</option><option value="transfer" ${t.status==='transfer'?'selected':''}>Transfer</option><option value="qris" ${t.status==='qris'?'selected':''}>QRIS</option><option value="belumTransfer" ${t.status==='belumTransfer'?'selected':''}>Belum</option></select></td><td data-label="" class="tx-act"><button class="btn tx-b tx-b-print btn-primary" onclick="cetakUlangStruk('${esc(t.id).replace(/'/g,"\\'")}')">🧾 Cetak</button>${_isAdmin ? `<button class="btn tx-b tx-b-edit btn-outline" onclick="editTrx('${esc(t.id).replace(/'/g,"\\'")}')">✏️ Edit</button>` : ''}<button class="btn tx-b tx-b-del" title="Hapus transaksi" aria-label="Hapus transaksi" onclick="deleteTrx('${esc(t.id).replace(/'/g,"\\'")}')">🗑</button></td></tr>`).join(''); }
 
     async function cetakUlangStruk(id) {
       let trx = allTrxList.find(t => t.id === id);
@@ -3191,7 +3193,16 @@
         filterTrx();
       }
     }
-    async function deleteTrx(id) { const confirm = await Swal.fire({ title:'Hapus?', text:'Hapus transaksi '+id+'?', icon:'warning', showCancelButton:true }); if (confirm.isConfirmed) { const trx = allTrxList.find(t => t.id === id); allTrxList = allTrxList.filter(t => t.id !== id); saveLocalData(); enqueueSync('deleteTrx', [id], 'Hapus transaksi ' + id); if (trx) logEditAction('transaksi', id, trx.customer || id, trx, null); filterTrx(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Transaksi dihapus' }); } }
+    // Dialog konfirmasi hapus yang seragam: tombol "Batal" fokus default supaya tidak terhapus tak sengaja.
+    function _delOpts(title, detail) {
+      return { title, html: '<div style="font-size:.9rem">' + detail + '</div><div style="margin-top:10px;font-size:.78rem;color:#DC2626;font-weight:700">Tindakan ini tidak bisa dibatalkan.</div>',
+        icon:'warning', showCancelButton:true, confirmButtonText:'Ya, hapus', cancelButtonText:'Batal', confirmButtonColor:'#DC2626', cancelButtonColor:'#64748B', focusCancel:true, reverseButtons:true };
+    }
+    function _delTrxDetail(id) {
+      const t = allTrxList.find(x => x.id === id);
+      return t ? '<b>' + esc(t.customer||'-') + '</b><br><span style="font-family:monospace;font-size:.78rem">' + esc(id) + '</span> · ' + esc(fmtDate(t.tgl)) + '<br>Total <b>' + fmtRp(t.nett||0) + '</b>' : 'Transaksi <b>' + esc(id) + '</b>';
+    }
+    async function deleteTrx(id) { const confirm = await Swal.fire(_delOpts('Hapus transaksi?', _delTrxDetail(id))); if (confirm.isConfirmed) { const trx = allTrxList.find(t => t.id === id); allTrxList = allTrxList.filter(t => t.id !== id); saveLocalData(); enqueueSync('deleteTrx', [id], 'Hapus transaksi ' + id); if (trx) logEditAction('transaksi', id, trx.customer || id, trx, null); filterTrx(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Transaksi dihapus' }); } }
     function openStrukById(id) { const trx = allTrxList.find(t => t.id === id); if (!trx) return Swal.fire('Error','Transaksi tidak ditemukan','error'); _strKData = { trx, items: trx.items || [] }; showStrukModal(); }
 
     // ========== SCANNER ==========
@@ -3463,8 +3474,8 @@
         </div>
 
         <div class="pt-sec-h"><div class="pt-sec-t"><i class="fas fa-users"></i> Rekap per Customer</div><button class="btn btn-sm btn-primary" onclick="cetakPiutangCustomer()"><i class="fas fa-receipt"></i> Cetak</button></div>
-        <div class="card tx-card" style="padding:0;overflow:hidden"><div class="table-wrap"><table class="tx-table pt-table"><thead><tr><th>Customer</th><th style="text-align:right">Jml Trx</th><th style="text-align:right">Total</th><th>Terlama</th></tr></thead><tbody>
-          ${custRows.length ? custRows.map(r=>{const ag=agingLabel(r.oldest);return`<tr class="tx-row pt-row"><td data-label="Customer" class="pt-name">${esc(r.customer)}</td><td data-label="Jml Trx" class="pt-cnt">${r.count} transaksi</td><td data-label="Total" class="pt-total">${fmtRp(r.total)}</td><td data-label="Terlama" class="pt-age"><span style="color:${_agCol[ag.cls]||'#D97706'};font-weight:800">${ag.label}</span></td></tr>`;}).join('') : '<tr><td colspan="4" class="text-center text-sm" style="padding:28px">Tidak ada piutang 🎉</td></tr>'}
+        <div class="card tx-card" style="padding:0;overflow:hidden"><div class="table-wrap"><table class="tx-table pt-table"><thead><tr><th>Customer</th><th style="text-align:right">Jml Trx</th><th style="text-align:right">Total</th><th>Terlama</th><th>Aksi</th></tr></thead><tbody>
+          ${custRows.length ? custRows.map(r=>{const ag=agingLabel(r.oldest);const _ci=custRows.indexOf(r);return`<tr class="tx-row pt-row"><td data-label="Customer" class="pt-name">${esc(r.customer)}</td><td data-label="Jml Trx" class="pt-cnt">${r.count} transaksi</td><td data-label="Total" class="pt-total">${fmtRp(r.total)}</td><td data-label="Terlama" class="pt-age"><span style="color:${_agCol[ag.cls]||'#D97706'};font-weight:800">${ag.label}</span></td><td data-label="" class="pt-act"><button class="btn btn-sm btn-primary" onclick="tagihWaIdx(${_ci})">💬 Tagih WA</button></td></tr>`;}).join('') : '<tr><td colspan="5" class="text-center text-sm" style="padding:28px">Tidak ada piutang 🎉</td></tr>'}
         </tbody></table></div></div>
 
         <div class="pt-sec-h"><div class="pt-sec-t"><i class="fas fa-list"></i> Detail Transaksi Belum Bayar</div><button class="btn btn-sm btn-primary" onclick="cetakPiutangDetail()"><i class="fas fa-receipt"></i> Cetak</button></div>
@@ -3672,6 +3683,48 @@
     // CATATAN PENTING: GAS belum punya fungsi deleteSetoran, jadi data Setoran TIDAK dihapus
     // oleh tombol hapus bulanan ini — hanya ditampilkan untuk keperluan laporan/export.
     let _lapBulananYM = ''; // format 'YYYY-MM', bulan yang sedang dipilih
+
+    // ========== TAGIH PIUTANG VIA WA (per customer, rinci + rekening) ==========
+    function tagihWaIdx(i) {
+      const r = (window._piutangCustRows || [])[i]; if (!r) return;
+      const today = localDateStr();
+      const trx = (window._piutangData || []).filter(t => (t.customer||'') === r.customer).sort((a,b) => String(a.tgl).localeCompare(String(b.tgl)));
+      const L = [`Halo *${r.customer}*, 👋`, '', `Pengingat tagihan dari *${settings.namaToko||'Tirta Kencana'}*:`, ''];
+      trx.forEach(t => { const d = Math.floor((new Date(today) - new Date(String(t.tgl).substring(0,10))) / 86400000); L.push(`• ${fmtDate(t.tgl)} — ${fmtRp(t.nett||0)}${d > 0 ? ` (${d} hari)` : ''}`); });
+      L.push('', `💰 *Total tagihan: ${fmtRp(r.total)}*`);
+      const banks = [settings.bank1, settings.bank2].filter(b => b && b.nama && b.norek);
+      if (banks.length) { L.push('', 'Transfer ke:'); banks.forEach(b => L.push(`🏦 ${b.nama} ${b.norek} a.n. ${b.penerima||'-'}`)); }
+      L.push('', 'Mohon konfirmasi pembayarannya ya, terima kasih 🙏');
+      kirimWaKeNomorPelanggan(r.customer, L.join('\n'));
+    }
+
+    // ========== STOK MENIPIS (batas minimum per SKU, disimpan lokal di perangkat) ==========
+    const MINSTOK_KEY = 'tirtaMinStok';
+    function _minStokLoad() { try { return JSON.parse(localStorage.getItem(MINSTOK_KEY) || '{}') || {}; } catch(e) { return {}; } }
+    async function _dxLoadLowStock() {
+      const el = document.getElementById('dxLowStock'); if (!el) return;
+      const mins = _minStokLoad();
+      const hasMin = Object.keys(mins).some(k => mins[k] > 0);
+      const head = (ttl, ic, col) => `<div class="dx-panel-head"><span><i class="fas ${ic}" style="color:${col};margin-right:6px"></i>${ttl}</span><button class="btn btn-sm btn-outline" onclick="showMinStokSettings()">Atur</button></div>`;
+      if (!hasMin) { el.innerHTML = `<div class="dx-panel" style="margin-bottom:12px">${head('Stok Menipis','fa-triangle-exclamation','#F59E0B')}<div class="text-sm" style="color:var(--text3);padding:6px 2px">Belum ada batas minimum. Atur agar barang yang hampir habis muncul di sini.</div></div>`; return; }
+      let rows = [];
+      try { rows = await getCorrectedStockBarangForDate(localDateStr()); } catch(e) { console.warn('lowstock:', e); }
+      if (!document.getElementById('dxLowStock')) return; // user sudah pindah halaman
+      const low = (rows||[]).filter(r => mins[r.sku] > 0 && (r.stokAkhir||0) <= mins[r.sku]).sort((a,b) => ((a.stokAkhir||0)/mins[a.sku]) - ((b.stokAkhir||0)/mins[b.sku]));
+      if (!low.length) { el.innerHTML = `<div class="dx-panel" style="margin-bottom:12px">${head('Stok Aman','fa-circle-check','#16A34A')}<div class="text-sm" style="color:var(--text3);padding:6px 2px">Semua barang di atas batas minimum.</div></div>`; return; }
+      el.innerHTML = `<div class="dx-panel" style="margin-bottom:12px;border-color:rgba(245,158,11,.5)">${head('Stok Menipis · '+low.length+' barang','fa-triangle-exclamation','#F59E0B')}
+        ${low.slice(0,12).map(r => { const hab = (r.stokAkhir||0) <= 0; return `<div class="flex-between" style="padding:7px 2px;border-top:1px solid rgba(128,150,180,.18)"><span style="font-weight:700;font-size:.82rem">${esc(r.nama||r.sku)}</span><span style="font-family:var(--mono);font-weight:800;font-size:.8rem;color:${hab?'#DC2626':'#D97706'}">${r.stokAkhir||0} <span style="color:var(--text3);font-weight:600">/ min ${mins[r.sku]}</span></span></div>`; }).join('')}
+        <button class="btn btn-sm btn-primary btn-block" style="margin-top:8px" onclick="navigateTo('pesanan')"><i class="fas fa-cart-flatbed"></i> Buat Pesanan</button></div>`;
+    }
+    function showMinStokSettings() {
+      const mins = _minStokLoad();
+      const list = (products||[]).filter(p => p && p.sku);
+      if (!list.length) { Swal.fire('Info', 'Belum ada produk.', 'info'); return; }
+      Swal.fire({ title: 'Batas Minimum Stok', width: 520, showCancelButton: true, confirmButtonText: 'Simpan', cancelButtonText: 'Batal',
+        html: `<div style="text-align:left;font-size:.78rem;color:#6B84A0;margin-bottom:8px">Isi jumlah minimum per SKU. Kosongkan / 0 untuk tidak dipantau. Tersimpan di perangkat ini.</div><div style="max-height:50vh;overflow:auto">${list.map(p => `<div style="display:flex;align-items:center;gap:8px;padding:5px 0"><div style="flex:1;text-align:left;font-weight:600;font-size:.82rem">${esc(p.nama||p.sku)}<div style="font-size:.65rem;color:#6B84A0">${esc(p.sku)}</div></div><input type="number" min="0" class="swal2-input msInp" data-sku="${esc(p.sku)}" value="${mins[p.sku]||''}" placeholder="0" style="width:90px;margin:0;text-align:right"></div>`).join('')}</div>`,
+        preConfirm: () => { const o = {}; document.querySelectorAll('.msInp').forEach(i => { const v = parseInt(i.value, 10); if (v > 0) o[i.dataset.sku] = v; }); return o; }
+      }).then(r => { if (!r.isConfirmed) return; try { localStorage.setItem(MINSTOK_KEY, JSON.stringify(r.value)); } catch(e) {} if (currentPage === 'dashboard') _dxLoadLowStock(); Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:1500, icon:'success', title:'Batas minimum tersimpan' }); });
+    }
 
     // ========== LAPORAN PROFIT ==========
     let _profitFrom = '', _profitTo = '';
@@ -4912,7 +4965,7 @@
           <td>${esc(s.driver||'-')}</td>
           <td>${esc(s.rit||'-')}</td>
           <td><select style="font-size:0.65rem;padding:2px 4px;border:1px solid var(--border);border-radius:6px;background:var(--surface)" onchange="editStockStatus('${esc(s.id).replace(/'/g,"\\'")}',this.value)"><option value="kiriman" ${s.status==='kiriman'?'selected':''}>Kiriman</option><option value="titipan" ${s.status==='titipan'?'selected':''}>Titipan</option></select></td>
-          <td style="display:flex;gap:3px"><button class="btn btn-sm btn-primary" onclick="cetakStrukInputBarang('${esc(s.id).replace(/'/g,"\\'")}')">🧾 Cetak</button><button class="btn btn-danger btn-sm" onclick="deleteStockIn('${esc(s.id).replace(/'/g,"\\'")}')">🗑</button></td>
+          <td style="display:flex;gap:8px;align-items:center"><button class="btn act-btn btn-primary" onclick="cetakStrukInputBarang('${esc(s.id).replace(/'/g,"\\'")}')">🧾 Cetak</button><button class="btn act-sq act-del" style="margin-left:6px" title="Hapus" aria-label="Hapus input barang" onclick="deleteStockIn('${esc(s.id).replace(/'/g,"\\'")}')">🗑</button></td>
         </tr>`;
       }).join('');
       return `<div class="card mt-2"><div class="card-title"><i class="fas fa-clipboard-list"></i> Detail Input Barang</div><div class="table-wrap"><table><thead><tr><th>ID</th><th>Tanggal</th><th>SKU</th><th>Nama</th><th>Qty</th><th>Disc</th><th>Harga Modal</th><th>Net Modal</th><th>Driver</th><th>Rit</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${rows}</tbody></tr></div></div>`;
@@ -5045,6 +5098,7 @@
               </div>
             </div>
             <button class="btn btn-primary" onclick="doStockBarang()" style="height:44px;align-self:flex-end">📊 Tampilkan</button>
+            <button class="btn btn-outline" onclick="showMinStokSettings()" style="height:44px;align-self:flex-end" title="Atur batas minimum stok per SKU">⚠️ Batas Minimum</button>
             <button class="btn btn-warning" onclick="rolloverStokAwal()" style="height:44px;align-self:flex-end" title="Jadikan stok akhir kemarin sebagai stok awal hari ini">🔄 Rollover Stok</button>
           </div>
           <div class="flex-row mb-2" style="gap:8px;flex-wrap:wrap;align-items:center">
@@ -5652,7 +5706,7 @@
       return `<div class="flex-row" style="gap:6px;margin-bottom:6px;align-items:center" data-idx="${i}">
         <input type="text" value="${esc(r.nama||'')}" placeholder="Nama" oninput="ckRowChange('${type}',${i},'nama',this.value)" style="flex:2;padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:0.8rem">
         <input type="number" value="${r.qty||''}" placeholder="Qty" oninput="ckRowChange('${type}',${i},'qty',this.value)" style="flex:1;padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:0.8rem">
-        <button class="btn btn-sm btn-danger" onclick="ckRemoveRow('${type}',${i})" style="padding:6px 10px"><i class="fas fa-trash"></i></button>
+        <button class="btn act-sq act-del" onclick="ckRemoveRow('${type}',${i})" title="Hapus baris" aria-label="Hapus baris"><i class="fas fa-trash"></i></button>
       </div>`;
     }
     function ckAddRow(type) {
@@ -5660,7 +5714,10 @@
       _saveCK(localDateStr(), window._ckToday);
       renderCekKosonganPage();
     }
-    function ckRemoveRow(type, i) {
+    async function ckRemoveRow(type, i) {
+      const _row = (window._ckToday[type] || [])[i];
+      const _ok = await Swal.fire(_delOpts('Hapus baris ini?', '<b>' + esc((_row && (_row.nama || _row.name)) || ('Baris ' + (i+1))) + '</b>'));
+      if (!_ok.isConfirmed) return;
       window._ckToday[type].splice(i, 1);
       _saveCK(localDateStr(), window._ckToday);
       renderCekKosonganPage();
@@ -5885,7 +5942,7 @@
           <button class="btn btn-primary btn-block mt-2" onclick="pesananSubmitCart()"><i class="fas fa-save"></i> Simpan Pesanan</button>
           <div class="table-wrap mt-2"><table>
             <thead><tr><th>Sales</th><th>Customer</th><th>SKU</th><th>Nama Barang</th><th style="text-align:center">Qty</th><th></th></tr></thead>
-            <tbody>${d.entries.length === 0 ? '<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:16px">Belum ada pesanan diinput</td></tr>' : d.entries.map(e => `<tr><td>${esc(e.sales||'-')}</td><td>${esc(e.customer||'-')}</td><td style="font-family:var(--mono);font-size:11px">${esc(e.sku||'-')}</td><td>${esc(e.nama||'-')}</td><td style="text-align:center;font-weight:700">${e.qty}</td><td><button class="btn btn-sm btn-danger" onclick="pesananRemoveEntry('${e.id}')"><i class="fas fa-trash"></i></button></td></tr>`).join('')}</tbody>
+            <tbody>${d.entries.length === 0 ? '<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:16px">Belum ada pesanan diinput</td></tr>' : d.entries.map(e => `<tr><td>${esc(e.sales||'-')}</td><td>${esc(e.customer||'-')}</td><td style="font-family:var(--mono);font-size:11px">${esc(e.sku||'-')}</td><td>${esc(e.nama||'-')}</td><td style="text-align:center;font-weight:700">${e.qty}</td><td><button class="btn act-sq act-del" title="Hapus pesanan" aria-label="Hapus pesanan" onclick="pesananRemoveEntry('${e.id}')"><i class="fas fa-trash"></i></button></td></tr>`).join('')}</tbody>
           </table></div>
         </div>
 
@@ -5969,7 +6026,10 @@
       renderPesananPage();
       Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:1500, icon:'success', title: newEntries.length + ' barang ditambahkan ke pesanan' });
     }
-    function pesananRemoveEntry(id) {
+    async function pesananRemoveEntry(id) {
+      const _e = (window._pesananData.entries || []).find(x => x.id === id);
+      const _ok = await Swal.fire(_delOpts('Hapus pesanan?', _e ? '<b>' + esc(_e.customer||'-') + '</b><br>' + esc(_e.nama||_e.sku||'-') + ' × ' + esc(String(_e.qty)) : 'Pesanan ini'));
+      if (!_ok.isConfirmed) return;
       window._pesananData.entries = window._pesananData.entries.filter(e => e.id !== id);
       _savePesanan(localDateStr(), window._pesananData);
       renderPesananPage();
@@ -6366,7 +6426,7 @@
                   <td style="font-size:0.75rem;color:var(--text2)">${esc(e.customer||'-')}</td>
                   <td style="text-align:center;font-weight:700;color:#16A34A">${e.tipe==='masuk' ? e.qty : ''}</td>
                   <td style="text-align:center;font-weight:700;color:#EF4444">${e.tipe==='keluar' ? e.qty : ''}</td>
-                  <td><button class="btn btn-sm btn-ghost" onclick="titipanRemoveEntry('${e.id}')"><i class="fas fa-trash" style="color:var(--text3)"></i></button></td>
+                  <td><button class="btn act-sq act-del" title="Hapus titipan" aria-label="Hapus titipan" onclick="titipanRemoveEntry('${e.id}')"><i class="fas fa-trash"></i></button></td>
                 </tr>`).join('');
               }).join('')}</tbody>
               <tfoot><tr style="font-weight:900;background:var(--surface2)"><td colspan="3">Grand Total</td><td style="text-align:center;color:#16A34A">${grandMasuk}</td><td style="text-align:center;color:#EF4444">${grandKeluar}</td><td></td></tr></tfoot>
@@ -6418,7 +6478,10 @@
       renderTitipanPage();
       Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:1200, icon:'success', title:'Titipan ditambahkan' });
     }
-    function titipanRemoveEntry(id) {
+    async function titipanRemoveEntry(id) {
+      const _e = (window._titipanList || []).find(x => x.id === id);
+      const _ok = await Swal.fire(_delOpts('Hapus catatan titipan?', _e ? '<b>' + esc(_e.nama||_e.sku||'-') + '</b> · ' + esc(String(_e.tipe||'')) + ' ' + esc(String(_e.qty||'')) : 'Catatan ini'));
+      if (!_ok.isConfirmed) return;
       window._titipanList = window._titipanList.filter(e => e.id !== id);
       enqueueSync('deleteTitipanEntry', [id], 'Hapus titipan ' + id);
       renderTitipanPage();
@@ -6969,7 +7032,7 @@
           <td>${esc(s.driver||'-')}</td>
           <td>${esc(s.rit||'-')}</td>
           <td><select style="font-size:0.65rem;padding:2px 4px;border:1px solid var(--border);border-radius:6px;background:var(--surface)" onchange="editStockStatus('${esc(s.id).replace(/'/g,"\\'")}',this.value)"><option value="kiriman" ${s.status==='kiriman'?'selected':''}>Kiriman</option><option value="titipan" ${s.status==='titipan'?'selected':''}>Titipan</option></select></td>
-          <td><button class="btn btn-danger btn-sm" onclick="deleteStockIn('${esc(s.id).replace(/'/g,"\\'")}')">🗑</button></td>
+          <td><button class="btn act-sq act-del" title="Hapus" aria-label="Hapus input barang" onclick="deleteStockIn('${esc(s.id).replace(/'/g,"\\'")}')">🗑</button></td>
         </tr>`;
       }).join('');
       el.innerHTML = `<div class="table-wrap"><table><thead><tr><th>ID</th><th>Tanggal</th><th>SKU</th><th>Nama</th><th>Qty</th><th>Disc</th><th>Harga Modal</th><th>Net Modal</th><th>Driver</th><th>Rit</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${rows}</tbody></table></div>`;
@@ -6992,7 +7055,7 @@
       }
     }
     async function deleteStockIn(id) {
-      const confirm = await Swal.fire({ title:'Hapus?', text:'Hapus data input barang '+id+'?', icon:'warning', showCancelButton:true });
+      const confirm = await Swal.fire(_delOpts('Hapus input barang?', 'Data input barang <b>'+esc(id)+'</b>'));
       if (confirm.isConfirmed) {
         const rec = stockInHistory.find(s => s.id === id);
         stockInHistory = stockInHistory.filter(s => s.id !== id);
@@ -7156,9 +7219,9 @@
               </div>
             </div>
           </div>
-          <div style="display:flex;flex-direction:column;gap:6px;min-width:36px;">
-            <button class="btn btn-sm btn-outline btn-icon" onclick="openProdukForm(${i})" title="Edit" style="border-radius:8px;"><i class="fas fa-pen"></i></button>
-            <button class="btn btn-sm btn-danger btn-icon" onclick="deleteProduk(${i})" title="Hapus" style="border-radius:8px;"><i class="fas fa-trash"></i></button>
+          <div style="display:flex;flex-direction:column;gap:12px;min-width:38px;">
+            <button class="btn act-sq btn-outline" onclick="openProdukForm(${i})" title="Edit" aria-label="Edit produk"><i class="fas fa-pen"></i></button>
+            <button class="btn act-sq act-del" onclick="deleteProduk(${i})" title="Hapus" aria-label="Hapus produk"><i class="fas fa-trash"></i></button>
           </div>
         </div>
       `;
@@ -7167,7 +7230,7 @@
     function openProdukForm(idx) { document.getElementById('editProdIdx').value = idx; if (idx >= 0 && products[idx]) { const p = products[idx]; document.getElementById('produkModalTitle').textContent = 'Edit Produk'; document.getElementById('prodSku').value = p.sku||''; document.getElementById('prodBarcode').value = p.barcode||''; document.getElementById('prodNama').value = p.nama||''; document.getElementById('prodJual').value = p.jual||p.harga||0; document.getElementById('prodModal').value = p.modal||0; document.getElementById('prodStok').value = p.stokAwal||0; } else { document.getElementById('produkModalTitle').textContent = 'Tambah Produk'; ['prodSku','prodBarcode','prodNama'].forEach(id => document.getElementById(id).value = ''); document.getElementById('prodJual').value = ''; document.getElementById('prodModal').value = ''; document.getElementById('prodStok').value = ''; } document.getElementById('produkModal').classList.add('show'); }
     function closeProdukForm() { document.getElementById('produkModal').classList.remove('show'); }
     function saveProduk() { const sku = document.getElementById('prodSku').value.trim(), nama = document.getElementById('prodNama').value.trim(); if (!sku || !nama) return Swal.fire('Error','SKU dan Nama wajib diisi','error'); const obj = { sku, barcode: document.getElementById('prodBarcode').value.trim(), nama, jual: parseFloat(document.getElementById('prodJual').value)||0, harga: parseFloat(document.getElementById('prodJual').value)||0, modal: parseFloat(document.getElementById('prodModal').value)||0, stokAwal: parseInt(document.getElementById('prodStok').value)||0 }; const idx = parseInt(document.getElementById('editProdIdx').value); if (idx >= 0 && products[idx]) { const before = {...products[idx]}; products[idx] = obj; logEditAction('produk', sku, nama, before, obj); } else products.push(obj); saveLocalData(); closeProdukForm(); renderProdukList(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Produk disimpan' }); syncProductsToSheet(); }
-    function deleteProduk(idx) { const p = products[idx]; Swal.fire({ title:'Hapus?', text:'Hapus '+products[idx].nama+'?', icon:'warning', showCancelButton:true }).then(r => { if (r.isConfirmed) { products.splice(idx,1); saveLocalData(); renderProdukList(); if (p) logEditAction('produk', p.sku, p.nama, p, null); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Produk dihapus' }); syncProductsToSheet(); } }); }
+    function deleteProduk(idx) { const p = products[idx]; Swal.fire(_delOpts('Hapus produk?', '<b>'+esc(products[idx].nama)+'</b>')).then(r => { if (r.isConfirmed) { products.splice(idx,1); saveLocalData(); renderProdukList(); if (p) logEditAction('produk', p.sku, p.nama, p, null); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Produk dihapus' }); syncProductsToSheet(); } }); }
 
     // ========== PELANGGAN ==========
     function loadPelanggan() { document.getElementById('contentArea').innerHTML = `<div class="card"><div class="flex-between mb-2"><div class="card-title"><i class="fas fa-address-book"></i> Daftar Pelanggan</div><div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button class="btn btn-outline btn-sm" onclick="btnSyncPelangganToSheet()" title="Kirim data pelanggan lokal ke Google Sheets"><i class="fas fa-cloud-upload-alt"></i> Sync ke Sheets</button><button class="btn btn-outline btn-sm" onclick="btnSyncPelangganFromSheet()" title="Ambil data pelanggan terbaru dari Google Sheets"><i class="fas fa-cloud-download-alt"></i> Sync ke Aplikasi</button><button class="btn btn-primary btn-sm" onclick="addPelanggan()">+ Tambah</button></div></div><input id="pelangganSearch" class="form-control mb-2" placeholder="🔍 Cari nama pelanggan…" oninput="renderPelangganList()"><div class="table-wrap"><table><thead><tr><th>#</th><th>Nama</th><th style="text-align:center" title="Jumlah transaksi bulan ini">Transaksi<br><span style="font-weight:400;font-size:0.6rem;opacity:.7">Bulan Ini</span></th><th style="text-align:right">Piutang</th><th>Aksi</th></tr></thead><tbody id="pelangganTbody"></tbody></table></div><div id="pelangganPaginationBar"></div></div>`; renderPelangganList(); }
@@ -7203,7 +7266,7 @@
           <td class="fw-bold">${esc(c)}</td>
           <td style="text-align:center;font-family:var(--mono)">${jumlahTrx || '-'}</td>
           <td style="text-align:right;font-family:var(--mono);font-weight:700;color:${piutang>0?'var(--merah)':'var(--text3)'}">${piutang>0?fmtRp(piutang):'-'}</td>
-          <td style="display:flex;gap:3px;flex-wrap:wrap;min-width:120px"><button class="btn btn-sm btn-outline" onclick="showPelangganDetail('${esc(c).replace(/'/g,"\\'")}')" title="Lihat riwayat & piutang"><i class="fas fa-eye"></i></button><button class="btn btn-sm btn-outline" onclick="editCustomerPhone('${esc(c).replace(/'/g,"\\'")}')" title="Atur nomor WA"><i class="fas fa-phone"></i></button><button class="btn btn-sm btn-outline" onclick="editCustomerAddress('${esc(c).replace(/'/g,"\\'")}')" title="Atur alamat"><i class="fas fa-map-marker-alt"></i></button><button class="btn btn-sm btn-outline" onclick="openCustomerAddressInMaps('${esc(c).replace(/'/g,"\\'")}')" title="Buka di Google Maps"><i class="fas fa-location-arrow"></i></button><button class="btn btn-sm btn-danger" onclick="deletePelanggan(${i})">🗑</button></td>
+          <td><div class="pl-act"><button class="btn act-sq btn-outline" onclick="showPelangganDetail('${esc(c).replace(/'/g,"\\'")}')" title="Lihat riwayat & piutang"><i class="fas fa-eye"></i></button><button class="btn act-sq btn-outline" onclick="editCustomerPhone('${esc(c).replace(/'/g,"\\'")}')" title="Atur nomor WA"><i class="fas fa-phone"></i></button><button class="btn act-sq btn-outline" onclick="editCustomerAddress('${esc(c).replace(/'/g,"\\'")}')" title="Atur alamat"><i class="fas fa-map-marker-alt"></i></button><button class="btn act-sq btn-outline" onclick="openCustomerAddressInMaps('${esc(c).replace(/'/g,"\\'")}')" title="Buka di Google Maps"><i class="fas fa-location-arrow"></i></button><button class="btn act-sq act-del" title="Hapus pelanggan" aria-label="Hapus pelanggan" onclick="deletePelanggan(${i})">🗑</button></div></td>
         </tr>`;
       }).join('');
     }
@@ -7377,7 +7440,7 @@
       kirimWaKeNomorPelanggan(p.name, lines.join('\n'));
     }
     function addPelanggan() { Swal.fire({ title:'Tambah Pelanggan', input:'text', inputLabel:'Nama pelanggan', showCancelButton:true }).then(r => { if (r.isConfirmed && r.value) { const name = r.value.trim(); if (!allCustomers.includes(name)) { allCustomers.push(name); pelanggan = allCustomers.slice(); saveLocalData(); renderPelangganList(); syncCustomersToSheet(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Pelanggan ditambahkan' }); } else Swal.fire('Info','Sudah ada','info'); } }); }
-    function deletePelanggan(idx) { const nama = allCustomers[idx]; Swal.fire({ title:'Hapus?', text:'Hapus '+allCustomers[idx]+'?', icon:'warning', showCancelButton:true }).then(r => { if (r.isConfirmed) { allCustomers.splice(idx,1); pelanggan = allCustomers.slice(); saveLocalData(); renderPelangganList(); syncCustomersToSheet(); if (nama) logEditAction('pelanggan', nama, nama, { nama }, null); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Pelanggan dihapus' }); } }); }
+    function deletePelanggan(idx) { const nama = allCustomers[idx]; Swal.fire(_delOpts('Hapus pelanggan?', '<b>'+esc(allCustomers[idx])+'</b>')).then(r => { if (r.isConfirmed) { allCustomers.splice(idx,1); pelanggan = allCustomers.slice(); saveLocalData(); renderPelangganList(); syncCustomersToSheet(); if (nama) logEditAction('pelanggan', nama, nama, { nama }, null); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Pelanggan dihapus' }); } }); }
 
     // ========== PENGATURAN ==========
     function loadPengaturan() { 
@@ -7507,7 +7570,7 @@
     function removeDriver(i) { drivers.splice(i,1); saveLocalData(); enqueueSync('saveDrivers', [drivers.map(String)], 'Daftar Driver'); renderDriverTags(); }
     function renderUserList() { const el = document.getElementById('userList'); if (!el) return; el.innerHTML = allUsers.length ? allUsers.map((u,i) => `<div class="flex-between mb-1" style="padding:4px 0;border-bottom:1px solid var(--border)"><span><b>${esc(u.name)}</b> (${u.role})</span><button class="btn btn-sm btn-danger" onclick="deleteUser(${i})">🗑</button></div>`).join('') : '<p class="text-sm text-center">Belum ada user</p>'; }
     function addUser() { const name = document.getElementById('newUserName').value.trim(), role = document.getElementById('newUserRole').value, pass = document.getElementById('newUserPass').value.trim(); if (!name || !pass) return Swal.fire('Error','Nama dan password wajib diisi','error'); if (allUsers.find(u => u.name === name)) return Swal.fire('Error','Nama sudah ada','error'); allUsers.push({ name, role }); saveLocalData(); enqueueSync('saveUser', [{ name, role, password: pass }], 'User ' + name); document.getElementById('newUserName').value = ''; document.getElementById('newUserPass').value = ''; renderUserList(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'User ditambahkan' }); }
-    function deleteUser(i) { Swal.fire({ title:'Hapus user?', text:'Hapus '+allUsers[i].name+'?', icon:'warning', showCancelButton:true }).then(r => { if (r.isConfirmed) { const deletedUser = {...allUsers[i]}; allUsers.splice(i,1); saveLocalData(); renderUserList(); enqueueSync('deleteUser', [deletedUser.name], 'Hapus user ' + deletedUser.name); logEditAction('user', deletedUser.name, deletedUser.name, deletedUser, null); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'User dihapus' }); } }); }
+    function deleteUser(i) { Swal.fire(_delOpts('Hapus user?', '<b>'+esc(allUsers[i].name)+'</b>')).then(r => { if (r.isConfirmed) { const deletedUser = {...allUsers[i]}; allUsers.splice(i,1); saveLocalData(); renderUserList(); enqueueSync('deleteUser', [deletedUser.name], 'Hapus user ' + deletedUser.name); logEditAction('user', deletedUser.name, deletedUser.name, deletedUser, null); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'User dihapus' }); } }); }
     function savePengaturan() { settings.namaToko = document.getElementById('setNamaToko').value.trim(); settings.tagline = document.getElementById('setTagline').value.trim(); settings.alamat = document.getElementById('setAlamat').value.trim(); settings.telepon = document.getElementById('setTelepon').value.trim(); settings.bottomLine = document.getElementById('setFooter').value.trim(); settings.bank1 = { nama: document.getElementById('setB1Nama').value.trim(), norek: document.getElementById('setB1Norek').value.trim(), penerima: document.getElementById('setB1Penerima').value.trim() }; settings.bank2 = { nama: document.getElementById('setB2Nama').value.trim(), norek: document.getElementById('setB2Norek').value.trim(), penerima: document.getElementById('setB2Penerima').value.trim() }; document.getElementById('headerAlamat').textContent = settings.alamat; saveLocalData(); enqueueSync('saveSettings', [{ storeName: settings.namaToko||settings.storeName, tagline: settings.tagline, address: settings.alamat||settings.address, phone: settings.telepon||settings.phone, footer: settings.bottomLine||settings.footer, salesList: settings.salesList||[], bank1: settings.bank1, bank2: settings.bank2, qris: settings.qris||_qrisUrl }], 'Pengaturan Toko'); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Pengaturan disimpan' }); }
     function backupData() { saveLocalData(); const blob = new Blob([localStorage.getItem('tirtaFullData')], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'tirta-backup-'+new Date().toISOString().slice(0,10)+'.json'; a.click(); }
     function restoreData() { Swal.fire({ title:'Restore Data', text:'Pilih file backup JSON', icon:'warning', showCancelButton:true }).then(r => { if (r.isConfirmed) { const input = document.createElement('input'); input.type='file'; input.accept='.json'; input.onchange = e => { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = ev => { try { const data = JSON.parse(ev.target.result); localStorage.setItem('tirtaFullData', JSON.stringify(data)); loadLocalData(); Swal.fire('Sukses','Data direstore! Refresh halaman.','success'); } catch(err) { Swal.fire('Error','File tidak valid','error'); } }; reader.readAsText(file); }; input.click(); } }); }
