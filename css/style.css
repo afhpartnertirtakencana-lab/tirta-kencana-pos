@@ -1976,3 +1976,9 @@ body[data-page="pelanggan"] #pelangganTbody td:last-child .btn { margin:0; }
 
 /* tombol teks aksi tabel (Cetak dsb.) setinggi tombol kotak */
 .act-btn { height:38px; padding:0 14px !important; display:inline-flex; align-items:center; justify-content:center; border-radius:10px !important; font-size:.78rem; font-weight:800; white-space:nowrap; line-height:1; }
+
+/* tombol cetak popup detail dashboard */
+.dxp-share{display:flex;gap:8px;padding:10px 14px 14px;border-top:1px solid rgba(0,120,212,.15)}
+.dxp-share button{flex:1;border:0;cursor:pointer;font:inherit;font-size:.78rem;font-weight:800;color:#fff;padding:11px 8px;border-radius:12px;background:linear-gradient(120deg,var(--a1,#0078D4),var(--a2,#29A8FF));box-shadow:0 4px 12px rgba(0,60,140,.22)}
+.dxp-share button.wa{background:linear-gradient(120deg,#16A34A,#25D366)}
+.dxp-share button i{margin-right:5px}
