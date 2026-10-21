@@ -1778,6 +1778,7 @@
     }
     // ===== Popup detail dashboard (desain azure: banner, kartu ringkas, daftar rapi) =====
     function _dxPop(o) {
+      window._dxShare = o.share || null;
       const stats = (o.stats||[]).map(x => `<div class="dxp-stat"><div class="dxp-stat-v">${x.v}</div><div class="dxp-stat-l">${x.l}</div></div>`).join('');
       const secs = (o.sections||[]).map(sec => {
         const rows = (sec.rows||[]).map((r,i) => `<div class="dxp-row">
@@ -1797,9 +1798,56 @@
             <div class="dxp-ht"><div class="dxp-title">${o.title}</div><div class="dxp-hs">${o.sub||''}</div></div>
             <button type="button" class="dxp-x" onclick="Swal.close()" aria-label="Tutup"><i class="fas fa-xmark"></i></button></div>
           ${stats ? `<div class="dxp-stats">${stats}</div>` : ''}
-          <div class="dxp-body">${secs}${o.footer?`<div class="dxp-foot">${o.footer}</div>`:''}</div></div>`,
+          <div class="dxp-body">${secs}${o.footer?`<div class="dxp-foot">${o.footer}</div>`:''}</div>${o.share?`<div class="dxp-share"><button type="button" onclick="dxShareDo('print')"><i class="fas fa-print"></i> Print</button><button type="button" onclick="dxShareDo('png')"><i class="fas fa-download"></i> PNG</button><button type="button" class="wa" onclick="dxShareDo('wa')"><i class="fab fa-whatsapp"></i> WA</button></div>`:''}</div>`,
         showConfirmButton:false, padding:0, width:Math.min(480, window.innerWidth-20), customClass:{ popup:'dxp-popup', htmlContainer:'dxp-hc' }
       });
+    }
+
+    // ===== Cetak / PNG / WA untuk popup detail dashboard (SKU & Customer) =====
+    function buildDxShareHTML(p, logoOverride) {
+      const tone = p.tone || 'blue';
+      const rows = p.rows.map(r => ({ n:r.n, q:r.q, v:r.v }));
+      return _rcRoot('dxshare-root', 380,
+        _rcHead({ tone, icon:p.icon, logo:logoOverride, title:p.title, sub:p.sub }) +
+        _rcStats(p.stats, tone) +
+        _rcBody(_rcSec({ tone, title:p.secTitle, badge:p.badge, rows, total:p.total })) +
+        _rcFoot(settings.bottomLine || 'Terima kasih!'));
+    }
+    function dxShareDo(act) {
+      const p = window._dxShare; if (!p) return;
+      if (act === 'print') {
+        const win = window.open('', '_blank', 'width=420,height=700');
+        if (!win) return Swal.fire('Pop-up diblokir', 'Izinkan pop-up untuk mencetak.', 'warning');
+        win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"><title>' + esc(p.title) + '</title></head><body style="margin:16px;background:#e8f2f9;display:flex;justify-content:center">');
+        win.document.write(buildDxShareHTML(p));
+        win.document.write('<script>window.onload=function(){window.print();}<\/script></body></html>');
+        win.document.close();
+      } else if (act === 'png') {
+        const off = document.getElementById('strukOffscreen');
+        off.style.cssText = 'position:fixed;left:-9999px;top:0;pointer-events:none;z-index:-1;background:#e8f2f9;padding:20px';
+        _ensureLogoDataUrl(_logoUrl).then(logoData => {
+          off.innerHTML = buildDxShareHTML(p, logoData);
+          const el = off.querySelector('#dxshare-root');
+          if (!el) return Swal.fire('Error', 'Gagal render', 'error');
+          setTimeout(() => {
+            html2canvas(el, { backgroundColor:'#e8f2f9', scale:2.5, useCORS:true, allowTaint:true, logging:false }).then(canvas => {
+              const a = document.createElement('a');
+              a.download = p.file + '.png'; a.href = canvas.toDataURL('image/png');
+              document.body.appendChild(a); a.click(); document.body.removeChild(a);
+              off.innerHTML = '';
+              Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:2000, icon:'success', title:'Gambar tersimpan' });
+            }).catch(err => { off.innerHTML = ''; Swal.fire('Error', err.message, 'error'); });
+          }, 400);
+        });
+      } else {
+        const L = '━━━━━━━━━━━━━━━━━━━━━━';
+        const lines = ['📊 *' + p.waTitle + '*', '*' + (settings.namaToko || 'Tirta Kencana') + '*', L, p.waSub, L];
+        p.stats.forEach(x => lines.push(x.l + ': ' + x.v));
+        lines.push(L);
+        p.rows.forEach((r, i) => lines.push((i + 1) + '. ' + r.nPlain + ' — ' + r.q + (r.v ? ' (' + r.v + ')' : '')));
+        lines.push(L, '*' + p.total.l + ': ' + p.total.v + '*');
+        window.open('https://wa.me/?text=' + encodeURIComponent(lines.join('\n')), '_blank');
+      }
     }
     function showDxRekapInput() {
       const today = _dxToday();
@@ -1831,9 +1879,13 @@
         per[c].qty += (it.qty||0); per[c].nett += n; tq += (it.qty||0); tn += n;
       }));
       const rows = Object.entries(per).sort((a,b)=>b[1].qty-a[1].qty).map(r => ({ n:esc(r[0]), q:r[1].qty+' pcs', v:fmtRp(r[1].nett) }));
+      const _st = [{ l:'Terjual', v:tq+' pcs' }, { l:'Nilai', v:fmtRp(tn) }, { l:'Customer', v:rows.length }];
       _dxPop({ icon:'fa-cube', title:esc(name), sub:'Rekap SKU · ' + esc(fmtDate(today)),
-        stats: [{ l:'Terjual', v:tq+' pcs' }, { l:'Nilai', v:fmtRp(tn) }, { l:'Customer', v:rows.length }],
-        sections: [{ title:'Pembeli hari ini', badge:rows.length+' customer', rows, total:{ l:'Total '+tq+' pcs', v:fmtRp(tn) } }] });
+        stats: _st,
+        sections: [{ title:'Pembeli hari ini', badge:rows.length+' customer', rows, total:{ l:'Total '+tq+' pcs', v:fmtRp(tn) } }],
+        share: { icon:'fa-cube', title:esc(name), sub:'Rekap SKU · ' + esc(fmtDate(today)), stats:_st, rows:rows.map(r=>Object.assign({nPlain:r.n.replace(/&amp;/g,'&')},r)),
+          secTitle:'<i class="fas fa-users" style="color:#0078D4;margin-right:5px"></i>Pembeli hari ini', badge:rows.length+' customer', total:{ l:'Total '+tq+' pcs', v:fmtRp(tn) },
+          file:'RekapSKU-'+String(name).replace(/[^\w-]+/g,'_')+'-'+today, waTitle:'REKAP SKU: '+name, waSub:'Tanggal: '+fmtDate(today) } });
     }
     function showDxCustDetail(name) {
       const today = _dxToday();
@@ -1841,9 +1893,13 @@
       const per = {}; let tn = 0, tq = 0;
       trx.forEach(t => { tn += (t.nett||0); (t.items||[]).forEach(it => { const k = it.nama||it.sku||'—'; if (!per[k]) per[k] = { qty:0, nett:0 }; per[k].qty += (it.qty||0); tq += (it.qty||0); per[k].nett += (it.qty||0)*((it.harga||0)-(it.discRpPer||0)); }); });
       const rows = Object.entries(per).sort((a,b)=>b[1].qty-a[1].qty).map(r => ({ n:esc(r[0]), q:r[1].qty+' pcs', v:fmtRp(r[1].nett) }));
+      const _st = [{ l:'Total Nett', v:fmtRp(tn) }, { l:'Transaksi', v:trx.length }, { l:'Qty', v:tq+' pcs' }];
       _dxPop({ icon:'fa-user', title:esc(name), sub:'Rekap Customer · ' + esc(fmtDate(today)),
-        stats: [{ l:'Total Nett', v:fmtRp(tn) }, { l:'Transaksi', v:trx.length }, { l:'Qty', v:tq+' pcs' }],
-        sections: [{ title:'Barang dibeli', badge:rows.length+' SKU', rows, total:{ l:trx.length+' transaksi', v:fmtRp(tn) } }] });
+        stats: _st,
+        sections: [{ title:'Barang dibeli', badge:rows.length+' SKU', rows, total:{ l:trx.length+' transaksi', v:fmtRp(tn) } }],
+        share: { icon:'fa-user', title:esc(name), sub:'Rekap Customer · ' + esc(fmtDate(today)), stats:_st, rows:rows.map(r=>Object.assign({nPlain:r.n.replace(/&amp;/g,'&')},r)),
+          secTitle:'<i class="fas fa-cube" style="color:#0078D4;margin-right:5px"></i>Barang dibeli', badge:rows.length+' SKU', total:{ l:trx.length+' transaksi', v:fmtRp(tn) },
+          file:'RekapCustomer-'+String(name).replace(/[^\w-]+/g,'_')+'-'+today, waTitle:'REKAP CUSTOMER: '+name, waSub:'Tanggal: '+fmtDate(today) } });
     }
 
     function showDashboardPiutangDetail() {
