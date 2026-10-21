@@ -3767,6 +3767,12 @@
       } catch(e) { /* audit belum tersedia: abaikan */ }
     }
 
+    // Muat ulang layar (untuk PWA terinstal yang tidak punya tombol refresh browser). Antrian sync tersimpan di localStorage, jadi aman.
+    async function refreshApp(btn) {
+      try { const i = btn && btn.querySelector('i'); if (i) i.classList.add('fa-spin'); } catch(e) {}
+      try { const reg = await (navigator.serviceWorker && navigator.serviceWorker.getRegistration()); if (reg) { await Promise.race([reg.update(), new Promise(r => setTimeout(r, 1500))]); if (reg.waiting) reg.waiting.postMessage({ type:'SKIP_WAITING' }); } } catch(e) {}
+      location.reload();
+    }
     // ========== KONFIGURASI ATURAN & PERINGATAN (sinkron ke sheet "Konfigurasi") ==========
     const CFG_KEY = 'tirtaConfig';
     const CFG_DEFAULT = { kredit:{ maxPiutang:5000000, maxHari:30, tagihHari:7, perCust:{} }, setoran:{ batasSelisih:20000 }, anomali:{ maxDiskonPct:20 } };
