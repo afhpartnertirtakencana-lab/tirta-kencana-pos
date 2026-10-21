@@ -216,6 +216,11 @@
           _syncQueue = _syncQueue.filter(q => q.qid !== item.qid);
           _saveSyncQueueState();
         } catch(e) {
+          if (/TERKUNCI|Akses ditolak/i.test(e.message || '')) { // ditolak permanen oleh server: jangan diulang terus
+            _syncQueue = _syncQueue.filter(q => q.qid !== item.qid); _saveSyncQueueState();
+            try { Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:4000, icon:'warning', title:'Ditolak server: ' + String(e.message).replace(/\s*\(.*\)$/, '').substring(0, 120) }); } catch(x) {}
+            continue;
+          }
           const idx = _syncQueue.findIndex(q => q.qid === item.qid);
           if (idx >= 0) { _syncQueue[idx].attempts++; _syncQueue[idx].lastError = e.message; }
           _saveSyncQueueState();
@@ -1370,6 +1375,7 @@
              <button class="tab ${currentPage==='piutang'?'active':''}" onclick="navigateTo('piutang')"><i class="fas fa-file-invoice-dollar"></i> Piutang</button>
              <button class="tab ${currentPage==='laporanbulanan'?'active':''}" onclick="navigateTo('laporanbulanan')"><i class="fas fa-calendar-alt"></i> Laporan Bulanan</button>
              <button class="tab ${currentPage==='profit'?'active':''}" onclick="navigateTo('profit')"><i class="fas fa-sack-dollar"></i> Profit</button>
+             <button class="tab ${currentPage==='rekapharian'?'active':''}" onclick="navigateTo('rekapharian')"><i class="fas fa-calendar-check"></i> Rekap Harian</button>
              <button class="tab ${currentPage==='auditlog'?'active':''}" onclick="navigateTo('auditlog')"><i class="fas fa-shield-halved"></i> Backup &amp; Audit</button>
              <button class="tab ${currentPage==='pengaturan'?'active':''}" onclick="navigateTo('pengaturan')"><i class="fas fa-cog"></i> Atur</button>`;
       } else if (r === 'sales') {
@@ -1427,6 +1433,7 @@
           { page:'piutang', label:'Piutang', icon:'fa-file-invoice-dollar' },
           { page:'laporanbulanan', label:'Laporan Bulanan', icon:'fa-calendar-alt' },
           { page:'profit', label:'Profit', icon:'fa-sack-dollar' },
+          { page:'rekapharian', label:'Rekap Harian', icon:'fa-calendar-check' },
           { page:'auditlog', label:'Backup & Audit', icon:'fa-shield-halved' },
           { page:'googlesheets', label:'Google Sheets', icon:'fa-table-cells' },
           { page:'pengaturan', label:'Atur', icon:'fa-cog' },
@@ -1524,7 +1531,7 @@
     function _pgHero(icon, title, sub, val, lbl) {
       return `<div class="pg-hero"><div class="pg-hero-eyebrow"><i class="fas ${icon}"></i> ${title}</div><div class="pg-hero-sub">${sub||''}</div>${val !== undefined && val !== null ? `<div class="pg-hero-val">${val}</div><div class="pg-hero-lbl">${lbl||''}</div>` : ''}</div>`;
     }
-    function renderContent() { try { document.getElementById('contentArea').setAttribute('data-page', currentPage); } catch(e) {} switch (currentPage) { case 'dashboard': loadDashboard(); break; case 'penjualan': loadPenjualan(); break; case 'transaksi': loadTransaksi(); break; case 'rekap': loadRekap(); break; case 'rekapinput': loadRekapInput(); break; case 'setoran': loadSetoran(); break; case 'rekapsetoran': loadRekapSetoran(); break; case 'inputbarang': loadInputBarang(); break; case 'stockbarang': loadStockBarang(); break; case 'cekstock': loadCekStock(); break; case 'cekkosongan': loadCekKosongan(); break; case 'pesanan': loadPesanan(); break; case 'titipan': loadTitipan(); break; case 'produk': loadProduk(); break; case 'pelanggan': loadPelanggan(); break; case 'pengaturan': loadPengaturan(); break; case 'pengaturanUser': loadPengaturanUser(); break; case 'grafik': loadGrafik(); break; case 'piutang': loadPiutang(); break; case 'laporanbulanan': loadLaporanBulanan(); break; case 'profit': loadProfit(); break; case 'auditlog': loadAuditLog(); break; case 'googlesheets': loadGoogleSheets(); break; } }
+    function renderContent() { try { document.getElementById('contentArea').setAttribute('data-page', currentPage); } catch(e) {} switch (currentPage) { case 'dashboard': loadDashboard(); break; case 'penjualan': loadPenjualan(); break; case 'transaksi': loadTransaksi(); break; case 'rekap': loadRekap(); break; case 'rekapinput': loadRekapInput(); break; case 'setoran': loadSetoran(); break; case 'rekapsetoran': loadRekapSetoran(); break; case 'inputbarang': loadInputBarang(); break; case 'stockbarang': loadStockBarang(); break; case 'cekstock': loadCekStock(); break; case 'cekkosongan': loadCekKosongan(); break; case 'pesanan': loadPesanan(); break; case 'titipan': loadTitipan(); break; case 'produk': loadProduk(); break; case 'pelanggan': loadPelanggan(); break; case 'pengaturan': loadPengaturan(); break; case 'pengaturanUser': loadPengaturanUser(); break; case 'grafik': loadGrafik(); break; case 'piutang': loadPiutang(); break; case 'laporanbulanan': loadLaporanBulanan(); break; case 'profit': loadProfit(); break; case 'rekapharian': loadRekapHarian(); break; case 'auditlog': loadAuditLog(); break; case 'googlesheets': loadGoogleSheets(); break; } }
 
     // ========== DASHBOARD (MENU UTAMA) ==========
     function loadDashboard() {
@@ -3153,7 +3160,7 @@
     }
     function pgGoto(key, page) { _pgState[key] = page; const fn = window['_pgRerender_' + key]; if (typeof fn === 'function') fn(); }
 
-    function renderTrxTable(filtered = allTrxList, _pgKeep = false) { const tb = document.getElementById('trxTbody'); if (!tb) return; try { _txUpdateHero(filtered); } catch(e) {} if (!_pgKeep) pgReset('trx'); window._pgRerender_trx = () => renderTrxTable(filtered, true); if (!filtered.length) { tb.innerHTML = '<tr><td colspan="9" class="text-center text-sm" style="padding:32px">Tidak ada transaksi</td></tr>'; const pb0 = document.getElementById('trxPaginationBar'); if (pb0) pb0.innerHTML = ''; return; } try { _txUpdateHero(filtered); } catch(e) {} const _pg = pgSlice(filtered, 'trx', 25); const pb = document.getElementById('trxPaginationBar'); if (pb) pb.innerHTML = pgBar('trx', _pg.page, _pg.totalPages, _pg.total, _pg.pageSize); const _isAdmin = currentUser?.role === 'admin'; tb.innerHTML = _pg.items.map(t => `<tr class="tx-row st-${esc(t.status||'')}"><td data-label="ID" class="tx-id">${esc(t.id)}</td><td data-label="Tanggal" class="tx-tgl">${fmtDate(t.tgl)}</td><td data-label="Customer" class="tx-cust">${esc(t.customer||'-')}</td><td data-label="Sales" class="tx-sales">${esc(t.sales||'-')}</td><td data-label="Gross" class="tx-num">${fmtRp(t.gross)}</td><td data-label="Diskon" class="tx-num tx-disc">${fmtRp(t.diskon)}</td><td data-label="Nett" class="tx-nett">${fmtRp(t.nett)}</td><td data-label="Status" class="tx-stat"><select class="form-control tx-sel" onchange="updateTrxStatus('${esc(t.id).replace(/'/g,"\\'")}', this.value)"><option value="cod" ${t.status==='cod'?'selected':''}>COD</option><option value="transfer" ${t.status==='transfer'?'selected':''}>Transfer</option><option value="qris" ${t.status==='qris'?'selected':''}>QRIS</option><option value="belumTransfer" ${t.status==='belumTransfer'?'selected':''}>Belum</option></select></td><td data-label="" class="tx-act"><button class="btn tx-b tx-b-print btn-primary" onclick="cetakUlangStruk('${esc(t.id).replace(/'/g,"\\'")}')">🧾 Cetak</button>${_isAdmin ? `<button class="btn tx-b tx-b-edit btn-outline" onclick="editTrx('${esc(t.id).replace(/'/g,"\\'")}')">✏️ Edit</button>` : ''}<button class="btn tx-b tx-b-del" title="Hapus transaksi" aria-label="Hapus transaksi" onclick="deleteTrx('${esc(t.id).replace(/'/g,"\\'")}')">🗑</button></td></tr>`).join(''); }
+    function renderTrxTable(filtered = allTrxList, _pgKeep = false) { const tb = document.getElementById('trxTbody'); if (!tb) return; try { _txUpdateHero(filtered); } catch(e) {} if (!_pgKeep) pgReset('trx'); window._pgRerender_trx = () => renderTrxTable(filtered, true); if (!filtered.length) { tb.innerHTML = '<tr><td colspan="9" class="text-center text-sm" style="padding:32px">Tidak ada transaksi</td></tr>'; const pb0 = document.getElementById('trxPaginationBar'); if (pb0) pb0.innerHTML = ''; return; } try { _txUpdateHero(filtered); } catch(e) {} const _pg = pgSlice(filtered, 'trx', 25); const pb = document.getElementById('trxPaginationBar'); if (pb) pb.innerHTML = pgBar('trx', _pg.page, _pg.totalPages, _pg.total, _pg.pageSize); const _isAdmin = currentUser?.role === 'admin'; tb.innerHTML = _pg.items.map(t => `<tr class="tx-row st-${esc(t.status||'')}"><td data-label="ID" class="tx-id">${esc(t.id)}</td><td data-label="Tanggal" class="tx-tgl">${fmtDate(t.tgl)}</td><td data-label="Customer" class="tx-cust">${esc(t.customer||'-')}</td><td data-label="Sales" class="tx-sales">${esc(t.sales||'-')}</td><td data-label="Gross" class="tx-num">${fmtRp(t.gross)}</td><td data-label="Diskon" class="tx-num tx-disc">${fmtRp(t.diskon)}</td><td data-label="Nett" class="tx-nett">${fmtRp(t.nett)}</td><td data-label="Status" class="tx-stat"><select class="form-control tx-sel" onchange="updateTrxStatus('${esc(t.id).replace(/'/g,"\\'")}', this.value)"><option value="cod" ${t.status==='cod'?'selected':''}>COD</option><option value="transfer" ${t.status==='transfer'?'selected':''}>Transfer</option><option value="qris" ${t.status==='qris'?'selected':''}>QRIS</option><option value="belumTransfer" ${t.status==='belumTransfer'?'selected':''}>Belum</option></select></td><td data-label="" class="tx-act"><button class="btn tx-b tx-b-print btn-primary" onclick="cetakUlangStruk('${esc(t.id).replace(/'/g,"\\'")}')">🧾 Cetak</button>${_isAdmin ? `<button class="btn tx-b tx-b-edit btn-outline" onclick="editTrx('${esc(t.id).replace(/'/g,"\\'")}')">✏️ Edit</button>` : ''}<button class="btn tx-b tx-b-del" title="${_trxLockInfo(t) ? 'Terkunci: setoran sudah ditutup' : 'Hapus transaksi'}" aria-label="Hapus transaksi" onclick="deleteTrx('${esc(t.id).replace(/'/g,"\\'")}')">${_trxLockInfo(t) ? '🔒' : '🗑'}</button></td></tr>`).join(''); }
 
     async function cetakUlangStruk(id) {
       let trx = allTrxList.find(t => t.id === id);
@@ -3193,6 +3200,14 @@
         filterTrx();
       }
     }
+    // [NEW] Kunci tanggal: non-admin tidak boleh hapus transaksi milik sales yang setorannya di tanggal tsb sudah disimpan.
+    function _trxLockInfo(t) {
+      if (!t || currentUser?.role === 'admin') return '';
+      const sales = String(t.sales||'').trim().toLowerCase(), tgl = String(t.tgl||'').substring(0,10);
+      if (!sales || !tgl) return '';
+      const hit = (setoranHistory||[]).some(x => String(x.tgl||'').substring(0,10) === tgl && String(x.sales||'').trim().toLowerCase() === sales);
+      return hit ? 'Setoran ' + (t.sales||'') + ' tanggal ' + fmtDate(tgl) + ' sudah ditutup. Hubungi admin untuk menghapus/mengubah transaksi ini.' : '';
+    }
     // Dialog konfirmasi hapus yang seragam: tombol "Batal" fokus default supaya tidak terhapus tak sengaja.
     function _delOpts(title, detail) {
       return { title, html: '<div style="font-size:.9rem">' + detail + '</div><div style="margin-top:10px;font-size:.78rem;color:#DC2626;font-weight:700">Tindakan ini tidak bisa dibatalkan.</div>',
@@ -3202,7 +3217,7 @@
       const t = allTrxList.find(x => x.id === id);
       return t ? '<b>' + esc(t.customer||'-') + '</b><br><span style="font-family:monospace;font-size:.78rem">' + esc(id) + '</span> · ' + esc(fmtDate(t.tgl)) + '<br>Total <b>' + fmtRp(t.nett||0) + '</b>' : 'Transaksi <b>' + esc(id) + '</b>';
     }
-    async function deleteTrx(id) { const confirm = await Swal.fire(_delOpts('Hapus transaksi?', _delTrxDetail(id))); if (confirm.isConfirmed) { const trx = allTrxList.find(t => t.id === id); allTrxList = allTrxList.filter(t => t.id !== id); saveLocalData(); enqueueSync('deleteTrx', [id], 'Hapus transaksi ' + id); if (trx) logEditAction('transaksi', id, trx.customer || id, trx, null); filterTrx(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Transaksi dihapus' }); } }
+    async function deleteTrx(id) { const _lk = _trxLockInfo(allTrxList.find(t => t.id === id)); if (_lk) { Swal.fire({ icon:'info', title:'🔒 Tanggal Terkunci', text:_lk, confirmButtonText:'Mengerti' }); return; } const confirm = await Swal.fire(_delOpts('Hapus transaksi?', _delTrxDetail(id))); if (confirm.isConfirmed) { const trx = allTrxList.find(t => t.id === id); allTrxList = allTrxList.filter(t => t.id !== id); saveLocalData(); enqueueSync('deleteTrx', [id], 'Hapus transaksi ' + id); if (trx) logEditAction('transaksi', id, trx.customer || id, trx, null); filterTrx(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Transaksi dihapus' }); } }
     function openStrukById(id) { const trx = allTrxList.find(t => t.id === id); if (!trx) return Swal.fire('Error','Transaksi tidak ditemukan','error'); _strKData = { trx, items: trx.items || [] }; showStrukModal(); }
 
     // ========== SCANNER ==========
@@ -3701,8 +3716,20 @@
     // ========== STOK MENIPIS (batas minimum per SKU, disimpan lokal di perangkat) ==========
     const MINSTOK_KEY = 'tirtaMinStok';
     function _minStokLoad() { try { return JSON.parse(localStorage.getItem(MINSTOK_KEY) || '{}') || {}; } catch(e) { return {}; } }
+    let _minStokFetched = false;
+    async function _minStokSyncFromServer() {
+      if (_minStokFetched) return; _minStokFetched = true;
+      try {
+        const srv = await gasCall('getMinStok', [], 0);
+        const loc = _minStokLoad();
+        if (srv && typeof srv === 'object' && Object.keys(srv).length) { try { localStorage.setItem(MINSTOK_KEY, JSON.stringify(srv)); } catch(e) {} }
+        else if (Object.keys(loc).length) { enqueueSync('saveMinStok', [loc], 'Batas minimum stok'); } // server masih kosong: kirim yang ada di perangkat ini
+      } catch(e) { _minStokFetched = false; console.warn('getMinStok:', e.message); }
+    }
     async function _dxLoadLowStock() {
       const el = document.getElementById('dxLowStock'); if (!el) return;
+      await _minStokSyncFromServer();
+      if (!document.getElementById('dxLowStock')) return;
       const mins = _minStokLoad();
       const hasMin = Object.keys(mins).some(k => mins[k] > 0);
       const head = (ttl, ic, col) => `<div class="dx-panel-head"><span><i class="fas ${ic}" style="color:${col};margin-right:6px"></i>${ttl}</span><button class="btn btn-sm btn-outline" onclick="showMinStokSettings()">Atur</button></div>`;
@@ -3721,9 +3748,48 @@
       const list = (products||[]).filter(p => p && p.sku);
       if (!list.length) { Swal.fire('Info', 'Belum ada produk.', 'info'); return; }
       Swal.fire({ title: 'Batas Minimum Stok', width: 520, showCancelButton: true, confirmButtonText: 'Simpan', cancelButtonText: 'Batal',
-        html: `<div style="text-align:left;font-size:.78rem;color:#6B84A0;margin-bottom:8px">Isi jumlah minimum per SKU. Kosongkan / 0 untuk tidak dipantau. Tersimpan di perangkat ini.</div><div style="max-height:50vh;overflow:auto">${list.map(p => `<div style="display:flex;align-items:center;gap:8px;padding:5px 0"><div style="flex:1;text-align:left;font-weight:600;font-size:.82rem">${esc(p.nama||p.sku)}<div style="font-size:.65rem;color:#6B84A0">${esc(p.sku)}</div></div><input type="number" min="0" class="swal2-input msInp" data-sku="${esc(p.sku)}" value="${mins[p.sku]||''}" placeholder="0" style="width:90px;margin:0;text-align:right"></div>`).join('')}</div>`,
+        html: `<div style="text-align:left;font-size:.78rem;color:#6B84A0;margin-bottom:8px">Isi jumlah minimum per SKU. Kosongkan / 0 untuk tidak dipantau. Tersinkron ke semua perangkat.</div><div style="max-height:50vh;overflow:auto">${list.map(p => `<div style="display:flex;align-items:center;gap:8px;padding:5px 0"><div style="flex:1;text-align:left;font-weight:600;font-size:.82rem">${esc(p.nama||p.sku)}<div style="font-size:.65rem;color:#6B84A0">${esc(p.sku)}</div></div><input type="number" min="0" class="swal2-input msInp" data-sku="${esc(p.sku)}" value="${mins[p.sku]||''}" placeholder="0" style="width:90px;margin:0;text-align:right"></div>`).join('')}</div>`,
         preConfirm: () => { const o = {}; document.querySelectorAll('.msInp').forEach(i => { const v = parseInt(i.value, 10); if (v > 0) o[i.dataset.sku] = v; }); return o; }
-      }).then(r => { if (!r.isConfirmed) return; try { localStorage.setItem(MINSTOK_KEY, JSON.stringify(r.value)); } catch(e) {} if (currentPage === 'dashboard') _dxLoadLowStock(); Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:1500, icon:'success', title:'Batas minimum tersimpan' }); });
+      }).then(r => { if (!r.isConfirmed) return; try { localStorage.setItem(MINSTOK_KEY, JSON.stringify(r.value)); } catch(e) {} enqueueSync('saveMinStok', [r.value], 'Batas minimum stok'); if (currentPage === 'dashboard') _dxLoadLowStock(); Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:1500, icon:'success', title:'Batas minimum tersimpan' }); });
+    }
+
+    // ========== REKAP HARIAN (dihitung otomatis server tiap malam) ==========
+    let _rhRows = [];
+    function loadRekapHarian() {
+      document.getElementById('contentArea').innerHTML = `
+        <div class="card">
+          <div class="card-title"><i class="fas fa-calendar-check"></i> Rekap Harian</div>
+          <div class="text-sm" style="color:var(--text3);margin-bottom:10px">Server menghitung ringkasan tiap malam (±23.50) dan mengirimnya ke email. Tekan tombol untuk menghitung/menyegarkan hari ini.</div>
+          <button class="btn btn-primary btn-block" id="btnRekapNow" onclick="rekapHarianNow()"><i class="fas fa-calculator"></i> Hitung Hari Ini</button>
+        </div>
+        <div id="rhList"><div class="card text-center text-sm" style="padding:28px"><i class="fas fa-spinner fa-spin"></i> Memuat…</div></div>`;
+      refreshRekapHarian();
+    }
+    async function refreshRekapHarian() {
+      const el = document.getElementById('rhList'); if (!el) return;
+      try {
+        const rows = await gasCall('getRekapHarian', [], 0);
+        _rhRows = Array.isArray(rows) ? rows : [];
+        if (!_rhRows.length) { el.innerHTML = '<div class="card text-center text-sm" style="padding:28px;color:var(--text3)">Belum ada rekap. Tekan “Hitung Hari Ini”.</div>'; return; }
+        const stat = (l, v, c) => `<div><div style="font-size:.56rem;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--text3)">${l}</div><div style="font-family:var(--mono);font-weight:800;font-size:.82rem;color:${c||'inherit'}">${v}</div></div>`;
+        el.innerHTML = _rhRows.map(r => `<div class="card" style="padding:14px 16px">
+          <div class="flex-between" style="margin-bottom:8px"><div style="font-weight:800">${esc(fmtDate(r.tgl))}</div><div style="font-size:.7rem;color:var(--text3)">${r.jmlTrx} transaksi</div></div>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px 14px">
+            ${stat('Omzet', fmtRp(r.omzet))}${stat('Profit', fmtRp(r.profit), r.profit<0?'#DC2626':'#16A34A')}
+            ${stat('COD', fmtRp(r.cod))}${stat('Transfer + QRIS', fmtRp((r.transfer||0)+(r.qris||0)))}
+            ${stat('Belum Bayar (hari ini)', fmtRp(r.belumBayar), r.belumBayar>0?'#D97706':'inherit')}${stat('Total Piutang', fmtRp(r.totalPiutang), r.totalPiutang>0?'#DC2626':'inherit')}
+            ${stat('Total Setoran', fmtRp(r.totalSetoran))}${stat('Selisih Setoran', fmtRp(r.selisih), r.selisih<0?'#DC2626':(r.selisih>0?'#16A34A':'inherit'))}
+          </div>
+          ${r.modalInput?`<div style="margin-top:8px;font-size:.7rem;color:var(--text3)">Modal barang masuk: ${fmtRp(r.modalInput)}</div>`:''}</div>`).join('');
+      } catch(e) {
+        el.innerHTML = '<div class="card text-center text-sm" style="color:#DC2626">Gagal memuat: ' + esc(e.message||String(e)) + '<div style="margin-top:6px;color:var(--text3)">Pastikan backend sudah di-deploy versi terbaru &amp; Anda login sebagai admin.</div></div>';
+      }
+    }
+    async function rekapHarianNow() {
+      const btn = document.getElementById('btnRekapNow'); if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menghitung…'; }
+      try { await gasCall('runRekapHarian', [localDateStr()], 0); await refreshRekapHarian(); }
+      catch(e) { Swal.fire('Gagal', e.message || String(e), 'error'); }
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-calculator"></i> Hitung Hari Ini'; }
     }
 
     // ========== LAPORAN PROFIT ==========
@@ -8618,6 +8684,7 @@ if ('serviceWorker' in navigator) {
       else if (currentPage === 'grafik') h = _pgHero('fa-chart-line', 'Grafik Penjualan', 'Tren harian, mingguan & bulanan');
       else if (currentPage === 'laporanbulanan') h = _pgHero('fa-calendar-days', 'Laporan Bulanan', 'Ringkasan penjualan, input barang & setoran');
       else if (currentPage === 'pengaturan') h = _pgHero('fa-gear', 'Pengaturan', 'Info toko, struk & pengguna');
+      else if (currentPage === 'rekapharian') h = _pgHero('fa-calendar-check', 'Rekap Harian', 'Ringkasan otomatis tiap malam');
       else if (currentPage === 'profit') h = _pgHero('fa-sack-dollar', 'Laporan Profit', 'Untung per SKU, sales & customer');
       else if (currentPage === 'auditlog') h = _pgHero('fa-shield-halved', 'Backup & Audit', 'Cadangan data & jejak aktivitas');
       if (h) el.insertAdjacentHTML('afterbegin', h);
