@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Tirta Kencana">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css?v=20261021b">
+  <link rel="stylesheet" href="css/style.css?v=20261021c">
   <style>
     /* [PERF] Optimasi scroll untuk HP RAM kecil.
        - overscroll-behavior-y:contain menahan efek "rubber-band" pantulan browser
@@ -305,7 +305,7 @@
         <button class="btn-refresh" onclick="openWhatsAppApp()" title="Chat WhatsApp" style="color:#25D366"><i class="fab fa-whatsapp"></i></button>
         <button class="btn-darkmode" onclick="toggleDarkMode()" title="Dark Mode">🌙</button>
         <button class="btn-refresh" onclick="showNotifications()" title="Notifikasi" style="position:relative">🔔<span id="notifBadge" class="notif-badge" style="display:none">0</span></button>
-        <span id="syncStatus" onclick="showSyncHealthDashboard()" style="font-size:0.6rem;color:var(--text3);padding:2px 6px;background:var(--biru-muda);border-radius:8px;cursor:pointer;position:relative">✓ Tersinkron<span id="syncQueueBadge" style="display:none;position:absolute;top:-6px;right:-6px;background:#f59e0b;color:#fff;border-radius:8px;font-size:0.55rem;padding:1px 4px;min-width:14px;text-align:center;line-height:1.3">0</span></span><button class="btn-refresh" onclick="_nextSyncTime=Date.now()+AUTO_SYNC_INTERVAL;syncFromGAS()" title="Sinkron Manual">🔄</button>
+        <span id="syncStatus" onclick="showSyncHealthDashboard()" style="font-size:0.6rem;color:var(--text3);padding:2px 6px;background:var(--biru-muda);border-radius:8px;cursor:pointer;position:relative">✓ Tersinkron<span id="syncQueueBadge" style="display:none;position:absolute;top:-6px;right:-6px;background:#f59e0b;color:#fff;border-radius:8px;font-size:0.55rem;padding:1px 4px;min-width:14px;text-align:center;line-height:1.3">0</span></span><button class="btn-refresh" onclick="_nextSyncTime=Date.now()+AUTO_SYNC_INTERVAL;syncFromGAS()" title="Sinkron Manual">🔄</button><button class="btn-refresh" id="btnReloadApp" onclick="refreshApp(this)" title="Muat ulang layar (refresh)" aria-label="Muat ulang layar"><i class="fas fa-rotate-right"></i></button>
         <button class="btn-logout" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i></button>
       </div>
     </div>
@@ -351,6 +351,6 @@
     <div id="sbSkuCheckList" style="max-height:50vh;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;border:1px solid var(--border);border-radius:10px;padding:4px 0;"></div>
     <button class="btn btn-primary btn-block mt-2" onclick="closeSbSkuModal();doStockBarang()"><i class="fas fa-check"></i> Terapkan</button>
   </div></div></div>
-  <script src="js/app.js?v=20261021b" defer></script>
+  <script src="js/app.js?v=20261021c" defer></script>
 </body>
 </html>
