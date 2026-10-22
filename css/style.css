@@ -2027,3 +2027,11 @@ body.light-mode .bottom-nav-more-sheet { background:#fff; }
 body.light-mode .mobile-greeting { background:#EAF4FF !important; color:#4B6584 !important; }
 body.light-mode .mobile-greeting #mobileGreetName { color:#0067B8 !important; }
 .header { background: linear-gradient(120deg, #00509E 0%, #0078D4 60%, #1E96F0 100%) !important; }
+/* HP: ikon bilah atas satu baris rapi */
+@media (max-width:767px) {
+  .nav-bar { padding:5px 8px !important; }
+  .nav-bar > div:last-child { display:flex !important; flex-wrap:nowrap !important; width:100%; align-items:center; justify-content:space-between; gap:3px !important; }
+  .nav-bar button, .nav-bar .btn-refresh, .nav-bar .btn-darkmode, .nav-bar .btn-install, .nav-bar .btn-logout {
+    flex:1 1 0; min-width:0 !important; max-width:42px; width:auto !important; height:34px !important; padding:0 !important; font-size:.9rem !important; border-radius:11px !important; display:inline-flex !important; align-items:center; justify-content:center; }
+  .nav-bar #syncStatus { flex:0 0 auto; font-size:.6rem !important; padding:0 7px !important; height:30px; display:inline-flex; align-items:center; border-radius:11px !important; white-space:nowrap; }
+}
