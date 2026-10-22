@@ -1806,11 +1806,11 @@
     // ===== Cetak / PNG / WA untuk popup detail dashboard (SKU & Customer) =====
     function buildDxShareHTML(p, logoOverride) {
       const tone = p.tone || 'blue';
-      const rows = p.rows.map(r => ({ n:r.n, q:r.q, v:r.v }));
+      const rows = (p.rows||[]).map(r => ({ n:r.n, q:r.q, v:r.v }));
       return _rcRoot('dxshare-root', 380,
         _rcHead({ tone, icon:p.icon, logo:logoOverride, title:p.title, sub:p.sub }) +
         _rcStats(p.stats, tone) +
-        _rcBody(_rcSec({ tone, title:p.secTitle, badge:p.badge, rows, total:p.total })) +
+        _rcBody(p.sections ? p.sections.map(sc => _rcSec(Object.assign({ tone:sc.tone||tone }, sc))).join('') : _rcSec({ tone, title:p.secTitle, badge:p.badge, rows, total:p.total })) +
         _rcFoot(settings.bottomLine || 'Terima kasih!'));
     }
     function dxShareDo(act) {
@@ -1842,10 +1842,16 @@
       } else {
         const L = '━━━━━━━━━━━━━━━━━━━━━━';
         const lines = ['📊 *' + p.waTitle + '*', '*' + (settings.namaToko || 'Tirta Kencana') + '*', L, p.waSub, L];
-        p.stats.forEach(x => lines.push(x.l + ': ' + x.v));
+        if (!p.sections) { p.stats.forEach(x => lines.push(x.l + ': ' + x.v)); }
+        else lines.push('Total Modal: ' + p.stats[0].v);
         lines.push(L);
+        if (p.sections) {
+          p.sections.forEach(sc => { lines.push('*' + sc.plainTitle + '*'); sc.rows.forEach((r, i) => { lines.push((i + 1) + '. ' + r.nPlain + ' — ' + r.q + (r.v ? ' (' + r.v + ')' : '')); if (r.subPlain) lines.push('    ' + r.subPlain); }); lines.push('_' + sc.total.l + ': ' + sc.total.v + '_', ''); });
+          lines.push(L, '*' + p.total.l + ': ' + p.total.v + '*');
+        } else {
         p.rows.forEach((r, i) => lines.push((i + 1) + '. ' + r.nPlain + ' — ' + r.q + (r.v ? ' (' + r.v + ')' : '')));
         lines.push(L, '*' + p.total.l + ': ' + p.total.v + '*');
+        }
         window.open('https://wa.me/?text=' + encodeURIComponent(lines.join('\n')), '_blank');
       }
     }
@@ -1853,21 +1859,40 @@
       const today = _dxToday();
       const inp = _dxInputToday(today);
       const g = {};
-      let tq = 0, tn = 0;
+      let tq = 0, tn = 0, kirN = 0, titN = 0, kirQ = 0, titQ = 0;
       inp.forEach(s => {
         const k = (s.driver||'—') + '|' + (s.rit||'') + '|' + (s.status||'');
         if (!g[k]) g[k] = { driver:s.driver||'—', rit:s.rit, status:s.status, rows:[], qty:0, net:0 };
         const n = (s.qty||0)*((s.hargaModal||0)-(s.disc||0));
-        g[k].rows.push({ n:esc(s.nama||s.sku||'—'), q:(s.qty||0)+' pcs', v:fmtRp(n) });
+        g[k].rows.push({ n:esc(s.nama||s.sku||'—'), nPlain:String(s.nama||s.sku||'—'), q:(s.qty||0)+' pcs', v:fmtRp(n) });
         g[k].qty += (s.qty||0); g[k].net += n; tq += (s.qty||0); tn += n;
+        if (s.status==='titipan') { titN += n; titQ += (s.qty||0); } else { kirN += n; kirQ += (s.qty||0); }
       });
       const secs = Object.values(g).map(x => ({
         title: '<i class="fas fa-truck"></i> ' + esc(x.driver) + (x.rit ? ' · Rit '+esc(String(x.rit)) : ''),
+        plainTitle: x.driver + (x.rit ? ' · Rit '+x.rit : '') + ' (' + (x.status==='titipan' ? 'Titipan' : 'Kiriman') + ')',
         badge: x.status==='titipan' ? 'Titipan' : 'Kiriman', tone: x.status==='titipan' ? 'ungu' : '',
         rows: x.rows, total: { l:'Total '+x.qty+' pcs', v:fmtRp(x.net) } }));
+      const rt = {};
+      inp.forEach(s => {
+        const k = (s.driver||'—') + '|' + (s.rit||'');
+        if (!rt[k]) rt[k] = { driver:s.driver||'—', rit:s.rit, kir:0, tit:0, qty:0 };
+        const n = (s.qty||0)*((s.hargaModal||0)-(s.disc||0));
+        if (s.status==='titipan') rt[k].tit += n; else rt[k].kir += n;
+        rt[k].qty += (s.qty||0);
+      });
+      const ritRows = Object.values(rt).sort((a,b)=>String(a.rit||'').localeCompare(String(b.rit||''),undefined,{numeric:true}) || String(a.driver).localeCompare(String(b.driver))).map(x => ({
+        n: esc(x.driver) + (x.rit ? ' · Rit '+esc(String(x.rit)) : ''), nPlain: x.driver + (x.rit ? ' · Rit '+x.rit : ''),
+        sub: 'Kiriman ' + fmtRp(x.kir) + ' + Titipan ' + fmtRp(x.tit), subPlain: 'Kiriman ' + fmtRp(x.kir) + ' + Titipan ' + fmtRp(x.tit),
+        q: x.qty+' pcs', v: fmtRp(x.kir + x.tit) }));
+      const ritSec = { title:'<i class="fas fa-route"></i> Total per Rit', plainTitle:'TOTAL PER RIT', badge:ritRows.length+' rit', rows:ritRows, total:{ l:'Kiriman + Titipan', v:fmtRp(tn) } };
+      secs.unshift(ritSec);
+      const stats = [{ l:'Total Modal', v:fmtRp(tn) }, { l:'Kiriman', v:fmtRp(kirN) }, { l:'Titipan', v:fmtRp(titN) }];
+      const sub = 'Rekap Input · ' + fmtDate(today);
       _dxPop({ icon:'fa-boxes', title:'Rekap Input Hari Ini', sub: esc(fmtDate(today)),
-        stats: [{ l:'Nilai Modal', v:fmtRp(tn) }, { l:'Total Qty', v:tq+' pcs' }, { l:'Input', v:Object.keys(g).length }],
-        sections: secs });
+        stats, sections: secs,
+        share: { icon:'fa-boxes', title:'Rekap Input Hari Ini', sub:esc(sub), stats, sections:secs.map(x=>Object.assign({},x,{ tone:x.tone==='ungu'?'purple':'blue' })),
+          total:{ l:'TOTAL '+tq+' pcs', v:fmtRp(tn) }, file:'RekapInput-'+today, waTitle:'REKAP INPUT HARI INI', waSub:'Tanggal: '+fmtDate(today)+'\nKiriman: '+fmtRp(kirN)+' ('+kirQ+' pcs)\nTitipan: '+fmtRp(titN)+' ('+titQ+' pcs)' } });
     }
     function showDxSkuDetail(name) {
       const today = _dxToday(), per = {};
