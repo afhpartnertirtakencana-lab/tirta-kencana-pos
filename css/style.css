@@ -1982,3 +1982,48 @@ body[data-page="pelanggan"] #pelangganTbody td:last-child .btn { margin:0; }
 .dxp-share button{flex:1;border:0;cursor:pointer;font:inherit;font-size:.78rem;font-weight:800;color:#fff;padding:11px 8px;border-radius:12px;background:linear-gradient(120deg,var(--a1,#0078D4),var(--a2,#29A8FF));box-shadow:0 4px 12px rgba(0,60,140,.22)}
 .dxp-share button.wa{background:linear-gradient(120deg,#16A34A,#25D366)}
 .dxp-share button i{margin-right:5px}
+
+/* seragam azure: judul kartu + label form untuk halaman sisa (HP & web) */
+#contentArea:is([data-page="inputbarang"],[data-page="produk"],[data-page="pelanggan"],[data-page="pengaturan"],[data-page="pengaturanUser"],[data-page="grafik"],[data-page="laporanbulanan"],[data-page="googlesheets"],[data-page="analisacust"],[data-page="rekapharian"],[data-page="auditlog"],[data-page="profit"]) .card { border-radius:18px; }
+#contentArea:is([data-page="inputbarang"],[data-page="produk"],[data-page="pelanggan"],[data-page="pengaturan"],[data-page="pengaturanUser"],[data-page="grafik"],[data-page="laporanbulanan"],[data-page="googlesheets"],[data-page="analisacust"],[data-page="rekapharian"],[data-page="auditlog"],[data-page="profit"]) .card-title { display:flex; align-items:center; gap:8px; font-weight:800; color:var(--text); }
+#contentArea:is([data-page="inputbarang"],[data-page="produk"],[data-page="pelanggan"],[data-page="pengaturan"],[data-page="pengaturanUser"],[data-page="grafik"],[data-page="laporanbulanan"],[data-page="googlesheets"],[data-page="analisacust"],[data-page="rekapharian"],[data-page="auditlog"],[data-page="profit"]) .card-title > i:first-child { width:28px; height:28px; border-radius:9px; display:inline-flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#0078D4,#29A8FF); color:#fff !important; font-size:0.72rem; box-shadow:0 4px 10px rgba(0,120,212,0.4); flex-shrink:0; }
+#contentArea:is([data-page="inputbarang"],[data-page="produk"],[data-page="pelanggan"],[data-page="pengaturan"],[data-page="pengaturanUser"],[data-page="grafik"],[data-page="laporanbulanan"],[data-page="googlesheets"],[data-page="analisacust"],[data-page="rekapharian"],[data-page="auditlog"],[data-page="profit"]) .form-group label { font-size:0.64rem; font-weight:800; letter-spacing:.4px; text-transform:uppercase; color:var(--text2); }
+#contentArea:is([data-page="inputbarang"],[data-page="produk"],[data-page="pelanggan"],[data-page="pengaturan"],[data-page="pengaturanUser"],[data-page="grafik"],[data-page="laporanbulanan"],[data-page="googlesheets"],[data-page="analisacust"],[data-page="rekapharian"],[data-page="auditlog"],[data-page="profit"]) .btn-outline { border-color:rgba(0,120,212,.55); color:#29A8FF; background:rgba(0,120,212,.08); font-weight:700; }
+body.light-mode #contentArea:is([data-page="inputbarang"],[data-page="produk"],[data-page="pelanggan"],[data-page="pengaturan"],[data-page="pengaturanUser"],[data-page="grafik"],[data-page="laporanbulanan"],[data-page="googlesheets"],[data-page="analisacust"],[data-page="rekapharian"],[data-page="auditlog"],[data-page="profit"]) .btn-outline { color:#0060B0; background:#EAF4FF; border-color:#9CC7EE; }
+body.light-mode #contentArea:is([data-page="inputbarang"],[data-page="produk"],[data-page="pelanggan"],[data-page="pengaturan"],[data-page="pengaturanUser"],[data-page="grafik"],[data-page="laporanbulanan"],[data-page="googlesheets"],[data-page="analisacust"],[data-page="rekapharian"],[data-page="auditlog"],[data-page="profit"]) .card-title { color:#0B3A6A !important; }
+
+/* ===== HP: header & menu bawah diseragamkan dengan tema azure ===== */
+.header { background: linear-gradient(120deg, #00509E 0%, #0078D4 55%, #29A8FF 100%); }
+@media (max-width:767px) {
+  /* bilah "Hello, user" + ikon */
+  .nav-bar { background:linear-gradient(180deg,#06264D,#041B38) !important; border-bottom:1px solid rgba(41,168,255,.25) !important; }
+  .nav-bar .user-info, .nav-bar .user-info * { color:#CFE8FF; }
+  .nav-bar button, .nav-bar #syncStatus { background:rgba(41,168,255,.13) !important; border:1px solid rgba(41,168,255,.38) !important; color:#8FD3FF !important; box-shadow:none !important; }
+  .nav-bar .btn-logout { background:rgba(255,80,110,.14) !important; border-color:rgba(255,80,110,.45) !important; color:#FF8AA5 !important; }
+  .nav-bar button[onclick*="openWhatsAppApp"] { color:#34D399 !important; border-color:rgba(52,211,153,.45) !important; background:rgba(52,211,153,.12) !important; }
+  body.light-mode .nav-bar { background:linear-gradient(180deg,#EAF4FF,#DCEBFB) !important; border-bottom:1px solid rgba(0,120,212,.22) !important; }
+  body.light-mode .nav-bar .user-info, body.light-mode .nav-bar .user-info * { color:#0B3A6A; }
+  body.light-mode .nav-bar button, body.light-mode .nav-bar #syncStatus { background:#fff !important; border:1px solid rgba(0,120,212,.30) !important; color:#0067B8 !important; }
+  body.light-mode .nav-bar .btn-logout { background:#FFF1F4 !important; border-color:rgba(220,38,38,.35) !important; color:#DC2626 !important; }
+  body.light-mode .nav-bar button[onclick*="openWhatsAppApp"] { background:#ECFDF5 !important; border-color:rgba(5,150,105,.4) !important; color:#059669 !important; }
+  body.light-mode .nav-bar .btn-darkmode { background:#FFF7E0 !important; border-color:#F5C451 !important; color:#B7791F !important; }
+}
+/* menu bawah */
+.bottom-nav-mobile { background:linear-gradient(180deg,rgba(6,38,77,.97),rgba(4,27,56,.98)); border-top:1px solid rgba(41,168,255,.30); box-shadow:0 -6px 24px rgba(0,40,100,.35); }
+.bnav-item { color:#8FB8E0; }
+.bnav-item.active { color:#29A8FF; }
+.bnav-item.active i { text-shadow:0 0 8px rgba(41,168,255,.6); }
+.bnav-center .bnav-center-btn { background:linear-gradient(135deg,#0060B8,#29A8FF); box-shadow:0 4px 14px rgba(0,120,212,.55), 0 0 0 4px #052449; }
+body.light-mode .bottom-nav-mobile { background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(234,244,255,.99)); border-top:1px solid rgba(0,120,212,.25); box-shadow:0 -6px 22px rgba(0,80,160,.14); }
+body.light-mode .bnav-item { color:#5A7FA6; }
+body.light-mode .bnav-item.active { color:#0078D4; }
+body.light-mode .bnav-item.active i { text-shadow:none; }
+body.light-mode .bnav-center .bnav-center-btn { background:linear-gradient(135deg,#0060B8,#29A8FF); box-shadow:0 5px 14px rgba(0,120,212,.45), 0 0 0 4px #fff; }
+body.light-mode .bnav-center span { color:#0067B8; }
+body.light-mode .bottom-nav-more-sheet { background:#fff; }
+/* sapaan menyatu dengan bilah ikon & header azure */
+.mobile-greeting { background:#06264D !important; color:#CFE8FF !important; }
+.mobile-greeting #mobileGreetName { color:#fff !important; }
+body.light-mode .mobile-greeting { background:#EAF4FF !important; color:#4B6584 !important; }
+body.light-mode .mobile-greeting #mobileGreetName { color:#0067B8 !important; }
+.header { background: linear-gradient(120deg, #00509E 0%, #0078D4 60%, #1E96F0 100%) !important; }
