@@ -9242,6 +9242,8 @@ if ('serviceWorker' in navigator) {
       else if (currentPage === 'analisacust') h = _pgHero('fa-users-viewfinder', 'Analisa Customer', 'Terbaik & mulai jarang beli');
       else if (currentPage === 'profit') h = _pgHero('fa-sack-dollar', 'Laporan Profit', 'Untung per SKU, sales & customer');
       else if (currentPage === 'auditlog') h = _pgHero('fa-shield-halved', 'Backup & Audit', 'Cadangan data & jejak aktivitas');
+      else if (currentPage === 'googlesheets') h = _pgHero('fa-table', 'Google Sheets', 'Database & sinkronisasi');
+      else if (currentPage === 'pengaturanUser') h = _pgHero('fa-users-gear', 'Pengguna', 'Akun, peran & akses');
       if (h) el.insertAdjacentHTML('afterbegin', h);
     } catch(e) { console.warn('hero extra:', e); }
   };
