@@ -1743,8 +1743,8 @@
     function _dxRekapPanels(today, todayTx) {
       const inp = _dxInputToday(today);
       const groups = new Set(inp.map(s => s.groupId || ((s.driver||'')+'|'+(s.rit||'')+'|'+(s.status||''))));
-      let qty = 0, kir = 0, tit = 0;
-      inp.forEach(s => { qty += (s.qty||0); const n=(s.qty||0)*((s.hargaModal||0)-(s.disc||0)); if (s.status==='titipan') tit+=n; else kir+=n; });
+      let qty = 0, kir = 0, tit = 0, qKir = 0, qTit = 0;
+      inp.forEach(s => { const q0=(s.qty||0); qty += q0; const n=q0*((s.hargaModal||0)-(s.disc||0)); if (s.status==='titipan') { tit+=n; qTit+=q0; } else { kir+=n; qKir+=q0; } });
       const skuMap = {}, cusMap = {};
       todayTx.forEach(t => {
         const c = t.customer || '—';
@@ -1770,7 +1770,10 @@
           <div class="dx-panel dx-click" onclick="showDxRekapInput()">
             <div class="dx-panel-head"><span><i class="fas fa-boxes" style="color:var(--az-3);margin-right:6px"></i>Rekap Input Hari Ini</span><i class="fas fa-chevron-right dx-chev-s"></i></div>
             <div class="dx-ri-total">${fmtRp(kir+tit)}</div>
-            <div class="dx-ri-chips"><span>${groups.size} input</span><span>${qty} pcs</span><span>Kiriman ${fmtRp(kir)}</span><span>Titipan ${fmtRp(tit)}</span></div>
+            <div class="dx-ri-lbl">Nilai Input (Rp)</div>
+            <div class="dx-ri-chips"><span>Kiriman ${fmtRp(kir)}</span><span>Titipan ${fmtRp(tit)}</span></div>
+            <div class="dx-ri-lbl" style="margin-top:8px">Jumlah Barang (qty)</div>
+            <div class="dx-ri-chips dx-ri-qty"><span>Total ${qty} pcs</span><span>Kiriman ${qKir} pcs</span><span>Titipan ${qTit} pcs</span></div>
             ${inp.length ? '' : '<div class="dx-empty">Belum ada input hari ini</div>'}
           </div>
           <div class="dx-panel">
@@ -1893,6 +1896,20 @@
         sub: 'Kiriman ' + fmtRp(x.kir) + ' + Titipan ' + fmtRp(x.tit), subPlain: 'Kiriman ' + fmtRp(x.kir) + ' + Titipan ' + fmtRp(x.tit),
         q: x.qty+' pcs', v: fmtRp(x.kir + x.tit) }));
       const ritSec = { title:'<i class="fas fa-route"></i> Total per Rit', plainTitle:'TOTAL PER RIT', badge:ritRows.length+' rit', rows:ritRows, total:{ l:'Kiriman + Titipan', v:fmtRp(tn) } };
+      // gabungan per SKU (Kiriman + Titipan)
+      const sk = {};
+      inp.forEach(s => {
+        const k = s.nama || s.sku || '—';
+        if (!sk[k]) sk[k] = { nama:k, qK:0, qT:0, nK:0, nT:0 };
+        const q0 = (s.qty||0), n = q0*((s.hargaModal||0)-(s.disc||0));
+        if (s.status==='titipan') { sk[k].qT += q0; sk[k].nT += n; } else { sk[k].qK += q0; sk[k].nK += n; }
+      });
+      const skRows = Object.values(sk).sort((a,b)=>(b.qK+b.qT)-(a.qK+a.qT)).map(x => {
+        const sub = 'Kiriman ' + x.qK + ' pcs · Titipan ' + x.qT + ' pcs';
+        return { n:esc(x.nama), nPlain:String(x.nama), sub, subPlain:sub, q:(x.qK+x.qT)+' pcs', v:fmtRp(x.nK+x.nT) };
+      });
+      const gabSec = { title:'<i class="fas fa-layer-group"></i> Gabungan Kiriman + Titipan', plainTitle:'GABUNGAN KIRIMAN + TITIPAN (PER SKU)', badge:skRows.length+' SKU', rows:skRows, total:{ l:'Total '+tq+' pcs', v:fmtRp(tn) } };
+      secs.unshift(gabSec);
       secs.unshift(ritSec);
       const stats = [{ l:'Total Modal', v:fmtRp(tn) }, { l:'Kiriman', v:fmtRp(kirN) }, { l:'Titipan', v:fmtRp(titN) }];
       const sub = 'Rekap Input · ' + fmtDate(today);
