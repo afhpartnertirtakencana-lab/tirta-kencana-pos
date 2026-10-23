@@ -1984,7 +1984,7 @@ body[data-page="pelanggan"] #pelangganTbody td:last-child .btn { margin:0; }
 .dxp-share button i{margin-right:5px}
 
 /* seragam azure: judul kartu + label form untuk halaman sisa (HP & web) */
-#contentArea:is([data-page="inputbarang"],[data-page="produk"],[data-page="pelanggan"],[data-page="pengaturan"],[data-page="pengaturanUser"],[data-page="grafik"],[data-page="laporanbulanan"],[data-page="googlesheets"],[data-page="analisacust"],[data-page="rekapharian"],[data-page="auditlog"],[data-page="profit"]) .card { border-radius:18px; }
+#contentArea:is([data-page="inputbarang"],[data-page="produk"],[data-page="pelanggan"],[data-page="pengaturan"],[data-page="pengaturanUser"],[data-page="grafik"],[data-page="laporanbulanan"],[data-page="googlesheets"],[data-page="analisacust"],[data-page="panduan"],[data-page="rekapharian"],[data-page="auditlog"],[data-page="profit"]) .card { border-radius:18px; }
 #contentArea:is([data-page="inputbarang"],[data-page="produk"],[data-page="pelanggan"],[data-page="pengaturan"],[data-page="pengaturanUser"],[data-page="grafik"],[data-page="laporanbulanan"],[data-page="googlesheets"],[data-page="analisacust"],[data-page="rekapharian"],[data-page="auditlog"],[data-page="profit"]) .card-title { display:flex; align-items:center; gap:8px; font-weight:800; color:var(--text); }
 #contentArea:is([data-page="inputbarang"],[data-page="produk"],[data-page="pelanggan"],[data-page="pengaturan"],[data-page="pengaturanUser"],[data-page="grafik"],[data-page="laporanbulanan"],[data-page="googlesheets"],[data-page="analisacust"],[data-page="rekapharian"],[data-page="auditlog"],[data-page="profit"]) .card-title > i:first-child { width:28px; height:28px; border-radius:9px; display:inline-flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#0078D4,#29A8FF); color:#fff !important; font-size:0.72rem; box-shadow:0 4px 10px rgba(0,120,212,0.4); flex-shrink:0; }
 #contentArea:is([data-page="inputbarang"],[data-page="produk"],[data-page="pelanggan"],[data-page="pengaturan"],[data-page="pengaturanUser"],[data-page="grafik"],[data-page="laporanbulanan"],[data-page="googlesheets"],[data-page="analisacust"],[data-page="rekapharian"],[data-page="auditlog"],[data-page="profit"]) .form-group label { font-size:0.64rem; font-weight:800; letter-spacing:.4px; text-transform:uppercase; color:var(--text2); }
@@ -2035,3 +2035,26 @@ body.light-mode .mobile-greeting #mobileGreetName { color:#0067B8 !important; }
     flex:1 1 0; min-width:0 !important; max-width:42px; width:auto !important; height:34px !important; padding:0 !important; font-size:.9rem !important; border-radius:11px !important; display:inline-flex !important; align-items:center; justify-content:center; }
   .nav-bar #syncStatus { flex:0 0 auto; font-size:.6rem !important; padding:0 7px !important; height:30px; display:inline-flex; align-items:center; border-radius:11px !important; white-space:nowrap; }
 }
+
+/* Panduan */
+.pd-sec { margin-bottom:12px; border:1px solid rgba(41,168,255,.28); border-radius:16px; overflow:hidden; background:rgba(41,168,255,.05); }
+.pd-sec-h { display:flex; align-items:center; gap:8px; padding:10px 14px; font-weight:800; font-size:.86rem; color:var(--text); background:linear-gradient(120deg,rgba(0,120,212,.22),rgba(41,168,255,.10)); }
+.pd-sec-h i { width:26px; height:26px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#0078D4,#29A8FF); color:#fff; font-size:.7rem; }
+.pd-it { border-top:1px solid rgba(41,168,255,.18); padding:0 14px; }
+.pd-it summary { cursor:pointer; padding:11px 0; font-weight:700; font-size:.82rem; color:var(--text); list-style:none; display:flex; justify-content:space-between; gap:8px; }
+.pd-it summary::-webkit-details-marker { display:none; }
+.pd-it summary::after { content:'+'; font-weight:800; color:#29A8FF; }
+.pd-it[open] summary::after { content:'–'; }
+.pd-it p { margin:0 0 12px; font-size:.8rem; line-height:1.55; color:var(--text2); }
+body.light-mode .pd-sec { background:#F3F9FF; border-color:#BBD8F3; }
+body.light-mode .pd-sec-h { color:#0B3A6A; background:linear-gradient(120deg,#DCEBFB,#EAF4FF); }
+body.light-mode .pd-it summary { color:#0B3A6A; }
+body.light-mode .pd-it p { color:#3E5873; }
+/* seragam azure: tombol "warning" (Rollover Stok dll.) tidak oranye di mode terang */
+#contentArea[data-page="stockbarang"] .btn-warning { background:linear-gradient(135deg,#0078D4,#29A8FF) !important; color:#fff !important; border:0 !important; box-shadow:0 6px 16px rgba(0,120,212,.32); }
+body.light-mode #contentArea[data-page="stockbarang"] .btn-warning { background:linear-gradient(135deg,#0060B8,#29A8FF) !important; color:#fff !important; }
+
+/* judul kartu azure untuk Panduan & Rekap Setoran */
+#contentArea:is([data-page="panduan"],[data-page="rekapsetoran"]) .card-title { display:flex; align-items:center; gap:8px; font-weight:800; color:var(--text); }
+#contentArea:is([data-page="panduan"],[data-page="rekapsetoran"]) .card-title > i:first-child { width:28px; height:28px; border-radius:9px; display:inline-flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#0078D4,#29A8FF); color:#fff !important; font-size:0.72rem; box-shadow:0 4px 10px rgba(0,120,212,0.4); flex-shrink:0; }
+body.light-mode #contentArea:is([data-page="panduan"],[data-page="rekapsetoran"]) .card-title { color:#0B3A6A !important; }
