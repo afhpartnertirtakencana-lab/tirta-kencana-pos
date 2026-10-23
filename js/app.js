@@ -7475,9 +7475,30 @@
       const sisaMap = {};
       custEntries.forEach(e => { if (!sisaMap[e.sku]) sisaMap[e.sku] = { nama: e.nama, masuk: 0, keluar: 0 }; if (e.tipe === 'masuk') sisaMap[e.sku].masuk += e.qty; else sisaMap[e.sku].keluar += e.qty; });
       const sisaRows = Object.keys(sisaMap).map(sku => ({ sku, nama: sisaMap[sku].nama, sisa: sisaMap[sku].masuk - sisaMap[sku].keluar })).sort((a,b) => a.nama.localeCompare(b.nama));
-      _lastTitipanPayload = { date: today, customer, todayEntries, sisaRows };
-      showTitipanStrukModal(_lastTitipanPayload);
+      _titPickSku(sisaRows, '🖨️ Pilih SKU yang dicetak — ' + customer, (picked) => {
+        _lastTitipanPayload = { date: today, customer, todayEntries: todayEntries.filter(e => picked.has(e.sku)), sisaRows: sisaRows.filter(r => picked.has(r.sku)) };
+        showTitipanStrukModal(_lastTitipanPayload);
+      });
     };
+    // Popup pilih SKU sebelum cetak sisa titipan (default: semua SKU, atau sesuai Filter SKU halaman)
+    function _titPickSku(items, title, cb) {
+      if (!items.length) return Swal.fire({ icon:'info', title:'Tidak Ada SKU', text:'Belum ada SKU titipan untuk dicetak.' });
+      const filt = (typeof _titFilterGet === 'function') ? _titFilterGet() : new Set();
+      const pre = new Set(items.filter(r => filt.size === 0 || filt.has(r.sku)).map(r => r.sku));
+      const defSel = pre.size ? pre : new Set(items.map(r => r.sku));
+      const rows = items.map(r => `<label class="tps-row"><input type="checkbox" class="tps-cb" value="${esc(r.sku)}" ${defSel.has(r.sku) ? 'checked' : ''}><span class="tps-n">${esc(r.nama || r.sku)}</span>${r.sisa !== undefined ? `<span class="tps-q ${r.sisa < 0 ? 'neg' : ''}">${r.sisa}</span>` : ''}</label>`).join('');
+      Swal.fire({
+        title, width: 420, showCancelButton: true, confirmButtonText: 'Cetak', cancelButtonText: 'Batal', focusConfirm: false,
+        html: `<div class="tps"><div class="tps-bar"><input id="tpsQ" class="form-control" placeholder="🔍 Cari SKU…" oninput="document.querySelectorAll('.tps-row').forEach(l=>{l.style.display=l.textContent.toLowerCase().includes(this.value.toLowerCase())?'':'none'})"><button type="button" class="btn btn-sm btn-outline" onclick="document.querySelectorAll('.tps-row').forEach(l=>{if(l.style.display!=='none')l.querySelector('input').checked=true});_tpsCount()">Semua</button><button type="button" class="btn btn-sm btn-outline" onclick="document.querySelectorAll('.tps-row').forEach(l=>{if(l.style.display!=='none')l.querySelector('input').checked=false});_tpsCount()">Kosongkan</button></div><div class="tps-list" onchange="_tpsCount()">${rows}</div><div id="tpsInfo" class="tps-info"></div></div>`,
+        didOpen: () => _tpsCount(),
+        preConfirm: () => {
+          const picked = new Set([...document.querySelectorAll('.tps-cb:checked')].map(c => c.value));
+          if (!picked.size) { Swal.showValidationMessage('Pilih minimal 1 SKU'); return false; }
+          return [...picked];
+        }
+      }).then(res => { if (res && res.isConfirmed && res.value) cb(new Set(res.value)); });
+    }
+    function _tpsCount() { const n = document.querySelectorAll('.tps-cb:checked').length, t = document.querySelectorAll('.tps-cb').length, e = document.getElementById('tpsInfo'); if (e) e.textContent = n + ' dari ' + t + ' SKU dipilih'; }
     function buildTitipanStrukHTML(payload, logoOverride) {
       const now = new Date(); const timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
       const tone = 'indigo', t = _rcT(tone);
@@ -7552,8 +7573,16 @@
         if (e.tipe === 'masuk') byCustomer[e.customer][e.sku].masuk += e.qty; else byCustomer[e.customer][e.sku].keluar += e.qty;
       });
       if (Object.keys(byCustomer).length === 0) return Swal.fire({ icon:'info', title:'Belum Ada Data', text:'Belum ada titipan yang tercatat dengan nama pelanggan.' });
-      _lastTitipanPelangganPayload = { date: localDateStr(), byCustomer };
-      showTitipanPelangganStrukModal(_lastTitipanPelangganPayload);
+      const skuAgg = {};
+      Object.keys(byCustomer).forEach(c => Object.keys(byCustomer[c]).forEach(k => { const x = byCustomer[c][k]; if (!skuAgg[k]) skuAgg[k] = { sku:k, nama:x.nama, sisa:0 }; skuAgg[k].sisa += (x.masuk - x.keluar); }));
+      const items = Object.values(skuAgg).sort((a,b) => String(a.nama).localeCompare(String(b.nama)));
+      _titPickSku(items, '🖨️ Pilih SKU yang dicetak', (picked) => {
+        const filtered = {};
+        Object.keys(byCustomer).forEach(c => { const sub = {}; Object.keys(byCustomer[c]).forEach(k => { if (picked.has(k)) sub[k] = byCustomer[c][k]; }); if (Object.keys(sub).length) filtered[c] = sub; });
+        if (!Object.keys(filtered).length) return Swal.fire({ icon:'info', title:'Tidak Ada Data', text:'Tidak ada pelanggan yang memiliki SKU terpilih.' });
+        _lastTitipanPelangganPayload = { date: localDateStr(), byCustomer: filtered };
+        showTitipanPelangganStrukModal(_lastTitipanPelangganPayload);
+      });
     }
     function buildTitipanPelangganStrukHTML(payload, logoOverride) {
       const now = new Date(); const timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
