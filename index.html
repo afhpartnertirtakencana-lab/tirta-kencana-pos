@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Tirta Kencana">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css?v=20261022g">
+  <link rel="stylesheet" href="css/style.css?v=20261023c">
   <style>
     /* [PERF] Optimasi scroll untuk HP RAM kecil.
        - overscroll-behavior-y:contain menahan efek "rubber-band" pantulan browser
@@ -184,10 +184,53 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
-  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
+  <!-- [PERFORMA] Library berat (html2canvas, jsQR, Chart.js, SheetJS ±1,4 MB) TIDAK lagi diunduh saat aplikasi dibuka.
+       Dimuat otomatis di latar belakang beberapa detik setelah layar tampil, atau langsung saat pertama kali dipakai
+       (mis. tombol Export / Download PNG) - kode aplikasi tidak perlu diubah karena nama global-nya tetap sama. -->
+  <script>
+  (function () {
+    var LIBS = {
+      html2canvas: 'https://html2canvas.hertzen.com/dist/html2canvas.min.js',
+      jsQR: 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js',
+      Chart: 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js',
+      XLSX: 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'
+    };
+    var done = {}, shims = {};
+    function real(n) { var v = window[n]; return (v && v !== shims[n]) ? v : null; }
+    function syncLoad(n) { // dipakai hanya bila fitur dipakai SEBELUM pemuatan latar belakang selesai
+      if (real(n)) return real(n);
+      var x = new XMLHttpRequest(); x.open('GET', LIBS[n], false);
+      try { x.send(); } catch (e) { throw new Error('Library ' + n + ' gagal dimuat (butuh internet)'); }
+      if (x.status !== 200) throw new Error('Library ' + n + ' gagal dimuat (butuh internet)');
+      try { delete window[n]; } catch (e) {}
+      (0, eval)(x.responseText);
+      var r = real(n); if (!r) { window[n] = shims[n]; throw new Error('Library ' + n + ' gagal dimuat'); }
+      done[n] = 1; return r;
+    }
+    Object.keys(LIBS).forEach(function (n) {
+      var shim = new Proxy(function () {}, {
+        get: function (t, k) { return syncLoad(n)[k]; },
+        has: function (t, k) { return k in syncLoad(n); },
+        apply: function (t, th, a) { return Reflect.apply(syncLoad(n), th, a); },
+        construct: function (t, a) { return Reflect.construct(syncLoad(n), a); }
+      });
+      shims[n] = shim; window[n] = shim;
+    });
+    function bg(names, i) {
+      if (i >= names.length) return;
+      var n = names[i];
+      if (real(n)) return bg(names, i + 1);
+      var s = document.createElement('script'); s.src = LIBS[n]; s.async = true;
+      s.onload = s.onerror = function () { setTimeout(function () { bg(names, i + 1); }, 400); };
+      document.head.appendChild(s);
+    }
+    window.addEventListener('load', function () {
+      var c = navigator.connection || {};
+      if (c.saveData || navigator.onLine === false) return;
+      setTimeout(function () { bg(['html2canvas', 'Chart', 'XLSX', 'jsQR'], 0); }, 3500);
+    });
+  })();
+  </script>
 </head>
 <body>
   <!-- ========== SPLASH SCREEN PWA (BARU) ========== -->
@@ -350,6 +393,6 @@
     <div id="sbSkuCheckList" style="max-height:50vh;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;border:1px solid var(--border);border-radius:10px;padding:4px 0;"></div>
     <button class="btn btn-primary btn-block mt-2" onclick="closeSbSkuModal();doStockBarang()"><i class="fas fa-check"></i> Terapkan</button>
   </div></div></div>
-  <script src="js/app.js?v=20261022g" defer></script>
+  <script src="js/app.js?v=20261023c" defer></script>
 </body>
 </html>

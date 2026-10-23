@@ -9,7 +9,7 @@
    - Bump CACHE_VERSION on every deploy so old caches are purged on activate.
 */
 
-const CACHE_VERSION = 'tk-pos-v33';
+const CACHE_VERSION = 'tk-pos-v36';
 const APP_SHELL = [
   './index.html',
   './css/style.css',
@@ -44,6 +44,18 @@ self.addEventListener('fetch', (event) => {
   // (GAS backend calls, Google Fonts, CDN libraries, cross-origin images)
   // passes straight through to the network untouched.
   if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) {
+    return;
+  }
+
+  // [PERFORMA] File ber-versi (?v=...) tidak pernah berubah isinya -> cache-first: buka aplikasi berikutnya
+  // tidak perlu mengunduh ulang app.js/style.css (±1 MB). Versi baru = URL baru = otomatis terunduh.
+  if (new URL(req.url).searchParams.has('v')) {
+    event.respondWith(
+      caches.match(req).then((hit) => hit || fetch(req).then((res) => {
+        if (res && res.ok) { const copy = res.clone(); caches.open(CACHE_VERSION).then((c) => c.put(req, copy)).catch(() => {}); }
+        return res;
+      }))
+    );
     return;
   }
 
