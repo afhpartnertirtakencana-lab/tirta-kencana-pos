@@ -2066,3 +2066,18 @@ body.light-mode .dx-ri-qty span { background:#E4F8EF !important; color:#0A7F55 !
 
 .cs-selisih { text-decoration:underline dotted; text-underline-offset:3px; }
 .cs-selisih:active { background:rgba(41,168,255,.18); }
+
+/* popup pilih SKU cetak titipan */
+.tps { text-align:left; }
+.tps-bar { display:flex; gap:6px; margin-bottom:8px; align-items:center; }
+.tps-bar input { flex:1; min-width:0; }
+.tps-list { max-height:300px; overflow:auto; border:1px solid rgba(41,168,255,.28); border-radius:14px; background:rgba(41,168,255,.06); padding:4px; }
+.tps-row { display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:10px; font-size:.84rem; font-weight:600; cursor:pointer; }
+.tps-row:active { background:rgba(41,168,255,.16); }
+.tps-row input { width:18px; height:18px; accent-color:#0078D4; flex-shrink:0; }
+.tps-n { flex:1; min-width:0; }
+.tps-q { font-family:var(--mono); font-weight:800; font-size:.74rem; padding:2px 9px; border-radius:20px; background:rgba(16,185,129,.16); color:#34D399; }
+.tps-q.neg { background:rgba(239,68,68,.16); color:#F87171; }
+.tps-info { margin-top:8px; font-size:.72rem; font-weight:700; color:var(--text3); text-align:center; }
+body.light-mode .tps-q { background:#E4F8EF; color:#0A7F55; }
+body.light-mode .tps-q.neg { background:#FFE8E8; color:#C62828; }
