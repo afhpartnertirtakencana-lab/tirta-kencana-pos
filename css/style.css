@@ -2058,3 +2058,8 @@ body.light-mode #contentArea[data-page="stockbarang"] .btn-warning { background:
 #contentArea:is([data-page="panduan"],[data-page="rekapsetoran"]) .card-title { display:flex; align-items:center; gap:8px; font-weight:800; color:var(--text); }
 #contentArea:is([data-page="panduan"],[data-page="rekapsetoran"]) .card-title > i:first-child { width:28px; height:28px; border-radius:9px; display:inline-flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#0078D4,#29A8FF); color:#fff !important; font-size:0.72rem; box-shadow:0 4px 10px rgba(0,120,212,0.4); flex-shrink:0; }
 body.light-mode #contentArea:is([data-page="panduan"],[data-page="rekapsetoran"]) .card-title { color:#0B3A6A !important; }
+
+.dx-ri-lbl { font-size:.6rem; font-weight:800; letter-spacing:.5px; text-transform:uppercase; color:var(--text3); margin:0 0 4px; }
+.dx-ri-total { margin-bottom:2px !important; }
+.dx-ri-qty span { background:rgba(16,185,129,.16) !important; color:#34D399 !important; }
+body.light-mode .dx-ri-qty span { background:#E4F8EF !important; color:#0A7F55 !important; }
