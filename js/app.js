@@ -1852,7 +1852,7 @@
       } else {
         const L = '━━━━━━━━━━━━━━━━━━━━━━';
         const lines = ['📊 *' + p.waTitle + '*', '*' + (settings.namaToko || 'Tirta Kencana') + '*', L, p.waSub, L];
-        if (!p.sections) { p.stats.forEach(x => lines.push(x.l + ': ' + x.v)); }
+        if (!p.sections || p.allStats) { p.stats.forEach(x => lines.push(x.l + ': ' + x.v)); }
         else lines.push('Total Modal: ' + p.stats[0].v);
         lines.push(L);
         if (p.sections) {
@@ -6212,7 +6212,7 @@
         <td>${esc(r.nama)}</td>
         <td style="text-align:center;font-weight:700;font-family:var(--mono)">${r.stock}</td>
         <td style="text-align:center"><input type="number" class="cek-stock-input" value="${hasVal ? savedVal : ''}" placeholder="-" style="width:80px;text-align:center;padding:4px 6px;border-radius:6px;border:1px solid var(--border);background:var(--surface);font-family:var(--mono);font-size:12px" oninput="onCekStockInput(this)"></td>
-        <td style="text-align:center;font-family:var(--mono);font-weight:700;color:${hasVal ? (selisih===0?'#16A34A':'#EF4444') : 'var(--text3)'}" id="selisih-${esc(r.sku)}">${hasVal ? (selisih>0?'+':'')+selisih : '-'}</td>
+        <td class="cs-selisih" title="Ketuk untuk lihat detail" onclick="showCekStockDetail(this.closest('tr').dataset.sku)" style="text-align:center;font-family:var(--mono);font-weight:700;cursor:pointer;color:${hasVal ? (selisih===0?'#16A34A':'#EF4444') : 'var(--text3)'}" id="selisih-${esc(r.sku)}">${hasVal ? (selisih>0?'+':'')+selisih : '-'}</td>
         <td style="text-align:center" id="status-${esc(r.sku)}">${statusHtml}</td>
       </tr>`;
     }
@@ -6258,6 +6258,48 @@
       if (vals[1]) vals[1].textContent = cocok;
       if (vals[2]) vals[2].textContent = cekLagi;
       if (vals[3]) vals[3].textContent = belum;
+    }
+
+    // ===== Cek Stock: detail per SKU saat kolom Selisih diketuk =====
+    async function showCekStockDetail(sku) {
+      const today = _dxToday();
+      const tr = document.querySelector('#cekStockTbody tr[data-sku="' + String(sku).replace(/"/g,'\\"') + '"]');
+      const stokSistem = tr ? (Number(tr.dataset.stock) || 0) : 0;
+      const inp = tr && tr.querySelector('.cek-stock-input');
+      const hasVal = !!(inp && inp.value !== '');
+      const fisik = hasVal ? Number(inp.value) : null;
+      const selisih = hasVal ? fisik - stokSistem : null;
+      const prod = products.find(x => x.sku === sku);
+      const sRow = (_stockBarangAll || []).find(d => (d.date||'').substring(0,10) === today && d.sku === sku);
+      const nama = (sRow && sRow.nama) || (prod && prod.nama) || sku;
+      const awal = sRow ? (sRow.stokAwal || 0) : 0;
+      const rec = stockInHistory.filter(x => (x.date||x.tgl||'').substring(0,10) === today && x.sku === sku);
+      const kirim = rec.filter(x => (x.status||'').toLowerCase() === 'kiriman').reduce((a,x)=>a+(x.qty||0),0);
+      const titip = rec.filter(x => (x.status||'').toLowerCase() === 'titipan').reduce((a,x)=>a+(x.qty||0),0);
+      const masuk = rec.length ? kirim : (sRow ? (sRow.masuk||0) : 0);
+      const per = {}; let tq = 0, tn = 0;
+      allTrxList.filter(t => (t.tgl||'').substring(0,10) === today).forEach(t => (t.items||[]).forEach(it => {
+        if (it.sku !== sku && (it.nama||'') !== nama) return;
+        const c = t.customer || '—'; if (!per[c]) per[c] = { qty:0, nett:0 };
+        const n = (it.qty||0)*((it.harga||0)-(it.discRpPer||0));
+        per[c].qty += (it.qty||0); per[c].nett += n; tq += (it.qty||0); tn += n;
+      }));
+      const buyers = Object.entries(per).sort((a,b)=>b[1].qty-a[1].qty).map(r => ({ n:esc(r[0]), nPlain:String(r[0]), q:r[1].qty+' pcs', v:fmtRp(r[1].nett) }));
+      const mv = [
+        { n:'Stok awal', nPlain:'Stok awal', q:awal+' pcs' },
+        { n:'+ Masuk (kiriman)', nPlain:'Masuk (kiriman)', q:'+'+masuk+' pcs' },
+        { n:'− Terjual', nPlain:'Terjual', q:'−'+tq+' pcs' },
+        { n:'= Stok sistem', nPlain:'Stok sistem', q:stokSistem+' pcs' }
+      ];
+      if (titip) mv.splice(2, 0, { n:'Titipan (tidak masuk stok)', nPlain:'Titipan (tidak masuk stok)', q:titip+' pcs' });
+      const selTxt = hasVal ? ((selisih>0?'+':'')+selisih+' pcs') : 'Belum dicek';
+      const stats = [{ l:'Stok Sistem', v:stokSistem+' pcs' }, { l:'Cek Fisik', v:hasVal ? fisik+' pcs' : '-' }, { l:'Selisih', v:selTxt }];
+      const secMv = { title:'<i class="fas fa-arrows-rotate"></i> Pergerakan stok hari ini', plainTitle:'PERGERAKAN STOK', rows:mv, total:{ l:'Stok sistem', v:stokSistem+' pcs' } };
+      const secBy = { title:'<i class="fas fa-users"></i> Pembeli hari ini', plainTitle:'PEMBELI HARI INI', badge:buyers.length+' customer', rows:buyers, total:{ l:'Total '+tq+' pcs', v:fmtRp(tn) } };
+      const sub = 'Cek Stock · ' + fmtDate(today);
+      _dxPop({ icon:'fa-clipboard-check', tone: (hasVal && selisih !== 0) ? 'belum' : '', title:esc(nama), sub:esc(sub), stats, sections:[secMv, secBy],
+        share: { icon:'fa-clipboard-check', title:esc(nama), sub:esc(sub), stats, sections:[secMv, secBy], tone: (hasVal && selisih !== 0) ? 'red' : 'blue',
+          allStats:true, total:{ l:'Selisih', v:selTxt }, file:'CekStock-'+String(sku).replace(/[^\w-]+/g,'_')+'-'+today, waTitle:'CEK STOCK: '+nama, waSub:'Tanggal: '+fmtDate(today)+'\nSKU: '+sku } });
     }
     async function resetCekStockValues() {
       const conf = await Swal.fire({ icon:'question', title:'Reset Hasil Cek Hari Ini?', text:'Semua angka Cek Stock yang sudah diisi hari ini akan dikosongkan. Pilihan SKU tidak berubah.', showCancelButton:true, confirmButtonText:'Ya, Reset' });
