@@ -2081,3 +2081,20 @@ body.light-mode .dx-ri-qty span { background:#E4F8EF !important; color:#0A7F55 !
 .tps-info { margin-top:8px; font-size:.72rem; font-weight:700; color:var(--text3); text-align:center; }
 body.light-mode .tps-q { background:#E4F8EF; color:#0A7F55; }
 body.light-mode .tps-q.neg { background:#FFE8E8; color:#C62828; }
+
+/* tooltip nama ikon bilah atas */
+#tkTip { position:fixed; z-index:100000; display:none; pointer-events:none; padding:5px 10px; border-radius:9px; font-size:.72rem; font-weight:700; letter-spacing:.2px; white-space:nowrap; color:#fff; background:linear-gradient(120deg,#0060B8,#1E96F0); box-shadow:0 6px 16px rgba(0,60,140,.35); }
+@media (hover:none) { #tkTip { display:none !important; } }
+
+/* ===== Ikon bilah atas: nama tampil permanen DI BAWAH ikon ===== */
+#tkTip { display:none !important; }
+@media (min-width:768px) { .menu-row button[data-lbl]:not([style*="display: none"]) {
+  display:inline-grid !important; grid-template-rows:auto auto; place-items:center; align-content:center; justify-items:center;
+  gap:3px; height:auto !important; min-height:50px; width:auto !important; min-width:48px; padding:6px 7px 5px !important; line-height:1;
+} }
+@media (min-width:768px) { .menu-row button[data-lbl]::after { content:attr(data-lbl); font-size:.54rem; font-weight:800; letter-spacing:.2px; line-height:1; white-space:nowrap; opacity:.92; color:inherit; font-family:inherit; } }
+@media (min-width:768px) { .menu-row .nav-bar > div:last-child { align-items:flex-end !important; } .menu-row #syncStatus { align-self:center; } }
+@media (max-width:767px) {
+  .nav-bar button[data-lbl]:not([style*="display: none"]) { display:inline-grid !important; grid-template-rows:auto auto; place-items:center; align-content:center; gap:3px; height:auto !important; min-height:46px; padding:5px 2px 4px !important; max-width:46px; font-size:.82rem !important; }
+  .nav-bar button[data-lbl]::after { content:attr(data-lbl); font-size:.46rem; font-weight:800; letter-spacing:0; line-height:1; white-space:nowrap; color:inherit; }
+}
