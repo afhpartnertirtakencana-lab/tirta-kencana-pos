@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Tirta Kencana">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css?v=20261024a">
+  <link rel="stylesheet" href="css/style.css?v=20261024b">
   <style>
     /* [PERF] Optimasi scroll untuk HP RAM kecil.
        - overscroll-behavior-y:contain menahan efek "rubber-band" pantulan browser
@@ -397,6 +397,7 @@
   <script>
   (function () {
     var MAP = [['toggleSidebar','Menu'],["navigateTo('dashboard')",'Dashboard'],["navigateTo('penjualan')",'Jual'],["navigateTo('transaksi')",'Transaksi'],["navigateTo('rekap')",'Rekap'],['installApp','Pasang Aplikasi'],['openWhatsAppApp','WhatsApp'],['toggleDarkMode','Mode Gelap / Terang'],['showNotifications','Notifikasi'],['showSyncHealthDashboard','Status Sinkron'],['syncFromGAS','Sinkron Manual'],['openGlobalSearch','Cari (tekan /)'],['refreshApp','Muat Ulang Layar'],['doLogout','Keluar']];
+    var SHORT = { 'Dashboard':'Dashboard', 'Jual':'Jual', 'Transaksi':'Transaksi', 'Rekap':'Rekap', 'Pasang Aplikasi':'Pasang', 'WhatsApp':'WA', 'Mode Gelap / Terang':'Tema', 'Notifikasi':'Notif', 'Sinkron Manual':'Sinkron', 'Cari (tekan /)':'Cari', 'Muat Ulang Layar':'Muat', 'Keluar':'Keluar' };
     function label(el) {
       var oc = el.getAttribute('onclick') || '';
       for (var i = 0; i < MAP.length; i++) if (oc.indexOf(MAP[i][0]) >= 0) return MAP[i][1];
@@ -406,6 +407,7 @@
       document.querySelectorAll('.menu-row button, .menu-row #syncStatus').forEach(function (el) {
         var t = label(el); if (!t) return;
         el.setAttribute('data-tip', t); el.setAttribute('aria-label', t); el.removeAttribute('title');
+        var sh = SHORT[t]; if (sh) el.setAttribute('data-lbl', sh); else el.removeAttribute('data-lbl');
       });
     }
     var tip;
@@ -430,6 +432,6 @@
     });
   })();
   </script>
-  <script src="js/app.js?v=20261024a" defer></script>
+  <script src="js/app.js?v=20261024b" defer></script>
 </body>
 </html>
