@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Tirta Kencana">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css?v=20261023g">
+  <link rel="stylesheet" href="css/style.css?v=20261024a">
   <style>
     /* [PERF] Optimasi scroll untuk HP RAM kecil.
        - overscroll-behavior-y:contain menahan efek "rubber-band" pantulan browser
@@ -393,6 +393,43 @@
     <div id="sbSkuCheckList" style="max-height:50vh;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;border:1px solid var(--border);border-radius:10px;padding:4px 0;"></div>
     <button class="btn btn-primary btn-block mt-2" onclick="closeSbSkuModal();doStockBarang()"><i class="fas fa-check"></i> Terapkan</button>
   </div></div></div>
-  <script src="js/app.js?v=20261023g" defer></script>
+    <!-- Tooltip nama ikon (muncul saat kursor di atas ikon bilah atas) -->
+  <script>
+  (function () {
+    var MAP = [['toggleSidebar','Menu'],["navigateTo('dashboard')",'Dashboard'],["navigateTo('penjualan')",'Jual'],["navigateTo('transaksi')",'Transaksi'],["navigateTo('rekap')",'Rekap'],['installApp','Pasang Aplikasi'],['openWhatsAppApp','WhatsApp'],['toggleDarkMode','Mode Gelap / Terang'],['showNotifications','Notifikasi'],['showSyncHealthDashboard','Status Sinkron'],['syncFromGAS','Sinkron Manual'],['openGlobalSearch','Cari (tekan /)'],['refreshApp','Muat Ulang Layar'],['doLogout','Keluar']];
+    function label(el) {
+      var oc = el.getAttribute('onclick') || '';
+      for (var i = 0; i < MAP.length; i++) if (oc.indexOf(MAP[i][0]) >= 0) return MAP[i][1];
+      return el.getAttribute('aria-label') || el.getAttribute('data-tip') || '';
+    }
+    function tag() {
+      document.querySelectorAll('.menu-row button, .menu-row #syncStatus').forEach(function (el) {
+        var t = label(el); if (!t) return;
+        el.setAttribute('data-tip', t); el.setAttribute('aria-label', t); el.removeAttribute('title');
+      });
+    }
+    var tip;
+    function show(el) {
+      var t = el.getAttribute('data-tip'); if (!t) return;
+      if (!tip) { tip = document.createElement('div'); tip.id = 'tkTip'; document.body.appendChild(tip); }
+      tip.textContent = t; tip.style.display = 'block';
+      var r = el.getBoundingClientRect(), w = tip.offsetWidth;
+      var x = Math.max(6, Math.min(window.innerWidth - w - 6, r.left + r.width / 2 - w / 2));
+      tip.style.left = x + 'px'; tip.style.top = (r.bottom + 8) + 'px';
+    }
+    function hide() { if (tip) tip.style.display = 'none'; }
+    document.addEventListener('DOMContentLoaded', function () {
+      tag();
+      var mr = document.querySelector('.menu-row');
+      if (mr && window.MutationObserver) new MutationObserver(function () { tag(); }).observe(mr, { childList: true, subtree: true });
+      document.addEventListener('mouseover', function (e) { var el = e.target.closest && e.target.closest('.menu-row [data-tip]'); if (el) show(el); });
+      document.addEventListener('mouseout', function (e) { if (e.target.closest && e.target.closest('.menu-row [data-tip]')) hide(); });
+      document.addEventListener('focusin', function (e) { var el = e.target.closest && e.target.closest('.menu-row [data-tip]'); if (el && el.matches(':focus-visible')) show(el); });
+      document.addEventListener('focusout', hide);
+      document.addEventListener('click', hide, true); window.addEventListener('scroll', hide, true);
+    });
+  })();
+  </script>
+  <script src="js/app.js?v=20261024a" defer></script>
 </body>
 </html>
