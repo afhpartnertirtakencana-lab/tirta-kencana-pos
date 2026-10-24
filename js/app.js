@@ -4014,7 +4014,7 @@
     }
     // ========== KONFIGURASI ATURAN & PERINGATAN (sinkron ke sheet "Konfigurasi") ==========
     const CFG_KEY = 'tirtaConfig';
-    const CFG_DEFAULT = { kredit:{ maxPiutang:5000000, maxHari:30, tagihHari:7, perCust:{} }, setoran:{ batasSelisih:20000 }, anomali:{ maxDiskonPct:20 }, notif:{ tutup:true, selisih:true, stok:true, piutang:true, waOwner:'' } };
+    const CFG_DEFAULT = { kredit:{ maxPiutang:5000000, maxHari:30, tagihHari:7, perCust:{} }, setoran:{ batasSelisih:20000 }, anomali:{ maxDiskonPct:20 }, notif:{ tutup:true, selisih:true, stok:true, piutang:true, waRekap:true, waOwner:'' } };
     function _cfgMerge(base, over) {
       const o = JSON.parse(JSON.stringify(base));
       Object.keys(over||{}).forEach(k => { if (over[k] && typeof over[k] === 'object' && !Array.isArray(over[k]) && o[k] && typeof o[k] === 'object') { Object.keys(over[k]).forEach(k2 => { o[k][k2] = over[k][k2]; }); } else o[k] = over[k]; });
@@ -4419,10 +4419,10 @@
         <div class="card">
           <div class="card-title"><i class="fas fa-bell"></i> Notifikasi Pemilik</div>
           <div class="text-sm" style="color:var(--text3);margin-bottom:8px">Server mengirim email otomatis untuk kejadian berikut (dan WhatsApp bila Anda mengaktifkan WA otomatis, lihat catatan di bawah).</div>
-          ${chk('tutup','Buku harian ditutup (ringkasan hari itu)')}${chk('selisih','Selisih setoran melewati batas')}${chk('stok','Stok menipis (cek tiap pagi ±07.30)')}${chk('piutang','Piutang lewat batas hari (cek tiap pagi ±07.30)')}
-          <div class="form-group" style="margin-top:8px"><label>No. WhatsApp Anda (untuk tombol “Kirim ringkasan ke WA”)</label><input id="nf_waOwner" inputmode="numeric" placeholder="mis. 628123456789" value="${esc(nf.waOwner||'')}"></div>
+          ${chk('tutup','Buku harian ditutup (ringkasan hari itu)')}${chk('waRekap','Rekap harian otomatis ke WhatsApp (±23.50)')}${chk('selisih','Selisih setoran melewati batas')}${chk('stok','Stok menipis (cek tiap pagi ±07.30)')}${chk('piutang','Piutang lewat batas hari (cek tiap pagi ±07.30)')}
+          <div class="form-group" style="margin-top:8px"><label>No. WhatsApp Anda (penerima WA otomatis & tombol “Ringkasan ke WA”)</label><input id="nf_waOwner" inputmode="numeric" placeholder="mis. 628123456789" value="${esc(nf.waOwner||'')}"></div>
           <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-primary" style="flex:1" onclick="saveNotifUI()"><i class="fas fa-floppy-disk"></i> Simpan</button><button class="btn btn-outline" style="flex:1" onclick="notifTesUI()"><i class="fas fa-paper-plane"></i> Kirim Tes</button><button class="btn" style="flex:1;background:linear-gradient(135deg,#16A34A,#25D366);color:#fff;border:0" onclick="ringkasanWaOwner()"><i class="fab fa-whatsapp"></i> Ringkasan ke WA</button></div>
-          <div class="text-sm" style="color:var(--text3);margin-top:10px;line-height:1.5"><b>WA otomatis (opsional):</b> daftar di layanan gateway WhatsApp (mis. Fonnte), lalu di Apps Script buka Project Settings → Script properties dan isi <code>WA_API_TOKEN</code> (token) dan <code>WA_OWNER_NUMBER</code> (nomor Anda, format 628…). Tanpa itu notifikasi tetap terkirim lewat email. Jalankan <code>installDailyAlertTrigger</code> satu kali dari editor Apps Script untuk jadwal pagi.</div>
+          <div class="text-sm" style="color:var(--text3);margin-top:10px;line-height:1.5"><b>WA otomatis (saat tutup buku &amp; rekap ±23.50):</b> WhatsApp tidak punya jalur kirim otomatis gratis, jadi butuh layanan gateway (mis. Fonnte). Daftar, sambungkan nomor pengirim, lalu di Apps Script buka Project Settings → Script properties dan isi <code>WA_API_TOKEN</code> (token Fonnte). Nomor penerima diambil dari kolom di atas (setelah Simpan), atau isi <code>WA_OWNER_NUMBER</code>. Tanpa token, notifikasi tetap terkirim lewat email dan tombol “Ringkasan ke WA” tetap bisa dipakai manual. Klik <b>Kirim Tes</b> untuk memastikan. Jalankan <code>installDailyAlertTrigger</code> satu kali dari editor Apps Script untuk jadwal pagi.</div>
         </div>
         <div class="card">
           <div class="card-title"><i class="fas fa-database"></i> Backup Data</div>
@@ -4543,7 +4543,7 @@
     function saveNotifUI() {
       const g = k => !!document.getElementById('nf_' + k)?.checked;
       const wa = (document.getElementById('nf_waOwner')?.value || '').replace(/[^0-9]/g, '').replace(/^0/, '62');
-      cfgSave({ notif: { tutup: g('tutup'), selisih: g('selisih'), stok: g('stok'), piutang: g('piutang'), waOwner: wa } });
+      cfgSave({ notif: { tutup: g('tutup'), selisih: g('selisih'), stok: g('stok'), piutang: g('piutang'), waRekap: g('waRekap'), waOwner: wa } });
       Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:1800, icon:'success', title:'Pengaturan notifikasi disimpan' });
     }
     async function notifTesUI() {
