@@ -230,15 +230,28 @@
       _syncProcessing = false;
       updateSyncBadge();
     }
+    const SYNC_STALE_MS = 3 * 3600 * 1000; // data tertahan > 3 jam dianggap perlu perhatian
+    function _syncOldestAge() { return _syncQueue.length ? Date.now() - Math.min(..._syncQueue.map(q => q.addedAt || Date.now())) : 0; }
+    function _syncIsStale() { return _syncQueue.length > 0 && _syncOldestAge() > SYNC_STALE_MS; }
+    function _ageTxt(ms) {
+      const m = Math.max(0, Math.round(ms / 60000));
+      if (m < 1) return 'baru saja';
+      if (m < 60) return m + ' menit';
+      const h = Math.floor(m / 60);
+      if (h < 24) return h + ' jam' + (m % 60 ? ' ' + (m % 60) + ' mnt' : '');
+      return Math.floor(h / 24) + ' hari ' + (h % 24) + ' jam';
+    }
     function updateSyncBadge() {
       const n = _syncQueue.length;
-      const stuck = _syncQueue.some(q => q.attempts >= 15);
+      const stuck = _syncQueue.some(q => q.attempts >= 15) || _syncIsStale();
+      const offline = (typeof navigator !== 'undefined' && navigator.onLine === false);
       const badge = document.getElementById('syncQueueBadge');
       if (badge) { badge.style.display = n > 0 ? 'inline-flex' : 'none'; badge.textContent = n > 99 ? '99+' : n; badge.style.background = stuck ? '#ef4444' : '#f59e0b'; }
       const statusEl = document.getElementById('syncStatus');
       if (statusEl) {
-        if (n === 0) { statusEl.textContent = '✓ Tersinkron'; statusEl.style.color = ''; }
-        else if (stuck) { statusEl.textContent = '⚠ ' + n + ' perlu dicek'; statusEl.style.color = '#ef4444'; }
+        if (offline) { statusEl.textContent = '📴 Offline' + (n ? ' · ' + n + ' antre' : ''); statusEl.style.color = '#f59e0b'; }
+        else if (n === 0) { statusEl.textContent = '✓ Tersinkron'; statusEl.style.color = ''; }
+        else if (stuck) { statusEl.textContent = '⚠ ' + n + ' tertahan'; statusEl.style.color = '#ef4444'; }
         else { statusEl.textContent = '⏳ ' + n + ' belum sync'; statusEl.style.color = '#f59e0b'; }
       }
     }
@@ -249,18 +262,58 @@
         Swal.fire({ icon: 'success', title: 'Semua Tersinkron', text: 'Tidak ada data yang mengantre ke Google Sheets saat ini.' });
         return;
       }
-      const rows = _syncQueue.map(q => `<tr><td style="text-align:left;padding:4px 8px">${esc(q.label)}</td><td style="text-align:center;padding:4px 8px">${q.attempts}x</td><td style="text-align:left;padding:4px 8px;color:#ef4444;font-size:11px">${esc(q.lastError||'-')}</td></tr>`).join('');
+      const isAdmin = currentUser && currentUser.role === 'admin';
+      const offline = (typeof navigator !== 'undefined' && navigator.onLine === false);
+      const stale = _syncIsStale();
+      const items = _syncQueue.slice().sort((a, b) => (a.addedAt || 0) - (b.addedAt || 0)).map(q => {
+        const age = Date.now() - (q.addedAt || Date.now());
+        const old = age > SYNC_STALE_MS || q.attempts >= 15;
+        return `<div class="sq-it ${old ? 'old' : ''}">
+          <div class="sq-main"><div class="sq-l">${esc(q.label || q.fn)}</div>
+            <div class="sq-s">Menunggu ${esc(_ageTxt(age))} · ${q.attempts}x dicoba${q.attempts >= 15 ? ' · <b>berhenti otomatis</b>' : ''}</div>
+            ${q.lastError ? `<div class="sq-e">${esc(String(q.lastError).substring(0, 140))}</div>` : ''}</div>
+          <div class="sq-b"><button type="button" class="sq-btn" onclick="_sqRetry('${q.qid}')">Coba</button>${isAdmin ? `<button type="button" class="sq-btn del" onclick="_sqDiscard('${q.qid}')">Buang</button>` : ''}</div>
+        </div>`;
+      }).join('');
+      const warn = offline ? '📴 Perangkat sedang offline. Data akan dikirim otomatis saat internet kembali.'
+        : stale ? '⚠️ Ada data yang tertahan lebih dari 3 jam. Pastikan internet stabil, lalu tekan “Coba Kirim Semua”. Jika tetap gagal, tekan “Salin Laporan” dan kirim ke admin.'
+        : 'Otomatis dicoba lagi tiap ±25 detik & saat internet nyambung. Data AMAN tersimpan di HP ini walau belum terkirim.';
       Swal.fire({
-        title: `${_syncQueue.length} Data Belum Sync`,
-        html: `<div style="max-height:300px;overflow:auto"><table style="width:100%;font-size:12px"><thead><tr><th style="text-align:left;padding:4px 8px">Data</th><th style="padding:4px 8px">Percobaan</th><th style="text-align:left;padding:4px 8px">Error Terakhir</th></tr></thead><tbody>${rows}</tbody></table></div><p style="font-size:11px;color:#888;margin-top:10px">Otomatis dicoba lagi tiap ±25 detik & saat internet nyambung. Data ini AMAN tersimpan di HP ini walau belum sync.</p>`,
-        confirmButtonText: 'Coba Sync Sekarang',
-        showCancelButton: true,
-        cancelButtonText: 'Tutup'
-      }).then(r => { if (r.isConfirmed) { _syncQueue.forEach(q => { q.attempts = 0; }); _saveSyncQueueState(); processSyncQueue(); } });
+        title: `${_syncQueue.length} Data Belum Terkirim`,
+        html: `<div class="sq"><div class="sq-warn ${stale || offline ? 'bad' : ''}">${warn}</div>
+          <div class="sq-sum"><span>Tertua: <b>${esc(_ageTxt(_syncOldestAge()))}</b></span><span>Jumlah: <b>${_syncQueue.length}</b></span></div>
+          <div class="sq-list">${items}</div></div>`,
+        width: 460, confirmButtonText: 'Coba Kirim Semua', showDenyButton: true, denyButtonText: 'Salin Laporan', showCancelButton: true, cancelButtonText: 'Tutup'
+      }).then(r => {
+        if (r.isConfirmed) { _syncQueue.forEach(q => { q.attempts = 0; }); _saveSyncQueueState(); processSyncQueue(); }
+        else if (r.isDenied) {
+          const txt = 'Antrian sync ' + (settings.namaToko || 'Tirta Kencana') + ' — ' + new Date().toLocaleString('id-ID') + '\n' + _syncQueue.map(q => `- ${q.label || q.fn} | ${_ageTxt(Date.now() - (q.addedAt || Date.now()))} | ${q.attempts}x | ${q.lastError || '-'}`).join('\n');
+          try { navigator.clipboard.writeText(txt); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, icon: 'success', title: 'Laporan disalin' }); } catch (e) { window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank'); }
+        }
+      });
+    }
+    function _sqRetry(qid) {
+      const q = _syncQueue.find(x => x.qid === qid); if (!q) return;
+      q.attempts = 0; _saveSyncQueueState(); processSyncQueue();
+      setTimeout(() => showSyncQueueDetail(), 1800);
+    }
+    function _sqDiscard(qid) {
+      const q = _syncQueue.find(x => x.qid === qid); if (!q) return;
+      Swal.fire({ icon: 'warning', title: 'Buang dari antrian?', html: `<b>${esc(q.label || q.fn)}</b><br>Data ini <b>tidak akan terkirim</b> ke Google Sheets. Gunakan hanya jika data sudah ada di Sheet atau memang salah.`, showCancelButton: true, confirmButtonText: 'Ya, buang', cancelButtonText: 'Batal', confirmButtonColor: '#DC2626' })
+        .then(r => { if (r.isConfirmed) { _syncQueue = _syncQueue.filter(x => x.qid !== qid); _saveSyncQueueState(); showSyncQueueDetail(); } else showSyncQueueDetail(); });
     }
     if (typeof window !== 'undefined') {
       window.addEventListener('online', () => { console.log('Koneksi kembali online, proses antrian sync...'); processSyncQueue(); });
       setInterval(() => { if (_syncQueue.length > 0) processSyncQueue(); }, 25000);
+      window.addEventListener('offline', () => updateSyncBadge());
+      let _lastStaleToast = 0;
+      setInterval(() => {
+        updateSyncBadge();
+        if (_syncIsStale() && Date.now() - _lastStaleToast > 2 * 3600 * 1000) {
+          _lastStaleToast = Date.now();
+          try { Swal.fire({ toast: true, position: 'top', showConfirmButton: false, timer: 7000, timerProgressBar: true, icon: 'warning', title: _syncQueue.length + ' data tertahan > 3 jam. Ketuk status sinkron di atas.' }); } catch (e) {}
+        }
+      }, 600000);
     }
     // [NEW] Dashboard Kesehatan Sync - supaya kalau ada masalah sync (sering
     // terjadi sepanjang pengembangan app ini: rollover stok, item transaksi
@@ -1656,6 +1709,7 @@
             </div>
           </div>
           <div id="dxAlerts"></div>
+          <button type="button" class="dx-lap-btn" onclick="showLaporanHarian()"><i class="fas fa-file-lines"></i> Laporan Harian <span>Print · PNG · WA</span></button>
           <div id="dxLowStock"></div>
           ${_dxRekapPanels(today, todayTx)}
         `;
@@ -1820,7 +1874,7 @@
       return _rcRoot('dxshare-root', 380,
         _rcHead({ tone, icon:p.icon, logo:logoOverride, title:p.title, sub:p.sub }) +
         _rcStats(p.stats, tone) +
-        _rcBody(p.sections ? p.sections.map(sc => _rcSec(Object.assign({ tone:sc.tone||tone }, sc))).join('') : _rcSec({ tone, title:p.secTitle, badge:p.badge, rows, total:p.total })) +
+        _rcBody(p.sections ? p.sections.map(sc => _rcSec(Object.assign({ tone:sc.tone||tone }, sc))).join('') + (p.totalBar ? _rcSum([], p.total, tone) : '') : _rcSec({ tone, title:p.secTitle, badge:p.badge, rows, total:p.total })) +
         _rcFoot(settings.bottomLine || 'Terima kasih!'));
     }
     function dxShareDo(act) {
@@ -1856,7 +1910,7 @@
         else lines.push('Total Modal: ' + p.stats[0].v);
         lines.push(L);
         if (p.sections) {
-          p.sections.forEach(sc => { lines.push('*' + sc.plainTitle + '*'); sc.rows.forEach((r, i) => { lines.push((i + 1) + '. ' + r.nPlain + ' — ' + r.q + (r.v ? ' (' + r.v + ')' : '')); if (r.subPlain) lines.push('    ' + r.subPlain); }); lines.push('_' + sc.total.l + ': ' + sc.total.v + '_', ''); });
+          p.sections.forEach(sc => { lines.push('*' + sc.plainTitle + '*'); sc.rows.forEach((r, i) => { lines.push((i + 1) + '. ' + r.nPlain + ' — ' + r.q + (r.v ? ' (' + r.v + ')' : '')); if (r.subPlain) lines.push('    ' + r.subPlain); }); if (sc.total) lines.push('_' + sc.total.l + ': ' + sc.total.v + '_'); lines.push(''); });
           lines.push(L, '*' + p.total.l + ': ' + p.total.v + '*');
         } else {
         p.rows.forEach((r, i) => lines.push((i + 1) + '. ' + r.nPlain + ' — ' + r.q + (r.v ? ' (' + r.v + ')' : '')));
@@ -1864,6 +1918,57 @@
         }
         window.open('https://wa.me/?text=' + encodeURIComponent(lines.join('\n')), '_blank');
       }
+    }
+
+    // ===== Laporan Harian: satu halaman ringkas (omzet, bayar, top SKU/customer, input, setoran, stok, piutang) =====
+    async function showLaporanHarian(tgl) {
+      tgl = tgl || localDateStr();
+      const isAdmin = currentUser && currentUser.role === 'admin';
+      try { await ensureTrxItemsForDates([tgl]); } catch(e) {}
+      const trx = allTrxList.filter(t => String(t.tgl||'').substring(0,10) === tgl);
+      const sum = f => trx.filter(f).reduce((a,t) => a + (t.nett||0), 0);
+      const omzet = trx.reduce((a,t) => a + (t.nett||0), 0);
+      const st = t => String(t.status||'').toLowerCase();
+      const cod = sum(t => st(t) === 'cod'), tf = sum(t => st(t) === 'transfer'), qr = sum(t => st(t) === 'qris'), belum = sum(t => st(t) === 'belumtransfer');
+      const skuM = {}, cusM = {}; let profit = 0, adaModal = false;
+      trx.forEach(t => {
+        const c = t.customer || '—'; if (!cusM[c]) cusM[c] = { n:0, nett:0 }; cusM[c].n++; cusM[c].nett += (t.nett||0);
+        (t.items||[]).forEach(it => {
+          const k = it.nama || it.sku || '—'; if (!skuM[k]) skuM[k] = { qty:0, nett:0 };
+          const net = (it.harga||0) - (it.discRpPer||0);
+          skuM[k].qty += (it.qty||0); skuM[k].nett += (it.qty||0) * net;
+          if ((it.modal||0) > 0) { adaModal = true; profit += (it.qty||0) * (net - it.modal); }
+        });
+      });
+      const topSku = Object.entries(skuM).sort((a,b) => b[1].qty - a[1].qty).slice(0, 8);
+      const topCus = Object.entries(cusM).sort((a,b) => b[1].nett - a[1].nett).slice(0, 8);
+      // input barang
+      const inp = stockInHistory.filter(x => String(x.date||x.tgl||'').substring(0,10) === tgl);
+      let kirN = 0, titN = 0, kirQ = 0, titQ = 0;
+      inp.forEach(x => { const q = x.qty||0, n = q * ((x.hargaModal||0) - (x.disc||0)); if (String(x.status||'').toLowerCase() === 'titipan') { titN += n; titQ += q; } else { kirN += n; kirQ += q; } });
+      // setoran
+      const set = (setoranHistory||[]).map(normalizeSetoranRecord).filter(x => String(x.tgl||'').substring(0,10) === tgl);
+      const setTotal = set.reduce((a,x) => a + (x.total||0), 0), setSetor = set.reduce((a,x) => a + (x.setor||0), 0), setSel = set.reduce((a,x) => a + (x.selisih||0), 0);
+      // piutang saat ini
+      const pi = allTrxList.filter(t => t.status === 'belumTransfer'), totPi = pi.reduce((a,t) => a + _sisa(t), 0);
+      // stok menipis
+      let low = [];
+      try { const mins = _minStokLoad(), rows = await getCorrectedStockBarangForDate(tgl); low = (rows||[]).filter(r => mins[r.sku] > 0 && (r.stokAkhir||0) <= mins[r.sku]).slice(0, 8); } catch(e) {}
+      const R = (n, q, v, sub) => ({ n:esc(n), nPlain:String(n), q, v, sub });
+      const secs = [];
+      secs.push({ title:'<i class="fas fa-wallet"></i> Pembayaran', plainTitle:'PEMBAYARAN', badge:trx.length+' transaksi', rows:[ R('COD', fmtRp(cod)), R('Transfer', fmtRp(tf)), R('QRIS', fmtRp(qr)), R('Belum bayar', fmtRp(belum)) ], total:{ l:'Omzet', v:fmtRp(omzet) } });
+      if (topSku.length) secs.push({ title:'<i class="fas fa-cube"></i> Produk terlaris', plainTitle:'PRODUK TERLARIS', badge:topSku.length+' SKU', rows: topSku.map(r => R(r[0], r[1].qty+' pcs', fmtRp(r[1].nett))) });
+      if (topCus.length) secs.push({ title:'<i class="fas fa-users"></i> Customer teratas', plainTitle:'CUSTOMER TERATAS', badge:topCus.length+' customer', rows: topCus.map(r => R(r[0], fmtRp(r[1].nett), '', r[1].n+' transaksi')) });
+      if (inp.length) secs.push({ title:'<i class="fas fa-boxes"></i> Input barang', plainTitle:'INPUT BARANG', rows:[ R('Kiriman', fmtRp(kirN), '', kirQ+' pcs'), R('Titipan', fmtRp(titN), '', titQ+' pcs') ], total:{ l:'Total modal', v:fmtRp(kirN+titN) } });
+      if (set.length) secs.push({ title:'<i class="fas fa-hand-holding-dollar"></i> Setoran sales', plainTitle:'SETORAN SALES', badge:set.length+' sales', rows: set.map(x => R(x.sales||'-', fmtRp(x.setor||0), '', 'Total ' + fmtRp(x.total||0) + (x.selisih ? ' · selisih ' + fmtRp(x.selisih) : ''))), total:{ l:'Selisih', v:fmtRp(setSel) } });
+      if (low.length) secs.push({ title:'<i class="fas fa-triangle-exclamation"></i> Stok menipis', plainTitle:'STOK MENIPIS', tone:'red', badge:low.length+' SKU', rows: low.map(r => R(r.nama||r.sku, (r.stokAkhir||0)+' pcs', '', 'min ' + (_minStokLoad()[r.sku]||0))) });
+      const stats = [{ l:'Omzet', v:fmtRp(omzet) }, { l:'Transaksi', v:String(trx.length) }, isAdmin && adaModal ? { l:'Profit (perkiraan)', v:fmtRp(profit) } : { l:'Piutang', v:fmtRp(totPi) }];
+      const sub = fmtDate(tgl);
+      const dateFooter = `<div class="lh-date"><label>Tanggal laporan</label><input type="date" id="lhTgl" value="${esc(tgl)}" onchange="showLaporanHarian(this.value)"></div>` + `<div class="lh-piu">Total piutang saat ini: <b>${fmtRp(totPi)}</b> (${pi.length} transaksi)</div>`;
+      const shareSecs = secs.map(x => Object.assign({}, x, { tone: x.tone || 'blue' }));
+      _dxPop({ icon:'fa-file-lines', title:'Laporan Harian', sub:esc(sub), stats, sections:secs, footer:dateFooter,
+        share: { icon:'fa-file-lines', title:'Laporan Harian', sub:esc(sub), stats, sections:shareSecs, allStats:true, totalBar:true, total:{ l:'PIUTANG SAAT INI', v:fmtRp(totPi) },
+          file:'LaporanHarian-'+tgl, waTitle:'LAPORAN HARIAN', waSub:'Tanggal: ' + fmtDate(tgl) } });
     }
     function showDxRekapInput() {
       const today = _dxToday();
@@ -3978,7 +4083,12 @@
       });
       if (odd.length) sections.push({ ic:'fa-magnifying-glass-dollar', col:'#7C3AED', title:'Transaksi Perlu Dicek', n:odd.length, rows: odd.slice(0,5).map(o => ({ t: esc(o.t.customer||'-') + ' · ' + esc(o.t.id), sub: esc(fmtDate(o.t.tgl)) + ' · ' + fmtRp(o.t.nett||0) + ' · ' + esc(o.why), act:'' })), more: Math.max(0, odd.length - 5), go:"navigateTo('transaksi')" });
       // 4) Antrian sync
-      if ((_syncQueue||[]).length) sections.push({ ic:'fa-cloud-arrow-up', col:'#0EA5E9', title:'Belum Tersinkron', n:_syncQueue.length, rows:[{ t:`${_syncQueue.length} data menunggu dikirim ke Google Sheets`, sub: _syncQueue.some(q => q.attempts >= 15) ? '⚠ Ada yang gagal berulang — ketuk untuk melihat' : 'Akan dicoba otomatis saat koneksi stabil', act:`<button class="btn btn-sm btn-outline" style="white-space:nowrap;flex:none" onclick="showSyncQueueDetail()">Lihat</button>` }], more:0, go:'' });
+      if ((_syncQueue||[]).length) { const _st = _syncIsStale(); sections.push({ ic:'fa-cloud-arrow-up', col:_st ? '#DC2626' : '#0EA5E9', title:_st ? 'Data Tertahan' : 'Belum Tersinkron', n:_syncQueue.length, rows:[{ t:`${_syncQueue.length} data menunggu dikirim ke Google Sheets`, sub: _st ? `⚠ Tertua ${_ageTxt(_syncOldestAge())} — ketuk untuk melihat & mencoba ulang` : (_syncQueue.some(q => q.attempts >= 15) ? '⚠ Ada yang gagal berulang — ketuk untuk melihat' : 'Akan dicoba otomatis saat koneksi stabil'), act:`<button class="btn btn-sm btn-outline" style="white-space:nowrap;flex:none" onclick="showSyncQueueDetail()">Lihat</button>` }], more:0, go:'' }); }
+      // 4b) Uji Sistem (hasil pemeriksaan otomatis terakhir, hanya admin)
+      try {
+        const stc = (currentUser && currentUser.role === 'admin') ? _selfTestCache() : null;
+        if (stc && stc.gagal > 0) sections.push({ ic:'fa-stethoscope', col:'#DC2626', title:'Uji Sistem', n:stc.gagal, rows: stc.bad.slice(0,4).map(x => ({ t: esc(x.nama), sub: esc((x.saran || x.info || '').substring(0, 110)), act:'' })).concat([{ t:`Diperiksa ${esc(_ageTxt(Date.now() - stc.t))} lalu`, sub:'Ketuk “Buka” untuk detail & menjalankan ulang', act:`<button class="btn btn-sm btn-outline" style="white-space:nowrap;flex:none" onclick="navigateTo('auditlog')">Buka</button>` }]), more: Math.max(0, stc.bad.length - 4), go:'' });
+      } catch(e) {}
       const render = (extra) => {
         const all = sections.concat(extra || []);
         const total = all.reduce((a,x) => a + x.n, 0);
@@ -4004,6 +4114,7 @@
         } catch(e) {}
         if (extra.length && document.getElementById('dxAlerts')) render(extra);
       } catch(e) { /* audit belum tersedia: abaikan */ }
+      try { setTimeout(() => autoSelfTest(false), 4000); } catch(e) {}
     }
 
     // Muat ulang layar (untuk PWA terinstal yang tidak punya tombol refresh browser). Antrian sync tersimpan di localStorage, jadi aman.
@@ -4014,7 +4125,7 @@
     }
     // ========== KONFIGURASI ATURAN & PERINGATAN (sinkron ke sheet "Konfigurasi") ==========
     const CFG_KEY = 'tirtaConfig';
-    const CFG_DEFAULT = { kredit:{ maxPiutang:5000000, maxHari:30, tagihHari:7, perCust:{} }, setoran:{ batasSelisih:20000 }, anomali:{ maxDiskonPct:20 }, notif:{ tutup:true, selisih:true, stok:true, piutang:true, waRekap:true, waOwner:'' } };
+    const CFG_DEFAULT = { kredit:{ maxPiutang:5000000, maxHari:30, tagihHari:7, perCust:{} }, setoran:{ batasSelisih:20000 }, anomali:{ maxDiskonPct:20 }, notif:{ tutup:true, selisih:true, stok:true, piutang:true, waRekap:true, laporanPdf:true, waOwner:'' } };
     function _cfgMerge(base, over) {
       const o = JSON.parse(JSON.stringify(base));
       Object.keys(over||{}).forEach(k => { if (over[k] && typeof over[k] === 'object' && !Array.isArray(over[k]) && o[k] && typeof o[k] === 'object') { Object.keys(over[k]).forEach(k2 => { o[k][k2] = over[k][k2]; }); } else o[k] = over[k]; });
@@ -4215,6 +4326,7 @@
           <div class="card-title"><i class="fas fa-calendar-check"></i> Rekap Harian</div>
           <div class="text-sm" style="color:var(--text3);margin-bottom:10px">Server menghitung ringkasan tiap malam (±23.50) dan mengirimnya ke email. Tekan tombol untuk menghitung/menyegarkan hari ini.</div>
           <button class="btn btn-primary btn-block" id="btnRekapNow" onclick="rekapHarianNow()"><i class="fas fa-calculator"></i> Hitung Hari Ini</button>
+          <button class="btn btn-outline btn-block" style="margin-top:8px" onclick="showLaporanHarian()"><i class="fas fa-file-lines"></i> Laporan Harian (Print · PNG · WA)</button>
           <div class="flex-row" style="gap:8px;margin-top:10px"><input type="date" id="tbTgl" value="${localDateStr()}" style="flex:1"><button class="btn btn-outline" id="btnTutupBuku" onclick="tutupBukuUI()" style="flex:1"><i class="fas fa-lock"></i> Tutup Buku</button></div>
         </div>
         <div id="rhList"><div class="card text-center text-sm" style="padding:28px"><i class="fas fa-spinner fa-spin"></i> Memuat…</div></div>`;
@@ -4414,15 +4526,21 @@
           <div class="card-title"><i class="fas fa-stethoscope"></i> Uji Sistem</div>
           <div class="text-sm" style="color:var(--text3);margin-bottom:10px">Memeriksa sheet database, jadwal otomatis (backup, rekap, rollover, peringatan), folder backup, email, dan fitur cicilan langsung di server Anda.</div>
           <button class="btn btn-primary btn-block" id="btnSelfTest" onclick="runSelfTestUI()"><i class="fas fa-play"></i> Jalankan Uji Sistem</button>
+          <div class="text-sm" style="color:var(--text3);margin-top:8px">${(() => { const c = _selfTestCache(); return c ? 'Pemeriksaan otomatis terakhir: ' + esc(_ageTxt(Date.now() - c.t)) + ' lalu — ' + (c.gagal ? '<b style="color:#DC2626">' + c.gagal + ' masalah</b>' : '<b style="color:#16A34A">semua baik</b>') + '. Berjalan otomatis ±1x sehari saat admin membuka Dashboard.' : 'Berjalan otomatis ±1x sehari saat admin membuka Dashboard.'; })()}</div>
           <div id="selfTestOut" style="margin-top:10px"></div>
         </div>
         <div class="card">
           <div class="card-title"><i class="fas fa-bell"></i> Notifikasi Pemilik</div>
           <div class="text-sm" style="color:var(--text3);margin-bottom:8px">Server mengirim email otomatis untuk kejadian berikut (dan WhatsApp bila Anda mengaktifkan WA otomatis, lihat catatan di bawah).</div>
-          ${chk('tutup','Buku harian ditutup (ringkasan hari itu)')}${chk('waRekap','Rekap harian otomatis ke WhatsApp (±23.50)')}${chk('selisih','Selisih setoran melewati batas')}${chk('stok','Stok menipis (cek tiap pagi ±07.30)')}${chk('piutang','Piutang lewat batas hari (cek tiap pagi ±07.30)')}
+          ${chk('tutup','Buku harian ditutup (ringkasan hari itu)')}${chk('waRekap','Rekap harian otomatis ke WhatsApp (±23.50)')}${chk('laporanPdf','Lampirkan PDF pada email laporan harian')}${chk('selisih','Selisih setoran melewati batas')}${chk('stok','Stok menipis (cek tiap pagi ±07.30)')}${chk('piutang','Piutang lewat batas hari (cek tiap pagi ±07.30)')}
           <div class="form-group" style="margin-top:8px"><label>No. WhatsApp Anda (penerima WA otomatis & tombol “Ringkasan ke WA”)</label><input id="nf_waOwner" inputmode="numeric" placeholder="mis. 628123456789" value="${esc(nf.waOwner||'')}"></div>
           <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-primary" style="flex:1" onclick="saveNotifUI()"><i class="fas fa-floppy-disk"></i> Simpan</button><button class="btn btn-outline" style="flex:1" onclick="notifTesUI()"><i class="fas fa-paper-plane"></i> Kirim Tes</button><button class="btn" style="flex:1;background:linear-gradient(135deg,#16A34A,#25D366);color:#fff;border:0" onclick="ringkasanWaOwner()"><i class="fab fa-whatsapp"></i> Ringkasan ke WA</button></div>
           <div class="text-sm" style="color:var(--text3);margin-top:10px;line-height:1.5"><b>WA otomatis (saat tutup buku &amp; rekap ±23.50):</b> WhatsApp tidak punya jalur kirim otomatis gratis, jadi butuh layanan gateway (mis. Fonnte). Daftar, sambungkan nomor pengirim, lalu di Apps Script buka Project Settings → Script properties dan isi <code>WA_API_TOKEN</code> (token Fonnte). Nomor penerima diambil dari kolom di atas (setelah Simpan), atau isi <code>WA_OWNER_NUMBER</code>. Tanpa token, notifikasi tetap terkirim lewat email dan tombol “Ringkasan ke WA” tetap bisa dipakai manual. Klik <b>Kirim Tes</b> untuk memastikan. Jalankan <code>installDailyAlertTrigger</code> satu kali dari editor Apps Script untuk jadwal pagi.</div>
+        </div>
+        <div class="card">
+          <div class="card-title"><i class="fas fa-envelope-open-text"></i> Laporan Harian ke Email</div>
+          <div class="text-sm" style="color:var(--text3);margin-bottom:10px;line-height:1.5">Laporan lengkap (omzet, pembayaran, produk terlaris, customer teratas, input barang, setoran, stok menipis) dikirim otomatis ke email saat <b>tutup buku</b> dan tiap malam <b>±23.50</b>, berupa email HTML + lampiran PDF.</div>
+          <button class="btn btn-primary btn-block" id="btnLapEmail" onclick="laporanEmailUI()"><i class="fas fa-paper-plane"></i> Kirim Laporan Hari Ini ke Email</button>
         </div>
         <div class="card">
           <div class="card-title"><i class="fas fa-database"></i> Backup Data</div>
@@ -4525,12 +4643,35 @@
       });
       const e = document.getElementById('pdEmpty'); if (e) e.style.display = shown ? 'none' : '';
     }
+    // ===== Uji Sistem otomatis (admin): jalan diam-diam maks. 1x per ~20 jam saat Dashboard dibuka =====
+    const SELFTEST_KEY = 'tirtaSelfTestLast';
+    function _selfTestCache() { try { return JSON.parse(localStorage.getItem(SELFTEST_KEY) || 'null'); } catch(e) { return null; } }
+    function _selfTestStore(r) {
+      try {
+        const bad = ((r && r.hasil) || []).filter(x => !x.ok).map(x => ({ nama: x.nama, info: x.info || '', saran: x.saran || '' }));
+        localStorage.setItem(SELFTEST_KEY, JSON.stringify({ t: Date.now(), gagal: bad.length, total: ((r && r.hasil) || []).length, bad }));
+      } catch(e) {}
+    }
+    let _autoSelfTestBusy = false;
+    async function autoSelfTest(force) {
+      if (!currentUser || currentUser.role !== 'admin' || _autoSelfTestBusy) return;
+      const c = _selfTestCache();
+      if (!force && c && Date.now() - c.t < 20 * 3600 * 1000) return;
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+      _autoSelfTestBusy = true;
+      try {
+        const r = await gasCall('selfTest', [], 0);
+        if (r && Array.isArray(r.hasil)) { _selfTestStore(r); if (currentPage === 'dashboard' && document.getElementById('dxAlerts')) _dxLoadAlerts(true); }
+      } catch(e) { /* server lama / tidak tersedia: abaikan diam-diam */ }
+      _autoSelfTestBusy = false;
+    }
     async function runSelfTestUI() {
       const btn = document.getElementById('btnSelfTest'), out = document.getElementById('selfTestOut'); if (!out) return;
       if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memeriksa…'; }
       out.innerHTML = '';
       try {
         const r = await gasCall('selfTest', [], 0);
+        _selfTestStore(r);
         const rows = (r && r.hasil) || [];
         out.innerHTML = `<div style="padding:10px 12px;border-radius:12px;font-weight:800;font-size:.85rem;margin-bottom:8px;background:${r.gagal ? 'rgba(245,158,11,.14)' : 'rgba(22,163,74,.14)'};color:${r.gagal ? '#B45309' : '#15803D'};border:1px solid ${r.gagal ? 'rgba(245,158,11,.4)' : 'rgba(22,163,74,.4)'}">${r.gagal ? '⚠️ ' + r.gagal + ' hal perlu diperiksa' : '✅ Semua pemeriksaan lolos'} <span style="font-weight:600;opacity:.8;font-size:.72rem">· ${rows.length} pemeriksaan · server ${esc(r.versi||'')} · ${esc(r.waktu||'')}</span></div>` +
           rows.map(x => `<div style="display:flex;gap:10px;padding:8px 2px;border-top:1px solid rgba(128,150,180,.18)"><div style="flex-shrink:0;font-size:1rem">${x.ok ? '✅' : '❌'}</div><div style="min-width:0"><div style="font-weight:700;font-size:.82rem">${esc(x.nama)}</div>${x.info ? `<div style="font-size:.72rem;opacity:.75;word-break:break-word">${esc(x.info)}</div>` : ''}${x.saran ? `<div style="font-size:.72rem;color:#B45309;font-weight:700;margin-top:2px">→ ${esc(x.saran)}</div>` : ''}</div></div>`).join('');
@@ -4543,8 +4684,17 @@
     function saveNotifUI() {
       const g = k => !!document.getElementById('nf_' + k)?.checked;
       const wa = (document.getElementById('nf_waOwner')?.value || '').replace(/[^0-9]/g, '').replace(/^0/, '62');
-      cfgSave({ notif: { tutup: g('tutup'), selisih: g('selisih'), stok: g('stok'), piutang: g('piutang'), waRekap: g('waRekap'), waOwner: wa } });
+      cfgSave({ notif: { tutup: g('tutup'), selisih: g('selisih'), stok: g('stok'), piutang: g('piutang'), waRekap: g('waRekap'), laporanPdf: g('laporanPdf'), waOwner: wa } });
       Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:1800, icon:'success', title:'Pengaturan notifikasi disimpan' });
+    }
+    async function laporanEmailUI() {
+      const b = document.getElementById('btnLapEmail'); if (b) { b.disabled = true; b.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengirim…'; }
+      try {
+        const r = await gasCall('kirimLaporanEmail', [localDateStr()], 0);
+        Swal.fire({ icon: r && r.email ? 'success' : 'warning', title: r && r.email ? 'Laporan terkirim' : 'Laporan tidak terkirim',
+          html: r && r.email ? `Email ke <b>${esc(r.tujuan||'-')}</b> ✅<br>Lampiran PDF: ${r.pdf ? '✅ ada' : '— tidak terlampir'}` : 'Cek alamat email tujuan & izin email di Apps Script.' });
+      } catch(e) { Swal.fire('Gagal', String(e.message || e), 'error'); }
+      if (b) { b.disabled = false; b.innerHTML = '<i class="fas fa-paper-plane"></i> Kirim Laporan Hari Ini ke Email'; }
     }
     async function notifTesUI() {
       try {
