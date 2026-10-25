@@ -1335,7 +1335,7 @@
 
     async function showMainApp() {
       document.getElementById('loginPage').classList.add('hidden'); document.getElementById('mainApp').classList.remove('hidden');
-      document.getElementById('displayName').textContent = currentUser.name; document.getElementById('displayRole').textContent = currentUser.role.toUpperCase();
+      document.getElementById('displayName').textContent = currentUser.name; document.getElementById('displayRole').textContent = currentUser.role.toUpperCase(); try { const lm = document.getElementById('btnLapMail'); if (lm) lm.style.display = currentUser.role === 'admin' ? '' : 'none'; } catch(e) {}
       document.getElementById('userAvatar').textContent = currentUser.name.charAt(0).toUpperCase();
       // [NEW] Sapaan "Hello, {nama}" khusus tampilan mobile (header ringkas) - lihat
       // .mobile-greeting di index.html/style.css, hanya tampil di layar HP.
@@ -4686,6 +4686,10 @@
       const wa = (document.getElementById('nf_waOwner')?.value || '').replace(/[^0-9]/g, '').replace(/^0/, '62');
       cfgSave({ notif: { tutup: g('tutup'), selisih: g('selisih'), stok: g('stok'), piutang: g('piutang'), waRekap: g('waRekap'), laporanPdf: g('laporanPdf'), waOwner: wa } });
       Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:1800, icon:'success', title:'Pengaturan notifikasi disimpan' });
+    }
+    async function laporanEmailDash() {
+      const ok = await Swal.fire({ icon:'question', title:'Kirim laporan ke email?', html:'Laporan harian hari ini (HTML + PDF) akan dikirim ke email pemilik sekarang.', showCancelButton:true, confirmButtonText:'Kirim', cancelButtonText:'Batal' });
+      if (ok.isConfirmed) laporanEmailUI();
     }
     async function laporanEmailUI() {
       const b = document.getElementById('btnLapEmail'); if (b) { b.disabled = true; b.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengirim…'; }
