@@ -6561,6 +6561,7 @@
       } catch(e) { return { toko: '', mobil: '', titipan: [], pinjaman: [] }; }
     }
     function _saveCK(dateStr, data) {
+      if (dateStr === localDateStr()) window._ckCarry = '';
       localStorage.setItem(_ckKey(dateStr), JSON.stringify(data));
       // [NEW] Ikut disinkronkan ke Google Sheets lewat antrian sync (otomatis retry
       // kalau gagal, tidak hilang), supaya data Cek Kosongan tidak cuma tersimpan di
@@ -6605,7 +6606,28 @@
           localStorage.setItem(_ckKey(yesterdayStr), JSON.stringify(window._ckYesterday));
         }
       } catch(e) { console.warn('Gagal ambil data kemarin dari server:', e); }
+      // [v15] Hari ini belum ada input -> pakai data hari terakhir yang berisi (di HP ini atau di server)
+      window._ckCarry = '';
+      if (!_ckAda(window._ckToday)) {
+        let c = null;
+        try { c = _ckTerakhirLocal(today); } catch(e) {}
+        try { const sv = await gasCall('getCekKosonganTerakhir', [today]); if (sv && (!c || sv.date > c.date)) c = sv; } catch(e) { console.warn('Gagal ambil Cek Kosongan terakhir:', e); }
+        if (c) { window._ckToday = { toko: c.toko, mobil: c.mobil, titipan: c.titipan||[], pinjaman: c.pinjaman||[] }; window._ckCarry = c.date; }
+      }
       if (currentPage === 'cekkosongan') renderCekKosonganPage();
+    }
+    function _ckAda(d) { return !!d && (Number(d.toko) > 0 || Number(d.mobil) > 0 || (d.titipan||[]).length > 0 || (d.pinjaman||[]).length > 0); }
+    function _ckTerakhirLocal(sebelum) {
+      let best = null;
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i) || '';
+        if (!k.startsWith('tirtaCekKosongan_')) continue;
+        const d = k.substring(17);
+        if (d >= sebelum || (best && d <= best.date)) continue;
+        const v = _loadCK(d);
+        if (_ckAda(v)) best = { date: d, toko: v.toko, mobil: v.mobil, titipan: v.titipan, pinjaman: v.pinjaman };
+      }
+      return best;
     }
     function renderCekKosonganPage() {
       const today = localDateStr();
@@ -6618,6 +6640,7 @@
         `<span style="font-size:0.72rem;font-weight:700;color:${diff===0?'#16A34A':(diff>0?'#3B82F6':'#EF4444')};margin-left:8px">${diff===0?'(sama dgn kemarin)':(diff>0?'▲ +'+diff+' dari kemarin':'▼ '+diff+' dari kemarin')}</span>`;
       document.getElementById('contentArea').innerHTML = `
         ${_pgHero('fa-recycle','Cek Kosongan', esc(fmtDate(today)) + ' · bandingkan dengan kemarin', tToday.totalGalon, 'Total Galon Hari Ini')}
+        ${window._ckCarry ? `<div class="card" style="border-left:4px solid #F59E0B;padding:10px 14px;font-size:.8rem"><i class="fas fa-clock-rotate-left" style="color:#F59E0B"></i> Belum ada input hari ini, jadi memakai data terakhir (<b>${esc(fmtDate(window._ckCarry))}</b>). Ubah angka lalu simpan bila hari ini berbeda.</div>` : ''}
         <div class="jual-two-col">
         <div class="card jual-col-left">
           <div class="card-title"><i class="fas fa-recycle"></i> Kosongan Kemarin (${esc(fmtDate(yesterdayStr))})</div>
