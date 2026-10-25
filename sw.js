@@ -9,11 +9,13 @@
    - Bump CACHE_VERSION on every deploy so old caches are purged on activate.
 */
 
-const CACHE_VERSION = 'tk-pos-v43';
+const CACHE_VERSION = 'tk-pos-v46';
 const APP_SHELL = [
   './index.html',
   './css/style.css',
   './js/app.js',
+  './js/m-laporan.js',
+  './js/m-stok.js',
   './manifest.json',
   './icons/icon-192.png',
   './icons/icon-512.png',
@@ -25,7 +27,7 @@ const APP_SHELL = [
 self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_VERSION).then((cache) => cache.addAll(APP_SHELL)).catch(() => {})
+    caches.open(CACHE_VERSION).then((cache) => Promise.all(APP_SHELL.map((u) => cache.add(u).catch(() => {})))).catch(() => {})
   );
 });
 
