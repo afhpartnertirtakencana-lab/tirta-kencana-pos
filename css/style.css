@@ -240,7 +240,7 @@
        ditampilkan lewat media query max-width:600px di index.html. */
     .mobile-greeting {
       display:none; padding:2px 16px 10px; font-size:0.78rem; color:#9fc1e6;
-      font-weight:500;
+      font-weight:600;
     }
     .mobile-greeting #mobileGreetName { color:#fff; font-weight:700; }
     /* [FIX] Sebelumnya warna teks sapaan di light-mode dibuat putih/nyaris putih -
@@ -1197,14 +1197,14 @@ body.light-mode .dx-kpi, body.light-mode .dx-panel {
 }
 body.light-mode .dx-kpi:hover { border-color:rgba(0,120,212,0.45); }
 body.light-mode .dx-kpi-v, body.light-mode .dx-piutang-v, body.light-mode .dx-panel-head, body.light-mode .dx-rank-n, body.light-mode .dx-section-title { color:#0F2A4A; }
-body.light-mode .dx-kpi-l, body.light-mode .dx-panel-eyebrow, body.light-mode .dx-piutang-s { color:#5B7491; }
+body.light-mode .dx-kpi-l, body.light-mode .dx-panel-eyebrow, body.light-mode .dx-piutang-s { color:#41597A; }
 body.light-mode .dx-kpi-pct, body.light-mode .dx-panel-note, body.light-mode .dx-rank-no, body.light-mode .dx-chev, body.light-mode .dx-col.today .dx-col-l, body.light-mode .dx-rank-v { color:#0067B8; }
 body.light-mode .dx-kpi-pct, body.light-mode .dx-panel-note, body.light-mode .dx-rank-no { background:#E6F3FF; }
 body.light-mode .dx-rank:first-child .dx-rank-no { background:linear-gradient(135deg,#0078D4,#29A8FF); color:#fff; }
 body.light-mode .dx-bar { background:#E3F1FD; }
 body.light-mode .dx-col-bar span { background:#BFE1FB; }
 body.light-mode .dx-col.today .dx-col-bar span { background:linear-gradient(180deg,#29A8FF,#0067B8); box-shadow:none; }
-body.light-mode .dx-col-l, body.light-mode .dx-empty { color:#6B84A0; }
+body.light-mode .dx-col-l, body.light-mode .dx-empty { color:#4A6283; }
 body.light-mode .dx-kpi.warn .dx-kpi-pct { color:#B45309; background:#FEF3C7; }
 body.light-mode .dx-piutang-ic { background:#FEF3C7; }
 body.light-mode .dx-hero { box-shadow:0 14px 32px rgba(0,120,212,0.30), inset 0 1px 0 rgba(255,255,255,0.3); }
@@ -1308,7 +1308,7 @@ body.light-mode .jx .form-group label, body.light-mode .jx-r3 label > span { col
 body.light-mode .jx-sec, body.light-mode .jx-foto-h { color:#0F2A4A; }
 body.light-mode .jx .jx-mic { background:#E6F3FF !important; color:#0067B8 !important; }
 body.light-mode .jx-btn.scan, body.light-mode .jx-btn.soft, body.light-mode .jx-chip, body.light-mode .jx-reset { background:#E6F3FF; color:#0067B8; border-color:rgba(0,120,212,0.25); }
-body.light-mode .jx-chip.ghost { background:#fff; color:#6B84A0; }
+body.light-mode .jx-chip.ghost { background:#fff; color:#4A6283; }
 body.light-mode .jx .cart-item-row { background:#F7FBFF; border-color:rgba(0,120,212,0.16); }
 body.light-mode .jx .cart-nama { color:#0067B8 !important; background:#EAF4FF !important; border-color:rgba(0,120,212,0.3) !important; }
 body.light-mode .jx-sub, body.light-mode .jx-extra-h { color:#0067B8; }
@@ -1847,7 +1847,7 @@ body.light-mode .dx-rank.dx-click:hover { background:#EAF4FF; }
 .dxp-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:0 14px; margin-top:-16px; position:relative; }
 .dxp-stat { background:#fff; border-radius:14px; padding:10px 6px; text-align:center; box-shadow:0 6px 16px rgba(0,60,140,.14); min-width:0; }
 .dxp-stat-v { font-size:.84rem; font-weight:800; color:var(--a1,#0067B8); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-family:var(--mono, monospace); }
-.dxp-stat-l { font-size:.62rem; font-weight:700; color:#6B84A0; text-transform:uppercase; letter-spacing:.6px; margin-top:3px; }
+.dxp-stat-l { font-size:.62rem; font-weight:700; color:#4A6283; text-transform:uppercase; letter-spacing:.6px; margin-top:3px; }
 .dxp-body { padding:14px; max-height:min(52vh,430px); overflow:auto; }
 .dxp-sec { background:#fff; border-radius:16px; box-shadow:0 2px 10px rgba(0,40,100,.07); margin-bottom:12px; overflow:hidden; border:1px solid rgba(0,120,212,.1); }
 .dxp-sec:last-child { margin-bottom:0; }
@@ -1860,14 +1860,14 @@ body.light-mode .dx-rank.dx-click:hover { background:#EAF4FF; }
 .dxp-no { width:24px; height:24px; flex:none; border-radius:8px; display:grid; place-items:center; font-size:.66rem; font-weight:800; background:#E6F3FF; color:#0067B8; }
 .dxp-main { flex:1; min-width:0; }
 .dxp-name { font-size:.8rem; font-weight:700; color:#0F2A4A; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.dxp-sub { font-size:.66rem; color:#6B84A0; margin-top:1px; }
+.dxp-sub { font-size:.66rem; color:#4A6283; margin-top:1px; }
 .dxp-val { display:flex; flex-direction:column; align-items:flex-end; gap:2px; flex:none; }
 .dxp-pill { font-size:.7rem; font-weight:800; color:#0067B8; background:#E6F3FF; padding:2px 9px; border-radius:20px; white-space:nowrap; }
 .dxp-amt { font-size:.68rem; font-weight:700; color:#4B6584; font-family:var(--mono, monospace); white-space:nowrap; }
 .dxp-total { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; font-size:.78rem; font-weight:800; color:#fff; background:linear-gradient(120deg,var(--a1,#0078D4),var(--a2,#29A8FF)); }
 .dxp-sec.ungu .dxp-total { background:linear-gradient(120deg,#6D28D9,#8B5CF6); }
 .dxp-total b { font-family:var(--mono, monospace); font-size:.86rem; }
-.dxp-empty { padding:18px; text-align:center; font-size:.76rem; color:#6B84A0; }
+.dxp-empty { padding:18px; text-align:center; font-size:.76rem; color:#4A6283; }
 @media (max-width:480px) { .dxp-title { font-size:.98rem; } .dxp-stat-v { font-size:.76rem; } }
 .dxp-x:focus, .dxp-x:focus-visible { outline:none !important; box-shadow:none !important; }
 .dxp-stats { margin-top:-18px; }
@@ -2098,3 +2098,62 @@ body.light-mode .tps-q.neg { background:#FFE8E8; color:#C62828; }
   .nav-bar button[data-lbl]:not([style*="display: none"]) { display:inline-grid !important; grid-template-rows:auto auto; place-items:center; align-content:center; gap:3px; height:auto !important; min-height:46px; padding:5px 2px 4px !important; max-width:46px; font-size:.82rem !important; }
   .nav-bar button[data-lbl]::after { content:attr(data-lbl); font-size:.46rem; font-weight:800; letter-spacing:0; line-height:1; white-space:nowrap; color:inherit; }
 }
+
+/* ===== Antrian sync (detail) ===== */
+.sq { text-align:left; }
+.sq-warn { font-size:.74rem; line-height:1.45; padding:9px 12px; border-radius:12px; background:rgba(41,168,255,.12); border:1px solid rgba(41,168,255,.3); margin-bottom:8px; }
+.sq-warn.bad { background:rgba(245,158,11,.14); border-color:rgba(245,158,11,.5); }
+.sq-sum { display:flex; justify-content:space-between; font-size:.72rem; margin:0 4px 8px; color:var(--text3); }
+.sq-list { max-height:320px; overflow:auto; }
+.sq-it { display:flex; gap:8px; align-items:flex-start; padding:9px 10px; border:1px solid rgba(41,168,255,.25); border-radius:12px; margin-bottom:6px; background:rgba(41,168,255,.06); }
+.sq-it.old { border-color:rgba(239,68,68,.5); background:rgba(239,68,68,.07); }
+.sq-main { flex:1; min-width:0; }
+.sq-l { font-weight:800; font-size:.8rem; word-break:break-word; }
+.sq-s { font-size:.68rem; color:var(--text3); margin-top:2px; }
+.sq-e { font-size:.66rem; color:#EF4444; margin-top:3px; word-break:break-word; }
+.sq-b { display:flex; flex-direction:column; gap:4px; flex:none; }
+.sq-btn { border:1px solid rgba(41,168,255,.5); background:rgba(41,168,255,.14); color:#29A8FF; font:inherit; font-size:.68rem; font-weight:800; padding:5px 12px; border-radius:9px; cursor:pointer; }
+.sq-btn.del { border-color:rgba(239,68,68,.5); background:rgba(239,68,68,.12); color:#EF4444; }
+body.light-mode .sq-btn { color:#0067B8; background:#EAF4FF; }
+body.light-mode .sq-btn.del { color:#C62828; background:#FFECEC; }
+
+/* Laporan Harian */
+.dx-lap-btn { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; margin:0 0 12px; padding:13px 16px; border:0; border-radius:16px; cursor:pointer; font:inherit; font-size:.9rem; font-weight:800; color:#fff; background:linear-gradient(120deg,#0060B8,#29A8FF); box-shadow:0 8px 20px rgba(0,80,160,.28); }
+.dx-lap-btn span { font-size:.64rem; font-weight:700; opacity:.85; background:rgba(255,255,255,.2); padding:2px 8px; border-radius:99px; }
+.lh-date { display:flex; align-items:center; gap:10px; justify-content:space-between; font-size:.72rem; font-weight:800; color:var(--text2); }
+.lh-date input { flex:1; max-width:170px; }
+.lh-piu { margin-top:8px; font-size:.74rem; text-align:center; color:var(--text3); }
+
+/* ===== v16: Bilah ikon adaptif (tablet / web / split-screen) =====
+   Bila ruang tidak cukup, kelompok ikon turun ke baris sendiri (rata kanan) dan ikon boleh
+   menyusut sedikit, jadi tidak pernah saling menimpa atau terpotong. */
+@media (min-width:768px) {
+  .menu-row { flex-wrap:wrap !important; row-gap:8px !important; overflow:visible !important; }
+  .menu-row .nav-bar { flex:1 1 560px !important; min-width:0 !important; max-width:100%; }
+  .menu-row .nav-bar > div:last-child { width:100%; flex-wrap:nowrap !important; justify-content:flex-end !important; gap:5px !important; min-width:0; }
+  .menu-row .nav-bar button[data-lbl]:not([style*="display: none"]) { flex:0 1 auto; min-width:40px !important; padding-left:3px !important; padding-right:3px !important; }
+  .menu-row #syncStatus { flex:0 1 auto; min-width:0; padding:0 9px !important; white-space:nowrap; }
+  .menu-row .nav-bar button[data-lbl]::after { font-size:.56rem; }
+}
+@media (min-width:768px) and (max-width:1100px) {
+  .menu-row .nav-bar > div:last-child { justify-content:space-between !important; }
+}
+
+/* ===== v16: Teks & angka lebih tebal, tajam, dan kontras (terutama warna hitam) ===== */
+html { text-rendering:optimizeLegibility; -webkit-text-size-adjust:100%; }
+body { font-weight:600; }
+button, input, select, textarea { font-family:inherit; font-weight:inherit; }
+input, select, textarea { font-weight:700; }
+input::placeholder, textarea::placeholder { font-weight:600; opacity:.75; }
+td { font-weight:700; }
+th { font-weight:800; }
+label { font-weight:700; }
+.text-sm, small { font-weight:600; }
+:root, body.dark { --text2:#8FD0E8; --text3:#9CC0DA; }
+body.light-mode { --text:#0A1426; --text2:#2E4468; --text3:#3F5379; }
+body.light-mode .card, body.light-mode .table-wrap td, body.light-mode .modal { color:var(--text); }
+body.light-mode td, body.light-mode th { color:#0A1426; }
+body.light-mode .text-sm, body.light-mode small { color:#2E4468; }
+body table td, body .table-wrap td { font-weight:700; }
+body.light-mode { --text:#0A1426; }
+html body.light-mode { --text:#0A1426; }
