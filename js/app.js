@@ -1436,7 +1436,6 @@
              <button class="tab ${currentPage==='laporanbulanan'?'active':''}" onclick="navigateTo('laporanbulanan')"><i class="fas fa-calendar-alt"></i> Laporan Bulanan</button>
              <button class="tab ${currentPage==='profit'?'active':''}" onclick="navigateTo('profit')"><i class="fas fa-sack-dollar"></i> Profit</button>
              <button class="tab ${currentPage==='analisacust'?'active':''}" onclick="navigateTo('analisacust')"><i class="fas fa-users-viewfinder"></i> Analisa Customer</button>
-             <button class="tab ${currentPage==='tanyaai'?'active':''}" onclick="navigateTo('tanyaai')"><i class="fas fa-robot"></i> Tanya AI</button>
              <button class="tab ${currentPage==='rekapharian'?'active':''}" onclick="navigateTo('rekapharian')"><i class="fas fa-calendar-check"></i> Rekap Harian</button>
              <button class="tab ${currentPage==='auditlog'?'active':''}" onclick="navigateTo('auditlog')"><i class="fas fa-shield-halved"></i> Backup &amp; Audit</button>
              <button class="tab ${currentPage==='panduan'?'active':''}" onclick="navigateTo('panduan')"><i class="fas fa-circle-question"></i> Panduan</button>
@@ -1500,7 +1499,6 @@
           { page:'laporanbulanan', label:'Laporan Bulanan', icon:'fa-calendar-alt' },
           { page:'profit', label:'Profit', icon:'fa-sack-dollar' },
           { page:'analisacust', label:'Analisa Customer', icon:'fa-users-viewfinder' },
-          { page:'tanyaai', label:'Tanya AI', icon:'fa-robot' },
           { page:'rekapharian', label:'Rekap Harian', icon:'fa-calendar-check' },
           { page:'auditlog', label:'Backup & Audit', icon:'fa-shield-halved' },
           { page:'googlesheets', label:'Google Sheets', icon:'fa-table-cells' },
@@ -1602,7 +1600,7 @@
     function _pgHero(icon, title, sub, val, lbl) {
       return `<div class="pg-hero"><div class="pg-hero-eyebrow"><i class="fas ${icon}"></i> ${title}</div><div class="pg-hero-sub">${sub||''}</div>${val !== undefined && val !== null ? `<div class="pg-hero-val">${val}</div><div class="pg-hero-lbl">${lbl||''}</div>` : ''}</div>`;
     }
-    function renderContent() { try { document.getElementById('contentArea').setAttribute('data-page', currentPage); } catch(e) {} switch (currentPage) { case 'dashboard': loadDashboard(); break; case 'penjualan': loadPenjualan(); break; case 'transaksi': loadTransaksi(); break; case 'rekap': loadRekap(); break; case 'rekapinput': loadRekapInput(); break; case 'setoran': loadSetoran(); break; case 'rekapsetoran': loadRekapSetoran(); break; case 'inputbarang': loadInputBarang(); break; case 'stockbarang': loadStockBarang(); break; case 'cekstock': loadCekStock(); break; case 'cekkosongan': loadCekKosongan(); break; case 'pesanan': loadPesanan(); break; case 'titipan': loadTitipan(); break; case 'produk': loadProduk(); break; case 'pelanggan': loadPelanggan(); break; case 'pengaturan': loadPengaturan(); break; case 'pengaturanUser': loadPengaturanUser(); break; case 'grafik': loadGrafik(); break; case 'piutang': loadPiutang(); break; case 'retur': loadRetur(); break; case 'tanyaai': loadTanyaAI(); break; case 'laporanbulanan': loadLaporanBulanan(); break; case 'profit': loadProfit(); break; case 'analisacust': loadAnalisaCust(); break; case 'rekapharian': loadRekapHarian(); break; case 'auditlog': loadAuditLog(); break; case 'googlesheets': loadGoogleSheets(); break; case 'panduan': loadPanduan(); break; } }
+    function renderContent() { try { document.getElementById('contentArea').setAttribute('data-page', currentPage); } catch(e) {} switch (currentPage) { case 'dashboard': loadDashboard(); break; case 'penjualan': loadPenjualan(); break; case 'transaksi': loadTransaksi(); break; case 'rekap': loadRekap(); break; case 'rekapinput': loadRekapInput(); break; case 'setoran': loadSetoran(); break; case 'rekapsetoran': loadRekapSetoran(); break; case 'inputbarang': loadInputBarang(); break; case 'stockbarang': loadStockBarang(); break; case 'cekstock': loadCekStock(); break; case 'cekkosongan': loadCekKosongan(); break; case 'pesanan': loadPesanan(); break; case 'titipan': loadTitipan(); break; case 'produk': loadProduk(); break; case 'pelanggan': loadPelanggan(); break; case 'pengaturan': loadPengaturan(); break; case 'pengaturanUser': loadPengaturanUser(); break; case 'grafik': loadGrafik(); break; case 'piutang': loadPiutang(); break; case 'retur': loadRetur(); break; case 'laporanbulanan': loadLaporanBulanan(); break; case 'profit': loadProfit(); break; case 'analisacust': loadAnalisaCust(); break; case 'rekapharian': loadRekapHarian(); break; case 'auditlog': loadAuditLog(); break; case 'googlesheets': loadGoogleSheets(); break; case 'panduan': loadPanduan(); break; } }
 
     // ========== DASHBOARD (MENU UTAMA) ==========
     function loadDashboard() {
@@ -1688,7 +1686,6 @@
 
         h = `
           ${_dxHero({ eyebrow:'Total Penjualan Hari Ini', title: total, sub: todayTx.length + ' transaksi · rata-rata ' + fmtRp(avg) + (_rtD.nilai > 0 ? ' · retur −' + fmtRp(_rtD.nilai) : ''), delta })}
-          ${role === 'admin' ? _dxAiCard() : ''}
           <div class="dx-kpis">
             ${kpi('cod','COD','fa-hand-holding-usd',cod,'')}
             ${kpi('transfer','Transfer','fa-university',transfer,'')}
@@ -1732,7 +1729,6 @@
       // tab menu (desktop), jadi tidak perlu duplikasi di sini.
 
       document.getElementById('contentArea').innerHTML = h;
-      try { if (role === 'admin') _dxAiInit(); } catch(e) {}
       try { _dxLoadAlerts(); } catch(e) {}
       try { _dxLoadLowStock(); } catch(e) {}
       // Lengkapi item transaksi hari ini (sekali) agar rekap SKU/Customer akurat
@@ -4014,142 +4010,6 @@
         Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:1800, icon:'success', title:'Retur dibatalkan' });
       });
     }
-    // ========== TANYA AI (Gemini, opsional; kunci disimpan di Script Properties backend) ==========
-    // ========== KARTU TANYA AI DI DASHBOARD (khusus admin) ==========
-    const _DXAI_CHIPS = [[0,'📈 Penjualan 7 hari'],[1,'🏆 Customer paling untung'],[5,'📦 Perlu dipesan?'],[4,'💸 Siapa ditagih?']];
-    function _dxAiCard() {
-      const st = window._aiStatus, ans = window._dashAiAns;
-      const chip = !st ? '<span class="dxai-pill" id="dxAiPill"><i class="fas fa-spinner fa-spin"></i></span>' : (st.aktif ? `<span class="dxai-pill ok" id="dxAiPill"><i class="fas fa-bolt"></i> ${st.sisa}/${st.batas}</span>` : '<span class="dxai-pill off" id="dxAiPill">Belum aktif</span>');
-      const aktif = !!(st && st.aktif);
-      return `<div class="dx-ai" id="dxAi">
-        <div class="dxai-glow"></div>
-        <div class="dxai-head">
-          <div class="dxai-ic"><i class="fas fa-wand-magic-sparkles"></i></div>
-          <div class="dxai-ttl"><b>Tanya AI</b><span>Tanya data toko pakai bahasa biasa</span></div>
-          ${chip}
-        </div>
-        <form class="dxai-form" onsubmit="dashAiAsk(event)">
-          <input id="dxAiQ" type="text" maxlength="500" autocomplete="off" placeholder="${aktif || !st ? 'Mis. siapa customer paling untung bulan ini?' : 'Aktifkan AI dulu untuk mulai bertanya'}" ${st && !st.aktif ? 'disabled' : ''}>
-          <button type="submit" id="dxAiGo" aria-label="Kirim" ${st && !st.aktif ? 'disabled' : ''}><i class="fas fa-paper-plane"></i></button>
-        </form>
-        <div class="dxai-chips" id="dxAiChips" ${st && !st.aktif ? 'style="display:none"' : ''}>${_DXAI_CHIPS.map(c => `<button type="button" onclick="dashAiPick(${c[0]})">${c[1]}</button>`).join('')}</div>
-        <div class="dxai-ans" id="dxAiAns" ${ans ? '' : 'style="display:none"'}>${ans ? _dxAiAnsHtml(ans) : ''}</div>
-        <div class="dxai-off" id="dxAiOff" ${st && !st.aktif ? '' : 'style="display:none"'}>AI gratis dari Google belum diaktifkan. <button type="button" onclick="navigateTo('tanyaai')">Aktifkan sekarang <i class="fas fa-arrow-right"></i></button></div>
-      </div>`;
-    }
-    function _dxAiAnsHtml(a) {
-      if (a.loading) return `<div class="dxai-q"><i class="fas fa-comment-dots"></i> ${esc(a.q)}</div><div class="dxai-typing"><span></span><span></span><span></span> Menganalisis data…</div>`;
-      return `<div class="dxai-q"><i class="fas fa-comment-dots"></i> ${esc(a.q)}</div><div class="dxai-a${a.err ? ' err' : ''}">${_aiFmt(a.t)}</div>
-        <div class="dxai-foot"><button type="button" onclick="navigateTo('tanyaai')">Lanjut di halaman Tanya AI <i class="fas fa-arrow-right"></i></button>${a.err ? '' : '<span>Jawaban AI bisa keliru, cek angka pentingnya.</span>'}</div>`;
-    }
-    function _dxAiRefreshStatus() {
-      if (currentPage !== 'dashboard' || !document.getElementById('dxAi')) return;
-      const card = document.getElementById('dxAi'); if (!card) return;
-      const tmp = document.createElement('div'); tmp.innerHTML = _dxAiCard();
-      const keepQ = (document.getElementById('dxAiQ')?.value) || '';
-      card.replaceWith(tmp.firstElementChild);
-      const q = document.getElementById('dxAiQ'); if (q && keepQ) q.value = keepQ;
-    }
-    async function _dxAiInit() {
-      if (window._aiStatusAt && Date.now() - window._aiStatusAt < 300000 && window._aiStatus) return;
-      try { window._aiStatus = await gasCall('aiStatus', [], 0); window._aiStatusAt = Date.now(); }
-      catch(e) { window._aiStatus = window._aiStatus || { aktif:false, sisa:0, batas:0 }; }
-      _dxAiRefreshStatus();
-    }
-    function dashAiPick(i) { const q = document.getElementById('dxAiQ'); if (!q) return; q.value = _AI_CHIPS[i]; dashAiAsk(); }
-    async function dashAiAsk(ev) {
-      if (ev && ev.preventDefault) ev.preventDefault();
-      if (_aiBusy) return;
-      const inp = document.getElementById('dxAiQ'); const q = (inp?.value || '').trim(); if (!q) return;
-      _aiBusy = true; const go = document.getElementById('dxAiGo'); if (go) go.disabled = true;
-      const box = document.getElementById('dxAiAns');
-      const slot = window._dashAiAns = { q, loading:true, t:'' };
-      if (box) { box.style.display = ''; box.innerHTML = _dxAiAnsHtml(slot); }
-      try {
-        const r = await gasCall('aiTanya', [{ q, riwayat: window._aiHist.slice(-3) }], 0);
-        if (r && r.ok) {
-          slot.loading = false; slot.t = r.jawab; window._aiHist.push({ q, a: r.jawab });
-          (window._aiThreadView = window._aiThreadView || []).push({ role:'u', t:q }, { role:'a', t:r.jawab });
-          if (window._aiStatus) { window._aiStatus.sisa = r.sisa; window._aiStatus.dipakai = Math.max(0, (window._aiStatus.batas||0) - r.sisa); }
-        } else { slot.loading = false; slot.err = true; slot.t = (r && (r.error || r.message)) || 'AI tidak memberi jawaban.'; }
-      } catch(e) { slot.loading = false; slot.err = true; slot.t = String(e.message || e); }
-      _aiBusy = false;
-      const b2 = document.getElementById('dxAiAns'); if (b2) b2.innerHTML = _dxAiAnsHtml(slot);
-      const g2 = document.getElementById('dxAiGo'); if (g2) g2.disabled = false;
-      const pill = document.getElementById('dxAiPill'); if (pill && window._aiStatus && window._aiStatus.aktif) pill.innerHTML = `<i class="fas fa-bolt"></i> ${window._aiStatus.sisa}/${window._aiStatus.batas}`;
-    }
-
-    window._aiHist = window._aiHist || [];
-    const _AI_CHIPS = ['Bagaimana penjualan 7 hari terakhir dibanding sebelumnya?', 'Siapa 5 customer paling untung bulan ini?', 'Barang apa yang profitnya paling besar?', 'Customer mana yang mulai jarang order?', 'Piutang siapa yang paling perlu ditagih?', 'Stok barang apa yang perlu segera dipesan?'];
-    function _aiFmt(t) {
-      return esc(String(t||'')).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').split('\n').map(l => /^\s*[-*]\s+/.test(l) ? '• ' + l.replace(/^\s*[-*]\s+/, '') : l).join('<br>');
-    }
-    async function loadTanyaAI() {
-      const el = document.getElementById('contentArea');
-      if (currentUser?.role !== 'admin') { el.innerHTML = `<div class="card"><div class="text-sm" style="padding:16px;text-align:center">Menu Tanya AI khusus admin.</div></div>`; return; }
-      el.innerHTML = `${_pgHero('fa-robot','Tanya AI','Tanya data toko pakai bahasa biasa')}<div class="card"><p class="text-center text-sm" style="padding:30px"><i class="fas fa-spinner fa-spin"></i> Memuat…</p></div>`;
-      let st = null, err = '';
-      try { st = await gasCall('aiStatus', [], 0); } catch(e) { err = String(e.message || e); }
-      window._aiStatus = st;
-      _renderTanyaAI(err);
-    }
-    function _renderTanyaAI(err) {
-      const el = document.getElementById('contentArea'); if (!el || currentPage !== 'tanyaai') return;
-      const st = window._aiStatus;
-      const hero = _pgHero('fa-robot','Tanya AI','Tanya data toko pakai bahasa biasa', st && st.aktif ? (st.sisa + ' / ' + st.batas) : undefined, 'Sisa pertanyaan hari ini');
-      if (err || !st) {
-        el.innerHTML = hero + `<div class="card"><div class="text-sm" style="color:#DC2626;line-height:1.5">Tidak bisa membaca status AI${err ? ': ' + esc(err) : ''}.<br><span style="color:var(--text3)">Pastikan backend sudah di-deploy versi terbaru (New version).</span></div><button class="btn btn-outline btn-block" style="margin-top:10px" onclick="loadTanyaAI()"><i class="fas fa-rotate"></i> Coba lagi</button></div>`; return;
-      }
-      const setup = `<div class="card">
-        <div class="card-title"><i class="fas fa-key"></i> ${st.aktif ? 'Kunci API Gemini' : 'Aktifkan AI (gratis)'}</div>
-        ${st.aktif ? `<div class="text-sm" style="color:#16A34A;font-weight:700;margin-bottom:8px"><i class="fas fa-circle-check"></i> AI aktif · model ${esc(st.model||'')} · dipakai ${st.dipakai} dari ${st.batas} hari ini</div>` :
-        `<ol class="text-sm" style="line-height:1.7;padding-left:18px;margin:0 0 10px;color:var(--text2)"><li>Buka <b>aistudio.google.com/apikey</b> dan masuk dengan akun Google.</li><li>Klik <b>Create API key</b>, salin kuncinya.</li><li>Tempel di kolom di bawah lalu <b>Simpan</b>.</li></ol>
-        <div class="text-sm" style="color:var(--text3);margin-bottom:10px;line-height:1.5">Jalur gratis Google punya batas pemakaian harian. Kunci disimpan di server Apps Script Anda (bukan di Sheet). Yang dikirim ke AI hanya ringkasan angka penjualan, tanpa nomor telepon dan alamat pelanggan.</div>`}
-        <div style="display:flex;gap:8px;flex-wrap:wrap"><input id="aiKeyInp" type="password" autocomplete="off" placeholder="${st.aktif ? 'Tempel kunci baru untuk mengganti' : 'Tempel kunci API Gemini'}" style="flex:1;min-width:180px"><button class="btn btn-primary" onclick="aiSaveKey()"><i class="fas fa-floppy-disk"></i> Simpan</button>${st.aktif ? `<button class="btn btn-ghost" onclick="aiRemoveKey()"><i class="fas fa-trash"></i> Hapus</button>` : ''}</div>
-      </div>`;
-      const chat = st.aktif ? `<div class="card">
-        <div class="card-title"><i class="fas fa-comments"></i> Tanya data toko</div>
-        <div id="aiChips" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">${_AI_CHIPS.map((c,i) => `<button class="btn btn-sm btn-outline" style="text-align:left;white-space:normal" onclick="aiPick(${i})">${esc(c)}</button>`).join('')}</div>
-        <div id="aiThread" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px"></div>
-        <div style="display:flex;gap:8px;align-items:flex-end"><textarea id="aiQ" rows="2" maxlength="500" placeholder="Tulis pertanyaan… (maks 500 huruf)" style="flex:1;resize:vertical" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();aiAsk();}"></textarea><button class="btn btn-primary" id="aiSend" onclick="aiAsk()"><i class="fas fa-paper-plane"></i> Kirim</button></div>
-        <div class="text-sm" style="color:var(--text3);margin-top:8px;line-height:1.5">Jawaban AI berdasarkan data 30–45 hari terakhir dan bisa keliru, jadi cek angka pentingnya di menu terkait. AI hanya membaca, tidak mengubah data.</div>
-      </div>` : '';
-      el.innerHTML = hero + chat + setup;
-      _aiRenderThread();
-    }
-    function _aiRenderThread() {
-      const th = document.getElementById('aiThread'); if (!th) return;
-      th.innerHTML = (window._aiThreadView || []).map(m => m.role === 'u'
-        ? `<div style="align-self:flex-end;max-width:92%;background:linear-gradient(135deg,#0078D4,#29A8FF);color:#fff;padding:8px 12px;border-radius:14px 14px 4px 14px;font-size:.84rem;font-weight:700">${esc(m.t)}</div>`
-        : `<div style="align-self:flex-start;max-width:96%;background:var(--surface2);border:1px solid var(--border);padding:9px 12px;border-radius:14px 14px 14px 4px;font-size:.84rem;line-height:1.55;${m.err ? 'color:#DC2626' : ''}">${m.loading ? '<i class="fas fa-spinner fa-spin"></i> Menganalisis data…' : _aiFmt(m.t)}</div>`).join('');
-    }
-    function aiPick(i) { const q = document.getElementById('aiQ'); if (q) { q.value = _AI_CHIPS[i]; aiAsk(); } }
-    let _aiBusy = false;
-    async function aiAsk() {
-      if (_aiBusy) return;
-      const inp = document.getElementById('aiQ'); const q = (inp?.value || '').trim(); if (!q) return;
-      _aiBusy = true; const btn = document.getElementById('aiSend'); if (btn) btn.disabled = true;
-      const view = window._aiThreadView = window._aiThreadView || [];
-      view.push({ role:'u', t:q }); const slot = { role:'a', loading:true, t:'' }; view.push(slot); if (inp) inp.value = ''; _aiRenderThread();
-      try {
-        const r = await gasCall('aiTanya', [{ q, riwayat: window._aiHist.slice(-3) }], 0);
-        if (r && r.ok) { slot.loading = false; slot.t = r.jawab; window._aiHist.push({ q, a: r.jawab }); if (window._aiStatus) { window._aiStatus.sisa = r.sisa; window._aiStatus.dipakai = Math.max(0, (window._aiStatus.batas||0) - r.sisa); } }
-        else { slot.loading = false; slot.err = true; slot.t = (r && (r.error || r.message)) || 'AI tidak memberi jawaban.'; }
-      } catch(e) { slot.loading = false; slot.err = true; slot.t = String(e.message || e); }
-      _aiBusy = false; if (btn) btn.disabled = false; _aiRenderThread();
-      try { const hv = document.querySelector('.pg-hero-val'); if (hv && window._aiStatus) hv.textContent = window._aiStatus.sisa + ' / ' + window._aiStatus.batas; } catch(e) {}
-    }
-    async function aiSaveKey() {
-      const v = (document.getElementById('aiKeyInp')?.value || '').replace(/[\s"'`]+/g, '');
-      if (!v) return Swal.fire('Isi kunci dulu', 'Tempel kunci API Gemini di kolom yang tersedia.', 'info');
-      try { await gasCall('aiSimpanKunci', [v], 0); Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:2000, icon:'success', title:'Kunci disimpan' }); loadTanyaAI(); }
-      catch(e) { Swal.fire('Gagal menyimpan', String(e.message || e), 'error'); }
-    }
-    async function aiRemoveKey() {
-      const c = await Swal.fire({ icon:'warning', title:'Hapus kunci AI?', text:'Fitur Tanya AI dan paragraf AI di email akan nonaktif sampai kunci diisi lagi.', showCancelButton:true, confirmButtonText:'Hapus', cancelButtonText:'Batal' });
-      if (!c.isConfirmed) return;
-      try { await gasCall('aiSimpanKunci', [''], 0); window._aiThreadView = []; window._aiHist = []; loadTanyaAI(); } catch(e) { Swal.fire('Gagal', String(e.message || e), 'error'); }
-    }
     function loadRetur() {
       const g = _retGroups(), isAdmin = currentUser?.role === 'admin';
       const bulan = localDateStr().substring(0,7), gBulan = g.filter(x => String(x.tgl).startsWith(bulan));
@@ -4403,7 +4263,7 @@
     }
     // ========== KONFIGURASI ATURAN & PERINGATAN (sinkron ke sheet "Konfigurasi") ==========
     const CFG_KEY = 'tirtaConfig';
-    const CFG_DEFAULT = { kredit:{ maxPiutang:5000000, maxHari:30, tagihHari:7, perCust:{} }, setoran:{ batasSelisih:20000 }, anomali:{ maxDiskonPct:20 }, notif:{ tutup:true, selisih:true, stok:true, piutang:true, waRekap:true, laporanPdf:true, aiRingkas:true, waOwner:'' } };
+    const CFG_DEFAULT = { kredit:{ maxPiutang:5000000, maxHari:30, tagihHari:7, perCust:{} }, setoran:{ batasSelisih:20000 }, anomali:{ maxDiskonPct:20 }, notif:{ tutup:true, selisih:true, stok:true, piutang:true, waRekap:true, laporanPdf:true, waOwner:'' } };
     function _cfgMerge(base, over) {
       const o = JSON.parse(JSON.stringify(base));
       Object.keys(over||{}).forEach(k => { if (over[k] && typeof over[k] === 'object' && !Array.isArray(over[k]) && o[k] && typeof o[k] === 'object') { Object.keys(over[k]).forEach(k2 => { o[k][k2] = over[k][k2]; }); } else o[k] = over[k]; });
@@ -4810,7 +4670,7 @@
         <div class="card">
           <div class="card-title"><i class="fas fa-bell"></i> Notifikasi Pemilik</div>
           <div class="text-sm" style="color:var(--text3);margin-bottom:8px">Server mengirim email otomatis untuk kejadian berikut (dan WhatsApp bila Anda mengaktifkan WA otomatis, lihat catatan di bawah).</div>
-          ${chk('tutup','Buku harian ditutup (ringkasan hari itu)')}${chk('waRekap','Rekap harian otomatis ke WhatsApp (±23.50)')}${chk('laporanPdf','Lampirkan PDF pada email laporan harian')}${chk('aiRingkas','Paragraf ringkasan AI di email laporan (perlu kunci Gemini di menu Tanya AI)')}${chk('selisih','Selisih setoran melewati batas')}${chk('stok','Stok menipis (cek tiap pagi ±07.30)')}${chk('piutang','Piutang lewat batas hari (cek tiap pagi ±07.30)')}
+          ${chk('tutup','Buku harian ditutup (ringkasan hari itu)')}${chk('waRekap','Rekap harian otomatis ke WhatsApp (±23.50)')}${chk('laporanPdf','Lampirkan PDF pada email laporan harian')}${chk('selisih','Selisih setoran melewati batas')}${chk('stok','Stok menipis (cek tiap pagi ±07.30)')}${chk('piutang','Piutang lewat batas hari (cek tiap pagi ±07.30)')}
           <div class="form-group" style="margin-top:8px"><label>No. WhatsApp Anda (penerima WA otomatis & tombol “Ringkasan ke WA”)</label><input id="nf_waOwner" inputmode="numeric" placeholder="mis. 628123456789" value="${esc(nf.waOwner||'')}"></div>
           <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-primary" style="flex:1" onclick="saveNotifUI()"><i class="fas fa-floppy-disk"></i> Simpan</button><button class="btn btn-outline" style="flex:1" onclick="notifTesUI()"><i class="fas fa-paper-plane"></i> Kirim Tes</button><button class="btn" style="flex:1;background:linear-gradient(135deg,#16A34A,#25D366);color:#fff;border:0" onclick="ringkasanWaOwner()"><i class="fab fa-whatsapp"></i> Ringkasan ke WA</button></div>
           <div class="text-sm" style="color:var(--text3);margin-top:10px;line-height:1.5"><b>WA otomatis (saat tutup buku &amp; rekap ±23.50):</b> WhatsApp tidak punya jalur kirim otomatis gratis, jadi butuh layanan gateway (mis. Fonnte). Daftar, sambungkan nomor pengirim, lalu di Apps Script buka Project Settings → Script properties dan isi <code>WA_API_TOKEN</code> (token Fonnte). Nomor penerima diambil dari kolom di atas (setelah Simpan), atau isi <code>WA_OWNER_NUMBER</code>. Tanpa token, notifikasi tetap terkirim lewat email dan tombol “Ringkasan ke WA” tetap bisa dipakai manual. Klik <b>Kirim Tes</b> untuk memastikan. Jalankan <code>installDailyAlertTrigger</code> satu kali dari editor Apps Script untuk jadwal pagi.</div>
@@ -4864,8 +4724,7 @@
         { t:'Tutup buku & laporan', ic:'fa-calendar-check', items:[
           ['Tutup Buku harian', 'Rekap Harian → pilih tanggal → Tutup Buku. Jika ada sales belum setor, aplikasi memperingatkan. Admin dapat membuka kembali dengan tombol Buka.'],
           ['Laporan bulanan', 'Menu Profit → pilih rentang (mis. “Bulan lalu”) → Ekspor Excel atau PDF.'],
-          ['Analisa Customer', 'Customer terbaik dan yang mulai jarang beli; tombol 💬 Ajak mengirim WA ajakan.'],
-          ['Tanya AI', 'Khusus admin. Tanya data toko pakai bahasa biasa (mis. “siapa customer paling untung bulan ini?”). Perlu kunci API Gemini gratis; hanya ringkasan angka yang dikirim, tanpa nomor telepon/alamat.'] ] },
+          ['Analisa Customer', 'Customer terbaik dan yang mulai jarang beli; tombol 💬 Ajak mengirim WA ajakan.'] ] },
         { t:'Keamanan & pemeliharaan', ic:'fa-shield-halved', items:[
           ['Backup & Audit', 'Backup otomatis tiap malam ke Drive. Halaman Backup & Audit juga berisi Log Login, Audit Log, Uji Sistem, dan pengaturan Notifikasi Pemilik.'],
           ['Uji Sistem', 'Jalankan setelah memasang pembaruan backend atau bila ada yang terasa janggal; hasilnya menunjukkan bagian mana yang perlu diperbaiki.'],
@@ -4963,7 +4822,7 @@
     function saveNotifUI() {
       const g = k => !!document.getElementById('nf_' + k)?.checked;
       const wa = (document.getElementById('nf_waOwner')?.value || '').replace(/[^0-9]/g, '').replace(/^0/, '62');
-      cfgSave({ notif: { tutup: g('tutup'), selisih: g('selisih'), stok: g('stok'), piutang: g('piutang'), waRekap: g('waRekap'), laporanPdf: g('laporanPdf'), aiRingkas: g('aiRingkas'), waOwner: wa } });
+      cfgSave({ notif: { tutup: g('tutup'), selisih: g('selisih'), stok: g('stok'), piutang: g('piutang'), waRekap: g('waRekap'), laporanPdf: g('laporanPdf'), waOwner: wa } });
       Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:1800, icon:'success', title:'Pengaturan notifikasi disimpan' });
     }
     async function laporanEmailDash() {
