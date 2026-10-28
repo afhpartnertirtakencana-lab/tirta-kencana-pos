@@ -2784,7 +2784,7 @@
       return `<div style="background:linear-gradient(120deg,${t.a0},${t.a1} 55%,${t.a2});padding:16px 18px 40px;color:#fff">
         <div style="display:flex;align-items:center;gap:11px">${_rcLogo(o.logo)}
           <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center"><div style="font-size:17px;font-weight:800;letter-spacing:-.3px;line-height:1.15">${esc(settings.namaToko||'Tirta Kencana')}</div>
-            <div style="font-size:10px;font-weight:700;letter-spacing:.9px;line-height:1.25;opacity:.95;margin-top:2px">WTC MANGGA 2</div><div style="font-size:9.5px;font-weight:500;letter-spacing:.5px;line-height:1.25;opacity:.85;margin-top:1px;margin-bottom:6px">LANTAI UG BLOK A /53</div></div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:.9px;line-height:1.25;opacity:.95;margin-top:2px">WTC MANGGA 2</div><div style="font-size:9.5px;font-weight:600;letter-spacing:.5px;line-height:1.25;opacity:.85;margin-top:1px;margin-bottom:6px">LANTAI UG BLOK A /53</div></div>
           ${o.icon?`<div style="width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0"><i class="fas ${o.icon}"></i></div>`:''}</div>
         <div style="margin-top:14px;font-size:19px;font-weight:800;letter-spacing:-.3px;line-height:1.2">${o.title||''}</div>
         ${o.sub?`<div style="font-size:11px;opacity:.88;margin-top:3px">${o.sub}</div>`:''}</div>`;
@@ -2792,27 +2792,27 @@
     // stats: [{l, v}]
     function _rcStats(stats, tone) {
       const t = _rcT(tone);
-      return `<div style="display:flex;gap:8px;padding:0 14px;margin-top:-24px;position:relative">${stats.map(x => `<div style="flex:1;min-width:0;background:#fff;border-radius:14px;padding:10px 4px;text-align:center;box-shadow:0 6px 16px rgba(0,60,140,.14)"><div style="font-size:12px;font-weight:800;color:${t.tx};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:'JetBrains Mono',Tahoma,monospace">${x.v}</div><div style="font-size:8.5px;font-weight:700;color:#6B84A0;text-transform:uppercase;letter-spacing:.6px;margin-top:3px">${x.l}</div></div>`).join('')}</div>`;
+      return `<div style="display:flex;gap:8px;padding:0 14px;margin-top:-24px;position:relative">${stats.map(x => `<div style="flex:1;min-width:0;background:#fff;border-radius:14px;padding:10px 4px;text-align:center;box-shadow:0 6px 16px rgba(0,60,140,.14)"><div style="font-size:12px;font-weight:800;color:${t.tx};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:'JetBrains Mono',Tahoma,monospace">${x.v}</div><div style="font-size:8.5px;font-weight:700;color:#4A6283;text-transform:uppercase;letter-spacing:.6px;margin-top:3px">${x.l}</div></div>`).join('')}</div>`;
     }
     function _rcBody(inner) { return `<div style="padding:14px">${inner}</div>`; }
     // kartu info: pasangan label/nilai
     function _rcInfo(pairs, tone) {
       const t = _rcT(tone);
-      return `<div style="background:#fff;border-radius:16px;border:1px solid ${t.chip};box-shadow:0 2px 10px rgba(0,40,100,.06);padding:11px 14px;margin-bottom:12px;display:flex;flex-wrap:wrap;gap:8px 0">${pairs.map(p => `<div style="width:${p.full?'100%':'50%'};min-width:0;${p.right?'text-align:right;':''}"><div style="font-size:8.5px;font-weight:700;color:#6B84A0;text-transform:uppercase;letter-spacing:.7px">${p.l}</div><div style="font-size:12px;font-weight:700;color:${p.c||'#0F2A4A'};margin-top:1px;word-break:break-word">${p.v}</div></div>`).join('')}</div>`;
+      return `<div style="background:#fff;border-radius:16px;border:1px solid ${t.chip};box-shadow:0 2px 10px rgba(0,40,100,.06);padding:11px 14px;margin-bottom:12px;display:flex;flex-wrap:wrap;gap:8px 0">${pairs.map(p => `<div style="width:${p.full?'100%':'50%'};min-width:0;${p.right?'text-align:right;':''}"><div style="font-size:8.5px;font-weight:700;color:#4A6283;text-transform:uppercase;letter-spacing:.7px">${p.l}</div><div style="font-size:12px;font-weight:700;color:${p.c||'#0F2A4A'};margin-top:1px;word-break:break-word">${p.v}</div></div>`).join('')}</div>`;
     }
     // baris: {n, sub, q (pill), v (nominal kecil di bawah pill)}
     function _rcRow(i, r, tone) {
       const t = _rcT(tone);
       return `<div style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px dashed ${t.chip}">
         <div style="width:24px;height:24px;flex-shrink:0;border-radius:8px;background:${t.chip};color:${t.tx};font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center">${r.no || (i + 1)}</div>
-        <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;color:#0F2A4A;line-height:1.3">${r.n}</div>${r.sub ? `<div style="font-size:10px;color:#6B84A0;margin-top:1px;line-height:1.35">${r.sub}</div>` : ''}</div>
+        <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;color:#0F2A4A;line-height:1.3">${r.n}</div>${r.sub ? `<div style="font-size:10px;color:#4A6283;margin-top:1px;line-height:1.35">${r.sub}</div>` : ''}</div>
         ${(r.q || r.v) ? `<div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:2px">${r.q ? `<span style="font-size:10.5px;font-weight:800;color:${r.qc || t.tx};background:${r.qbg || t.chip};padding:3px 9px;border-radius:20px;white-space:nowrap;line-height:1.5;display:inline-block">${r.q}</span>` : ''}${r.v ? `<span style="font-size:10.5px;font-weight:700;color:#4B6584;font-family:'JetBrains Mono',Tahoma,monospace;white-space:nowrap">${r.v}</span>` : ''}</div>` : ''}
       </div>`;
     }
     // s: {title (html), badge, rows:[...], total:{l,v}, tone, note}
     function _rcSec(s) {
       const t = _rcT(s.tone);
-      const rows = (s.rows || []).map((r, i) => _rcRow(i, r, s.tone)).join('') || '<div style="padding:16px;text-align:center;font-size:11px;color:#6B84A0">Tidak ada data</div>';
+      const rows = (s.rows || []).map((r, i) => _rcRow(i, r, s.tone)).join('') || '<div style="padding:16px;text-align:center;font-size:11px;color:#4A6283">Tidak ada data</div>';
       return `<div style="background:#fff;border-radius:16px;border:1px solid ${t.chip};box-shadow:0 2px 10px rgba(0,40,100,.07);margin-bottom:12px;overflow:hidden">
         ${s.title ? `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;background:${t.tint};border-bottom:1px solid ${t.chip}"><span style="font-size:11.5px;font-weight:800;color:#0B3A6A;min-width:0">${s.title}</span>${s.badge ? `<span style="font-size:9.5px;font-weight:800;color:#fff;background:${t.a1};padding:3px 10px;border-radius:20px;white-space:nowrap">${s.badge}</span>` : ''}</div>` : ''}
         ${rows}
@@ -2842,7 +2842,7 @@
       let totalQty = 0;
       let rows = [];
       if (data._loading) {
-        rows = [{ n:'<span style="color:#6B84A0;font-weight:600">Memuat detail item…</span>' }];
+        rows = [{ n:'<span style="color:#4A6283;font-weight:600">Memuat detail item…</span>' }];
       } else if (items.length) {
         rows = items.map(it => {
           const nettPer = it.nettPer !== undefined ? it.nettPer : (it.harga||0) - (it.discRpPer||0);
@@ -2852,18 +2852,18 @@
             q:(it.qty||0)+' pcs', v:_rcRp(nettPer*(it.qty||1)) };
         });
       } else {
-        rows = [{ n:'<span style="color:#6B84A0;font-weight:600">Detail item tidak tersedia</span>' }];
+        rows = [{ n:'<span style="color:#4A6283;font-weight:600">Detail item tidak tersedia</span>' }];
       }
 
       let payHtml = '';
       if (ns === 'transfer') {
         [settings.bank1, settings.bank2].forEach(bk => {
           if (!bk || !bk.nama) return;
-          payHtml += _rcCard(`<div style="font-size:8.5px;font-weight:700;color:#6B84A0;text-transform:uppercase;letter-spacing:.7px">Transfer ke</div><div style="font-size:12px;font-weight:800;color:#0F2A4A;margin-top:2px">${esc(bk.nama)}</div>${bk.norek?`<div style="font-family:'JetBrains Mono',Tahoma,monospace;font-size:16px;font-weight:800;color:${t.tx};letter-spacing:.5px;margin-top:2px">${esc(bk.norek)}</div>`:''}<div style="font-size:10.5px;color:#4B6584;margin-top:2px">a.n. <b>${esc(bk.penerima||'-')}</b></div>`);
+          payHtml += _rcCard(`<div style="font-size:8.5px;font-weight:700;color:#4A6283;text-transform:uppercase;letter-spacing:.7px">Transfer ke</div><div style="font-size:12px;font-weight:800;color:#0F2A4A;margin-top:2px">${esc(bk.nama)}</div>${bk.norek?`<div style="font-family:'JetBrains Mono',Tahoma,monospace;font-size:16px;font-weight:800;color:${t.tx};letter-spacing:.5px;margin-top:2px">${esc(bk.norek)}</div>`:''}<div style="font-size:10.5px;color:#4B6584;margin-top:2px">a.n. <b>${esc(bk.penerima||'-')}</b></div>`);
         });
       }
       if (ns === 'qris' && _qrisUrl) {
-        payHtml += _rcCard(`<div style="text-align:center"><div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#6B84A0;margin-bottom:8px">Scan QRIS</div><img src="${_qrisUrl}" style="width:170px;height:170px;object-fit:contain;border-radius:12px;border:1.5px solid ${t.chip};background:#fff;padding:8px"></div>`);
+        payHtml += _rcCard(`<div style="text-align:center"><div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#4A6283;margin-bottom:8px">Scan QRIS</div><img src="${_qrisUrl}" style="width:170px;height:170px;object-fit:contain;border-radius:12px;border:1.5px solid ${t.chip};background:#fff;padding:8px"></div>`);
       }
 
       const lines = [{ l:'Gross', v:_rcRp(trx.gross||0) }];
@@ -4279,7 +4279,7 @@
       const list = (products||[]).filter(p => p && p.sku);
       if (!list.length) { Swal.fire('Info', 'Belum ada produk.', 'info'); return; }
       Swal.fire({ title: 'Batas Minimum Stok', width: 520, showCancelButton: true, confirmButtonText: 'Simpan', cancelButtonText: 'Batal',
-        html: `<div style="text-align:left;font-size:.78rem;color:#6B84A0;margin-bottom:8px">Isi jumlah minimum per SKU. Kosongkan / 0 untuk tidak dipantau. Tersinkron ke semua perangkat.</div><div style="max-height:50vh;overflow:auto">${list.map(p => `<div style="display:flex;align-items:center;gap:8px;padding:5px 0"><div style="flex:1;text-align:left;font-weight:600;font-size:.82rem">${esc(p.nama||p.sku)}<div style="font-size:.65rem;color:#6B84A0">${esc(p.sku)}</div></div><input type="number" min="0" class="swal2-input msInp" data-sku="${esc(p.sku)}" value="${mins[p.sku]||''}" placeholder="0" style="width:90px;margin:0;text-align:right"></div>`).join('')}</div>`,
+        html: `<div style="text-align:left;font-size:.78rem;color:#4A6283;margin-bottom:8px">Isi jumlah minimum per SKU. Kosongkan / 0 untuk tidak dipantau. Tersinkron ke semua perangkat.</div><div style="max-height:50vh;overflow:auto">${list.map(p => `<div style="display:flex;align-items:center;gap:8px;padding:5px 0"><div style="flex:1;text-align:left;font-weight:600;font-size:.82rem">${esc(p.nama||p.sku)}<div style="font-size:.65rem;color:#4A6283">${esc(p.sku)}</div></div><input type="number" min="0" class="swal2-input msInp" data-sku="${esc(p.sku)}" value="${mins[p.sku]||''}" placeholder="0" style="width:90px;margin:0;text-align:right"></div>`).join('')}</div>`,
         preConfirm: () => { const o = {}; document.querySelectorAll('.msInp').forEach(i => { const v = parseInt(i.value, 10); if (v > 0) o[i.dataset.sku] = v; }); return o; }
       }).then(r => { if (!r.isConfirmed) return; try { localStorage.setItem(MINSTOK_KEY, JSON.stringify(r.value)); } catch(e) {} enqueueSync('saveMinStok', [r.value], 'Batas minimum stok'); if (currentPage === 'dashboard') _dxLoadLowStock(); Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:1500, icon:'success', title:'Batas minimum tersimpan' }); });
     }
@@ -4500,7 +4500,7 @@
         h3{margin:18px 0 6px;font-size:13px;color:#0A4FA8;border-bottom:2px solid #29A8FF;padding-bottom:3px}
         .kpi{display:flex;gap:8px;margin:10px 0} .kpi div{flex:1;border:1px solid #BBD7F5;border-radius:8px;padding:8px;background:#F4F9FF} .kpi b{display:block;font-size:14px;margin-top:3px}
         table{width:100%;border-collapse:collapse} th{background:#0A4FA8;color:#fff;text-align:left;padding:5px 6px;font-size:10px} td{padding:4px 6px;border-bottom:1px solid #E3EDF8} .r{text-align:right} tr{page-break-inside:avoid}
-        .foot{margin-top:16px;color:#6B84A0;font-size:9px}</style></head><body>
+        .foot{margin-top:16px;color:#4A6283;font-size:9px}</style></head><body>
         <h1>${esc(settings.namaToko || 'Tirta Kencana')}</h1><div class="sub">Laporan Penjualan · ${esc(fmtDate(d.from))} – ${esc(fmtDate(d.to))} · dicetak ${esc(fmtDate(localDateStr()))}</div>
         <div class="kpi"><div>Omzet<b>${R(d.omzet)}</b></div><div>Modal<b>${R(d.cost)}</b></div><div>Profit<b>${R(d.profit)}</b></div><div>Margin<b>${d.margin.toFixed(1)}%</b></div><div>Transaksi<b>${d.trxs.length}</b></div></div>
         ${d.noItems ? `<div style="color:#B45309">* ${d.noItems} transaksi tanpa detail item tidak ikut perhitungan profit.</div>` : ''}
@@ -4762,7 +4762,7 @@
       const btn = document.getElementById('btnBackupNow'); if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Membuat backup…'; }
       try {
         const r = await gasCall('backupNow', [], 0);
-        Swal.fire({ icon:'success', title:'Backup berhasil', html:`<div style="font-size:.85rem">${esc(r?.name||'')}<br><span style="color:#6B84A0">Tersimpan ${r?.kept||'?'} salinan</span></div>` });
+        Swal.fire({ icon:'success', title:'Backup berhasil', html:`<div style="font-size:.85rem">${esc(r?.name||'')}<br><span style="color:#4A6283">Tersimpan ${r?.kept||'?'} salinan</span></div>` });
       } catch(e) {
         Swal.fire({ icon:'error', title:'Backup gagal / belum selesai', text:(e.message||String(e)) + ' — cek folder “Backup Tirta Kencana” di Drive, mungkin tetap berhasil.' });
       }
@@ -6040,7 +6040,7 @@
           const cl = document.getElementById('sbSkuCheckList');
           if (cl) {
             cl.innerHTML = skus.map(s => `
-              <label data-search="${s.toLowerCase()}" style="display:flex;align-items:center;gap:8px;padding:6px 12px;cursor:pointer;font-size:0.78rem;font-weight:500;color:var(--text);" onmouseover="this.style.background='var(--biru-muda)'" onmouseout="this.style.background=''">
+              <label data-search="${s.toLowerCase()}" style="display:flex;align-items:center;gap:8px;padding:6px 12px;cursor:pointer;font-size:0.78rem;font-weight:600;color:var(--text);" onmouseover="this.style.background='var(--biru-muda)'" onmouseout="this.style.background=''">
                 <input type="checkbox" value="${s}" ${_sbSelectedSkus.has(s) ? 'checked' : ''} onchange="toggleSbSku(this.value)" style="width:auto;accent-color:var(--biru);cursor:pointer;"> ${s}
               </label>`).join('');
           }
@@ -6491,7 +6491,7 @@
         const ok = r.hasVal && r.selisih === 0;
         const q = r.hasVal ? (ok ? 'Cocok' : (r.selisih>0?'+':'')+r.selisih) : 'Belum';
         return { n:esc(r.nama), sub:esc(r.sku), q,
-          qc: r.hasVal ? (ok ? '#047857' : '#DC2626') : '#6B84A0', qbg: r.hasVal ? (ok ? '#D5F5E6' : '#FFE0E0') : '#EAF0F6',
+          qc: r.hasVal ? (ok ? '#047857' : '#DC2626') : '#4A6283', qbg: r.hasVal ? (ok ? '#D5F5E6' : '#FFE0E0') : '#EAF0F6',
           v:'Stock '+r.stock+' · Cek '+(r.hasVal ? r.cekStock : '-') };
       });
       return _rcRoot('cekstock-root', 380,
@@ -7687,7 +7687,7 @@
         _rcStats([{ l:'Pergerakan', v:payload.todayEntries.length }, { l:'SKU Titipan', v:payload.sisaRows.length }, { l:'Total Sisa', v:totalSisa }], tone) +
         _rcBody(
           _rcInfo([{ l:'Pelanggan', v:esc(payload.customer), full:true }], tone) +
-          _rcSec({ tone, title:'<i class="fas fa-clock-rotate-left" style="color:'+t.a1+';margin-right:5px"></i>Riwayat Hari Ini', badge:payload.todayEntries.length+' entri', rows: mv.length ? mv : [{ n:'<span style="color:#6B84A0;font-weight:600">Tidak ada pergerakan hari ini</span>' }] }) +
+          _rcSec({ tone, title:'<i class="fas fa-clock-rotate-left" style="color:'+t.a1+';margin-right:5px"></i>Riwayat Hari Ini', badge:payload.todayEntries.length+' entri', rows: mv.length ? mv : [{ n:'<span style="color:#4A6283;font-weight:600">Tidak ada pergerakan hari ini</span>' }] }) +
           _rcSec({ tone:'purple', title:'<i class="fas fa-boxes-stacked" style="color:#7C3AED;margin-right:5px"></i>Sisa Titipan', badge:payload.sisaRows.length+' SKU', rows:sisa, total:{ l:'TOTAL SISA', v:String(totalSisa) } })) +
         _rcFoot(settings.bottomLine || 'Terima kasih!'));
     }
@@ -8386,7 +8386,7 @@
     function deleteProduk(idx) { const p = products[idx]; Swal.fire(_delOpts('Hapus produk?', '<b>'+esc(products[idx].nama)+'</b>')).then(r => { if (r.isConfirmed) { products.splice(idx,1); saveLocalData(); renderProdukList(); if (p) logEditAction('produk', p.sku, p.nama, p, null); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Produk dihapus' }); syncProductsToSheet(); } }); }
 
     // ========== PELANGGAN ==========
-    function loadPelanggan() { document.getElementById('contentArea').innerHTML = `<div class="card"><div class="flex-between mb-2"><div class="card-title"><i class="fas fa-address-book"></i> Daftar Pelanggan</div><div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button class="btn btn-outline btn-sm" onclick="btnSyncPelangganToSheet()" title="Kirim data pelanggan lokal ke Google Sheets"><i class="fas fa-cloud-upload-alt"></i> Sync ke Sheets</button><button class="btn btn-outline btn-sm" onclick="btnSyncPelangganFromSheet()" title="Ambil data pelanggan terbaru dari Google Sheets"><i class="fas fa-cloud-download-alt"></i> Sync ke Aplikasi</button><button class="btn btn-primary btn-sm" onclick="addPelanggan()">+ Tambah</button></div></div><input id="pelangganSearch" class="form-control mb-2" placeholder="🔍 Cari nama pelanggan…" oninput="renderPelangganList()"><div class="table-wrap"><table><thead><tr><th>#</th><th>Nama</th><th style="text-align:center" title="Jumlah transaksi bulan ini">Transaksi<br><span style="font-weight:400;font-size:0.6rem;opacity:.7">Bulan Ini</span></th><th style="text-align:right">Piutang</th><th>Aksi</th></tr></thead><tbody id="pelangganTbody"></tbody></table></div><div id="pelangganPaginationBar"></div></div>`; renderPelangganList(); }
+    function loadPelanggan() { document.getElementById('contentArea').innerHTML = `<div class="card"><div class="flex-between mb-2"><div class="card-title"><i class="fas fa-address-book"></i> Daftar Pelanggan</div><div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button class="btn btn-outline btn-sm" onclick="btnSyncPelangganToSheet()" title="Kirim data pelanggan lokal ke Google Sheets"><i class="fas fa-cloud-upload-alt"></i> Sync ke Sheets</button><button class="btn btn-outline btn-sm" onclick="btnSyncPelangganFromSheet()" title="Ambil data pelanggan terbaru dari Google Sheets"><i class="fas fa-cloud-download-alt"></i> Sync ke Aplikasi</button><button class="btn btn-primary btn-sm" onclick="addPelanggan()">+ Tambah</button></div></div><input id="pelangganSearch" class="form-control mb-2" placeholder="🔍 Cari nama pelanggan…" oninput="renderPelangganList()"><div class="table-wrap"><table><thead><tr><th>#</th><th>Nama</th><th style="text-align:center" title="Jumlah transaksi bulan ini">Transaksi<br><span style="font-weight:600;font-size:0.6rem;opacity:.7">Bulan Ini</span></th><th style="text-align:right">Piutang</th><th>Aksi</th></tr></thead><tbody id="pelangganTbody"></tbody></table></div><div id="pelangganPaginationBar"></div></div>`; renderPelangganList(); }
     function renderPelangganList(_pgKeep = false) {
       const tb = document.getElementById('pelangganTbody');
       if (!tb) return;
@@ -8520,7 +8520,7 @@
       const trows = rows.map(tx => {
         const items = tx.items || [];
         const isum = items.length ? (items.length > 1 ? `${esc(items[0].nama||items[0].sku||'-')} +${items.length-1} lainnya` : esc(items[0].nama||items[0].sku||'-')) : '-';
-        const c = stCol[tx.status] || ['#6B84A0','#EAF0F6'];
+        const c = stCol[tx.status] || ['#4A6283','#EAF0F6'];
         return { n:esc(fmtDate(tx.tgl)), sub:isum, q:fmtRp(tx.nett||0), qc:c[0], qbg:c[1], v:esc(statusLabel[tx.status]||tx.status||'-') };
       });
       const piu = stats.totalPiutang > 0;
