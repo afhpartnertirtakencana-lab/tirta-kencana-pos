@@ -1136,6 +1136,7 @@
         syncEditLogFromGAS(); // [NEW] tarik log edit terbaru dari semua device/admin juga
         syncCustomerAddressesFromGAS(); // [NEW] tarik alamat pelanggan terbaru dari Sheets juga
         cicilanSync(); // [NEW] cicilan piutang
+        returSync(); // [v16] retur barang
         if (Array.isArray(prod)) products = prod;
         if (Array.isArray(cust)) { allCustomers = cust; pelanggan = cust.slice(); }
         if (Array.isArray(trx)) {
@@ -1427,9 +1428,11 @@
              <div class="tab-sec">LAPORAN</div>
              <button class="tab ${currentPage==='grafik'?'active':''}" onclick="navigateTo('grafik')"><i class="fas fa-chart-line"></i> Grafik</button>
              <button class="tab ${currentPage==='piutang'?'active':''}" onclick="navigateTo('piutang')"><i class="fas fa-file-invoice-dollar"></i> Piutang</button>
+             <button class="tab ${currentPage==='retur'?'active':''}" onclick="navigateTo('retur')"><i class="fas fa-rotate-left"></i> Retur</button>
              <button class="tab ${currentPage==='laporanbulanan'?'active':''}" onclick="navigateTo('laporanbulanan')"><i class="fas fa-calendar-alt"></i> Laporan Bulanan</button>
              <button class="tab ${currentPage==='profit'?'active':''}" onclick="navigateTo('profit')"><i class="fas fa-sack-dollar"></i> Profit</button>
              <button class="tab ${currentPage==='analisacust'?'active':''}" onclick="navigateTo('analisacust')"><i class="fas fa-users-viewfinder"></i> Analisa Customer</button>
+             <button class="tab ${currentPage==='tanyaai'?'active':''}" onclick="navigateTo('tanyaai')"><i class="fas fa-robot"></i> Tanya AI</button>
              <button class="tab ${currentPage==='rekapharian'?'active':''}" onclick="navigateTo('rekapharian')"><i class="fas fa-calendar-check"></i> Rekap Harian</button>
              <button class="tab ${currentPage==='auditlog'?'active':''}" onclick="navigateTo('auditlog')"><i class="fas fa-shield-halved"></i> Backup &amp; Audit</button>
              <button class="tab ${currentPage==='panduan'?'active':''}" onclick="navigateTo('panduan')"><i class="fas fa-circle-question"></i> Panduan</button>
@@ -1489,9 +1492,11 @@
           { page:'rekapsetoran', label:'Rekap Setoran', icon:'fa-table' },
           { page:'grafik', label:'Grafik', icon:'fa-chart-line' },
           { page:'piutang', label:'Piutang', icon:'fa-file-invoice-dollar' },
+          { page:'retur', label:'Retur', icon:'fa-rotate-left' },
           { page:'laporanbulanan', label:'Laporan Bulanan', icon:'fa-calendar-alt' },
           { page:'profit', label:'Profit', icon:'fa-sack-dollar' },
           { page:'analisacust', label:'Analisa Customer', icon:'fa-users-viewfinder' },
+          { page:'tanyaai', label:'Tanya AI', icon:'fa-robot' },
           { page:'rekapharian', label:'Rekap Harian', icon:'fa-calendar-check' },
           { page:'auditlog', label:'Backup & Audit', icon:'fa-shield-halved' },
           { page:'googlesheets', label:'Google Sheets', icon:'fa-table-cells' },
@@ -1593,7 +1598,7 @@
     function _pgHero(icon, title, sub, val, lbl) {
       return `<div class="pg-hero"><div class="pg-hero-eyebrow"><i class="fas ${icon}"></i> ${title}</div><div class="pg-hero-sub">${sub||''}</div>${val !== undefined && val !== null ? `<div class="pg-hero-val">${val}</div><div class="pg-hero-lbl">${lbl||''}</div>` : ''}</div>`;
     }
-    function renderContent() { try { document.getElementById('contentArea').setAttribute('data-page', currentPage); } catch(e) {} switch (currentPage) { case 'dashboard': loadDashboard(); break; case 'penjualan': loadPenjualan(); break; case 'transaksi': loadTransaksi(); break; case 'rekap': loadRekap(); break; case 'rekapinput': loadRekapInput(); break; case 'setoran': loadSetoran(); break; case 'rekapsetoran': loadRekapSetoran(); break; case 'inputbarang': loadInputBarang(); break; case 'stockbarang': loadStockBarang(); break; case 'cekstock': loadCekStock(); break; case 'cekkosongan': loadCekKosongan(); break; case 'pesanan': loadPesanan(); break; case 'titipan': loadTitipan(); break; case 'produk': loadProduk(); break; case 'pelanggan': loadPelanggan(); break; case 'pengaturan': loadPengaturan(); break; case 'pengaturanUser': loadPengaturanUser(); break; case 'grafik': loadGrafik(); break; case 'piutang': loadPiutang(); break; case 'laporanbulanan': loadLaporanBulanan(); break; case 'profit': loadProfit(); break; case 'analisacust': loadAnalisaCust(); break; case 'rekapharian': loadRekapHarian(); break; case 'auditlog': loadAuditLog(); break; case 'googlesheets': loadGoogleSheets(); break; case 'panduan': loadPanduan(); break; } }
+    function renderContent() { try { document.getElementById('contentArea').setAttribute('data-page', currentPage); } catch(e) {} switch (currentPage) { case 'dashboard': loadDashboard(); break; case 'penjualan': loadPenjualan(); break; case 'transaksi': loadTransaksi(); break; case 'rekap': loadRekap(); break; case 'rekapinput': loadRekapInput(); break; case 'setoran': loadSetoran(); break; case 'rekapsetoran': loadRekapSetoran(); break; case 'inputbarang': loadInputBarang(); break; case 'stockbarang': loadStockBarang(); break; case 'cekstock': loadCekStock(); break; case 'cekkosongan': loadCekKosongan(); break; case 'pesanan': loadPesanan(); break; case 'titipan': loadTitipan(); break; case 'produk': loadProduk(); break; case 'pelanggan': loadPelanggan(); break; case 'pengaturan': loadPengaturan(); break; case 'pengaturanUser': loadPengaturanUser(); break; case 'grafik': loadGrafik(); break; case 'piutang': loadPiutang(); break; case 'retur': loadRetur(); break; case 'tanyaai': loadTanyaAI(); break; case 'laporanbulanan': loadLaporanBulanan(); break; case 'profit': loadProfit(); break; case 'analisacust': loadAnalisaCust(); break; case 'rekapharian': loadRekapHarian(); break; case 'auditlog': loadAuditLog(); break; case 'googlesheets': loadGoogleSheets(); break; case 'panduan': loadPanduan(); break; } }
 
     // ========== DASHBOARD (MENU UTAMA) ==========
     function loadDashboard() {
@@ -1632,7 +1637,9 @@
         const transfer = todayTx.filter(t=>t.status==='transfer').reduce((s,t)=>s+(t.nett||0),0);
         const qris = todayTx.filter(t=>t.status==='qris').reduce((s,t)=>s+(t.nett||0),0);
         const belum = todayTx.filter(t=>t.status==='belumTransfer').reduce((s,t)=>s+(t.nett||0),0);
-        const total = cod+transfer+qris+belum;
+        const totalKotor = cod+transfer+qris+belum;
+        const _rtD = _returOn(today);
+        const total = totalKotor - _rtD.nilai;
         // [NEW] Total Piutang (semua transaksi belumTransfer, semua tanggal - bukan cuma hari ini)
         const piutangAll = allTrxList.filter(t=>(t.status||'')==='belumTransfer');
         const totalPiutangAll = piutangAll.reduce((s,t)=>s+_sisa(t),0);
@@ -1643,13 +1650,13 @@
         for (let i = 6; i >= 0; i--) {
           const dd = new Date(); dd.setDate(dd.getDate() - i);
           const key = _ds(dd);
-          const sum = allTrxList.filter(t => (t.tgl||'').substring(0,10) === key).reduce((s,t)=>s+(t.nett||0),0);
+          const sum = allTrxList.filter(t => (t.tgl||'').substring(0,10) === key).reduce((s,t)=>s+(t.nett||0),0) - _returOn(key).nilai;
           trend.push({ key, label: dayNames[dd.getDay()], sum, isToday: i === 0 });
         }
         const yest = trend[5].sum;
         const delta = yest > 0 ? Math.round((total - yest) / yest * 100) : null;
         const maxTrend = Math.max(1, ...trend.map(x => x.sum));
-        const pct = v => total > 0 ? Math.round(v / total * 100) : 0;
+        const pct = v => totalKotor > 0 ? Math.round(v / totalKotor * 100) : 0;
         const avg = todayTx.length ? Math.round(total / todayTx.length) : 0;
 
         // Penjualan per sales (hari ini)
@@ -1676,7 +1683,7 @@
           </div>`).join('') : '<div class="dx-empty">Belum ada data hari ini</div>';
 
         h = `
-          ${_dxHero({ eyebrow:'Total Penjualan Hari Ini', title: total, sub: todayTx.length + ' transaksi · rata-rata ' + fmtRp(avg), delta })}
+          ${_dxHero({ eyebrow:'Total Penjualan Hari Ini', title: total, sub: todayTx.length + ' transaksi · rata-rata ' + fmtRp(avg) + (_rtD.nilai > 0 ? ' · retur −' + fmtRp(_rtD.nilai) : ''), delta })}
           <div class="dx-kpis">
             ${kpi('cod','COD','fa-hand-holding-usd',cod,'')}
             ${kpi('transfer','Transfer','fa-university',transfer,'')}
@@ -3382,7 +3389,7 @@
     }
     function pgGoto(key, page) { _pgState[key] = page; const fn = window['_pgRerender_' + key]; if (typeof fn === 'function') fn(); }
 
-    function renderTrxTable(filtered = allTrxList, _pgKeep = false) { const tb = document.getElementById('trxTbody'); if (!tb) return; try { _txUpdateHero(filtered); } catch(e) {} if (!_pgKeep) pgReset('trx'); window._pgRerender_trx = () => renderTrxTable(filtered, true); if (!filtered.length) { tb.innerHTML = '<tr><td colspan="9" class="text-center text-sm" style="padding:32px">Tidak ada transaksi</td></tr>'; const pb0 = document.getElementById('trxPaginationBar'); if (pb0) pb0.innerHTML = ''; return; } try { _txUpdateHero(filtered); } catch(e) {} const _pg = pgSlice(filtered, 'trx', 25); const pb = document.getElementById('trxPaginationBar'); if (pb) pb.innerHTML = pgBar('trx', _pg.page, _pg.totalPages, _pg.total, _pg.pageSize); const _isAdmin = currentUser?.role === 'admin'; tb.innerHTML = _pg.items.map(t => `<tr class="tx-row st-${esc(t.status||'')}"><td data-label="ID" class="tx-id">${esc(t.id)}${_pendingChip(t.id)}</td><td data-label="Tanggal" class="tx-tgl">${fmtDate(t.tgl)}</td><td data-label="Customer" class="tx-cust">${esc(t.customer||'-')}</td><td data-label="Sales" class="tx-sales">${esc(t.sales||'-')}</td><td data-label="Gross" class="tx-num">${fmtRp(t.gross)}</td><td data-label="Diskon" class="tx-num tx-disc">${fmtRp(t.diskon)}</td><td data-label="Nett" class="tx-nett">${fmtRp(t.nett)}</td><td data-label="Status" class="tx-stat"><select class="form-control tx-sel" onchange="updateTrxStatus('${esc(t.id).replace(/'/g,"\\'")}', this.value)"><option value="cod" ${t.status==='cod'?'selected':''}>COD</option><option value="transfer" ${t.status==='transfer'?'selected':''}>Transfer</option><option value="qris" ${t.status==='qris'?'selected':''}>QRIS</option><option value="belumTransfer" ${t.status==='belumTransfer'?'selected':''}>Belum</option></select></td><td data-label="" class="tx-act"><button class="btn tx-b tx-b-print btn-primary" onclick="cetakUlangStruk('${esc(t.id).replace(/'/g,"\\'")}')">🧾 Cetak</button>${_isAdmin ? `<button class="btn tx-b tx-b-edit btn-outline" onclick="editTrx('${esc(t.id).replace(/'/g,"\\'")}')">✏️ Edit</button>` : ''}<button class="btn tx-b tx-b-del" title="${_trxLockInfo(t) ? 'Terkunci: setoran sudah ditutup' : 'Hapus transaksi'}" aria-label="Hapus transaksi" onclick="deleteTrx('${esc(t.id).replace(/'/g,"\\'")}')">${_trxLockInfo(t) ? '🔒' : '🗑'}</button></td></tr>`).join(''); }
+    function renderTrxTable(filtered = allTrxList, _pgKeep = false) { const tb = document.getElementById('trxTbody'); if (!tb) return; try { _txUpdateHero(filtered); } catch(e) {} if (!_pgKeep) pgReset('trx'); window._pgRerender_trx = () => renderTrxTable(filtered, true); if (!filtered.length) { tb.innerHTML = '<tr><td colspan="9" class="text-center text-sm" style="padding:32px">Tidak ada transaksi</td></tr>'; const pb0 = document.getElementById('trxPaginationBar'); if (pb0) pb0.innerHTML = ''; return; } try { _txUpdateHero(filtered); } catch(e) {} const _pg = pgSlice(filtered, 'trx', 25); const pb = document.getElementById('trxPaginationBar'); if (pb) pb.innerHTML = pgBar('trx', _pg.page, _pg.totalPages, _pg.total, _pg.pageSize); const _isAdmin = currentUser?.role === 'admin'; tb.innerHTML = _pg.items.map(t => `<tr class="tx-row st-${esc(t.status||'')}"><td data-label="ID" class="tx-id">${esc(t.id)}${_pendingChip(t.id)}</td><td data-label="Tanggal" class="tx-tgl">${fmtDate(t.tgl)}</td><td data-label="Customer" class="tx-cust">${esc(t.customer||'-')}</td><td data-label="Sales" class="tx-sales">${esc(t.sales||'-')}</td><td data-label="Gross" class="tx-num">${fmtRp(t.gross)}</td><td data-label="Diskon" class="tx-num tx-disc">${fmtRp(t.diskon)}</td><td data-label="Nett" class="tx-nett">${fmtRp(t.nett)}</td><td data-label="Status" class="tx-stat"><select class="form-control tx-sel" onchange="updateTrxStatus('${esc(t.id).replace(/'/g,"\\'")}', this.value)"><option value="cod" ${t.status==='cod'?'selected':''}>COD</option><option value="transfer" ${t.status==='transfer'?'selected':''}>Transfer</option><option value="qris" ${t.status==='qris'?'selected':''}>QRIS</option><option value="belumTransfer" ${t.status==='belumTransfer'?'selected':''}>Belum</option></select></td><td data-label="" class="tx-act"><button class="btn tx-b tx-b-print btn-primary" onclick="cetakUlangStruk('${esc(t.id).replace(/'/g,"\\'")}')">🧾 Cetak</button>${_isAdmin ? `<button class="btn tx-b tx-b-edit btn-outline" onclick="editTrx('${esc(t.id).replace(/'/g,"\\'")}')">✏️ Edit</button><button class="btn tx-b tx-b-edit btn-outline" onclick="returUI('${esc(t.id).replace(/'/g,"\\'")}')">↩ Retur</button>` : ''}<button class="btn tx-b tx-b-del" title="${_trxLockInfo(t) ? 'Terkunci: setoran sudah ditutup' : 'Hapus transaksi'}" aria-label="Hapus transaksi" onclick="deleteTrx('${esc(t.id).replace(/'/g,"\\'")}')">${_trxLockInfo(t) ? '🔒' : '🗑'}</button></td></tr>`).join(''); }
 
     async function cetakUlangStruk(id) {
       let trx = allTrxList.find(t => t.id === id);
@@ -3883,8 +3890,208 @@
     function _cicRebuild() { _cicMap = {}; cicilanList.forEach(c => { _cicMap[c.trxId] = (_cicMap[c.trxId] || 0) + (Number(c.jumlah) || 0); }); }
     function _cicSave() { try { localStorage.setItem(CIC_KEY, JSON.stringify(cicilanList)); } catch(e) {} }
     function _cicPaid(id) { return _cicMap[id] || 0; }
-    function _sisa(t) { return Math.max(0, (t.nett || 0) - _cicPaid(t.id)); }
+    function _sisa(t) { return Math.max(0, (t.nett || 0) - _cicPaid(t.id) - _retNilai(t.id)); }
     _cicRebuild();
+    // ===== RETUR BARANG (v16) =====
+    const RET_KEY = 'tirtaRetur';
+    let returList = []; try { returList = JSON.parse(localStorage.getItem(RET_KEY) || '[]') || []; } catch(e) {}
+    let _retMap = {};
+    function _retRebuild() { _retMap = {}; returList.forEach(r => { _retMap[r.trxId] = (_retMap[r.trxId] || 0) + (Number(r.nilai) || 0); }); }
+    function _retSave() { try { localStorage.setItem(RET_KEY, JSON.stringify(returList)); } catch(e) {} }
+    function _retNilai(id) { return _retMap[id] || 0; }
+    _retRebuild();
+    function _retGroups() {
+      const g = {};
+      returList.forEach(r => {
+        const x = g[r.id] || (g[r.id] = { id: r.id, trxId: r.trxId, tgl: r.tgl, customer: r.customer, items: [], nilai: 0, profit: 0, qty: 0, alasan: r.alasan, kembaliStok: r.kembaliStok !== false, metode: r.metode, potong: 0, refund: 0, oleh: r.oleh, waktu: r.waktu, pending: !!r.pending });
+        x.items.push(r); x.nilai += Number(r.nilai)||0; x.profit += Number(r.profit)||0; x.qty += Number(r.qty)||0; x.potong += Number(r.potong)||0; x.refund += Number(r.refund)||0;
+      });
+      return Object.values(g).sort((a,b) => String(b.tgl).localeCompare(String(a.tgl)) || String(b.waktu).localeCompare(String(a.waktu)));
+    }
+    function _returOn(tgl) {
+      const o = { nilai: 0, profit: 0, qty: 0, jml: 0 }, ids = new Set();
+      returList.forEach(r => { if (String(r.tgl).substring(0,10) !== tgl) return; o.nilai += Number(r.nilai)||0; o.profit += Number(r.profit)||0; o.qty += Number(r.qty)||0; ids.add(r.id); });
+      o.jml = ids.size; return o;
+    }
+    async function returSync() {
+      try {
+        const r = await gasCall('getRetur', []);
+        if (!Array.isArray(r)) return;
+        const pend = returList.filter(c => c.pending && (typeof _syncQueue !== 'undefined') && _syncQueue.some(q => q.qid === c.qid));
+        const have = new Set(r.map(x => x.id));
+        returList = r.concat(pend.filter(c => !have.has(c.id)));
+        _retRebuild(); _retSave();
+        if (currentPage === 'retur') loadRetur();
+        else if (currentPage === 'piutang') loadPiutang();
+      } catch(e) {}
+    }
+    const RET_ALASAN = ['Barang rusak / bocor', 'Salah kirim', 'Pesanan dibatalkan', 'Kedaluwarsa', 'Kelebihan kirim', 'Lainnya'];
+    async function returUI(id) {
+      if (currentUser?.role !== 'admin') return Swal.fire('Akses Ditolak', 'Hanya admin yang bisa membuat retur.', 'error');
+      const t = allTrxList.find(x => x.id === id); if (!t) return;
+      if (!Array.isArray(t.items) || !t.items.length) {
+        try { const d = await gasCall('getTrxDetail', [id]); if (d && Array.isArray(d.items) && d.items.length) { t.items = d.items; saveLocalData(); } } catch(e) {}
+      }
+      const items = Array.isArray(t.items) ? t.items : [];
+      if (!items.length) return Swal.fire('Item belum tersedia', 'Detail barang transaksi ini belum bisa dimuat. Coba lagi saat online.', 'info');
+      const sold = {}, info = {}; items.forEach(it => { sold[it.sku] = (sold[it.sku]||0) + (Number(it.qty)||0); info[it.sku] = it; });
+      const back = {}; returList.forEach(r => { if (r.trxId === id) back[r.sku] = (back[r.sku]||0) + (Number(r.qty)||0); });
+      const lines = Object.keys(sold).map(sku => ({ sku, nama: info[sku].nama || sku, sold: sold[sku], back: back[sku]||0, sisa: sold[sku] - (back[sku]||0), nettPer: Number(info[sku].nettPer) || ((Number(info[sku].harga)||0) - (Number(info[sku].discRpPer)||0)) }));
+      if (!lines.some(l => l.sisa > 0)) return Swal.fire('Sudah diretur semua', 'Semua barang di transaksi ini sudah diretur.', 'info');
+      window._retLines = lines; window._retTrx = t;
+      const piutang = t.status === 'belumTransfer';
+      Swal.fire({
+        title: '↩ Retur Barang',
+        width: Math.min(460, window.innerWidth - 20),
+        html: `<div style="text-align:left;font-size:.84rem">
+          <div style="font-weight:800;font-size:.95rem">${esc(t.customer||'-')}</div>
+          <div style="font-size:.72rem;opacity:.75;margin-bottom:10px">${esc(t.id)} · ${esc(fmtDate(t.tgl))} · ${piutang ? 'Belum lunas (retur memotong piutang)' : 'Sudah lunas (uang dikembalikan)'}</div>
+          ${lines.map((l,i) => l.sisa <= 0 ? '' : `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px dashed rgba(41,168,255,.3)"><div style="flex:1;min-width:0"><div style="font-weight:800">${esc(l.nama)}</div><div style="font-size:.7rem;opacity:.75">Dijual ${l.sold}${l.back ? ' · sudah retur ' + l.back : ''} · ${fmtRp(l.nettPer)}/pcs</div></div><input type="number" inputmode="numeric" min="0" max="${l.sisa}" value="0" data-i="${i}" class="swal2-input ret-q" style="width:76px;margin:0;text-align:center" oninput="_retHitung()"><span style="font-size:.7rem;opacity:.7">/${l.sisa}</span></div>`).join('')}
+          <label style="display:flex;gap:8px;align-items:center;margin:12px 0 6px;font-weight:700"><input type="checkbox" id="retStok" checked> Kembalikan barang ke stok</label>
+          <label style="font-size:.64rem;font-weight:800;letter-spacing:.4px;text-transform:uppercase;opacity:.75">Alasan</label>
+          <select id="retAlasan" class="swal2-input" style="margin:4px 0 8px;width:100%;box-sizing:border-box">${RET_ALASAN.map(a => `<option>${esc(a)}</option>`).join('')}</select>
+          <input id="retCat" type="text" maxlength="100" placeholder="Catatan (opsional)" class="swal2-input" style="margin:0 0 8px;width:100%;box-sizing:border-box">
+          <label style="font-size:.64rem;font-weight:800;letter-spacing:.4px;text-transform:uppercase;opacity:.75">Tanggal retur</label>
+          <input id="retTgl" type="date" value="${localDateStr()}" class="swal2-input" style="margin:4px 0 8px;width:100%;box-sizing:border-box">
+          <div id="retTotal" style="margin-top:6px;padding:10px;border-radius:12px;background:rgba(220,38,38,.1);font-weight:800;text-align:center;color:#DC2626">Nilai retur: ${fmtRp(0)}</div>
+        </div>`,
+        showCancelButton: true, confirmButtonText: 'Simpan Retur', cancelButtonText: 'Batal',
+        preConfirm: () => {
+          const out = [];
+          document.querySelectorAll('.ret-q').forEach(el => {
+            const l = window._retLines[Number(el.dataset.i)], q = Math.round(Number(el.value) || 0);
+            if (q > l.sisa) { Swal.showValidationMessage('Retur ' + l.nama + ' melebihi ' + l.sisa); out.length = 0; out.bad = true; return; }
+            if (q > 0) out.push({ sku: l.sku, nama: l.nama, qty: q, nettPer: l.nettPer });
+          });
+          if (out.bad) return false;
+          if (!out.length) { Swal.showValidationMessage('Isi jumlah retur minimal satu barang'); return false; }
+          const cat = document.getElementById('retCat').value.trim(), al = document.getElementById('retAlasan').value;
+          return { items: out, kembaliStok: document.getElementById('retStok').checked, alasan: al + (cat ? ' — ' + cat : ''), tgl: document.getElementById('retTgl').value || localDateStr() };
+        }
+      }).then(r => { if (r.isConfirmed && r.value) returSimpan(id, r.value); });
+    }
+    function _retHitung() {
+      let n = 0; document.querySelectorAll('.ret-q').forEach(el => { const l = window._retLines[Number(el.dataset.i)]; n += Math.min(Math.max(0, Math.round(Number(el.value)||0)), l.sisa) * l.nettPer; });
+      const el = document.getElementById('retTotal'); if (el) el.textContent = 'Nilai retur: ' + fmtRp(n);
+    }
+    function returSimpan(id, v) {
+      const t = allTrxList.find(x => x.id === id); if (!t) return;
+      const rid = 'RET-L' + Date.now().toString(36) + Math.floor(Math.random()*1e4);
+      const now = new Date(); const waktu = localDateStr() + ' ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+      const nilai = v.items.reduce((a,x) => a + x.qty * x.nettPer, 0);
+      const piutang = t.status === 'belumTransfer';
+      const sisaNow = _sisa(t), potong = piutang ? Math.min(nilai, sisaNow) : 0, refund = nilai - potong;
+      const qid = enqueueSync('addRetur', [{ trxId: id, tgl: v.tgl, items: v.items.map(x => ({ sku: x.sku, qty: x.qty })), alasan: v.alasan, kembaliStok: v.kembaliStok, rid }], 'Retur ' + (t.customer || id));
+      v.items.forEach((x, i) => {
+        const it = (t.items||[]).find(z => z.sku === x.sku) || {}, modal = Number(it.modal) || 0;
+        returList.push({ id: rid, trxId: id, tgl: v.tgl, customer: t.customer || '', sku: x.sku, nama: x.nama, qty: x.qty, nettPer: x.nettPer, modal, nilai: x.qty * x.nettPer, profit: x.qty * (x.nettPer - modal), kembaliStok: v.kembaliStok, metode: !piutang ? 'refund' : (refund > 0 ? 'campur' : 'potong_piutang'), potong: i === 0 ? potong : 0, refund: i === 0 ? refund : 0, alasan: v.alasan, oleh: currentUser?.name || '', waktu, pending: true, qid });
+      });
+      if (piutang && sisaNow - nilai <= 0) t.status = 'cod';
+      _retRebuild(); _retSave(); saveLocalData();
+      try { if (typeof _stockBarangAll !== 'undefined') { /* stok dihitung ulang dari keluar-map saat dibuka */ } } catch(e) {}
+      if (currentPage === 'transaksi') { try { loadTransaksi(); } catch(e) {} } else if (currentPage === 'piutang') loadPiutang();
+      Swal.fire({ icon: 'success', title: 'Retur tersimpan', html: `Nilai retur <b>${fmtRp(nilai)}</b><br>${piutang ? (refund > 0 ? 'Memotong piutang ' + fmtRp(potong) + ' · uang kembali ' + fmtRp(refund) : 'Memotong sisa piutang ' + fmtRp(potong)) : 'Uang dikembalikan ke pelanggan ' + fmtRp(nilai)}<br>${v.kembaliStok ? 'Stok barang dikembalikan.' : 'Barang tidak dikembalikan ke stok.'}`, confirmButtonText: 'OK' });
+    }
+    function returHapus(gid) {
+      if (currentUser?.role !== 'admin') return;
+      const g = _retGroups().find(x => x.id === gid); if (!g) return;
+      Swal.fire(_delOpts('Batalkan retur ini?', esc(g.customer||'-') + ' · <b>' + fmtRp(g.nilai) + '</b><br>Piutang dan stok kembali seperti sebelum retur.')).then(r => {
+        if (!r.isConfirmed) return;
+        const qids = new Set(returList.filter(x => x.id === gid && x.pending).map(x => x.qid));
+        returList = returList.filter(x => x.id !== gid); _retRebuild(); _retSave();
+        const t = allTrxList.find(x => x.id === g.trxId);
+        if (t && t.status !== 'belumTransfer' && g.metode !== 'refund' && _cicPaid(t.id) + _retNilai(t.id) < (t.nett||0)) t.status = 'belumTransfer';
+        saveLocalData();
+        if (qids.size && typeof _syncQueue !== 'undefined') { for (let i = _syncQueue.length - 1; i >= 0; i--) if (qids.has(_syncQueue[i].qid)) _syncQueue.splice(i, 1); try { _saveSyncQueueState(); } catch(e) {} }
+        else enqueueSync('deleteRetur', [gid], 'Batalkan retur');
+        if (currentPage === 'retur') loadRetur();
+        Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:1800, icon:'success', title:'Retur dibatalkan' });
+      });
+    }
+    // ========== TANYA AI (Gemini, opsional; kunci disimpan di Script Properties backend) ==========
+    window._aiHist = window._aiHist || [];
+    const _AI_CHIPS = ['Bagaimana penjualan 7 hari terakhir dibanding sebelumnya?', 'Siapa 5 customer paling untung bulan ini?', 'Barang apa yang profitnya paling besar?', 'Customer mana yang mulai jarang order?', 'Piutang siapa yang paling perlu ditagih?', 'Stok barang apa yang perlu segera dipesan?'];
+    function _aiFmt(t) {
+      return esc(String(t||'')).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').split('\n').map(l => /^\s*[-*]\s+/.test(l) ? '• ' + l.replace(/^\s*[-*]\s+/, '') : l).join('<br>');
+    }
+    async function loadTanyaAI() {
+      const el = document.getElementById('contentArea');
+      if (currentUser?.role !== 'admin') { el.innerHTML = `<div class="card"><div class="text-sm" style="padding:16px;text-align:center">Menu Tanya AI khusus admin.</div></div>`; return; }
+      el.innerHTML = `${_pgHero('fa-robot','Tanya AI','Tanya data toko pakai bahasa biasa')}<div class="card"><p class="text-center text-sm" style="padding:30px"><i class="fas fa-spinner fa-spin"></i> Memuat…</p></div>`;
+      let st = null, err = '';
+      try { st = await gasCall('aiStatus', [], 0); } catch(e) { err = String(e.message || e); }
+      window._aiStatus = st;
+      _renderTanyaAI(err);
+    }
+    function _renderTanyaAI(err) {
+      const el = document.getElementById('contentArea'); if (!el || currentPage !== 'tanyaai') return;
+      const st = window._aiStatus;
+      const hero = _pgHero('fa-robot','Tanya AI','Tanya data toko pakai bahasa biasa', st && st.aktif ? (st.sisa + ' / ' + st.batas) : undefined, 'Sisa pertanyaan hari ini');
+      if (err || !st) {
+        el.innerHTML = hero + `<div class="card"><div class="text-sm" style="color:#DC2626;line-height:1.5">Tidak bisa membaca status AI${err ? ': ' + esc(err) : ''}.<br><span style="color:var(--text3)">Pastikan backend sudah di-deploy versi terbaru (New version).</span></div><button class="btn btn-outline btn-block" style="margin-top:10px" onclick="loadTanyaAI()"><i class="fas fa-rotate"></i> Coba lagi</button></div>`; return;
+      }
+      const setup = `<div class="card">
+        <div class="card-title"><i class="fas fa-key"></i> ${st.aktif ? 'Kunci API Gemini' : 'Aktifkan AI (gratis)'}</div>
+        ${st.aktif ? `<div class="text-sm" style="color:#16A34A;font-weight:700;margin-bottom:8px"><i class="fas fa-circle-check"></i> AI aktif · model ${esc(st.model||'')} · dipakai ${st.dipakai} dari ${st.batas} hari ini</div>` :
+        `<ol class="text-sm" style="line-height:1.7;padding-left:18px;margin:0 0 10px;color:var(--text2)"><li>Buka <b>aistudio.google.com/apikey</b> dan masuk dengan akun Google.</li><li>Klik <b>Create API key</b>, salin kuncinya.</li><li>Tempel di kolom di bawah lalu <b>Simpan</b>.</li></ol>
+        <div class="text-sm" style="color:var(--text3);margin-bottom:10px;line-height:1.5">Jalur gratis Google punya batas pemakaian harian. Kunci disimpan di server Apps Script Anda (bukan di Sheet). Yang dikirim ke AI hanya ringkasan angka penjualan, tanpa nomor telepon dan alamat pelanggan.</div>`}
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><input id="aiKeyInp" type="password" autocomplete="off" placeholder="${st.aktif ? 'Tempel kunci baru untuk mengganti' : 'Tempel kunci API Gemini'}" style="flex:1;min-width:180px"><button class="btn btn-primary" onclick="aiSaveKey()"><i class="fas fa-floppy-disk"></i> Simpan</button>${st.aktif ? `<button class="btn btn-ghost" onclick="aiRemoveKey()"><i class="fas fa-trash"></i> Hapus</button>` : ''}</div>
+      </div>`;
+      const chat = st.aktif ? `<div class="card">
+        <div class="card-title"><i class="fas fa-comments"></i> Tanya data toko</div>
+        <div id="aiChips" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">${_AI_CHIPS.map((c,i) => `<button class="btn btn-sm btn-outline" style="text-align:left;white-space:normal" onclick="aiPick(${i})">${esc(c)}</button>`).join('')}</div>
+        <div id="aiThread" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px"></div>
+        <div style="display:flex;gap:8px;align-items:flex-end"><textarea id="aiQ" rows="2" maxlength="500" placeholder="Tulis pertanyaan… (maks 500 huruf)" style="flex:1;resize:vertical" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();aiAsk();}"></textarea><button class="btn btn-primary" id="aiSend" onclick="aiAsk()"><i class="fas fa-paper-plane"></i> Kirim</button></div>
+        <div class="text-sm" style="color:var(--text3);margin-top:8px;line-height:1.5">Jawaban AI berdasarkan data 30–45 hari terakhir dan bisa keliru, jadi cek angka pentingnya di menu terkait. AI hanya membaca, tidak mengubah data.</div>
+      </div>` : '';
+      el.innerHTML = hero + chat + setup;
+      _aiRenderThread();
+    }
+    function _aiRenderThread() {
+      const th = document.getElementById('aiThread'); if (!th) return;
+      th.innerHTML = (window._aiThreadView || []).map(m => m.role === 'u'
+        ? `<div style="align-self:flex-end;max-width:92%;background:linear-gradient(135deg,#0078D4,#29A8FF);color:#fff;padding:8px 12px;border-radius:14px 14px 4px 14px;font-size:.84rem;font-weight:700">${esc(m.t)}</div>`
+        : `<div style="align-self:flex-start;max-width:96%;background:var(--surface2);border:1px solid var(--border);padding:9px 12px;border-radius:14px 14px 14px 4px;font-size:.84rem;line-height:1.55;${m.err ? 'color:#DC2626' : ''}">${m.loading ? '<i class="fas fa-spinner fa-spin"></i> Menganalisis data…' : _aiFmt(m.t)}</div>`).join('');
+    }
+    function aiPick(i) { const q = document.getElementById('aiQ'); if (q) { q.value = _AI_CHIPS[i]; aiAsk(); } }
+    let _aiBusy = false;
+    async function aiAsk() {
+      if (_aiBusy) return;
+      const inp = document.getElementById('aiQ'); const q = (inp?.value || '').trim(); if (!q) return;
+      _aiBusy = true; const btn = document.getElementById('aiSend'); if (btn) btn.disabled = true;
+      const view = window._aiThreadView = window._aiThreadView || [];
+      view.push({ role:'u', t:q }); const slot = { role:'a', loading:true, t:'' }; view.push(slot); if (inp) inp.value = ''; _aiRenderThread();
+      try {
+        const r = await gasCall('aiTanya', [{ q, riwayat: window._aiHist.slice(-3) }], 0);
+        if (r && r.ok) { slot.loading = false; slot.t = r.jawab; window._aiHist.push({ q, a: r.jawab }); if (window._aiStatus) { window._aiStatus.sisa = r.sisa; window._aiStatus.dipakai = Math.max(0, (window._aiStatus.batas||0) - r.sisa); } }
+        else { slot.loading = false; slot.err = true; slot.t = (r && (r.error || r.message)) || 'AI tidak memberi jawaban.'; }
+      } catch(e) { slot.loading = false; slot.err = true; slot.t = String(e.message || e); }
+      _aiBusy = false; if (btn) btn.disabled = false; _aiRenderThread();
+      try { const hv = document.querySelector('.pg-hero-val'); if (hv && window._aiStatus) hv.textContent = window._aiStatus.sisa + ' / ' + window._aiStatus.batas; } catch(e) {}
+    }
+    async function aiSaveKey() {
+      const v = (document.getElementById('aiKeyInp')?.value || '').trim();
+      if (!v) return Swal.fire('Isi kunci dulu', 'Tempel kunci API Gemini di kolom yang tersedia.', 'info');
+      try { await gasCall('aiSimpanKunci', [v], 0); Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:2000, icon:'success', title:'Kunci disimpan' }); loadTanyaAI(); }
+      catch(e) { Swal.fire('Gagal menyimpan', String(e.message || e), 'error'); }
+    }
+    async function aiRemoveKey() {
+      const c = await Swal.fire({ icon:'warning', title:'Hapus kunci AI?', text:'Fitur Tanya AI dan paragraf AI di email akan nonaktif sampai kunci diisi lagi.', showCancelButton:true, confirmButtonText:'Hapus', cancelButtonText:'Batal' });
+      if (!c.isConfirmed) return;
+      try { await gasCall('aiSimpanKunci', [''], 0); window._aiThreadView = []; window._aiHist = []; loadTanyaAI(); } catch(e) { Swal.fire('Gagal', String(e.message || e), 'error'); }
+    }
+    function loadRetur() {
+      const g = _retGroups(), isAdmin = currentUser?.role === 'admin';
+      const bulan = localDateStr().substring(0,7), gBulan = g.filter(x => String(x.tgl).startsWith(bulan));
+      const totBulan = gBulan.reduce((a,x) => a + x.nilai, 0), qtyBulan = gBulan.reduce((a,x) => a + x.qty, 0);
+      document.getElementById('contentArea').innerHTML = `
+        ${_pgHero('fa-rotate-left','Retur Barang', 'Bulan ini · ' + gBulan.length + ' retur · ' + qtyBulan + ' pcs', fmtRp(totBulan), 'Total Retur Bulan Ini')}
+        <div class="card">
+          <div class="card-title"><i class="fas fa-rotate-left"></i> Daftar Retur</div>
+          <div class="text-sm" style="color:var(--text3);margin-bottom:8px">Retur dibuat dari menu <b>Transaksi</b> (tombol ↩ Retur, khusus admin). Omzet dan profit dikurangi pada tanggal retur; stok kembali bila dicentang.</div>
+          ${g.length ? `<div class="table-wrap"><table><thead><tr><th>Tanggal</th><th>Customer</th><th>Barang</th><th style="text-align:right">Nilai</th><th>Penyelesaian</th><th>Stok</th>${isAdmin ? '<th></th>' : ''}</tr></thead><tbody>${g.map(x => `<tr><td>${esc(fmtDate(x.tgl))}${x.pending ? ' <span style="color:#F59E0B" title="Menunggu sinkron">⏳</span>' : ''}</td><td><b>${esc(x.customer||'-')}</b><div style="font-size:.66rem;opacity:.7">${esc(x.trxId)}</div></td><td>${x.items.map(i => esc(i.nama) + ' ×' + i.qty).join('<br>')}<div style="font-size:.66rem;opacity:.7">${esc(x.alasan||'')}</div></td><td style="text-align:right;color:#DC2626">-${fmtRp(x.nilai)}</td><td>${x.metode === 'refund' ? 'Uang kembali' : (x.metode === 'campur' ? 'Potong piutang + uang kembali' : 'Potong piutang')}</td><td>${x.kembaliStok ? '✅ kembali' : '— tidak'}</td>${isAdmin ? `<td><button class="btn btn-sm tx-b-del" onclick="returHapus('${esc(x.id)}')" title="Batalkan retur">🗑</button></td>` : ''}</tr>`).join('')}</tbody></table></div>` : '<div class="text-center text-sm" style="padding:30px;color:var(--text3)">Belum ada retur.</div>'}
+        </div>`;
+    }
     async function cicilanSync() {
       try {
         const r = await gasCall('getCicilan', []);
@@ -3898,12 +4105,13 @@
     }
     function _nettCell(t) {
       const paid = _cicPaid(t.id);
-      return paid > 0 ? `${fmtRp(_sisa(t))}<div style="font-size:.62rem;font-weight:600;opacity:.75;white-space:nowrap">dari ${fmtRp(t.nett||0)} · dibayar ${fmtRp(paid)}</div>` : fmtRp(t.nett||0);
+      const rt = _retNilai(t.id);
+      return (paid > 0 || rt > 0) ? `${fmtRp(_sisa(t))}<div style="font-size:.62rem;font-weight:600;opacity:.75;white-space:nowrap">dari ${fmtRp(t.nett||0)}${paid > 0 ? ' · dibayar ' + fmtRp(paid) : ''}${rt > 0 ? ' · retur ' + fmtRp(rt) : ''}</div>` : fmtRp(t.nett||0);
     }
     function _cicMetodeLabel(m) { return m === 'transfer' ? 'Transfer' : m === 'qris' ? 'QRIS' : 'COD'; }
     function cicilUI(id) {
       const t = allTrxList.find(x => x.id === id); if (!t) return;
-      const paid = _cicPaid(id), sisa = Math.max(0, (t.nett||0) - paid);
+      const paid = _cicPaid(id), sisa = _sisa(t);
       if (sisa <= 0) return Swal.fire('Info', 'Transaksi ini tidak punya sisa piutang.', 'info');
       const hist = cicilanList.filter(c => c.trxId === id).sort((a,b) => String(a.tgl).localeCompare(String(b.tgl)));
       window._cicMetode = 'cod';
@@ -3940,7 +4148,7 @@
     }
     function cicilSimpan(id, v) {
       const t = allTrxList.find(x => x.id === id); if (!t) return;
-      const sisa = Math.max(0, (t.nett||0) - _cicPaid(id));
+      const sisa = _sisa(t);
       const cid = 'CIC-L' + Date.now().toString(36) + Math.floor(Math.random()*1e4);
       const now = new Date(); const waktu = localDateStr() + ' ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
       const entry = { id: cid, trxId: id, tgl: v.tgl, jumlah: v.jumlah, metode: v.metode, oleh: currentUser?.name || '', catatan: v.catatan, waktu, pending: true };
@@ -3990,7 +4198,7 @@
         if (!r.isConfirmed) return;
         cicilanList = cicilanList.filter(x => x.id !== cid); _cicRebuild(); _cicSave();
         const t = allTrxList.find(x => x.id === c.trxId);
-        if (t && t.status !== 'belumTransfer' && _cicPaid(t.id) < (t.nett||0)) t.status = 'belumTransfer';
+        if (t && t.status !== 'belumTransfer' && _cicPaid(t.id) + _retNilai(t.id) < (t.nett||0)) t.status = 'belumTransfer';
         saveLocalData();
         if (!c.pending) enqueueSync('deleteCicilan', [cid], 'Hapus cicilan');
         if (currentPage === 'piutang') loadPiutang();
@@ -4125,7 +4333,7 @@
     }
     // ========== KONFIGURASI ATURAN & PERINGATAN (sinkron ke sheet "Konfigurasi") ==========
     const CFG_KEY = 'tirtaConfig';
-    const CFG_DEFAULT = { kredit:{ maxPiutang:5000000, maxHari:30, tagihHari:7, perCust:{} }, setoran:{ batasSelisih:20000 }, anomali:{ maxDiskonPct:20 }, notif:{ tutup:true, selisih:true, stok:true, piutang:true, waRekap:true, laporanPdf:true, waOwner:'' } };
+    const CFG_DEFAULT = { kredit:{ maxPiutang:5000000, maxHari:30, tagihHari:7, perCust:{} }, setoran:{ batasSelisih:20000 }, anomali:{ maxDiskonPct:20 }, notif:{ tutup:true, selisih:true, stok:true, piutang:true, waRekap:true, laporanPdf:true, aiRingkas:true, waOwner:'' } };
     function _cfgMerge(base, over) {
       const o = JSON.parse(JSON.stringify(base));
       Object.keys(over||{}).forEach(k => { if (over[k] && typeof over[k] === 'object' && !Array.isArray(over[k]) && o[k] && typeof o[k] === 'object') { Object.keys(over[k]).forEach(k2 => { o[k][k2] = over[k][k2]; }); } else o[k] = over[k]; });
@@ -4532,7 +4740,7 @@
         <div class="card">
           <div class="card-title"><i class="fas fa-bell"></i> Notifikasi Pemilik</div>
           <div class="text-sm" style="color:var(--text3);margin-bottom:8px">Server mengirim email otomatis untuk kejadian berikut (dan WhatsApp bila Anda mengaktifkan WA otomatis, lihat catatan di bawah).</div>
-          ${chk('tutup','Buku harian ditutup (ringkasan hari itu)')}${chk('waRekap','Rekap harian otomatis ke WhatsApp (±23.50)')}${chk('laporanPdf','Lampirkan PDF pada email laporan harian')}${chk('selisih','Selisih setoran melewati batas')}${chk('stok','Stok menipis (cek tiap pagi ±07.30)')}${chk('piutang','Piutang lewat batas hari (cek tiap pagi ±07.30)')}
+          ${chk('tutup','Buku harian ditutup (ringkasan hari itu)')}${chk('waRekap','Rekap harian otomatis ke WhatsApp (±23.50)')}${chk('laporanPdf','Lampirkan PDF pada email laporan harian')}${chk('aiRingkas','Paragraf ringkasan AI di email laporan (perlu kunci Gemini di menu Tanya AI)')}${chk('selisih','Selisih setoran melewati batas')}${chk('stok','Stok menipis (cek tiap pagi ±07.30)')}${chk('piutang','Piutang lewat batas hari (cek tiap pagi ±07.30)')}
           <div class="form-group" style="margin-top:8px"><label>No. WhatsApp Anda (penerima WA otomatis & tombol “Ringkasan ke WA”)</label><input id="nf_waOwner" inputmode="numeric" placeholder="mis. 628123456789" value="${esc(nf.waOwner||'')}"></div>
           <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-primary" style="flex:1" onclick="saveNotifUI()"><i class="fas fa-floppy-disk"></i> Simpan</button><button class="btn btn-outline" style="flex:1" onclick="notifTesUI()"><i class="fas fa-paper-plane"></i> Kirim Tes</button><button class="btn" style="flex:1;background:linear-gradient(135deg,#16A34A,#25D366);color:#fff;border:0" onclick="ringkasanWaOwner()"><i class="fab fa-whatsapp"></i> Ringkasan ke WA</button></div>
           <div class="text-sm" style="color:var(--text3);margin-top:10px;line-height:1.5"><b>WA otomatis (saat tutup buku &amp; rekap ±23.50):</b> WhatsApp tidak punya jalur kirim otomatis gratis, jadi butuh layanan gateway (mis. Fonnte). Daftar, sambungkan nomor pengirim, lalu di Apps Script buka Project Settings → Script properties dan isi <code>WA_API_TOKEN</code> (token Fonnte). Nomor penerima diambil dari kolom di atas (setelah Simpan), atau isi <code>WA_OWNER_NUMBER</code>. Tanpa token, notifikasi tetap terkirim lewat email dan tombol “Ringkasan ke WA” tetap bisa dipakai manual. Klik <b>Kirim Tes</b> untuk memastikan. Jalankan <code>installDailyAlertTrigger</code> satu kali dari editor Apps Script untuk jadwal pagi.</div>
@@ -4586,7 +4794,8 @@
         { t:'Tutup buku & laporan', ic:'fa-calendar-check', items:[
           ['Tutup Buku harian', 'Rekap Harian → pilih tanggal → Tutup Buku. Jika ada sales belum setor, aplikasi memperingatkan. Admin dapat membuka kembali dengan tombol Buka.'],
           ['Laporan bulanan', 'Menu Profit → pilih rentang (mis. “Bulan lalu”) → Ekspor Excel atau PDF.'],
-          ['Analisa Customer', 'Customer terbaik dan yang mulai jarang beli; tombol 💬 Ajak mengirim WA ajakan.'] ] },
+          ['Analisa Customer', 'Customer terbaik dan yang mulai jarang beli; tombol 💬 Ajak mengirim WA ajakan.'],
+          ['Tanya AI', 'Khusus admin. Tanya data toko pakai bahasa biasa (mis. “siapa customer paling untung bulan ini?”). Perlu kunci API Gemini gratis; hanya ringkasan angka yang dikirim, tanpa nomor telepon/alamat.'] ] },
         { t:'Keamanan & pemeliharaan', ic:'fa-shield-halved', items:[
           ['Backup & Audit', 'Backup otomatis tiap malam ke Drive. Halaman Backup & Audit juga berisi Log Login, Audit Log, Uji Sistem, dan pengaturan Notifikasi Pemilik.'],
           ['Uji Sistem', 'Jalankan setelah memasang pembaruan backend atau bila ada yang terasa janggal; hasilnya menunjukkan bagian mana yang perlu diperbaiki.'],
@@ -4684,7 +4893,7 @@
     function saveNotifUI() {
       const g = k => !!document.getElementById('nf_' + k)?.checked;
       const wa = (document.getElementById('nf_waOwner')?.value || '').replace(/[^0-9]/g, '').replace(/^0/, '62');
-      cfgSave({ notif: { tutup: g('tutup'), selisih: g('selisih'), stok: g('stok'), piutang: g('piutang'), waRekap: g('waRekap'), laporanPdf: g('laporanPdf'), waOwner: wa } });
+      cfgSave({ notif: { tutup: g('tutup'), selisih: g('selisih'), stok: g('stok'), piutang: g('piutang'), waRekap: g('waRekap'), laporanPdf: g('laporanPdf'), aiRingkas: g('aiRingkas'), waOwner: wa } });
       Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:1800, icon:'success', title:'Pengaturan notifikasi disimpan' });
     }
     async function laporanEmailDash() {
@@ -6091,6 +6300,8 @@
           map.set(key, (map.get(key)||0) + (it.qty||0));
         });
       });
+      // [v16] retur yang dikembalikan ke stok mengurangi 'keluar' pada tanggal retur
+      returList.forEach(r => { const tg = String(r.tgl||'').substring(0,10); if (r.kembaliStok !== false && dateSet.has(tg)) { const key = tg + '|' + (r.sku||''); map.set(key, (map.get(key)||0) - (Number(r.qty)||0)); } });
       return map;
     }
     // [NEW] Sync Stock Barang KHUSUS HARI INI - beda dengan syncStockBarangToSheet()
@@ -7106,26 +7317,50 @@
     // ========== SARAN ORDER (prediksi dari penjualan 28 hari terakhir) ==========
     const PRED_COVER_KEY = 'tirtaPredCover';
     function _predCover() { const v = parseInt(localStorage.getItem(PRED_COVER_KEY), 10); return v > 0 ? v : 7; }
+    // Prediksi memakai pola HARI dalam seminggu (mis. Senin selalu ramai, Minggu tutup) dari 56 hari terakhir,
+    // dicampur rata-rata 28 hari terakhir. Retur dikurangkan dari penjualan.
+    const _HARI = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
+    function _dowOf(ds) { const [y,m,d] = ds.split('-').map(Number); return new Date(y, m-1, d).getDay(); }
     async function loadPrediksiOrder() {
       const today = localDateStr();
       let daily = [];
-      try { daily = await gasCall('getSkuDaily', [28], 0) || []; } catch(e) { window._pesananPred = { error: e.message || String(e) }; _renderPrediksiCard(); return; }
+      try { daily = await gasCall('getSkuDaily', [56], 0) || []; } catch(e) { window._pesananPred = { error: e.message || String(e) }; _renderPrediksiCard(); return; }
       let stock = []; try { stock = await getCorrectedStockBarangForDate(today); } catch(e) {}
       const cover = _predCover();
-      const dates = new Set(daily.map(x => x.tgl)); const activeDays = Math.max(1, dates.size);
-      const cut14 = localDateStr(new Date(Date.now() - 13*86400000));
-      const by = {};
-      daily.forEach(x => { const o = by[x.sku] || (by[x.sku] = { sku:x.sku, nama:x.nama||x.sku, total:0, last:0, prev:0 }); o.total += x.qty||0; if (x.tgl >= cut14) o.last += x.qty||0; else o.prev += x.qty||0; });
+      const retMap = {}; returList.forEach(r => { const k = String(r.tgl).substring(0,10) + '|' + r.sku; retMap[k] = (retMap[k]||0) + (Number(r.qty)||0); });
+      daily = daily.map(x => ({ ...x, qty: Math.max(0, (x.qty||0) - (retMap[x.tgl + '|' + x.sku]||0)) }));
+      const dates = [...new Set(daily.map(x => x.tgl))].sort();
+      const wdCount = [0,0,0,0,0,0,0]; dates.forEach(d => { wdCount[_dowOf(d)]++; });
+      const cut28 = localDateStr(new Date(Date.now() - 27*86400000)), cut14 = localDateStr(new Date(Date.now() - 13*86400000));
+      const act28 = Math.max(1, dates.filter(d => d >= cut28).length);
+      const trustZero = dates.length >= 14; // baru percaya "hari tutup" bila datanya cukup
+      const by = {}, wdAll = [0,0,0,0,0,0,0];
+      daily.forEach(x => {
+        const o = by[x.sku] || (by[x.sku] = { sku:x.sku, nama:x.nama||x.sku, t28:0, last:0, prev:0, wd:[0,0,0,0,0,0,0] });
+        const w = _dowOf(x.tgl); o.wd[w] += x.qty||0; wdAll[w] += x.qty||0;
+        if (x.tgl >= cut28) o.t28 += x.qty||0;
+        if (x.tgl >= cut14) o.last += x.qty||0; else if (x.tgl >= cut28) o.prev += x.qty||0;
+      });
+      const f = (o, avg, offset) => { // perkiraan penjualan hari ke-offset dari sekarang
+        const dt = new Date(); dt.setDate(dt.getDate() + offset); const w = dt.getDay(), n = wdCount[w];
+        if (n === 0) return trustZero ? 0 : avg;
+        const wdAvg = o.wd[w] / n;
+        return n >= 3 ? 0.65 * wdAvg + 0.35 * avg : avg;
+      };
       const rows = Object.values(by).map(o => {
         const st = stock.find(s => s.sku === o.sku); const stok = st ? (st.stokAkhir||0) : 0;
         const prod = products.find(p => p.sku === o.sku);
-        const avg = o.total / activeDays;
-        const saran = Math.max(0, Math.ceil(avg * cover - Math.max(stok, 0)));
-        const cukup = avg > 0 ? Math.max(stok, 0) / avg : null;
+        const avg = o.t28 / act28;
+        let butuh = 0; for (let i = 1; i <= cover; i++) butuh += f(o, avg, i);
+        const saran = Math.max(0, Math.ceil(butuh - Math.max(stok, 0)));
+        let cukup = null, left = Math.max(stok, 0);
+        for (let i = 1; i <= 30; i++) { const d = f(o, avg, i); if (d > 0 && left - d <= 0) { cukup = (i - 1) + left / d; break; } left -= d; if (i === 30 && butuh > 0) cukup = 30; }
         const trend = o.prev > 0 ? (o.last - o.prev) / o.prev : (o.last > 0 ? 1 : 0);
-        return { sku:o.sku, nama:(prod&&prod.nama)||o.nama, avg, stok, saran, cukup, trend };
-      }).filter(r => r.avg > 0).sort((a,b) => b.saran - a.saran || (a.cukup||99) - (b.cukup||99));
-      window._pesananPred = { rows, cover, activeDays };
+        return { sku:o.sku, nama:(prod&&prod.nama)||o.nama, avg, butuh, stok, saran, cukup, trend };
+      }).filter(r => r.avg > 0 || r.butuh > 0).sort((a,b) => b.saran - a.saran || (a.cukup==null?99:a.cukup) - (b.cukup==null?99:b.cukup));
+      const peak = wdAll.map((v,i) => ({ i, v })).filter(x => x.v > 0).sort((a,b) => b.v - a.v).slice(0,2).map(x => _HARI[x.i]);
+      const tutup = trustZero ? wdCount.map((n,i) => n === 0 ? _HARI[i] : null).filter(Boolean) : [];
+      window._pesananPred = { rows, cover, activeDays: act28, peak, tutup };
       _renderPrediksiCard();
     }
     function _renderPrediksiCard() {
@@ -7138,8 +7373,8 @@
       if (!p.rows.length) { el.innerHTML = `<div class="card">${head}<div class="text-sm" style="color:var(--text3)">Belum cukup data penjualan 28 hari terakhir.</div></div>`; return; }
       const arrow = t => t > 0.15 ? '<span style="color:#16A34A" title="Penjualan naik">▲</span>' : (t < -0.15 ? '<span style="color:#DC2626" title="Penjualan turun">▼</span>' : '<span style="color:var(--text3)">▬</span>');
       el.innerHTML = `<div class="card">${head}
-        <div class="text-sm" style="color:var(--text3);margin-bottom:8px">Berdasarkan rata-rata penjualan ${p.activeDays} hari aktif terakhir dikurangi stok sekarang.</div>
-        ${need.length ? `<div class="table-wrap"><table><thead><tr><th>Barang</th><th style="text-align:right">Rata/hari</th><th style="text-align:right">Stok</th><th style="text-align:right">Cukup</th><th style="text-align:right">Saran</th></tr></thead><tbody>${need.slice(0,15).map(r => `<tr><td style="font-weight:700">${esc(r.nama)} ${arrow(r.trend)}</td><td style="text-align:right;font-family:var(--mono)">${r.avg.toFixed(1)}</td><td style="text-align:right;font-family:var(--mono)">${r.stok}</td><td style="text-align:right;font-family:var(--mono);color:${r.cukup!==null&&r.cukup<2?'#DC2626':'inherit'}">${r.cukup===null?'-':r.cukup.toFixed(1)+' hr'}</td><td style="text-align:right;font-family:var(--mono);font-weight:900;color:#0067B8">${r.saran}</td></tr>`).join('')}</tbody></table></div>
+        <div class="text-sm" style="color:var(--text3);margin-bottom:8px">Perkiraan penjualan ${p.cover} hari ke depan memakai pola hari dalam seminggu (56 hari terakhir) dan rata-rata ${p.activeDays} hari aktif terakhir, dikurangi stok sekarang.${p.peak && p.peak.length ? ' Hari paling ramai: <b>' + p.peak.join(', ') + '</b>.' : ''}${p.tutup && p.tutup.length ? ' Biasanya libur: <b>' + p.tutup.join(', ') + '</b>.' : ''}</div>
+        ${need.length ? `<div class="table-wrap"><table><thead><tr><th>Barang</th><th style="text-align:right">Butuh</th><th style="text-align:right">Stok</th><th style="text-align:right">Cukup</th><th style="text-align:right">Saran</th></tr></thead><tbody>${need.slice(0,15).map(r => `<tr><td style="font-weight:700">${esc(r.nama)} ${arrow(r.trend)}<div style="font-size:.62rem;font-weight:600;opacity:.7">rata-rata ${r.avg.toFixed(1)}/hari</div></td><td style="text-align:right;font-family:var(--mono)">${Math.ceil(r.butuh)}</td><td style="text-align:right;font-family:var(--mono)">${r.stok}</td><td style="text-align:right;font-family:var(--mono);color:${r.cukup!==null&&r.cukup<2?'#DC2626':'inherit'}">${r.cukup===null?'-':r.cukup.toFixed(1)+' hr'}</td><td style="text-align:right;font-family:var(--mono);font-weight:900;color:#0067B8">${r.saran}</td></tr>`).join('')}</tbody></table></div>
         <button class="btn btn-primary btn-block" style="margin-top:10px" onclick="terapkanSaranOrder()"><i class="fas fa-wand-magic-sparkles"></i> Isi ke kolom Order (${need.length} barang)</button>` : '<div class="text-sm" style="color:#16A34A;font-weight:700">✅ Stok semua barang cukup untuk ' + p.cover + ' hari ke depan.</div>'}</div>`;
     }
     function terapkanSaranOrder() {
