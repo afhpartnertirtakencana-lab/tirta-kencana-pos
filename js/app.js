@@ -57,7 +57,11 @@
     // deployment GAS tertentu POST-nya bermasalah (jarang, tapi mungkin), app tetap
     // jalan seperti sebelumnya lewat GET.
     // ══════════════════════════════════════════════════════════════
+    // Fungsi yang memang butuh waktu lama (AI, kirim email): batas waktu lebih panjang dan TANPA jalur cadangan GET,
+    // supaya server tidak diminta mengerjakan hal yang sama dua kali (boros jatah AI / email ganda).
+    const _GAS_LONG = { aiTanya: 75000, kirimLaporanEmail: 60000, kirimNotifTes: 45000, selfTest: 60000, backupNow: 60000 };
     async function gasCall(fn, args = [], retry = 1) {
+      if (_GAS_LONG[fn]) return await _gasCallPost(fn, args, _GAS_LONG[fn]);
       try {
         return await _gasCallPost(fn, args);
       } catch (postErr) {
@@ -65,10 +69,10 @@
         return await _gasCallGet(fn, args, retry);
       }
     }
-    function _gasCallPost(fn, args) {
+    function _gasCallPost(fn, args, ms) {
       return new Promise((resolve, reject) => {
         const controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
-        const timer = setTimeout(() => { if (controller) controller.abort(); }, 20000);
+        const timer = setTimeout(() => { if (controller) controller.abort(); }, ms || 20000);
         // [NOTE] Content-Type 'text/plain' sengaja dipakai (walau isinya JSON) supaya
         // browser TIDAK mengirim CORS preflight (OPTIONS) - Apps Script web app tidak
         // punya handler doOptions, jadi preflight akan gagal & memblokir request kalau
@@ -90,7 +94,7 @@
             forceReLogin_('Sesi login sudah habis. Silakan login lagi.');
           }
           reject(new Error(errMsg));
-        }).catch(e => { clearTimeout(timer); reject(e); });
+        }).catch(e => { clearTimeout(timer); reject(ms && (e.name === 'AbortError' || /abort/i.test(String(e.message))) ? new Error('Server masih memproses terlalu lama (lebih dari ' + Math.round(ms/1000) + ' detik). Coba lagi sebentar lagi.') : e); });
       });
     }
     async function _gasCallGet(fn, args = [], retry = 1) {
