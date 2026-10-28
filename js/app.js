@@ -4070,7 +4070,7 @@
       try { const hv = document.querySelector('.pg-hero-val'); if (hv && window._aiStatus) hv.textContent = window._aiStatus.sisa + ' / ' + window._aiStatus.batas; } catch(e) {}
     }
     async function aiSaveKey() {
-      const v = (document.getElementById('aiKeyInp')?.value || '').trim();
+      const v = (document.getElementById('aiKeyInp')?.value || '').replace(/[\s"'`]+/g, '');
       if (!v) return Swal.fire('Isi kunci dulu', 'Tempel kunci API Gemini di kolom yang tersedia.', 'info');
       try { await gasCall('aiSimpanKunci', [v], 0); Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:2000, icon:'success', title:'Kunci disimpan' }); loadTanyaAI(); }
       catch(e) { Swal.fire('Gagal menyimpan', String(e.message || e), 'error'); }
