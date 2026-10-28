@@ -1684,6 +1684,7 @@
 
         h = `
           ${_dxHero({ eyebrow:'Total Penjualan Hari Ini', title: total, sub: todayTx.length + ' transaksi · rata-rata ' + fmtRp(avg) + (_rtD.nilai > 0 ? ' · retur −' + fmtRp(_rtD.nilai) : ''), delta })}
+          ${role === 'admin' ? _dxAiCard() : ''}
           <div class="dx-kpis">
             ${kpi('cod','COD','fa-hand-holding-usd',cod,'')}
             ${kpi('transfer','Transfer','fa-university',transfer,'')}
@@ -1727,6 +1728,7 @@
       // tab menu (desktop), jadi tidak perlu duplikasi di sini.
 
       document.getElementById('contentArea').innerHTML = h;
+      try { if (role === 'admin') _dxAiInit(); } catch(e) {}
       try { _dxLoadAlerts(); } catch(e) {}
       try { _dxLoadLowStock(); } catch(e) {}
       // Lengkapi item transaksi hari ini (sekali) agar rekap SKU/Customer akurat
@@ -4009,6 +4011,70 @@
       });
     }
     // ========== TANYA AI (Gemini, opsional; kunci disimpan di Script Properties backend) ==========
+    // ========== KARTU TANYA AI DI DASHBOARD (khusus admin) ==========
+    const _DXAI_CHIPS = [[0,'📈 Penjualan 7 hari'],[1,'🏆 Customer paling untung'],[5,'📦 Perlu dipesan?'],[4,'💸 Siapa ditagih?']];
+    function _dxAiCard() {
+      const st = window._aiStatus, ans = window._dashAiAns;
+      const chip = !st ? '<span class="dxai-pill" id="dxAiPill"><i class="fas fa-spinner fa-spin"></i></span>' : (st.aktif ? `<span class="dxai-pill ok" id="dxAiPill"><i class="fas fa-bolt"></i> ${st.sisa}/${st.batas}</span>` : '<span class="dxai-pill off" id="dxAiPill">Belum aktif</span>');
+      const aktif = !!(st && st.aktif);
+      return `<div class="dx-ai" id="dxAi">
+        <div class="dxai-glow"></div>
+        <div class="dxai-head">
+          <div class="dxai-ic"><i class="fas fa-wand-magic-sparkles"></i></div>
+          <div class="dxai-ttl"><b>Tanya AI</b><span>Tanya data toko pakai bahasa biasa</span></div>
+          ${chip}
+        </div>
+        <form class="dxai-form" onsubmit="dashAiAsk(event)">
+          <input id="dxAiQ" type="text" maxlength="500" autocomplete="off" placeholder="${aktif || !st ? 'Mis. siapa customer paling untung bulan ini?' : 'Aktifkan AI dulu untuk mulai bertanya'}" ${st && !st.aktif ? 'disabled' : ''}>
+          <button type="submit" id="dxAiGo" aria-label="Kirim" ${st && !st.aktif ? 'disabled' : ''}><i class="fas fa-paper-plane"></i></button>
+        </form>
+        <div class="dxai-chips" id="dxAiChips" ${st && !st.aktif ? 'style="display:none"' : ''}>${_DXAI_CHIPS.map(c => `<button type="button" onclick="dashAiPick(${c[0]})">${c[1]}</button>`).join('')}</div>
+        <div class="dxai-ans" id="dxAiAns" ${ans ? '' : 'style="display:none"'}>${ans ? _dxAiAnsHtml(ans) : ''}</div>
+        <div class="dxai-off" id="dxAiOff" ${st && !st.aktif ? '' : 'style="display:none"'}>AI gratis dari Google belum diaktifkan. <button type="button" onclick="navigateTo('tanyaai')">Aktifkan sekarang <i class="fas fa-arrow-right"></i></button></div>
+      </div>`;
+    }
+    function _dxAiAnsHtml(a) {
+      if (a.loading) return `<div class="dxai-q"><i class="fas fa-comment-dots"></i> ${esc(a.q)}</div><div class="dxai-typing"><span></span><span></span><span></span> Menganalisis data…</div>`;
+      return `<div class="dxai-q"><i class="fas fa-comment-dots"></i> ${esc(a.q)}</div><div class="dxai-a${a.err ? ' err' : ''}">${_aiFmt(a.t)}</div>
+        <div class="dxai-foot"><button type="button" onclick="navigateTo('tanyaai')">Lanjut di halaman Tanya AI <i class="fas fa-arrow-right"></i></button>${a.err ? '' : '<span>Jawaban AI bisa keliru, cek angka pentingnya.</span>'}</div>`;
+    }
+    function _dxAiRefreshStatus() {
+      if (currentPage !== 'dashboard' || !document.getElementById('dxAi')) return;
+      const card = document.getElementById('dxAi'); if (!card) return;
+      const tmp = document.createElement('div'); tmp.innerHTML = _dxAiCard();
+      const keepQ = (document.getElementById('dxAiQ')?.value) || '';
+      card.replaceWith(tmp.firstElementChild);
+      const q = document.getElementById('dxAiQ'); if (q && keepQ) q.value = keepQ;
+    }
+    async function _dxAiInit() {
+      if (window._aiStatusAt && Date.now() - window._aiStatusAt < 300000 && window._aiStatus) return;
+      try { window._aiStatus = await gasCall('aiStatus', [], 0); window._aiStatusAt = Date.now(); }
+      catch(e) { window._aiStatus = window._aiStatus || { aktif:false, sisa:0, batas:0 }; }
+      _dxAiRefreshStatus();
+    }
+    function dashAiPick(i) { const q = document.getElementById('dxAiQ'); if (!q) return; q.value = _AI_CHIPS[i]; dashAiAsk(); }
+    async function dashAiAsk(ev) {
+      if (ev && ev.preventDefault) ev.preventDefault();
+      if (_aiBusy) return;
+      const inp = document.getElementById('dxAiQ'); const q = (inp?.value || '').trim(); if (!q) return;
+      _aiBusy = true; const go = document.getElementById('dxAiGo'); if (go) go.disabled = true;
+      const box = document.getElementById('dxAiAns');
+      const slot = window._dashAiAns = { q, loading:true, t:'' };
+      if (box) { box.style.display = ''; box.innerHTML = _dxAiAnsHtml(slot); }
+      try {
+        const r = await gasCall('aiTanya', [{ q, riwayat: window._aiHist.slice(-3) }], 0);
+        if (r && r.ok) {
+          slot.loading = false; slot.t = r.jawab; window._aiHist.push({ q, a: r.jawab });
+          (window._aiThreadView = window._aiThreadView || []).push({ role:'u', t:q }, { role:'a', t:r.jawab });
+          if (window._aiStatus) { window._aiStatus.sisa = r.sisa; window._aiStatus.dipakai = Math.max(0, (window._aiStatus.batas||0) - r.sisa); }
+        } else { slot.loading = false; slot.err = true; slot.t = (r && (r.error || r.message)) || 'AI tidak memberi jawaban.'; }
+      } catch(e) { slot.loading = false; slot.err = true; slot.t = String(e.message || e); }
+      _aiBusy = false;
+      const b2 = document.getElementById('dxAiAns'); if (b2) b2.innerHTML = _dxAiAnsHtml(slot);
+      const g2 = document.getElementById('dxAiGo'); if (g2) g2.disabled = false;
+      const pill = document.getElementById('dxAiPill'); if (pill && window._aiStatus && window._aiStatus.aktif) pill.innerHTML = `<i class="fas fa-bolt"></i> ${window._aiStatus.sisa}/${window._aiStatus.batas}`;
+    }
+
     window._aiHist = window._aiHist || [];
     const _AI_CHIPS = ['Bagaimana penjualan 7 hari terakhir dibanding sebelumnya?', 'Siapa 5 customer paling untung bulan ini?', 'Barang apa yang profitnya paling besar?', 'Customer mana yang mulai jarang order?', 'Piutang siapa yang paling perlu ditagih?', 'Stok barang apa yang perlu segera dipesan?'];
     function _aiFmt(t) {
