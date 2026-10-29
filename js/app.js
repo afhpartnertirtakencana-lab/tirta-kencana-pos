@@ -4309,29 +4309,40 @@
         const bad = cs.overLimit || cs.overDue;
         h += `<div style="margin-top:6px;padding:8px 10px;border-radius:10px;font-size:.74rem;font-weight:700;background:${bad?'rgba(220,38,38,.12)':'rgba(245,158,11,.12)'};color:${bad?'#DC2626':'#D97706'};border:1px solid ${bad?'rgba(220,38,38,.35)':'rgba(245,158,11,.35)'}">${bad?'⚠️':'ℹ️'} Piutang ${fmtRp(cs.total)} (${cs.count} trx, tertua ${cs.days} hari)${cs.overLimit?` · melewati batas ${fmtRp(cs.limit)}`:''}${cs.overDue?` · lewat ${appConfig.kredit.maxHari} hari`:''}</div>`;
       }
-      if (allTrxList.some(t => (t.customer||'') === name)) h += `<button type="button" class="btn btn-sm btn-outline" style="margin-top:6px" onclick="repeatLastOrder()"><i class="fas fa-rotate-right"></i> Ulangi pesanan terakhir</button>`;
+      { const _nm = x => String(x||'').trim().replace(/\s+/g,' ').toLowerCase(), _mine = allTrxList.filter(t => _nm(t.customer) === _nm(name)).sort(window._trxNewestFirst || (() => 0));
+        if (_mine.length) h += `<button type="button" class="btn btn-sm btn-outline" style="margin-top:6px" onclick="repeatLastOrder()"><i class="fas fa-rotate-right"></i> Ulangi pesanan terakhir <span style="opacity:.75;font-weight:600">(${esc(fmtDate(_mine[0].tgl))})</span></button>`; }
       el.innerHTML = h;
     }
     async function repeatLastOrder() {
+      const norm = x => String(x||'').trim().replace(/\s+/g,' ').toLowerCase();
       const name = (document.getElementById('trxCust')?.value || '').trim(); if (!name) return;
-      const last = allTrxList.filter(t => (t.customer||'') === name).sort((a,b) => String(b.createdAt||b.tgl||'').localeCompare(String(a.createdAt||a.tgl||'')) || String(b.id).localeCompare(String(a.id)))[0];
+      const cmp = window._trxNewestFirst || ((a,b) => String(b.tgl||'').localeCompare(String(a.tgl||'')) || String(b.id).localeCompare(String(a.id)));
+      const mine = allTrxList.filter(t => norm(t.customer) === norm(name)).sort(cmp);
+      const last = mine[0];
       if (!last) return Swal.fire('Info', 'Belum ada transaksi sebelumnya untuk pelanggan ini.', 'info');
-      let items = last.items;
-      if (!Array.isArray(items) || !items.length) {
-        try { const d = await gasCall('getTrxDetail', [last.id]); items = d && d.items; } catch(e) {}
-      }
-      if (!Array.isArray(items) || !items.length) return Swal.fire('Info', 'Detail item transaksi terakhir tidak tersedia.', 'info');
+      // Ambil detail dari server dulu (paling akurat); bila gagal pakai item yang tersimpan di HP ini
+      let items = null;
+      try { const d = await gasCall('getTrxDetail', [last.id]); if (d && Array.isArray(d.items) && d.items.length) items = d.items; } catch(e) {}
+      if (!items && Array.isArray(last.items) && last.items.length) items = last.items;
+      if (!Array.isArray(items) || !items.length) return Swal.fire('Info', 'Detail item transaksi terakhir (' + last.id + ') tidak tersedia.', 'info');
+      const ts = window._trxTs ? window._trxTs(last) : 0;
+      const waktu = ts ? new Date(ts).toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' }).replace('.', ':') : '';
+      const info = fmtDate(last.tgl) + (waktu ? ' ' + waktu : '') + ' · ' + last.id;
       const have = [...document.querySelectorAll('#itemsContainer [data-field="sku"]')].some(i => i.value.trim());
-      if (have) { const c = await Swal.fire({ title:'Ganti isi keranjang?', text:'Item yang sudah diisi akan diganti dengan pesanan terakhir ' + name + ' (' + fmtDate(last.tgl) + ').', icon:'question', showCancelButton:true, confirmButtonText:'Ya, ganti', cancelButtonText:'Batal' }); if (!c.isConfirmed) return; }
+      if (have) { const c = await Swal.fire({ title:'Ganti isi keranjang?', text:'Item yang sudah diisi akan diganti dengan pesanan terakhir ' + name + ' (' + info + ').', icon:'question', showCancelButton:true, confirmButtonText:'Ya, ganti', cancelButtonText:'Batal' }); if (!c.isConfirmed) return; }
       document.getElementById('itemsContainer').innerHTML = '';
+      const missing = [];
       items.forEach(it => {
         addItemRow(it.sku);
         const row = [...document.querySelectorAll('#itemsContainer .cart-item-row')].pop(); if (!row) return;
+        if (!products.some(p => String(p.sku).toLowerCase() === String(it.sku||'').toLowerCase())) { missing.push(it.nama || it.sku); const n = row.querySelector('[data-field="nama"]'); if (n) n.value = it.nama || ''; }
         const q = row.querySelector('[data-field="qty"]'); if (q) q.value = it.qty || 1;
-        const d = row.querySelector('[data-field="disc"]'); if (d && it.discRpPer) d.value = it.discRpPer;
+        const h = row.querySelector('[data-field="harga"]'); if (h && it.harga !== undefined && it.harga !== null && it.harga !== '') h.value = it.harga;   // harga persis seperti pesanan itu
+        const d = row.querySelector('[data-field="disc"]'); if (d) d.value = it.discRpPer || '';
       });
       recalcTotals();
-      Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:1800, icon:'success', title:'Pesanan terakhir dimuat — cek harga & qty' });
+      Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer: missing.length ? 4500 : 2600, icon: missing.length ? 'warning' : 'success',
+        title: missing.length ? 'Dimuat dari ' + info + '. Produk tidak ada di daftar: ' + missing.join(', ') : 'Dimuat dari ' + info + ' — cek harga & qty' });
     }
     // Peringatan sebelum simpan transaksi: kredit, diskon besar, harga di bawah modal
     function trxWarnings(customer, status, items, gross, nett) {
@@ -9756,6 +9767,26 @@ if ('serviceWorker' in navigator) {
     try { _trxLocalOrder = JSON.parse(localStorage.getItem(LOCAL_ORDER_KEY) || '{}') || {}; } catch (e) { _trxLocalOrder = {}; }
     var _knownTrxIds = {};
     Object.keys(_trxLocalOrder).forEach(function(k) { _knownTrxIds[k] = true; });
+    // [FIX] Cap waktu transaksi yang akurat: createdAt dari server (bisa berupa teks 'yyyy-MM-dd HH:mm:ss' atau tanggal-jam dari Sheets),
+    // atau cap waktu lokal bila transaksi baru diinput di HP ini dan belum sinkron. Dipakai "Ulangi pesanan terakhir".
+    window._trxTs = function(t) {
+      if (!t) return 0;
+      var ca = t.createdAt;
+      if (ca) {
+        var m = String(ca).match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?/);
+        if (m) return new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +(m[6] || 0)).getTime();
+        var d = Date.parse(String(ca)); if (!isNaN(d)) return d;
+      }
+      var lo = _trxLocalOrder[t.id]; if (lo !== undefined) return Math.floor(lo);
+      return 0;
+    };
+    window._trxNewestFirst = function(a, b) {
+      var dc = String(b.tgl || '').substring(0, 10).localeCompare(String(a.tgl || '').substring(0, 10));
+      if (dc !== 0) return dc;
+      var ta = window._trxTs(a), tb = window._trxTs(b);
+      if (ta !== tb) return tb - ta;
+      return String(b.id || '').localeCompare(String(a.id || ''));
+    };
 
     function _persistLocalOrder() {
       try {
