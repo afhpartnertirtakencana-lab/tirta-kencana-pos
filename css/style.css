@@ -2158,21 +2158,41 @@ body table td, body .table-wrap td { font-weight:700; }
 body.light-mode { --text:#0A1426; }
 html body.light-mode { --text:#0A1426; }
 
-/* ===== v17: Ikon bilah menu SERAGAM (Menu, pintasan, ikon kanan) di tablet & web: semua 54 x 56 px ===== */
+/* ===== v17: Ikon bilah menu SERAGAM, SELALU 1 BARIS, mengecil otomatis mengikuti lebar (sidebar dibuka / zoom) ===== */
 @media (min-width:768px) {
-  .menu-row .side-fab, .menu-row .dash-fab, .menu-row .nav-bar button {
-    box-sizing:border-box !important; height:56px !important; min-height:56px !important; max-height:56px !important;
-    width:54px !important; min-width:54px !important; max-width:54px !important; flex:0 0 54px !important; padding:5px 1px 4px !important; margin:0 !important;
+  .menu-row { container-type:inline-size; container-name:mrow; align-items:center !important; gap:6px !important; flex-wrap:nowrap !important; overflow:visible !important; }
+  .menu-row .nav-bar { flex:1 1 0 !important; min-width:0 !important; max-width:none !important; }
+  .menu-row .nav-bar > div:last-child { display:flex !important; width:100%; min-width:0; flex-wrap:nowrap !important; align-items:center !important; justify-content:flex-end !important; gap:6px !important; }
+  .menu-row .side-fab, .menu-row .dash-fab, .menu-row .nav-bar button, .menu-row button[data-lbl]:not([style*="display: none"]), .menu-row .nav-bar button[data-lbl]:not([style*="display: none"]) {
+    box-sizing:border-box !important; height:56px !important; min-height:0 !important; max-height:none !important;
+    width:auto !important; min-width:0 !important; max-width:54px !important; flex:1 1 54px !important; padding:5px 1px 4px !important; margin:0 !important;
     display:inline-grid !important; grid-template-rows:auto auto; grid-template-columns:minmax(0,1fr); place-items:center; align-content:center; justify-items:center; gap:4px;
     border-radius:14px !important; font-size:1.02rem !important; line-height:1; overflow:visible;
   }
+  .menu-row .nav-bar button[onclick*="laporanEmailDash"], .menu-row .nav-bar button { flex-basis:54px !important; }
   .menu-row .side-fab i { font-size:1.02rem; }
   .menu-row .side-fab span { font-size:.54rem !important; font-weight:800; letter-spacing:0; line-height:1; white-space:nowrap; }
-  .menu-row button[data-lbl]::after, .menu-row .nav-bar button[data-lbl]::after { font-size:.54rem !important; letter-spacing:0 !important; white-space:nowrap; overflow:visible; text-overflow:clip; }
-  .menu-row .nav-bar button .notif-badge { top:2px !important; right:2px !important; }
-  .menu-row #syncStatus { box-sizing:border-box; height:56px !important; min-height:56px !important; padding:0 10px !important; border-radius:14px !important; align-self:center !important; display:inline-flex !important; align-items:center; justify-content:center; flex:0 0 auto; }
-  .menu-row { align-items:center !important; gap:8px !important; flex-wrap:wrap !important; row-gap:8px !important; }
-  .menu-row .nav-bar { flex:1 1 640px !important; min-width:0 !important; }
-  .menu-row .nav-bar > div:last-child { align-items:center !important; flex-wrap:nowrap !important; justify-content:flex-end !important; gap:6px !important; width:100%; }
+  .menu-row button[data-lbl]::after, .menu-row .nav-bar button[data-lbl]::after { font-size:.54rem !important; letter-spacing:0 !important; white-space:nowrap; overflow:visible; }
+  .menu-row .nav-bar button .notif-badge { top:1px !important; right:1px !important; }
+  .menu-row #syncStatus { box-sizing:border-box; height:56px !important; min-height:0 !important; padding:0 9px !important; border-radius:14px !important; align-self:center !important; display:inline-flex !important; align-items:center; justify-content:center; flex:0 1 auto !important; min-width:0 !important; white-space:nowrap; overflow:hidden; }
 }
-@media (min-width:768px) and (max-width:1023px) { .menu-row .nav-bar > div:last-child { justify-content:space-between !important; } }
+/* tingkat ukuran otomatis menurut lebar baris menu (bukan lebar layar) */
+@container mrow (max-width: 940px) {
+  .menu-row .side-fab, .menu-row .dash-fab, .menu-row .nav-bar button, .menu-row button[data-lbl]:not([style*="display: none"]), .menu-row .nav-bar button[data-lbl]:not([style*="display: none"]) { height:50px !important; max-width:48px !important; flex-basis:48px !important; border-radius:12px !important; gap:3px; }
+  .menu-row #syncStatus { height:50px !important; padding:0 7px !important; font-size:.66rem !important; }
+  .menu-row button[data-lbl]::after, .menu-row .side-fab span { font-size:.5rem !important; }
+  .menu-row .side-fab i, .menu-row .dash-fab i, .menu-row .nav-bar button i { font-size:.95rem; }
+}
+@container mrow (max-width: 800px) {
+  .menu-row, .menu-row .nav-bar > div:last-child { gap:4px !important; }
+  .menu-row .side-fab, .menu-row .dash-fab, .menu-row .nav-bar button, .menu-row button[data-lbl]:not([style*="display: none"]), .menu-row .nav-bar button[data-lbl]:not([style*="display: none"]) { height:46px !important; max-width:42px !important; flex-basis:42px !important; border-radius:11px !important; gap:2px; }
+  .menu-row #syncStatus { height:46px !important; padding:0 5px !important; font-size:.6rem !important; }
+  .menu-row button[data-lbl]::after, .menu-row .side-fab span { font-size:.44rem !important; }
+  .menu-row .side-fab i, .menu-row .dash-fab i, .menu-row .nav-bar button i { font-size:.88rem; }
+}
+@container mrow (max-width: 690px) {
+  .menu-row .side-fab, .menu-row .dash-fab, .menu-row .nav-bar button, .menu-row button[data-lbl]:not([style*="display: none"]), .menu-row .nav-bar button[data-lbl]:not([style*="display: none"]) { height:40px !important; max-width:36px !important; flex-basis:36px !important; border-radius:10px !important; }
+  .menu-row #syncStatus { height:40px !important; padding:0 4px !important; font-size:.56rem !important; }
+  .menu-row button[data-lbl]::after, .menu-row .side-fab span { display:none !important; }
+  .menu-row .side-fab i, .menu-row .dash-fab i, .menu-row .nav-bar button i { font-size:.9rem; }
+}
