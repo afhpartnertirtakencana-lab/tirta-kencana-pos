@@ -59,7 +59,7 @@
     // ══════════════════════════════════════════════════════════════
     // Fungsi yang memang butuh waktu lama (AI, kirim email): batas waktu lebih panjang dan TANPA jalur cadangan GET,
     // supaya server tidak diminta mengerjakan hal yang sama dua kali (boros jatah AI / email ganda).
-    const _GAS_LONG = { aiTanya: 75000, kirimLaporanEmail: 60000, kirimNotifTes: 45000, selfTest: 60000, backupNow: 60000 };
+    const _GAS_LONG = { aiTanya: 75000, kirimLaporanEmail: 60000, kirimNotifTes: 45000, selfTest: 60000, backupNow: 60000, driveStatus: 60000, driveSimpanLaporan: 60000, driveEksporData: 120000, driveRestoreBackup: 240000 };
     async function gasCall(fn, args = [], retry = 1) {
       if (_GAS_LONG[fn]) return await _gasCallPost(fn, args, _GAS_LONG[fn]);
       try {
@@ -1438,6 +1438,7 @@
              <button class="tab ${currentPage==='analisacust'?'active':''}" onclick="navigateTo('analisacust')"><i class="fas fa-users-viewfinder"></i> Analisa Customer</button>
              <button class="tab ${currentPage==='rekapharian'?'active':''}" onclick="navigateTo('rekapharian')"><i class="fas fa-calendar-check"></i> Rekap Harian</button>
              <button class="tab ${currentPage==='auditlog'?'active':''}" onclick="navigateTo('auditlog')"><i class="fas fa-shield-halved"></i> Backup &amp; Audit</button>
+             <button class="tab ${currentPage==='googledrive'?'active':''}" onclick="navigateTo('googledrive')"><i class="fas fa-hard-drive"></i> Google Drive</button>
              <button class="tab ${currentPage==='panduan'?'active':''}" onclick="navigateTo('panduan')"><i class="fas fa-circle-question"></i> Panduan</button>
              <button class="tab ${currentPage==='pengaturan'?'active':''}" onclick="navigateTo('pengaturan')"><i class="fas fa-cog"></i> Atur</button>`;
       } else if (r === 'sales') {
@@ -1501,6 +1502,7 @@
           { page:'analisacust', label:'Analisa Customer', icon:'fa-users-viewfinder' },
           { page:'rekapharian', label:'Rekap Harian', icon:'fa-calendar-check' },
           { page:'auditlog', label:'Backup & Audit', icon:'fa-shield-halved' },
+          { page:'googledrive', label:'Google Drive', icon:'fa-hard-drive' },
           { page:'googlesheets', label:'Google Sheets', icon:'fa-table-cells' },
           { page:'panduan', label:'Panduan', icon:'fa-circle-question' },
           { page:'pengaturan', label:'Atur', icon:'fa-cog' },
@@ -1600,7 +1602,7 @@
     function _pgHero(icon, title, sub, val, lbl) {
       return `<div class="pg-hero"><div class="pg-hero-eyebrow"><i class="fas ${icon}"></i> ${title}</div><div class="pg-hero-sub">${sub||''}</div>${val !== undefined && val !== null ? `<div class="pg-hero-val">${val}</div><div class="pg-hero-lbl">${lbl||''}</div>` : ''}</div>`;
     }
-    function renderContent() { try { document.getElementById('contentArea').setAttribute('data-page', currentPage); } catch(e) {} switch (currentPage) { case 'dashboard': loadDashboard(); break; case 'penjualan': loadPenjualan(); break; case 'transaksi': loadTransaksi(); break; case 'rekap': loadRekap(); break; case 'rekapinput': loadRekapInput(); break; case 'setoran': loadSetoran(); break; case 'rekapsetoran': loadRekapSetoran(); break; case 'inputbarang': loadInputBarang(); break; case 'stockbarang': loadStockBarang(); break; case 'cekstock': loadCekStock(); break; case 'cekkosongan': loadCekKosongan(); break; case 'pesanan': loadPesanan(); break; case 'titipan': loadTitipan(); break; case 'produk': loadProduk(); break; case 'pelanggan': loadPelanggan(); break; case 'pengaturan': loadPengaturan(); break; case 'pengaturanUser': loadPengaturanUser(); break; case 'grafik': loadGrafik(); break; case 'piutang': loadPiutang(); break; case 'retur': loadRetur(); break; case 'laporanbulanan': loadLaporanBulanan(); break; case 'profit': loadProfit(); break; case 'analisacust': loadAnalisaCust(); break; case 'rekapharian': loadRekapHarian(); break; case 'auditlog': loadAuditLog(); break; case 'googlesheets': loadGoogleSheets(); break; case 'panduan': loadPanduan(); break; } }
+    function renderContent() { try { document.getElementById('contentArea').setAttribute('data-page', currentPage); } catch(e) {} switch (currentPage) { case 'dashboard': loadDashboard(); break; case 'penjualan': loadPenjualan(); break; case 'transaksi': loadTransaksi(); break; case 'rekap': loadRekap(); break; case 'rekapinput': loadRekapInput(); break; case 'setoran': loadSetoran(); break; case 'rekapsetoran': loadRekapSetoran(); break; case 'inputbarang': loadInputBarang(); break; case 'stockbarang': loadStockBarang(); break; case 'cekstock': loadCekStock(); break; case 'cekkosongan': loadCekKosongan(); break; case 'pesanan': loadPesanan(); break; case 'titipan': loadTitipan(); break; case 'produk': loadProduk(); break; case 'pelanggan': loadPelanggan(); break; case 'pengaturan': loadPengaturan(); break; case 'pengaturanUser': loadPengaturanUser(); break; case 'grafik': loadGrafik(); break; case 'piutang': loadPiutang(); break; case 'retur': loadRetur(); break; case 'googledrive': loadGoogleDrive(); break; case 'laporanbulanan': loadLaporanBulanan(); break; case 'profit': loadProfit(); break; case 'analisacust': loadAnalisaCust(); break; case 'rekapharian': loadRekapHarian(); break; case 'auditlog': loadAuditLog(); break; case 'googlesheets': loadGoogleSheets(); break; case 'panduan': loadPanduan(); break; } }
 
     // ========== DASHBOARD (MENU UTAMA) ==========
     function loadDashboard() {
@@ -4010,6 +4012,121 @@
         Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:1800, icon:'success', title:'Retur dibatalkan' });
       });
     }
+    // ========== GOOGLE DRIVE (khusus admin) ==========
+    let _drv = { st:null, err:'', lap:[], bak:[], eks:[] };
+    function _drvBytes(n) { n = Number(n) || 0; if (n < 1024) return n + ' B'; if (n < 1048576) return (n/1024).toFixed(0) + ' KB'; if (n < 1073741824) return (n/1048576).toFixed(1) + ' MB'; return (n/1073741824).toFixed(1).replace('.', ',') + ' GB'; }
+    async function loadGoogleDrive() {
+      const el = document.getElementById('contentArea');
+      if (currentUser?.role !== 'admin') { el.innerHTML = `<div class="card"><div class="text-sm" style="padding:16px;text-align:center">Menu Google Drive khusus admin.</div></div>`; return; }
+      el.innerHTML = `${_pgHero('fa-hard-drive','Google Drive','Menghubungkan…')}<div class="card"><p class="text-center text-sm" style="padding:30px"><i class="fas fa-spinner fa-spin"></i> Memuat data Drive…</p></div>`;
+      const [st, lap, bak, eks] = await Promise.allSettled([gasCall('driveStatus', [], 0), gasCall('driveList', ['laporan'], 0), gasCall('driveList', ['backup'], 0), gasCall('driveList', ['ekspor'], 0)]);
+      _drv = { st: st.status === 'fulfilled' ? st.value : null, err: st.status === 'rejected' ? String(st.reason?.message || st.reason) : '',
+        lap: lap.status === 'fulfilled' && Array.isArray(lap.value) ? lap.value : [], bak: bak.status === 'fulfilled' && Array.isArray(bak.value) ? bak.value : [], eks: eks.status === 'fulfilled' && Array.isArray(eks.value) ? eks.value : [] };
+      _renderGoogleDrive();
+    }
+    function _drvFileRows(list, max, aksi) {
+      if (!list.length) return '<div class="text-sm" style="color:var(--text3);padding:8px 0">Belum ada file.</div>';
+      return `<div class="drv-list">${list.slice(0, max).map(f => `<div class="drv-row"><div class="drv-ic"><i class="fas ${/pdf/i.test(f.mime||f.nama) ? 'fa-file-pdf' : (/sheet|xlsx|excel/i.test(f.mime||'') || /\.xlsx$/i.test(f.nama) ? 'fa-file-excel' : (/csv/i.test(f.mime||'') || /\.csv$/i.test(f.nama) ? 'fa-file-csv' : 'fa-file'))}"></i></div>
+        <div class="drv-nm"><b>${esc(f.nama || f.name)}</b><span>${esc(f.dibuat || '')}${f.ukuran ? ' · ' + _drvBytes(f.ukuran) : ''}</span></div>
+        <div class="drv-act"><a class="btn btn-sm btn-outline" href="${esc(f.url)}" target="_blank" rel="noopener"><i class="fas fa-up-right-from-square"></i> Buka</a>${aksi ? aksi(f) : ''}</div></div>`).join('')}</div>`;
+    }
+    function _renderGoogleDrive() {
+      const el = document.getElementById('contentArea'); if (!el || currentPage !== 'googledrive') return;
+      const st = _drv.st, today = localDateStr();
+      if (!st) {
+        el.innerHTML = `${_pgHero('fa-hard-drive','Google Drive','Tidak tersambung')}<div class="card"><div class="text-sm" style="color:#DC2626;line-height:1.6"><b>Tidak bisa membaca Drive.</b>${_drv.err ? '<br>' + esc(_drv.err) : ''}<br><span style="color:var(--text3)">Pastikan backend sudah di-deploy versi terbaru (New version) dan izin Drive sudah disetujui.</span></div><button class="btn btn-outline btn-block" style="margin-top:10px" onclick="loadGoogleDrive()"><i class="fas fa-rotate"></i> Coba lagi</button></div>`; return;
+      }
+      const k = st.kuota, pct = k && k.batas > 0 ? Math.min(100, Math.round(k.dipakai / k.batas * 100)) : null;
+      const hero = _pgHero('fa-hard-drive', 'Google Drive', st.email ? 'Tersambung · ' + esc(st.email) : 'Tersambung', k ? _drvBytes(k.dipakai) : 'Aktif', k && k.batas ? 'terpakai dari ' + _drvBytes(k.batas) : 'Penyimpanan Drive');
+      const folderIc = { laporan:'fa-file-pdf', ekspor:'fa-file-export', backup:'fa-database', foto:'fa-camera' }, folderNm = { laporan:'Laporan', ekspor:'Ekspor data', backup:'Backup', foto:'Foto bukti' };
+      const folders = (st.folders || []).map(f => `<div class="drv-row"><div class="drv-ic"><i class="fas ${folderIc[f.key] || 'fa-folder'}"></i></div><div class="drv-nm"><b>${folderNm[f.key] || esc(f.nama)}</b><span>${f.ada ? f.jumlah + ' file · ' + _drvBytes(f.ukuran) : 'Folder dibuat otomatis saat pertama dipakai'}</span></div><div class="drv-act">${f.ada ? `<a class="btn btn-sm btn-outline" href="${esc(f.url)}" target="_blank" rel="noopener"><i class="fas fa-folder-open"></i> Buka</a>` : '<span class="drv-pill">Belum ada</span>'}</div></div>`).join('');
+      const bakAksi = f => `<button class="btn btn-sm btn-ghost" style="color:#DC2626" onclick="drvRestore('${esc(f.id)}','${esc(String(f.nama).replace(/'/g, ''))}')"><i class="fas fa-clock-rotate-left"></i> Pulihkan</button>`;
+      el.innerHTML = hero + `
+        <div class="card">
+          <div class="card-title"><i class="fas fa-plug-circle-check"></i> Koneksi & Folder</div>
+          <div class="drv-ok"><i class="fas fa-circle-check"></i> Tersambung ke Google Drive${st.email ? ' sebagai <b>' + esc(st.email) + '</b>' : ''}</div>
+          ${pct !== null ? `<div class="drv-bar"><span style="width:${pct}%"></span></div><div class="text-sm" style="color:var(--text3);margin-bottom:8px">${pct}% penyimpanan terpakai (${_drvBytes(k.dipakai)} dari ${_drvBytes(k.batas)})</div>` : ''}
+          <div class="drv-list">${folders}</div>
+          ${st.sheetUrl ? `<a class="btn btn-outline btn-block" style="margin-top:10px" href="${esc(st.sheetUrl)}" target="_blank" rel="noopener"><i class="fas fa-table-cells"></i> Buka Google Sheets data toko</a>` : ''}
+        </div>
+        <div class="card">
+          <div class="card-title"><i class="fas fa-file-pdf"></i> Laporan ke Drive</div>
+          <div class="text-sm" style="color:var(--text3);margin-bottom:10px;line-height:1.5">Simpan Laporan Harian (PDF) ke folder “Tirta Kencana - Laporan”. Laporan tanggal yang sama akan diganti dengan versi terbaru.</div>
+          <div class="drv-form"><input type="date" id="drvLapTgl" value="${today}" max="${today}"><button class="btn btn-primary" id="drvLapBtn" onclick="drvSaveLaporan()"><i class="fas fa-cloud-arrow-up"></i> Simpan ke Drive</button></div>
+          <label class="drv-chk"><input type="checkbox" id="drvAuto" ${st.auto ? 'checked' : ''} onchange="drvToggleAuto(this.checked)"> Simpan otomatis saat tutup buku dan tiap malam ±23.50</label>
+          ${_drvFileRows(_drv.lap, 6)}
+        </div>
+        <div class="card">
+          <div class="card-title"><i class="fas fa-database"></i> Backup & Pemulihan</div>
+          <div class="text-sm" style="color:var(--text3);margin-bottom:10px;line-height:1.5">Backup otomatis tiap malam ±23.30 (30 salinan terakhir). <b>Pulihkan</b> mengganti data sekarang dengan isi backup; sebelum itu aplikasi membuat backup pengaman, dan log audit/login tidak ikut ditimpa.</div>
+          <button class="btn btn-primary btn-block" id="drvBakBtn" onclick="drvBackupNow()"><i class="fas fa-cloud-arrow-up"></i> Backup Sekarang</button>
+          ${_drvFileRows(_drv.bak, 10, bakAksi)}
+        </div>
+        <div class="card">
+          <div class="card-title"><i class="fas fa-file-export"></i> Ekspor Data ke Drive</div>
+          <div class="text-sm" style="color:var(--text3);margin-bottom:10px;line-height:1.5">Simpan data sebagai file Excel atau CSV di folder “Tirta Kencana - Ekspor”.</div>
+          <div class="drv-grid">
+            <label>Data<select id="drvJenis" onchange="drvJenisChange()"><option value="transaksi">Penjualan per item</option><option value="stok">Stok harian</option><option value="piutang">Piutang berjalan</option><option value="inputbarang">Input barang</option></select></label>
+            <label>Format<select id="drvFmt"><option value="xlsx">Excel (.xlsx)</option><option value="csv">CSV (.csv)</option></select></label>
+            <label class="drv-rng">Dari<input type="date" id="drvDari" value="${localDateStr(new Date(Date.now() - 29*86400000))}"></label>
+            <label class="drv-rng">Sampai<input type="date" id="drvSampai" value="${today}"></label>
+          </div>
+          <button class="btn btn-primary btn-block" id="drvEksBtn" style="margin-top:10px" onclick="drvExport()"><i class="fas fa-file-export"></i> Ekspor ke Drive</button>
+          ${_drvFileRows(_drv.eks, 8)}
+        </div>`;
+    }
+    function drvJenisChange() { const j = document.getElementById('drvJenis')?.value; document.querySelectorAll('.drv-rng').forEach(e => { e.style.display = j === 'piutang' ? 'none' : ''; }); }
+    async function drvSaveLaporan() {
+      const b = document.getElementById('drvLapBtn'), tgl = document.getElementById('drvLapTgl')?.value || localDateStr();
+      if (b) { b.disabled = true; b.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan…'; }
+      try {
+        const r = await gasCall('driveSimpanLaporan', [tgl], 0);
+        Swal.fire({ icon:'success', title:'Laporan tersimpan di Drive', html: `<b>${esc(r.nama)}</b><br><a href="${esc(r.url)}" target="_blank" rel="noopener">Buka file</a>` });
+        try { _drv.lap = await gasCall('driveList', ['laporan'], 0); } catch(e) {}
+        _renderGoogleDrive();
+      } catch(e) { Swal.fire('Gagal menyimpan', String(e.message || e), 'error'); if (b) { b.disabled = false; b.innerHTML = '<i class="fas fa-cloud-arrow-up"></i> Simpan ke Drive'; } }
+    }
+    function drvToggleAuto(v) {
+      cfgSave({ notif: { driveLaporan: !!v } });
+      if (_drv.st) _drv.st.auto = !!v;
+      Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:1800, icon:'success', title: v ? 'Simpan otomatis diaktifkan' : 'Simpan otomatis dimatikan' });
+    }
+    async function drvBackupNow() {
+      const b = document.getElementById('drvBakBtn');
+      if (b) { b.disabled = true; b.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Membuat backup…'; }
+      try {
+        const r = await gasCall('backupNow', [], 0);
+        Swal.fire({ icon:'success', title:'Backup dibuat', html: `<b>${esc(r.name || '')}</b>${r.url ? `<br><a href="${esc(r.url)}" target="_blank" rel="noopener">Buka di Drive</a>` : ''}` });
+        try { _drv.bak = await gasCall('driveList', ['backup'], 0); } catch(e) {}
+        _renderGoogleDrive();
+      } catch(e) { Swal.fire('Backup gagal', String(e.message || e), 'error'); if (b) { b.disabled = false; b.innerHTML = '<i class="fas fa-cloud-arrow-up"></i> Backup Sekarang'; } }
+    }
+    async function drvRestore(id, nama) {
+      const c = await Swal.fire({ icon:'warning', title:'Pulihkan dari backup?', html: `Data toko akan <b>diganti</b> dengan isi:<br><b>${esc(nama)}</b><br><br>Backup kondisi sekarang dibuat otomatis lebih dulu. Ketik <b>PULIHKAN</b> untuk melanjutkan.`,
+        input:'text', inputPlaceholder:'PULIHKAN', showCancelButton:true, confirmButtonText:'Pulihkan', cancelButtonText:'Batal', confirmButtonColor:'#DC2626',
+        preConfirm: v => (String(v||'').trim() === 'PULIHKAN') ? true : Swal.showValidationMessage('Ketik PULIHKAN persis seperti itu') });
+      if (!c.isConfirmed) return;
+      Swal.fire({ title:'Memulihkan…', html:'Jangan tutup halaman ini. Proses bisa memakan beberapa menit.', allowOutsideClick:false, didOpen: () => { try { Swal.showLoading(); } catch(e) {} } });
+      try {
+        const r = await gasCall('driveRestoreBackup', [{ fileId:id, konfirmasi:'PULIHKAN' }], 0);
+        await Swal.fire({ icon:'success', title:'Pemulihan selesai', html: `${(r.sheet||[]).length} sheet dipulihkan.<br>Backup pengaman: <b>${esc(r.pengaman||'')}</b><br><br>Aplikasi akan dimuat ulang.` });
+        try { localStorage.removeItem('tirtaTrxLocalOrder'); } catch(e) {}
+        location.reload();
+      } catch(e) { Swal.fire('Pemulihan gagal', String(e.message || e), 'error'); }
+    }
+    async function drvExport() {
+      const b = document.getElementById('drvEksBtn'), jenis = document.getElementById('drvJenis')?.value, fmt = document.getElementById('drvFmt')?.value || 'xlsx';
+      const dari = document.getElementById('drvDari')?.value, sampai = document.getElementById('drvSampai')?.value;
+      if (jenis !== 'piutang' && dari && sampai && dari > sampai) return Swal.fire('Tanggal tidak valid', 'Tanggal “Dari” tidak boleh setelah “Sampai”.', 'warning');
+      if (b) { b.disabled = true; b.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengekspor…'; }
+      try {
+        const r = await gasCall('driveEksporData', [{ jenis, dari, sampai, format: fmt }], 0);
+        Swal.fire({ icon:'success', title:'Ekspor tersimpan di Drive', html: `<b>${esc(r.nama)}</b><br>${r.baris} baris${r.format !== r.formatDiminta ? '<br><span style="color:#B45309">Excel gagal dibuat, disimpan sebagai CSV.</span>' : ''}<br><a href="${esc(r.url)}" target="_blank" rel="noopener">Buka file</a>` });
+        try { _drv.eks = await gasCall('driveList', ['ekspor'], 0); } catch(e) {}
+        const keep = { jenis, fmt, dari, sampai }; _renderGoogleDrive();
+        ['drvJenis','drvFmt','drvDari','drvSampai'].forEach((id, i) => { const el = document.getElementById(id); if (el) el.value = [keep.jenis, keep.fmt, keep.dari, keep.sampai][i]; }); drvJenisChange();
+      } catch(e) { Swal.fire('Ekspor gagal', String(e.message || e), 'error'); if (b) { b.disabled = false; b.innerHTML = '<i class="fas fa-file-export"></i> Ekspor ke Drive'; } }
+    }
     function loadRetur() {
       const g = _retGroups(), isAdmin = currentUser?.role === 'admin';
       const bulan = localDateStr().substring(0,7), gBulan = g.filter(x => String(x.tgl).startsWith(bulan));
@@ -4263,7 +4380,7 @@
     }
     // ========== KONFIGURASI ATURAN & PERINGATAN (sinkron ke sheet "Konfigurasi") ==========
     const CFG_KEY = 'tirtaConfig';
-    const CFG_DEFAULT = { kredit:{ maxPiutang:5000000, maxHari:30, tagihHari:7, perCust:{} }, setoran:{ batasSelisih:20000 }, anomali:{ maxDiskonPct:20 }, notif:{ tutup:true, selisih:true, stok:true, piutang:true, waRekap:true, laporanPdf:true, waOwner:'' } };
+    const CFG_DEFAULT = { kredit:{ maxPiutang:5000000, maxHari:30, tagihHari:7, perCust:{} }, setoran:{ batasSelisih:20000 }, anomali:{ maxDiskonPct:20 }, notif:{ tutup:true, selisih:true, stok:true, piutang:true, waRekap:true, laporanPdf:true, driveLaporan:true, waOwner:'' } };
     function _cfgMerge(base, over) {
       const o = JSON.parse(JSON.stringify(base));
       Object.keys(over||{}).forEach(k => { if (over[k] && typeof over[k] === 'object' && !Array.isArray(over[k]) && o[k] && typeof o[k] === 'object') { Object.keys(over[k]).forEach(k2 => { o[k][k2] = over[k][k2]; }); } else o[k] = over[k]; });
@@ -4737,6 +4854,7 @@
           ['Laporan bulanan', 'Menu Profit → pilih rentang (mis. “Bulan lalu”) → Ekspor Excel atau PDF.'],
           ['Analisa Customer', 'Customer terbaik dan yang mulai jarang beli; tombol 💬 Ajak mengirim WA ajakan.'] ] },
         { t:'Keamanan & pemeliharaan', ic:'fa-shield-halved', items:[
+          ['Google Drive', 'Khusus admin. Status koneksi & folder Drive, simpan Laporan Harian (PDF) ke Drive, kelola backup (termasuk pulihkan), dan ekspor data ke Excel/CSV.'],
           ['Backup & Audit', 'Backup otomatis tiap malam ke Drive. Halaman Backup & Audit juga berisi Log Login, Audit Log, Uji Sistem, dan pengaturan Notifikasi Pemilik.'],
           ['Uji Sistem', 'Jalankan setelah memasang pembaruan backend atau bila ada yang terasa janggal; hasilnya menunjukkan bagian mana yang perlu diperbaiki.'],
           ['Notifikasi', 'Email otomatis untuk tutup buku, selisih setoran besar, stok menipis, dan piutang lewat batas. Tombol “Ringkasan ke WA” menyiapkan pesan WhatsApp ke nomor Anda.'] ] }
