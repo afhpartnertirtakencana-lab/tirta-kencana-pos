@@ -2157,3 +2157,22 @@ body.light-mode .text-sm, body.light-mode small { color:#2E4468; }
 body table td, body .table-wrap td { font-weight:700; }
 body.light-mode { --text:#0A1426; }
 html body.light-mode { --text:#0A1426; }
+
+/* ===== v17: Ikon bilah menu SERAGAM (Menu, pintasan, ikon kanan) di tablet & web: semua 54 x 56 px ===== */
+@media (min-width:768px) {
+  .menu-row .side-fab, .menu-row .dash-fab, .menu-row .nav-bar button {
+    box-sizing:border-box !important; height:56px !important; min-height:56px !important; max-height:56px !important;
+    width:54px !important; min-width:54px !important; max-width:54px !important; flex:0 0 54px !important; padding:5px 1px 4px !important; margin:0 !important;
+    display:inline-grid !important; grid-template-rows:auto auto; grid-template-columns:minmax(0,1fr); place-items:center; align-content:center; justify-items:center; gap:4px;
+    border-radius:14px !important; font-size:1.02rem !important; line-height:1; overflow:visible;
+  }
+  .menu-row .side-fab i { font-size:1.02rem; }
+  .menu-row .side-fab span { font-size:.54rem !important; font-weight:800; letter-spacing:0; line-height:1; white-space:nowrap; }
+  .menu-row button[data-lbl]::after, .menu-row .nav-bar button[data-lbl]::after { font-size:.54rem !important; letter-spacing:0 !important; white-space:nowrap; overflow:visible; text-overflow:clip; }
+  .menu-row .nav-bar button .notif-badge { top:2px !important; right:2px !important; }
+  .menu-row #syncStatus { box-sizing:border-box; height:56px !important; min-height:56px !important; padding:0 10px !important; border-radius:14px !important; align-self:center !important; display:inline-flex !important; align-items:center; justify-content:center; flex:0 0 auto; }
+  .menu-row { align-items:center !important; gap:8px !important; flex-wrap:wrap !important; row-gap:8px !important; }
+  .menu-row .nav-bar { flex:1 1 640px !important; min-width:0 !important; }
+  .menu-row .nav-bar > div:last-child { align-items:center !important; flex-wrap:nowrap !important; justify-content:flex-end !important; gap:6px !important; width:100%; }
+}
+@media (min-width:768px) and (max-width:1023px) { .menu-row .nav-bar > div:last-child { justify-content:space-between !important; } }
