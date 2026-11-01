@@ -2196,3 +2196,27 @@ html body.light-mode { --text:#0A1426; }
   .menu-row button[data-lbl]::after, .menu-row .side-fab span { display:none !important; }
   .menu-row .side-fab i, .menu-row .dash-fab i, .menu-row .nav-bar button i { font-size:.9rem; }
 }
+
+/* ===== v18: Menu Google Drive ===== */
+.drv-ok { display:flex; align-items:center; gap:8px; padding:9px 12px; margin-bottom:10px; border-radius:12px; font-size:.8rem; font-weight:800; color:#047857; background:rgba(16,185,129,.12); border:1px solid rgba(16,185,129,.4); }
+.drv-bar { height:9px; border-radius:99px; background:rgba(41,168,255,.2); overflow:hidden; margin:2px 0 6px; }
+.drv-bar span { display:block; height:100%; border-radius:99px; background:linear-gradient(90deg,#0078D4,#29A8FF); }
+.drv-list { display:flex; flex-direction:column; gap:8px; margin-top:10px; }
+.drv-row { display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:14px; background:var(--surface2); border:1px solid var(--border); }
+.drv-ic { flex:none; width:36px; height:36px; border-radius:11px; display:grid; place-items:center; color:#fff; font-size:.95rem; background:linear-gradient(135deg,#0078D4,#29A8FF); }
+.drv-nm { flex:1; min-width:0; display:flex; flex-direction:column; line-height:1.3; }
+.drv-nm b { font-size:.82rem; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text); }
+.drv-nm span { font-size:.7rem; font-weight:700; color:var(--text3); }
+.drv-act { flex:none; display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
+.drv-act a.btn { text-decoration:none; }
+.drv-pill { font-size:.68rem; font-weight:800; padding:4px 9px; border-radius:99px; background:rgba(245,158,11,.15); color:#B45309; border:1px solid rgba(245,158,11,.4); }
+.drv-form { display:flex; gap:8px; flex-wrap:wrap; }
+.drv-form input { flex:1; min-width:140px; }
+.drv-chk { display:flex; align-items:flex-start; gap:8px; margin:10px 0 2px; font-size:.78rem; font-weight:700; line-height:1.4; }
+.drv-chk input { width:18px; height:18px; flex:none; margin-top:1px; }
+.drv-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.drv-grid label { display:flex; flex-direction:column; gap:4px; font-size:.74rem; font-weight:800; color:var(--text2); }
+.drv-grid select, .drv-grid input { width:100%; }
+@media (max-width:360px) { .drv-row { flex-wrap:wrap; } .drv-act { width:100%; } }
+a.btn { text-decoration:none; }
+body.light-mode .drv-ok { color:#047857; }
