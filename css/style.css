@@ -2220,3 +2220,17 @@ html body.light-mode { --text:#0A1426; }
 @media (max-width:360px) { .drv-row { flex-wrap:wrap; } .drv-act { width:100%; } }
 a.btn { text-decoration:none; }
 body.light-mode .drv-ok { color:#047857; }
+
+/* ===== v19: bayar lebih dari 1 metode ===== */
+.spl-chk { display:flex; align-items:center; gap:8px; font-size:.8rem !important; font-weight:800; cursor:pointer; text-transform:none !important; letter-spacing:0 !important; }
+.spl-chk input { width:18px; height:18px; flex:none; }
+.spl-chk span { font-weight:700; color:var(--text3); font-size:.72rem; }
+#splitBox { margin-top:8px; padding:10px; border-radius:14px; background:var(--surface2); border:1px solid var(--border); }
+.spl-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.spl-nm { flex:none; width:92px; font-size:.78rem; font-weight:800; display:flex; align-items:center; gap:6px; }
+.spl-row input { flex:1; min-width:0; }
+.spl-fill { flex:none; padding:8px 12px; border-radius:10px; border:1px solid #29A8FF; background:rgba(41,168,255,.12); color:#0067B8; font-weight:800; font-size:.72rem; cursor:pointer; }
+.spl-sum { display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; padding:8px 10px; border-radius:10px; font-size:.76rem; font-weight:800; }
+.spl-sum.ok { background:rgba(16,185,129,.14); color:#047857; }
+.spl-sum.warn { background:rgba(245,158,11,.16); color:#B45309; }
+.spl-sum.bad { background:rgba(220,38,38,.14); color:#DC2626; }
