@@ -2234,3 +2234,5 @@ body.light-mode .drv-ok { color:#047857; }
 .spl-sum.ok { background:rgba(16,185,129,.14); color:#047857; }
 .spl-sum.warn { background:rgba(245,158,11,.16); color:#B45309; }
 .spl-sum.bad { background:rgba(220,38,38,.14); color:#DC2626; }
+
+.spl-badge { font-size:.72rem; font-weight:800; line-height:1.35; padding:5px 8px; border-radius:10px; background:rgba(41,168,255,.14); color:#0067B8; border:1px solid rgba(41,168,255,.4); white-space:nowrap; }
