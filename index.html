@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Tirta Kencana">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css?v=20261104a">
+  <link rel="stylesheet" href="css/style.css?v=20261104b">
   <style>
     /* [PERF] Optimasi scroll untuk HP RAM kecil.
        - overscroll-behavior-y:contain menahan efek "rubber-band" pantulan browser
@@ -210,6 +210,51 @@
       } catch (e) {}
       return a;
     }
+    // [PNG PANJANG -> BEBERAPA HALAMAN] Gambar yang sangat tinggi (mis. rekap per SKU) dikecilkan paksa oleh
+    // WhatsApp/galeri sehingga tulisan tidak terbaca. Unduhan PNG yang tingginya > ±1,7x lebarnya otomatis
+    // dipotong jadi beberapa gambar berukuran nyaman (dipotong di baris kosong, bukan di tengah tulisan).
+    (function () {
+      var origClick = HTMLAnchorElement.prototype.click;
+      function cutRow(ctx, W, H, target, lo, hi) {
+        var best = target, bestScore = 1e9;
+        for (var y = lo; y <= hi; y++) {
+          var d = ctx.getImageData(0, y, W, 1).data, dark = 0;
+          for (var i = 0; i < d.length; i += 16) { if (d[i] + d[i + 1] + d[i + 2] < 390) dark++; }
+          var score = dark * 1000 + Math.abs(y - target);
+          if (score < bestScore) { bestScore = score; best = y; if (dark === 0 && Math.abs(y - target) < 4) break; }
+        }
+        return best;
+      }
+      HTMLAnchorElement.prototype.click = function () {
+        var a = this, name = a.download || '', href = a.href || '';
+        if (a.__noSplit || !/\.png$/i.test(name) || href.indexOf('data:image/png') !== 0) return origClick.call(a);
+        var img = new Image();
+        img.onload = function () {
+          try {
+            var W = img.width, H = img.height, pageH = Math.round(W * 1.5);
+            if (H <= W * 1.7) return origClick.call(a);
+            var n = Math.ceil(H / pageH), ph = H / n;
+            var src = document.createElement('canvas'); src.width = W; src.height = H;
+            var sctx = src.getContext('2d', { willReadFrequently: true }); sctx.drawImage(img, 0, 0);
+            var cuts = [0];
+            for (var k = 1; k < n; k++) cuts.push(cutRow(sctx, W, H, Math.round(ph * k), Math.max(cuts[k - 1] + 100, Math.round(ph * k - ph * 0.18)), Math.min(H - 100, Math.round(ph * k + ph * 0.18))));
+            cuts.push(H);
+            var base = name.replace(/\.png$/i, '');
+            var i = 0;
+            (function next() {
+              if (i >= n) return;
+              var y0 = cuts[i], h = cuts[i + 1] - y0, c = document.createElement('canvas'); c.width = W; c.height = h;
+              c.getContext('2d').drawImage(src, 0, y0, W, h, 0, 0, W, h);
+              var b = document.createElement('a'); b.download = base + '-hal' + (i + 1) + 'dari' + n + '.png'; b.href = c.toDataURL('image/png'); b.__noSplit = 1;
+              document.body.appendChild(b); origClick.call(b); document.body.removeChild(b);
+              i++; setTimeout(next, 450);
+            })();
+          } catch (e) { origClick.call(a); }
+        };
+        img.onerror = function () { origClick.call(a); };
+        img.src = href;
+      };
+    })();
     function hqWrap(fn) {
       if (!fn || fn.__hq) return fn;
       var w = function () { return fn.apply(this, hqArgs(arguments)); };
@@ -454,6 +499,6 @@
     });
   })();
   </script>
-  <script src="js/app.js?v=20261104a" defer></script>
+  <script src="js/app.js?v=20261104b" defer></script>
 </body>
 </html>
