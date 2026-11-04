@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Tirta Kencana">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css?v=20261104c">
+  <link rel="stylesheet" href="css/style.css?v=20261105a">
   <style>
     /* [PERF] Optimasi scroll untuk HP RAM kecil.
        - overscroll-behavior-y:contain menahan efek "rubber-band" pantulan browser
@@ -212,7 +212,7 @@
     }
     // [PNG PANJANG -> BEBERAPA HALAMAN] Gambar yang sangat tinggi (mis. rekap per SKU) dikecilkan paksa oleh
     // WhatsApp/galeri sehingga tulisan tidak terbaca. Unduhan PNG yang tingginya > ±1,7x lebarnya otomatis
-    // dipotong jadi beberapa gambar berukuran nyaman (dipotong di baris kosong, bukan di tengah tulisan).
+    // digabung jadi SATU file PDF berhalaman A4 (dipotong di baris kosong, bukan di tengah tulisan).
     (function () {
       var origClick = HTMLAnchorElement.prototype.click;
       function cutRow(ctx, W, H, target, lo, hi) {
@@ -225,14 +225,36 @@
         }
         return best;
       }
+      function buildPdf(pages) {
+        var enc = new TextEncoder(), parts = [], len = 0, offs = [];
+        function add(x) { var u = typeof x === 'string' ? enc.encode(x) : x; parts.push(u); len += u.length; }
+        function obj(id, fn) { offs[id] = len; add(id + ' 0 obj\n'); fn(); add('\nendobj\n'); }
+        var PW = 595.28, N = 2 + pages.length * 3, kids = [];
+        add('%PDF-1.4\n');
+        pages.forEach(function (p, i) { kids.push((3 + i * 3) + ' 0 R'); });
+        obj(1, function () { add('<< /Type /Catalog /Pages 2 0 R >>'); });
+        obj(2, function () { add('<< /Type /Pages /Kids [' + kids.join(' ') + '] /Count ' + pages.length + ' >>'); });
+        pages.forEach(function (p, i) {
+          var po = 3 + i * 3, co = po + 1, io = po + 2, ph = (p.h * PW / p.w).toFixed(2);
+          obj(po, function () { add('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + PW + ' ' + ph + '] /Resources << /XObject << /Im0 ' + io + ' 0 R >> >> /Contents ' + co + ' 0 R >>'); });
+          var cs = 'q ' + PW + ' 0 0 ' + ph + ' 0 0 cm /Im0 Do Q';
+          obj(co, function () { add('<< /Length ' + cs.length + ' >>\nstream\n' + cs + '\nendstream'); });
+          obj(io, function () { add('<< /Type /XObject /Subtype /Image /Width ' + p.w + ' /Height ' + p.h + ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + p.jpg.length + ' >>\nstream\n'); add(p.jpg); add('\nendstream'); });
+        });
+        var xr = len; add('xref\n0 ' + (N + 1) + '\n0000000000 65535 f \n');
+        for (var k = 1; k <= N; k++) add(('0000000000' + offs[k]).slice(-10) + ' 00000 n \n');
+        add('trailer\n<< /Size ' + (N + 1) + ' /Root 1 0 R >>\nstartxref\n' + xr + '\n%%EOF');
+        var out = new Uint8Array(len), pos = 0; parts.forEach(function (u) { out.set(u, pos); pos += u.length; });
+        return out;
+      }
       HTMLAnchorElement.prototype.click = function () {
         var a = this, name = a.download || '', href = a.href || '';
         if (a.__noSplit || !/\.png$/i.test(name) || href.indexOf('data:image/png') !== 0) return origClick.call(a);
         var img = new Image();
         img.onload = function () {
           try {
-            var W = img.width, H = img.height, pageH = Math.round(W * 1.5);
-            if (H <= W * 1.7) return origClick.call(a);
+            var W = img.width, H = img.height, pageH = Math.round(W * 1.414);
+            if (H <= W * 1.6) return origClick.call(a);
             var n = Math.ceil(H / pageH), ph = H / n;
             var src = document.createElement('canvas'); src.width = W; src.height = H;
             var sctx = src.getContext('2d', { willReadFrequently: true }); sctx.drawImage(img, 0, 0);
@@ -240,15 +262,18 @@
             for (var k = 1; k < n; k++) cuts.push(cutRow(sctx, W, H, Math.round(ph * k), Math.max(cuts[k - 1] + 100, Math.round(ph * k - ph * 0.18)), Math.min(H - 100, Math.round(ph * k + ph * 0.18))));
             cuts.push(H);
             var base = name.replace(/\.png$/i, '');
-            var i = 0;
-            (function next() {
-              if (i >= n) return;
-              var y0 = cuts[i], h = cuts[i + 1] - y0, c = document.createElement('canvas'); c.width = W; c.height = h;
-              c.getContext('2d').drawImage(src, 0, y0, W, h, 0, 0, W, h);
-              var b = document.createElement('a'); b.download = base + '-hal' + (i + 1) + 'dari' + n + '.png'; b.href = c.toDataURL('image/png'); b.__noSplit = 1;
-              document.body.appendChild(b); origClick.call(b); document.body.removeChild(b);
-              i++; setTimeout(next, 450);
-            })();
+            var pages = [];
+            for (var q = 0; q < n; q++) {
+              var y0 = cuts[q], h = cuts[q + 1] - y0, c = document.createElement('canvas'); c.width = W; c.height = h;
+              var cx = c.getContext('2d'); cx.fillStyle = '#ffffff'; cx.fillRect(0, 0, W, h); cx.drawImage(src, 0, y0, W, h, 0, 0, W, h);
+              var b64 = c.toDataURL('image/jpeg', 0.95).split(',')[1], bin = atob(b64), u8 = new Uint8Array(bin.length);
+              for (var z = 0; z < bin.length; z++) u8[z] = bin.charCodeAt(z);
+              pages.push({ w: W, h: h, jpg: u8 });
+            }
+            var pdf = buildPdf(pages);
+            var b = document.createElement('a'); b.download = base + '.pdf'; b.href = URL.createObjectURL(new Blob([pdf], { type: 'application/pdf' })); b.__noSplit = 1;
+            document.body.appendChild(b); origClick.call(b); document.body.removeChild(b);
+            setTimeout(function () { URL.revokeObjectURL(b.href); }, 60000);
           } catch (e) { origClick.call(a); }
         };
         img.onerror = function () { origClick.call(a); };
@@ -499,6 +524,6 @@
     });
   })();
   </script>
-  <script src="js/app.js?v=20261104c" defer></script>
+  <script src="js/app.js?v=20261105a" defer></script>
 </body>
 </html>
