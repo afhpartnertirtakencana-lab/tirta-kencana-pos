@@ -1765,14 +1765,14 @@
     // Data diambil dari allTrxList (sumber yang sama dengan menu Rekap), difilter hari ini + status terkait.
     function showDashboardStatusDetail(status) {
       const today = localDateStr();
-      const todayTx = allTrxList.filter(t => (t.tgl||'').substring(0,10) === today && t.status === status);
+      const todayTx = allTrxList.filter(t => (t.tgl||'').substring(0,10) === today && _inMetode(t, status));
       const meta = { cod:{l:'COD', ic:'fa-hand-holding-dollar', tone:'cod'}, transfer:{l:'Transfer', ic:'fa-building-columns', tone:'transfer'}, qris:{l:'QRIS', ic:'fa-qrcode', tone:'qris'}, belumTransfer:{l:'Belum Bayar', ic:'fa-clock', tone:'belum'} }[status] || {l:status, ic:'fa-receipt', tone:''};
       const grouped = {};
       todayTx.forEach(t => { const k = t.sales || '—'; (grouped[k] = grouped[k] || []).push(t); });
       let grand = 0;
       const secs = Object.keys(grouped).sort().map(k => {
-        const rows = grouped[k].map(t => ({ n:esc(t.customer||'-'), sub: esc(t.id||''), q:fmtRp(t.nett||0) }));
-        const sub = grouped[k].reduce((a,t)=>a+(t.nett||0),0); grand += sub;
+        const rows = grouped[k].map(t => ({ n:esc(t.customer||'-'), sub: esc(t.id||'') + (_payText(t) ? ' · ' + esc(_payText(t)) : ''), q:fmtRp(_metodeAmt(t, status)) }));
+        const sub = grouped[k].reduce((a,t)=>a+_metodeAmt(t, status),0); grand += sub;
         return { title:'<i class="fas fa-user-tie"></i> '+esc(k), badge:grouped[k].length+' transaksi', rows, total:{ l:'Subtotal', v:fmtRp(sub) } };
       });
       _dxPop({ icon:meta.ic, tone:meta.tone, title:meta.l+' Hari Ini', sub:esc(fmtDate(today)),
@@ -2767,6 +2767,14 @@
       if (st === 'belumtransfer') r.belum += Math.max(0, rest); else r[(st === 'transfer' || st === 'qris') ? st : 'cod'] += rest;
       return r;
     }
+    // nilai transaksi pada satu kategori (cod/transfer/qris/belumTransfer) - transaksi bayar campur masuk ke SEMUA kategori yang dipakainya
+    function _metodeAmt(t, m) { const b = _payBreak(t); return m === 'belumTransfer' || m === 'belum' ? b.belum : (b[m] || 0); }
+    function _inMetode(t, m) {
+      const k = String(m || '').toLowerCase().replace(/[\s_]/g, '') === 'belumtransfer' ? 'belumTransfer' : String(m || '').toLowerCase();
+      const st = String(t.status || '').toLowerCase().replace(/\s/g, '');
+      if (st === k.toLowerCase()) return true;
+      return _metodeAmt(t, k) > 0;
+    }
     function _payText(t) {
       const cs = (cicilanList || []).filter(c => c.trxId === t.id);
       if (cs.length < 2 && !(cs.length === 1 && String(t.status||'').toLowerCase().replace(/\s/g,'') === 'belumtransfer')) return '';
@@ -3046,7 +3054,7 @@
       const tgl = document.getElementById('setorTgl').value; const sales = document.getElementById('setorSales').value; 
       if (!tgl || !sales) return Swal.fire('Error','Pilih tanggal & sales!','error'); 
       const filtered = allTrxList.filter(t => (t.tgl||'').substring(0,10) === tgl && (t.sales||'').toLowerCase().trim() === sales.toLowerCase().trim()); 
-      const grand = filtered.filter(t=>t.status==='cod').reduce((s,t)=>s+(t.nett||0),0); 
+      const grand = filtered.reduce((s,t)=>s+_metodeAmt(t,'cod'),0); // termasuk bagian COD dari transaksi bayar campur 
       // [NEW] Sync riwayat setoran dari Google Sheets dulu, lalu cek apakah tgl & sales ini sudah pernah disimpan
       document.getElementById('setoranContent').innerHTML = '<div class="text-center text-sm" style="padding:30px">Mengambil data dari Google Sheets...</div>';
       try { await syncSetoranHistoryFromGAS(); } catch(e) {}
@@ -3426,13 +3434,13 @@
       const c = document.getElementById('txHeroCount'); if (c) c.textContent = list.length + ' transaksi · ' + fmtDate(localDateStr());
       const st = document.getElementById('txStats'); if (!st) return;
       const defs = [['cod','COD','fa-hand-holding-usd'],['transfer','Transfer','fa-university'],['qris','QRIS','fa-qrcode'],['belumTransfer','Belum','fa-clock']];
-      st.innerHTML = defs.map(([k,l,ic]) => { const rows = list.filter(t => t.status === k); return `<div class="tx-stat-i ${k}"><i class="fas ${ic}"></i><div><b>${rows.length}</b><span>${l}</span></div></div>`; }).join('');
+      st.innerHTML = defs.map(([k,l,ic]) => { const rows = list.filter(t => _inMetode(t, k)); return `<div class="tx-stat-i ${k}"><i class="fas ${ic}"></i><div><b>${rows.length}</b><span>${l}</span></div></div>`; }).join('');
     }
     function filterTrx() {
       const q = (document.getElementById('trxSearch')?.value || '').toLowerCase(), st = (document.getElementById('trxFilterStatus')?.value || '').toLowerCase().replace(/\s/g,''), salesFilter = (document.getElementById('trxFilterSales')?.value || '').toLowerCase().trim();
       let filtered = allTrxList;
       if (q) filtered = filtered.filter(t => (t.id||'').toLowerCase().includes(q) || (t.customer||'').toLowerCase().includes(q));
-      if (st) filtered = filtered.filter(t => (t.status||'').toLowerCase().replace(/\s/g,'') === st);
+      if (st) filtered = filtered.filter(t => _inMetode(t, st));
       if (salesFilter) filtered = filtered.filter(t => (t.sales||'').toLowerCase().trim() === salesFilter);
       renderTrxTable(filtered);
     }
@@ -3459,7 +3467,7 @@
     }
     function pgGoto(key, page) { _pgState[key] = page; const fn = window['_pgRerender_' + key]; if (typeof fn === 'function') fn(); }
 
-    function renderTrxTable(filtered = allTrxList, _pgKeep = false) { const tb = document.getElementById('trxTbody'); if (!tb) return; try { _txUpdateHero(filtered); } catch(e) {} if (!_pgKeep) pgReset('trx'); window._pgRerender_trx = () => renderTrxTable(filtered, true); if (!filtered.length) { tb.innerHTML = '<tr><td colspan="9" class="text-center text-sm" style="padding:32px">Tidak ada transaksi</td></tr>'; const pb0 = document.getElementById('trxPaginationBar'); if (pb0) pb0.innerHTML = ''; return; } try { _txUpdateHero(filtered); } catch(e) {} const _pg = pgSlice(filtered, 'trx', 25); const pb = document.getElementById('trxPaginationBar'); if (pb) pb.innerHTML = pgBar('trx', _pg.page, _pg.totalPages, _pg.total, _pg.pageSize); const _isAdmin = currentUser?.role === 'admin'; tb.innerHTML = _pg.items.map(t => `<tr class="tx-row st-${esc(t.status||'')}"><td data-label="ID" class="tx-id">${esc(t.id)}${_pendingChip(t.id)}</td><td data-label="Tanggal" class="tx-tgl">${fmtDate(t.tgl)}</td><td data-label="Customer" class="tx-cust">${esc(t.customer||'-')}</td><td data-label="Sales" class="tx-sales">${esc(t.sales||'-')}</td><td data-label="Gross" class="tx-num">${fmtRp(t.gross)}</td><td data-label="Diskon" class="tx-num tx-disc">${fmtRp(t.diskon)}</td><td data-label="Nett" class="tx-nett">${fmtRp(t.nett)}</td><td data-label="Status" class="tx-stat"><select class="form-control tx-sel" onchange="updateTrxStatus('${esc(t.id).replace(/'/g,"\\'")}', this.value)"><option value="cod" ${t.status==='cod'?'selected':''}>COD</option><option value="transfer" ${t.status==='transfer'?'selected':''}>Transfer</option><option value="qris" ${t.status==='qris'?'selected':''}>QRIS</option><option value="belumTransfer" ${t.status==='belumTransfer'?'selected':''}>Belum</option></select></td><td data-label="" class="tx-act"><button class="btn tx-b tx-b-print btn-primary" onclick="cetakUlangStruk('${esc(t.id).replace(/'/g,"\\'")}')">🧾 Cetak</button>${_isAdmin ? `<button class="btn tx-b tx-b-edit btn-outline" onclick="editTrx('${esc(t.id).replace(/'/g,"\\'")}')">✏️ Edit</button><button class="btn tx-b tx-b-edit btn-outline" onclick="returUI('${esc(t.id).replace(/'/g,"\\'")}')">↩ Retur</button>` : ''}<button class="btn tx-b tx-b-del" title="${_trxLockInfo(t) ? 'Terkunci: setoran sudah ditutup' : 'Hapus transaksi'}" aria-label="Hapus transaksi" onclick="deleteTrx('${esc(t.id).replace(/'/g,"\\'")}')">${_trxLockInfo(t) ? '🔒' : '🗑'}</button></td></tr>`).join(''); }
+    function renderTrxTable(filtered = allTrxList, _pgKeep = false) { const tb = document.getElementById('trxTbody'); if (!tb) return; try { _txUpdateHero(filtered); } catch(e) {} if (!_pgKeep) pgReset('trx'); window._pgRerender_trx = () => renderTrxTable(filtered, true); if (!filtered.length) { tb.innerHTML = '<tr><td colspan="9" class="text-center text-sm" style="padding:32px">Tidak ada transaksi</td></tr>'; const pb0 = document.getElementById('trxPaginationBar'); if (pb0) pb0.innerHTML = ''; return; } try { _txUpdateHero(filtered); } catch(e) {} const _pg = pgSlice(filtered, 'trx', 25); const pb = document.getElementById('trxPaginationBar'); if (pb) pb.innerHTML = pgBar('trx', _pg.page, _pg.totalPages, _pg.total, _pg.pageSize); const _isAdmin = currentUser?.role === 'admin'; tb.innerHTML = _pg.items.map(t => `<tr class="tx-row st-${esc(t.status||'')}"><td data-label="ID" class="tx-id">${esc(t.id)}${_pendingChip(t.id)}</td><td data-label="Tanggal" class="tx-tgl">${fmtDate(t.tgl)}</td><td data-label="Customer" class="tx-cust">${esc(t.customer||'-')}</td><td data-label="Sales" class="tx-sales">${esc(t.sales||'-')}</td><td data-label="Gross" class="tx-num">${fmtRp(t.gross)}</td><td data-label="Diskon" class="tx-num tx-disc">${fmtRp(t.diskon)}</td><td data-label="Nett" class="tx-nett">${fmtRp(t.nett)}</td><td data-label="Status" class="tx-stat">${_payText(t) ? `<div class="spl-badge">${esc(_payText(t)).split(' + ').join('<br>')}</div>` : ''}<select class="form-control tx-sel" ${_payText(t) ? 'style="display:none"' : ''} onchange="updateTrxStatus('${esc(t.id).replace(/'/g,"\\'")}', this.value)"><option value="cod" ${t.status==='cod'?'selected':''}>COD</option><option value="transfer" ${t.status==='transfer'?'selected':''}>Transfer</option><option value="qris" ${t.status==='qris'?'selected':''}>QRIS</option><option value="belumTransfer" ${t.status==='belumTransfer'?'selected':''}>Belum</option></select></td><td data-label="" class="tx-act"><button class="btn tx-b tx-b-print btn-primary" onclick="cetakUlangStruk('${esc(t.id).replace(/'/g,"\\'")}')">🧾 Cetak</button>${_isAdmin ? `<button class="btn tx-b tx-b-edit btn-outline" onclick="editTrx('${esc(t.id).replace(/'/g,"\\'")}')">✏️ Edit</button><button class="btn tx-b tx-b-edit btn-outline" onclick="returUI('${esc(t.id).replace(/'/g,"\\'")}')">↩ Retur</button>` : ''}<button class="btn tx-b tx-b-del" title="${_trxLockInfo(t) ? 'Terkunci: setoran sudah ditutup' : 'Hapus transaksi'}" aria-label="Hapus transaksi" onclick="deleteTrx('${esc(t.id).replace(/'/g,"\\'")}')">${_trxLockInfo(t) ? '🔒' : '🗑'}</button></td></tr>`).join(''); }
 
     async function cetakUlangStruk(id) {
       let trx = allTrxList.find(t => t.id === id);
@@ -3704,8 +3712,8 @@
       let rows=[], wsName='Rekap';
       if (jenis==='cod'||jenis==='transfer'||jenis==='qris'||jenis==='belum_transfer') {
         const statusKey = jenis==='belum_transfer'?'belumTransfer':jenis;
-        const sf = filtered2.filter(t=>(t.status||'').toLowerCase().replace(/\s/g,'')===statusKey.toLowerCase().replace(/\s/g,''));
-        rows = [['Customer','Total'],...sf.map(t=>[t.customer, t.nett||0])];
+        const sf = filtered2.filter(t=>_inMetode(t, statusKey));
+        rows = [['Customer','Total'],...sf.map(t=>[t.customer, _metodeAmt(t, statusKey) || t.nett||0])];
         wsName = jenis.toUpperCase();
       } else if (jenis==='laporan_per_sales') {
         const agg={};
@@ -6010,21 +6018,15 @@
         // [FIX] Sebelumnya memakai field paymentMethod/statusBayar yang TIDAK PERNAH ADA di objek transaksi
         // (field yang benar & dipakai konsisten di seluruh aplikasi adalah t.status: 'cod'/'transfer'/'qris'/'belumTransfer'),
         // sehingga COD & Transfer selalu kosong dan Belum Transfer malah menampilkan SEMUA transaksi.
-        const statusFiltered = filtered.filter(t => {
-          const st = (t.status||'belumTransfer').toLowerCase().trim();
-          if (jenis === 'cod') return st === 'cod';
-          if (jenis === 'transfer') return st === 'transfer';
-          if (jenis === 'qris') return st === 'qris';
-          if (jenis === 'belum_transfer') return st === 'belumtransfer' || st === '';
-          return false;
-        });
+        const _mk = jenis === 'belum_transfer' ? 'belumTransfer' : jenis;
+        const statusFiltered = filtered.filter(t => (!String(t.status||'').trim() && _mk === 'belumTransfer') || _inMetode(t, _mk));
         const statusLabel = jenis==='cod'?'COD':jenis==='transfer'?'Transfer':jenis==='qris'?'QRIS':'Belum Transfer';
         const custAgg = {};
         statusFiltered.forEach(t => {
           if (!custAgg[t.customer]) custAgg[t.customer]=0;
-          custAgg[t.customer]+=(t.nett||0);
+          custAgg[t.customer]+=_metodeAmt(t, _mk) || (t.nett||0) * (String(t.status||'').trim() ? 0 : 1);
         });
-        const total = statusFiltered.reduce((s,t)=>s+(t.nett||0),0);
+        const total = Object.values(custAgg).reduce((s,v)=>s+v,0);
         const rows = Object.entries(custAgg).sort((a,b)=>a[0].localeCompare(b[0]));
         h = `<div class="card"><div class="card-title"><i class="fas fa-money-bill-wave"></i> ${statusLabel}</div>${labelFilter}<div class="flex-between" style="margin-top:6px;margin-bottom:8px;font-weight:800;color:var(--biru)"><span>Total</span><span style="font-family:var(--mono)">${fmtRp(total)}</span></div>`;
         if (!rows.length) { h += '<p class="text-center text-sm">Tidak ada transaksi ' + statusLabel + '</p></div>'; }
