@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Tirta Kencana">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css?v=20261102b">
+  <link rel="stylesheet" href="css/style.css?v=20261104a">
   <style>
     /* [PERF] Optimasi scroll untuk HP RAM kecil.
        - overscroll-behavior-y:contain menahan efek "rubber-band" pantulan browser
@@ -196,6 +196,26 @@
       XLSX: 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'
     };
     var done = {}, shims = {};
+    // [KUALITAS PNG] semua cetak PNG lewat html2canvas -> paksa resolusi tinggi (tulisan tajam, tidak pecah).
+    // Skala 4x (±1600 px untuk struk lebar 400 px), otomatis diturunkan kalau gambar terlalu besar
+    // supaya tidak melewati batas canvas HP (±16 juta piksel / 16000 px per sisi).
+    function hqArgs(a) {
+      try {
+        var el = a[0], o = Object.assign({}, a[1] || {}), r = el.getBoundingClientRect();
+        var w = Math.max(el.scrollWidth || 0, r.width, 1), h = Math.max(el.scrollHeight || 0, r.height, 1);
+        var cap = Math.min(Math.sqrt(15e6 / (w * h)), 15000 / Math.max(w, h));
+        o.scale = Math.max(1.5, Math.min(4, cap));
+        o.imageTimeout = 20000;
+        a = [el, o].concat(Array.prototype.slice.call(a, 2));
+      } catch (e) {}
+      return a;
+    }
+    function hqWrap(fn) {
+      if (!fn || fn.__hq) return fn;
+      var w = function () { return fn.apply(this, hqArgs(arguments)); };
+      try { Object.keys(fn).forEach(function (k) { w[k] = fn[k]; }); } catch (e) {}
+      w.__hq = 1; return w;
+    }
     function real(n) { var v = window[n]; return (v && v !== shims[n]) ? v : null; }
     function syncLoad(n) { // dipakai hanya bila fitur dipakai SEBELUM pemuatan latar belakang selesai
       if (real(n)) return real(n);
@@ -205,13 +225,14 @@
       try { delete window[n]; } catch (e) {}
       (0, eval)(x.responseText);
       var r = real(n); if (!r) { window[n] = shims[n]; throw new Error('Library ' + n + ' gagal dimuat'); }
+      if (n === 'html2canvas') { r = window[n] = hqWrap(r); }
       done[n] = 1; return r;
     }
     Object.keys(LIBS).forEach(function (n) {
       var shim = new Proxy(function () {}, {
         get: function (t, k) { return syncLoad(n)[k]; },
         has: function (t, k) { return k in syncLoad(n); },
-        apply: function (t, th, a) { return Reflect.apply(syncLoad(n), th, a); },
+        apply: function (t, th, a) { return Reflect.apply(syncLoad(n), th, n === 'html2canvas' ? hqArgs(a) : a); },
         construct: function (t, a) { return Reflect.construct(syncLoad(n), a); }
       });
       shims[n] = shim; window[n] = shim;
@@ -221,7 +242,7 @@
       var n = names[i];
       if (real(n)) return bg(names, i + 1);
       var s = document.createElement('script'); s.src = LIBS[n]; s.async = true;
-      s.onload = s.onerror = function () { setTimeout(function () { bg(names, i + 1); }, 400); };
+      s.onload = s.onerror = function () { if (n === 'html2canvas' && real(n)) window[n] = hqWrap(window[n]); setTimeout(function () { bg(names, i + 1); }, 400); };
       document.head.appendChild(s);
     }
     window.addEventListener('load', function () {
@@ -433,6 +454,6 @@
     });
   })();
   </script>
-  <script src="js/app.js?v=20261102b" defer></script>
+  <script src="js/app.js?v=20261104a" defer></script>
 </body>
 </html>
