@@ -1914,18 +1914,18 @@
         });
       } else {
         const L = '━━━━━━━━━━━━━━━━━━━━━━';
-        const lines = ['📊 *' + p.waTitle + '*', '*' + (settings.namaToko || 'Tirta Kencana') + '*', L, p.waSub, L];
+        const lines = _waHead('📊', p.waTitle, p.waSub ? ['🗓️ ' + p.waSub] : []);
         if (!p.sections || p.allStats) { p.stats.forEach(x => lines.push(x.l + ': ' + x.v)); }
         else lines.push('Total Modal: ' + p.stats[0].v);
         lines.push(L);
         if (p.sections) {
-          p.sections.forEach(sc => { lines.push('*' + sc.plainTitle + '*'); sc.rows.forEach((r, i) => { lines.push((i + 1) + '. ' + r.nPlain + ' — ' + r.q + (r.v ? ' (' + r.v + ')' : '')); if (r.subPlain) lines.push('    ' + r.subPlain); }); if (sc.total) lines.push('_' + sc.total.l + ': ' + sc.total.v + '_'); lines.push(''); });
+          p.sections.forEach(sc => { lines.push('📍 *' + sc.plainTitle + '*'); sc.rows.forEach((r, i) => { lines.push((i + 1) + '. ' + r.nPlain + ' — *' + r.q + '*' + (r.v ? ' (' + r.v + ')' : '')); if (r.subPlain) lines.push('    ' + r.subPlain); }); if (sc.total) lines.push('_' + sc.total.l + ': ' + sc.total.v + '_'); lines.push(''); });
           lines.push(L, '*' + p.total.l + ': ' + p.total.v + '*');
         } else {
-        p.rows.forEach((r, i) => lines.push((i + 1) + '. ' + r.nPlain + ' — ' + r.q + (r.v ? ' (' + r.v + ')' : '')));
+        p.rows.forEach((r, i) => lines.push((i + 1) + '. ' + r.nPlain + ' — *' + r.q + '*' + (r.v ? ' (' + r.v + ')' : '')));
         lines.push(L, '*' + p.total.l + ': ' + p.total.v + '*');
         }
-        window.open('https://wa.me/?text=' + encodeURIComponent(lines.join('\n')), '_blank');
+        _waOpen(lines);
       }
     }
 
@@ -3871,12 +3871,10 @@
       if (!_lastPiutangCustomerPayload) return;
       const p = _lastPiutangCustomerPayload;
       const agingLabel = window._piutangAgingLabel || (() => ({label:'-'}));
-      let lines = ['📋 *REKAP PIUTANG PER CUSTOMER*', '*'+(settings.namaToko||'Tirta Kencana')+'*', '━━━━━━━━━━━━━━━━━━━━━━'];
-      lines.push('Tanggal: ' + fmtDate(p.date));
-      lines.push('━━━━━━━━━━━━━━━━━━━━━━');
-      p.rows.forEach(r => { const ag = agingLabel(r.oldest); lines.push(r.customer + ': ' + fmtRp(r.total) + ' (' + r.count + 'x, ' + ag.label + ')'); });
-      lines.push('━━━━━━━━━━━━━━━━━━━━━━', '*TOTAL: ' + fmtRp(p.total) + '*');
-      window.open('https://wa.me/?text=' + encodeURIComponent(lines.join('\n')), '_blank');
+      let lines = _waHead('💳', 'REKAP PIUTANG PER CUSTOMER', ['📅 ' + fmtDate(p.date)]);
+      p.rows.forEach((r, i) => { const ag = agingLabel(r.oldest); if (i) lines.push(''); lines.push('📍 *' + r.customer + '*', '   ' + fmtRp(r.total) + ' · ' + r.count + ' transaksi', '   ⏳ ' + ag.label); });
+      lines.push('', _WAL, '💰 *TOTAL PIUTANG: ' + fmtRp(p.total) + '*', '_' + p.rows.length + ' customer_');
+      _waOpen(lines);
     }
 
     // ---- Cetak Detail Transaksi Belum Bayar (Print / PNG / WhatsApp) ----
@@ -3938,12 +3936,10 @@
     function doPiutangDetailWA() {
       if (!_lastPiutangDetailPayload) return;
       const p = _lastPiutangDetailPayload;
-      let lines = ['📋 *DETAIL TRANSAKSI BELUM BAYAR*', '*'+(settings.namaToko||'Tirta Kencana')+'*', '━━━━━━━━━━━━━━━━━━━━━━'];
-      lines.push('Tanggal: ' + fmtDate(p.date) + ' · ' + p.sales);
-      lines.push('━━━━━━━━━━━━━━━━━━━━━━');
-      p.rows.forEach(r => lines.push(r.customer + ' (' + fmtDate(r.tgl) + '): ' + fmtRp(r.nett) + ' - ' + r.aging));
-      lines.push('━━━━━━━━━━━━━━━━━━━━━━', '*TOTAL: ' + fmtRp(p.total) + '*');
-      window.open('https://wa.me/?text=' + encodeURIComponent(lines.join('\n')), '_blank');
+      let lines = _waHead('💳', 'DETAIL TRANSAKSI BELUM BAYAR', ['📅 ' + fmtDate(p.date) + ' · 👤 ' + p.sales]);
+      p.rows.forEach((r, i) => { if (i) lines.push(''); lines.push('📍 *' + r.customer + '*', '   📅 ' + fmtDate(r.tgl) + ' · ' + fmtRp(r.nett), '   ⏳ ' + r.aging); });
+      lines.push('', _WAL, '💰 *TOTAL: ' + fmtRp(p.total) + '*');
+      _waOpen(lines);
     }
 
     function filterPiutangTable() {
@@ -6167,14 +6163,17 @@
       // baris) supaya tidak perlu bikin format teks terpisah untuk tiap 10 jenis laporan.
       const tmp = document.createElement('div');
       tmp.innerHTML = _lastRekapPayload.tableHtml;
-      const lines = ['📊 *' + _lastRekapPayload.jenisLabel.toUpperCase() + '*', '*' + (settings.namaToko||'Tirta Kencana') + '*', _lastRekapPayload.filterLabel, '━━━━━━━━━━━━━━━━━━━━━━'];
+      const lines = _waHead('📊', _lastRekapPayload.jenisLabel.toUpperCase(), _lastRekapPayload.filterLabel ? ['🔎 ' + _lastRekapPayload.filterLabel] : []);
       tmp.querySelectorAll('table').forEach(table => {
         table.querySelectorAll('tr').forEach(tr => {
           const cells = Array.from(tr.children).map(td => td.textContent.trim()).filter(Boolean);
-          if (cells.length) lines.push(cells.join(' | '));
+          if (!cells.length) return;
+          if (tr.querySelector('th')) lines.push('_' + cells.join(' · ') + '_', '');
+          else if (cells.length === 1) lines.push('*' + cells[0] + '*');
+          else lines.push('▪️ *' + cells[0] + '* — ' + cells.slice(1).join(' · '));
         });
       });
-      window.open('https://wa.me/?text=' + encodeURIComponent(lines.join('\n')), '_blank');
+      _waOpen(lines);
     }
 
     // ========== REKAP INPUT (dengan tabel detail bisa edit qty & status) ==========
@@ -6253,7 +6252,14 @@
     }
     function doInputBarangPrint() { if (!_lastInputBarangStruk) return; const win = window.open('','_blank','width=420,height=700'); win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"><title>Struk Input Barang</title></head><body style="margin:16px;background:#e8f2f9;display:flex;justify-content:center">'); win.document.write(buildStrukInputBarangHTML(_lastInputBarangStruk)); win.document.write('<script>window.onload=function(){window.print();}<\/script></body></html>'); win.document.close(); }
     function doInputBarangPng() { if (!_lastInputBarangStruk) return; const off = document.getElementById('strukOffscreen'); off.style.cssText = 'position:fixed;left:-9999px;top:0;pointer-events:none;z-index:-1;background:#e8f2f9;padding:20px'; off.innerHTML = buildStrukInputBarangHTML(_lastInputBarangStruk); const el = off.querySelector('#inputbarang-root'); if (!el) return Swal.fire('Error','Gagal render','error'); setTimeout(() => { html2canvas(el, {backgroundColor:'#e8f2f9',scale:2.5,useCORS:true,allowTaint:true,logging:false}).then(canvas => { const a = document.createElement('a'); a.download = 'InputBarang-'+(_lastInputBarangStruk.id||'item')+'.png'; a.href = canvas.toDataURL('image/png'); document.body.appendChild(a); a.click(); document.body.removeChild(a); off.innerHTML = ''; Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, icon: 'success', title: 'Struk tersimpan' }); }).catch(err => { off.innerHTML=''; Swal.fire('Error',err.message,'error'); }); }, 400); }
-    function doInputBarangWA() { if (!_lastInputBarangStruk) return; const s = _lastInputBarangStruk; const disc = s.disc || 0; const netModal = (s.hargaModal - disc) * s.qty; let lines = ['📦 *INPUT BARANG*','*'+(settings.namaToko||'Tirta Kencana')+'*','━━━━━━━━━━━━━━━━━━━━━━']; lines.push('ID: *'+s.id+'*'); lines.push('Tgl: '+fmtDate(s.date||s.tgl||'')); lines.push('SKU: '+s.sku+' - '+(s.nama||'')); lines.push('Qty: '+s.qty); lines.push('Harga Modal: Rp '+Number(s.hargaModal||0).toLocaleString('id-ID')); if (disc) lines.push('Disc: -Rp '+Number(disc).toLocaleString('id-ID')); lines.push('Driver: '+(s.driver||'-')+' (Rit '+(s.rit||'-')+')'); lines.push('Status: *'+(s.status||'-').toUpperCase()+'*'); lines.push('━━━━━━━━━━━━━━━━━━━━━━'); lines.push('*NET MODAL : Rp '+Number(netModal).toLocaleString('id-ID')+'*'); window.open('https://wa.me/?text='+encodeURIComponent(lines.join('\n')),'_blank'); }
+    function doInputBarangWA() {
+      if (!_lastInputBarangStruk) return; const s = _lastInputBarangStruk, disc = s.disc || 0, netModal = (s.hargaModal - disc) * s.qty, rp = n => 'Rp ' + Number(n||0).toLocaleString('id-ID');
+      const lines = _waHead('📦', 'INPUT BARANG', ['📅 ' + fmtDate(s.date||s.tgl||'')]);
+      lines.push('🔖 ID: *' + s.id + '*', '📦 ' + s.sku + ' - ' + (s.nama||''), '🔢 Qty: *' + s.qty + '*', '💵 Harga modal: ' + rp(s.hargaModal));
+      if (disc) lines.push('🏷️ Disc: -' + rp(disc));
+      lines.push('🚚 Driver: ' + (s.driver||'-') + ' (Rit ' + (s.rit||'-') + ')', '📌 Status: *' + (s.status||'-').toUpperCase() + '*', _WAL, '💰 *NET MODAL: ' + rp(netModal) + '*');
+      _waOpen(lines);
+    }
 
     // ========== INPUT BARANG ==========
     function loadInputBarang() { 
@@ -6873,16 +6879,14 @@
     function doCekStockWA() {
       if (!_lastCekStockPayload) return;
       const p = _lastCekStockPayload;
-      let lines = ['🧾 *LAPORAN CEK STOCK*', '*'+(settings.namaToko||'Tirta Kencana')+'*', '━━━━━━━━━━━━━━━━━━━━━━'];
-      lines.push('Tanggal: ' + fmtDate(p.date));
-      lines.push('━━━━━━━━━━━━━━━━━━━━━━');
-      p.rows.forEach(r => {
-        const status = r.hasVal ? (r.selisih === 0 ? '✅' : '⚠️') : '⏳';
-        lines.push(status + ' ' + r.nama + ': Stock ' + r.stock + ', Cek ' + (r.hasVal ? r.cekStock : '-') + ', Selisih ' + (r.hasVal ? (r.selisih>0?'+':'')+r.selisih : '-'));
+      let lines = _waHead('🧾', 'LAPORAN CEK STOCK', ['📅 ' + fmtDate(p.date)]);
+      p.rows.forEach((r, i) => {
+        const st = r.hasVal ? (r.selisih === 0 ? '✅' : '⚠️') : '⏳';
+        if (i) lines.push('');
+        lines.push(st + ' *' + r.nama + '*', '   Stock ' + r.stock + ' · Cek ' + (r.hasVal ? r.cekStock : '-') + ' · Selisih ' + (r.hasVal ? (r.selisih>0?'+':'')+r.selisih : '-'));
       });
-      lines.push('━━━━━━━━━━━━━━━━━━━━━━');
-      lines.push('✅ Cocok: ' + p.cocokCount + ' | ⚠️ Cek Lagi: ' + p.cekLagiCount + ' | Belum: ' + p.belumCount);
-      window.open('https://wa.me/?text=' + encodeURIComponent(lines.join('\n')), '_blank');
+      lines.push('', _WAL, '✅ Cocok: *' + p.cocokCount + '*', '⚠️ Cek lagi: *' + p.cekLagiCount + '*', '⏳ Belum dicek: *' + p.belumCount + '*');
+      _waOpen(lines);
     }
 
     // ========== CEK KOSONGAN (GALON KOSONG: TOKO/MOBIL/TITIPAN/PINJAMAN) ==========
@@ -7129,15 +7133,12 @@
     function doCekKosonganWA() {
       if (!_lastCekKosonganPayload) return;
       const p = _lastCekKosonganPayload;
-      let lines = ['🧾 *LAPORAN CEK KOSONGAN*', '*'+(settings.namaToko||'Tirta Kencana')+'*', '━━━━━━━━━━━━━━━━━━━━━━'];
-      lines.push('Tanggal: ' + fmtDate(p.date));
-      lines.push('🏬 Toko: ' + p.toko + ' | 🚚 Mobil: ' + p.mobil);
-      lines.push('Total Stok: ' + p.totalStok);
-      if (p.titipan.length) { lines.push('━━━━━━━━━━━━━━━━━━━━━━', '📤 Titipan:'); p.titipan.forEach(r => lines.push('• ' + (r.nama||'-') + ': ' + (r.qty||0))); }
-      lines.push('Total - Titipan: ' + p.stokMinusTitipan);
-      if (p.pinjaman.length) { lines.push('━━━━━━━━━━━━━━━━━━━━━━', '📥 Pinjaman:'); p.pinjaman.forEach(r => lines.push('• ' + (r.nama||'-') + ': ' + (r.qty||0))); }
-      lines.push('━━━━━━━━━━━━━━━━━━━━━━', '*TOTAL GALON: ' + p.totalGalon + '*');
-      window.open('https://wa.me/?text=' + encodeURIComponent(lines.join('\n')), '_blank');
+      let lines = _waHead('🧾', 'LAPORAN CEK KOSONGAN', ['📅 ' + fmtDate(p.date)]);
+      lines.push('🏬 Toko: *' + p.toko + '*', '🚚 Mobil: *' + p.mobil + '*', '📦 Total stok: *' + p.totalStok + '*');
+      if (p.titipan.length) { lines.push('', '📤 *Titipan*'); p.titipan.forEach(r => lines.push('   • ' + (r.nama||'-') + ' : ' + (r.qty||0))); lines.push('   ➖ Stok setelah titipan: *' + p.stokMinusTitipan + '*'); }
+      if (p.pinjaman.length) { lines.push('', '📥 *Pinjaman*'); p.pinjaman.forEach(r => lines.push('   • ' + (r.nama||'-') + ' : ' + (r.qty||0))); }
+      lines.push('', _WAL, '💧 *TOTAL GALON: ' + p.totalGalon + '*');
+      _waOpen(lines);
     }
 
     // ========== PESANAN (Input Pesanan Pelanggan -> Rekap per Sales -> Rencana Order) ==========
@@ -7684,20 +7685,51 @@
         }, 400);
       });
     }
+    // ===== FORMAT PESAN WHATSAPP (seragam) =====
+    // Garis pemisah selebar gelembung chat (22 karakter) supaya mentok sampai ujung kanan.
+    const _WAL = '━━━━━━━━━━━━━━━━━━━━━━';
+    function _waHead(icon, title, extra) { return [icon + ' *' + title + '*', '🏪 ' + (settings.namaToko || 'Tirta Kencana')].concat(extra || [], [_WAL]); }
+    // Lebar tiap baris diperkirakan (satuan em), lalu garis pemisah dipanjangkan sampai setara baris terlebar
+    // (min 22, maks 30 karakter) sehingga garis selalu mentok ke ujung kanan gelembung chat.
+    function _waEstW(t) {
+      let w = 0;
+      for (const ch of String(t).replace(/[*_]/g, '')) {
+        const c = ch.codePointAt(0);
+        if (c > 0x2000 && ch !== '━' && ch !== '—' && ch !== '·' && ch !== '•') w += 1.15;
+        else if (ch === ' ') w += 0.28;
+        else if (/[A-Z0-9]/.test(ch)) w += 0.62;
+        else if (/[a-z]/.test(ch)) w += 0.52;
+        else if (/[.,:;'|!]/.test(ch)) w += 0.28;
+        else w += 0.55;
+      }
+      return w;
+    }
+    function _waOpen(lines) {
+      let mx = 0; lines.forEach(l => { if (l !== _WAL) mx = Math.max(mx, _waEstW(l)); });
+      const n = Math.max(22, Math.min(30, Math.ceil(mx / 0.5))), div = '━'.repeat(n);
+      window.open('https://wa.me/?text=' + encodeURIComponent(lines.map(l => l === _WAL ? div : l).join('\n')), '_blank');
+    }
     function doPesananSalesWA() {
       if (!_lastPesananSalesPayload) return;
       const p = _lastPesananSalesPayload;
-      let lines = ['📋 *REKAP PESANAN PER SALES*', '*'+(settings.namaToko||'Tirta Kencana')+'*', '━━━━━━━━━━━━━━━━━━━━━━'];
-      lines.push('Tanggal: ' + fmtDate(p.date));
-      Object.keys(p.bySales).sort().forEach(sname => {
-        lines.push('━━━━━━━━━━━━━━━━━━━━━━', '*' + sname.toUpperCase() + '*');
-        const customers = p.bySales[sname];
-        Object.keys(customers).forEach(cname => {
-          lines.push('_' + cname + '_');
-          customers[cname].forEach(it => lines.push('  ' + (it.nama||it.sku) + ': ' + it.qty));
+      const _line = _WAL;
+      let lines = _waHead('📋', 'REKAP PESANAN PER SALES', ['📅 ' + fmtDate(p.date)]);
+      let grandQty = 0, grandCust = 0;
+      Object.keys(p.bySales).sort().forEach((sname, si) => {
+        const customers = p.bySales[sname], cnames = Object.keys(customers);
+        let sQty = 0;
+        if (si > 0) lines.push('');
+        lines.push('👤 *' + sname.toUpperCase() + '*', '');
+        cnames.forEach((cname, ci) => {
+          lines.push('📍 *' + cname + '*');
+          customers[cname].forEach(it => { lines.push('   • ' + (it.nama||it.sku) + ' : *' + it.qty + '*'); sQty += Number(it.qty) || 0; });
+          if (ci < cnames.length - 1) lines.push('');
         });
+        grandQty += sQty; grandCust += cnames.length;
+        lines.push('', '▫️ _' + cnames.length + ' customer · total ' + sQty + ' qty_', _line);
       });
-      window.open('https://wa.me/?text=' + encodeURIComponent(lines.join('\n')), '_blank');
+      lines.push('', '✅ *TOTAL: ' + grandCust + ' customer · ' + grandQty + ' qty*');
+      _waOpen(lines);
     }
 
     function openPesananSkuModal() {
@@ -7784,12 +7816,10 @@
     function doPesananWA() {
       if (!_lastPesananPayload) return;
       const p = _lastPesananPayload;
-      let lines = ['📦 *LAPORAN BARANG AKAN DI-ORDER*', '*'+(settings.namaToko||'Tirta Kencana')+'*', '━━━━━━━━━━━━━━━━━━━━━━'];
-      lines.push('Tanggal: ' + fmtDate(p.date));
-      lines.push('━━━━━━━━━━━━━━━━━━━━━━');
-      p.rows.forEach(r => lines.push(r.nama + ': ' + r.order));
-      lines.push('━━━━━━━━━━━━━━━━━━━━━━', '----MAKASIH----');
-      window.open('https://wa.me/?text=' + encodeURIComponent(lines.join('\n')), '_blank');
+      let lines = _waHead('📦', 'BARANG AKAN DI-ORDER', ['📅 ' + fmtDate(p.date)]);
+      p.rows.forEach(r => lines.push('▪️ ' + r.nama + ' : *' + r.order + '*'));
+      lines.push(_WAL, '🙏 Terima kasih');
+      _waOpen(lines);
     }
 
     // ========== TITIPAN (barang dititip ke pihak lain: log Masuk/Keluar per SKU) ==========
@@ -8088,15 +8118,13 @@
     function doTitipanWA() {
       if (!_lastTitipanPayload) return;
       const p = _lastTitipanPayload;
-      let lines = ['📦 *LAPORAN TITIPAN*', '*'+(settings.namaToko||'Tirta Kencana')+'*', '━━━━━━━━━━━━━━━━━━━━━━'];
-      lines.push('Tanggal: ' + fmtDate(p.date));
-      lines.push('Pelanggan: *' + p.customer + '*');
-      lines.push('━━━━━━━━━━━━━━━━━━━━━━', '📋 Riwayat Hari Ini:');
-      if (p.todayEntries.length === 0) lines.push('(tidak ada pergerakan)');
-      else p.todayEntries.forEach(e => lines.push((e.tipe==='masuk'?'+':'-') + e.qty + ' ' + e.nama));
-      lines.push('━━━━━━━━━━━━━━━━━━━━━━', '📦 Sisa Titipan ' + p.customer + ':');
-      p.sisaRows.forEach(r => lines.push(r.nama + ': ' + r.sisa));
-      window.open('https://wa.me/?text=' + encodeURIComponent(lines.join('\n')), '_blank');
+      let lines = _waHead('📦', 'LAPORAN TITIPAN', ['📅 ' + fmtDate(p.date), '👤 Pelanggan: *' + p.customer + '*']);
+      lines.push('📋 *Riwayat hari ini*');
+      if (p.todayEntries.length === 0) lines.push('   (tidak ada pergerakan)');
+      else p.todayEntries.forEach(e => lines.push('   ' + (e.tipe==='masuk'?'➕':'➖') + ' ' + e.qty + ' ' + e.nama));
+      lines.push('', '📦 *Sisa titipan ' + p.customer + '*');
+      p.sisaRows.forEach(r => lines.push('   • ' + r.nama + ' : *' + r.sisa + '*'));
+      _waOpen(lines);
     }
 
     // ---- Cetak Rekap Titipan per Pelanggan (Print / PNG / WhatsApp) ----
@@ -8175,14 +8203,14 @@
     function doTitipanPelangganWA() {
       if (!_lastTitipanPelangganPayload) return;
       const p = _lastTitipanPelangganPayload;
-      let lines = ['📦 *REKAP TITIPAN PER PELANGGAN*', '*'+(settings.namaToko||'Tirta Kencana')+'*', '━━━━━━━━━━━━━━━━━━━━━━'];
-      lines.push('Tanggal: ' + fmtDate(p.date));
-      Object.keys(p.byCustomer).sort().forEach(cname => {
-        lines.push('━━━━━━━━━━━━━━━━━━━━━━', '*' + cname + '*');
+      let lines = _waHead('📦', 'REKAP TITIPAN PER PELANGGAN', ['📅 ' + fmtDate(p.date)]);
+      Object.keys(p.byCustomer).sort().forEach((cname, ci) => {
+        if (ci) lines.push('');
+        lines.push('📍 *' + cname + '*');
         const skus = p.byCustomer[cname];
-        Object.keys(skus).forEach(sku => { const s = skus[sku]; lines.push(s.nama + ': ' + (s.masuk - s.keluar)); });
+        Object.keys(skus).forEach(sku => { const x = skus[sku]; lines.push('   • ' + x.nama + ' : *' + (x.masuk - x.keluar) + '*'); });
       });
-      window.open('https://wa.me/?text=' + encodeURIComponent(lines.join('\n')), '_blank');
+      _waOpen(lines);
     }
 
     // ========== EDIT MANUAL STOCK BARANG (Stok Awal/Masuk/Keluar/Stok Akhir) ==========
@@ -8930,14 +8958,11 @@
       if (!_lastPelangganStrukPayload) return;
       const p = _lastPelangganStrukPayload;
       const periodeLabel = (p.stats.startDate || p.stats.endDate) ? `${p.stats.startDate?fmtDate(p.stats.startDate):'Awal'} - ${p.stats.endDate?fmtDate(p.stats.endDate):'Sekarang'}` : 'Semua Periode';
-      let lines = [`📋 *RIWAYAT PELANGGAN - ${p.name.toUpperCase()}*`, '*'+(settings.namaToko||'Tirta Kencana')+'*', '━━━━━━━━━━━━━━━━━━━━━━'];
-      lines.push('Periode: ' + periodeLabel);
-      lines.push('Total Belanja: ' + fmtRp(p.stats.totalBelanja));
-      lines.push('Piutang: ' + fmtRp(p.stats.totalPiutang));
-      lines.push('Jumlah Transaksi: ' + p.stats.jumlahTrx);
-      lines.push('━━━━━━━━━━━━━━━━━━━━━━');
-      p.rows.slice(0,30).forEach(t => lines.push(fmtDate(t.tgl) + ': ' + fmtRp(t.nett||0)));
-      window.open('https://wa.me/?text=' + encodeURIComponent(lines.join('\n')), '_blank');
+      let lines = _waHead('📋', 'RIWAYAT PELANGGAN', ['👤 *' + p.name.toUpperCase() + '*', '📅 ' + periodeLabel]);
+      lines.push('🛒 Total belanja: *' + fmtRp(p.stats.totalBelanja) + '*', '💳 Piutang: *' + fmtRp(p.stats.totalPiutang) + '*', '🧾 Jumlah transaksi: *' + p.stats.jumlahTrx + '*', _WAL);
+      p.rows.slice(0,30).forEach(t => lines.push('▪️ ' + fmtDate(t.tgl) + ' : ' + fmtRp(t.nett||0)));
+      if (p.rows.length > 30) lines.push('_…dan ' + (p.rows.length - 30) + ' transaksi lainnya_');
+      _waOpen(lines);
     }
     // [NEW] Sama persis isinya, dikirim LANGSUNG ke nomor WA pelanggan tsb.
     function doPelangganStrukWaPelanggan() {
