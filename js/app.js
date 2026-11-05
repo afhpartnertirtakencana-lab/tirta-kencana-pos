@@ -7277,6 +7277,18 @@
           ${rekapSalesHtml}
         </div>
 
+        <div class="card" id="pesRiwayatCard">
+          <div class="card-title"><i class="fas fa-clock-rotate-left"></i> Riwayat Pesanan</div>
+          <div class="text-sm" style="color:var(--text3);margin-bottom:8px">Pilih tanggal untuk melihat pesanan hari itu, lalu cetak atau kirim ke WhatsApp.</div>
+          <div class="pesrw-bar">
+            <button class="btn btn-outline btn-sm" onclick="pesRiwayatGeser(-1)" aria-label="Hari sebelumnya"><i class="fas fa-chevron-left"></i></button>
+            <input type="date" id="pesRwTgl" value="${localDateStr(new Date(Date.now() - 86400000))}" max="${today}" onchange="pesRiwayatLoad()">
+            <button class="btn btn-outline btn-sm" onclick="pesRiwayatGeser(1)" aria-label="Hari berikutnya"><i class="fas fa-chevron-right"></i></button>
+            <button class="btn btn-primary btn-sm" onclick="pesRiwayatLoad()"><i class="fas fa-magnifying-glass"></i> Tampilkan</button>
+          </div>
+          <div id="pesRiwayatBody"></div>
+        </div>
+
         <div class="card" id="pesananOrderCard">
           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
             <div class="card-title" style="margin:0"><i class="fas fa-truck-loading"></i> Rencana Order</div>
@@ -7289,6 +7301,7 @@
         </div>`;
       pesResetItemsCart();
       renderPesananOrderTable();
+      try { pesRiwayatLoad(); } catch(e) {}
     }
 
     // [NEW] Cart barang untuk Input Pesanan - mirip addItemRow() di menu Jual, versi
@@ -7614,6 +7627,55 @@
     }
     // ---- Cetak Rekap Pesanan per Sales (Print / PNG / WhatsApp) ----
     let _lastPesananSalesPayload = null;
+
+    // ===== RIWAYAT PESANAN (lihat pesanan tanggal lain, bisa dicetak / WA) =====
+    function pesRiwayatGeser(n) {
+      const el = document.getElementById('pesRwTgl'); if (!el) return;
+      const d = new Date((el.value || localDateStr()) + 'T00:00:00'); d.setDate(d.getDate() + n);
+      const v = localDateStr(d); if (v > localDateStr()) return; el.value = v; pesRiwayatLoad();
+    }
+    async function pesRiwayatLoad() {
+      const body = document.getElementById('pesRiwayatBody'), tgl = document.getElementById('pesRwTgl')?.value;
+      if (!body) return; if (!tgl) { body.innerHTML = ''; return; }
+      body.innerHTML = '<p class="text-center text-sm" style="padding:16px"><i class="fas fa-spinner fa-spin"></i> Memuat pesanan ' + esc(fmtDate(tgl)) + '…</p>';
+      let entries = [], ov = {};
+      if (tgl === localDateStr() && window._pesananData) { entries = window._pesananData.entries || []; ov = window._pesananData.orderValues || {}; }
+      else {
+        try { const r = await gasCall('getPesananByDate', [tgl], 0); if (r && Array.isArray(r.entries)) { entries = r.entries; ov = r.orderValues || {}; } } catch(e) {}
+        if (!entries.length && !Object.keys(ov).length) { const l = _loadPesanan(tgl); entries = l.entries || []; ov = l.orderValues || {}; }
+      }
+      if (document.getElementById('pesRwTgl')?.value !== tgl) return;   // user sudah ganti tanggal
+      const bySales = {};
+      entries.forEach(e => { const sl = e.sales || '-', c = e.customer || '-'; ((bySales[sl] = bySales[sl] || {})[c] = bySales[sl][c] || []).push(e); });
+      window._pesRw = { date: tgl, bySales, count: entries.length, orderRows: [] };
+      if (!entries.length && !Object.keys(ov).filter(k => Number(ov[k]) > 0).length) { body.innerHTML = '<div class="text-sm" style="color:var(--text3);padding:20px;text-align:center">Tidak ada pesanan pada ' + esc(fmtDate(tgl)) + '</div>'; return; }
+      let tq = 0, tc = 0;
+      const cards = Object.keys(bySales).sort().map(sn => {
+        const cu = bySales[sn], cn = Object.keys(cu); tc += cn.length;
+        return `<div style="min-width:220px;flex:1;border:1px solid var(--border);border-radius:10px;overflow:hidden">
+          <div style="background:var(--biru);color:#fff;padding:8px 12px;font-weight:800;font-size:0.82rem;text-align:center">${esc(sn).toUpperCase()}</div>
+          <div style="padding:8px 10px">${cn.map(c => `<div style="margin-bottom:8px"><div style="font-weight:700;font-size:0.75rem;color:var(--biru);margin-bottom:2px">${esc(c)}</div>${cu[c].map(it => { tq += Number(it.qty) || 0; return `<div class="flex-between" style="font-size:0.72rem;padding-left:8px"><span>${esc(it.nama||it.sku)}</span><span style="font-family:var(--mono);font-weight:700">${it.qty}</span></div>`; }).join('')}</div>`).join('')}</div></div>`;
+      }).join('');
+      body.innerHTML = `<div class="pesrw-sum"><b>${esc(fmtDate(tgl))}</b><span>${entries.length} item · ${tc} customer · ${tq} qty</span></div>
+        <div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:6px">${cards}</div>
+        <div class="pesrw-act"><button class="btn btn-primary" onclick="pesRiwayatCetak()"><i class="fas fa-receipt"></i> Cetak Rekap</button><button class="btn btn-outline" onclick="pesRiwayatWA()"><i class="fab fa-whatsapp"></i> WhatsApp</button></div>
+        <div class="pesrw-ord"><div class="pesrw-ordt"><i class="fas fa-truck-loading"></i> Rencana Order · ${esc(fmtDate(tgl))}</div><div id="pesRwOrder"><p class="text-center text-sm" style="padding:12px"><i class="fas fa-spinner fa-spin"></i> Memuat stock…</p></div></div>`;
+      // ---- Rencana Order tanggal itu: STOCK (hari itu) | PESANAN | ORDER (yang tersimpan) ----
+      const pq = {}; entries.forEach(e => { pq[e.sku] = (pq[e.sku] || 0) + (Number(e.qty) || 0); });
+      const skus = [...new Set([...Object.keys(pq), ...Object.keys(ov).filter(k => Number(ov[k]) > 0)])];
+      let stock = []; try { stock = await getCorrectedStockBarangForDate(tgl); } catch(e) {}
+      if (document.getElementById('pesRwTgl')?.value !== tgl) return;
+      const orows = skus.map(sku => { const sr = (stock || []).find(x => x.sku === sku), pr = products.find(x => x.sku === sku); return { sku, nama: (sr && sr.nama) || (pr && pr.nama) || sku, stock: sr ? sr.stokAkhir : '-', pesanan: pq[sku] || 0, order: Number(ov[sku]) > 0 ? Number(ov[sku]) : 0 }; }).sort((a, b) => a.nama.localeCompare(b.nama));
+      window._pesRw.orderRows = orows.filter(r => r.order > 0).map(r => ({ nama: r.nama, order: r.order }));
+      const ow = document.getElementById('pesRwOrder'); if (!ow) return;
+      ow.innerHTML = !orows.length ? '<div class="text-sm" style="color:var(--text3);padding:12px;text-align:center">Tidak ada data rencana order.</div>' :
+        `<div class="table-wrap"><table><thead><tr><th>KODE</th><th>NAMA BARANG</th><th style="text-align:center">STOCK</th><th style="text-align:center">PESANAN</th><th style="text-align:center">ORDER</th></tr></thead><tbody>${orows.map(r => `<tr><td style="font-family:var(--mono);font-size:11px">${esc(r.sku)}</td><td>${esc(r.nama)}</td><td style="text-align:center;font-weight:700;font-family:var(--mono)">${r.stock}</td><td style="text-align:center;font-weight:700;font-family:var(--mono);color:var(--biru)">${r.pesanan || '-'}</td><td style="text-align:center;font-weight:800;font-family:var(--mono)">${r.order || '-'}</td></tr>`).join('')}</tbody></table></div>
+        <div class="pesrw-act"><button class="btn btn-primary" onclick="pesRiwayatCetakOrder()"><i class="fas fa-receipt"></i> Cetak Order</button><button class="btn btn-outline" onclick="pesRiwayatWAOrder()"><i class="fab fa-whatsapp"></i> WhatsApp</button></div>`;
+    }
+    function pesRiwayatCetakOrder() { const r = window._pesRw; if (!r) return; if (!r.orderRows.length) return Swal.fire({ icon:'info', title:'Tidak ada order', text:'Tanggal ini belum ada barang yang diisi kolom ORDER.' }); _lastPesananPayload = { date: r.date, rows: r.orderRows }; showPesananStrukModal(_lastPesananPayload); }
+    function pesRiwayatWAOrder() { const r = window._pesRw; if (!r) return; if (!r.orderRows.length) return Swal.fire({ icon:'info', title:'Tidak ada order', text:'Tanggal ini belum ada barang yang diisi kolom ORDER.' }); _lastPesananPayload = { date: r.date, rows: r.orderRows }; doPesananWA(); }
+    function pesRiwayatCetak() { const r = window._pesRw; if (!r || !r.count) return; _lastPesananSalesPayload = { date: r.date, bySales: r.bySales }; showPesananSalesStrukModal(_lastPesananSalesPayload); }
+    function pesRiwayatWA() { const r = window._pesRw; if (!r || !r.count) return; _lastPesananSalesPayload = { date: r.date, bySales: r.bySales }; doPesananSalesWA(); }
     function cetakPesananPerSales() {
       const d = window._pesananData;
       if (!d.entries.length) return Swal.fire({ icon:'info', title:'Belum Ada Pesanan', text:'Input pesanan dulu sebelum mencetak rekap.' });
