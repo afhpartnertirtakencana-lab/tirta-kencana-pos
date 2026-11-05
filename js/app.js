@@ -2966,7 +2966,7 @@
         _rcFoot(settings.bottomLine));
     }
 
-    function showStrukModal() { if (!_strKData) return; const html = buildStrukHTML(_strKData); document.getElementById('strukContent').innerHTML = `<div class="modal-header"><h2>🧾 Struk</h2><button class="modal-close" onclick="closeStruk()">✕</button></div>${_strKData.trx.customer && !_strKData._loading ? `<button type="button" class="btn btn-block" style="background:linear-gradient(135deg,#16A34A,#25D366);color:#fff;border:none;height:48px;font-weight:800;margin:0 0 12px;border-radius:12px" onclick="doStrukWaPelanggan()">📤 Kirim Struk ke ${esc(_strKData.trx.customer)}</button>` : ''}<div class="action-grid"><div class="action-card" onclick="doStrukPrint()"><div style="font-size:28px">🖨️</div><div style="font-size:13px;font-weight:700">Print</div></div><div class="action-card" onclick="doStrukPng()"><div style="font-size:28px">📥</div><div style="font-size:13px;font-weight:700">Download PNG</div></div><div class="action-card" onclick="doStrukWA()"><div style="font-size:28px">💬</div><div style="font-size:13px;font-weight:700">WhatsApp</div></div><div class="action-card" onclick="doStrukWaPelanggan()"><div style="font-size:28px">📤</div><div style="font-size:13px;font-weight:700">Kirim ke Pelanggan</div></div><div class="action-card" onclick="document.getElementById('fotoInputStruk').click()"><div style="font-size:28px">📸</div><div style="font-size:13px;font-weight:700">Upload Foto</div></div><div class="action-card" onclick="showFotoBukti('${_strKData?.id||''}','Struk ${_strKData?.id||''}')"><div style="font-size:28px">🖼</div><div style="font-size:13px;font-weight:700">Lihat Foto</div></div></div><input type="file" id="fotoInputStruk" accept="image/*" capture="environment" style="display:none" onchange="uploadFotoBukti('${_strKData?.id||''}','transfer',this)"><div style="border:1px solid var(--border);border-radius:14px;overflow:auto;max-height:480px;background:#e8f2f9;padding:14px"><div style="width:360px;margin:0 auto">${html}</div></div>`; document.getElementById('strukModal').classList.add('show'); }
+    function showStrukModal() { if (!_strKData) return; const html = buildStrukHTML(_strKData); document.getElementById('strukContent').innerHTML = `<div class="modal-header"><h2>🧾 Struk</h2><button class="modal-close" onclick="closeStruk()">✕</button></div>${_strKData.trx.customer && !_strKData._loading ? `<button type="button" class="btn btn-block" style="background:linear-gradient(135deg,#16A34A,#25D366);color:#fff;border:none;height:48px;font-weight:800;margin:0 0 12px;border-radius:12px" onclick="doStrukWaPelanggan()">📤 Kirim Struk ke ${esc(_strKData.trx.customer)}</button>` : ''}<div class="action-grid"><div class="action-card" onclick="doStrukPrint()"><div style="font-size:28px">🖨️</div><div style="font-size:13px;font-weight:700">Print</div></div><div class="action-card" onclick="doStrukPng()"><div style="font-size:28px">📥</div><div style="font-size:13px;font-weight:700">Download PDF</div></div><div class="action-card" onclick="doStrukWA()"><div style="font-size:28px">💬</div><div style="font-size:13px;font-weight:700">WhatsApp</div></div><div class="action-card" onclick="doStrukWaPelanggan()"><div style="font-size:28px">📤</div><div style="font-size:13px;font-weight:700">Kirim ke Pelanggan</div></div><div class="action-card" onclick="document.getElementById('fotoInputStruk').click()"><div style="font-size:28px">📸</div><div style="font-size:13px;font-weight:700">Upload Foto</div></div><div class="action-card" onclick="showFotoBukti('${_strKData?.id||''}','Struk ${_strKData?.id||''}')"><div style="font-size:28px">🖼</div><div style="font-size:13px;font-weight:700">Lihat Foto</div></div></div><input type="file" id="fotoInputStruk" accept="image/*" capture="environment" style="display:none" onchange="uploadFotoBukti('${_strKData?.id||''}','transfer',this)"><div style="border:1px solid var(--border);border-radius:14px;overflow:auto;max-height:480px;background:#e8f2f9;padding:14px"><div style="width:360px;margin:0 auto">${html}</div></div>`; document.getElementById('strukModal').classList.add('show'); }
 
     // [NEW] Cek Transaksi Publik - dipanggil dari #publicCekPage (index.html), TANPA login.
     // Sama sekali tidak menyentuh currentUser/sessionToken. Cetak strukturnya pakai ULANG
@@ -2995,7 +2995,7 @@
     function showPublicStrukModal() {
       if (!_strKData) return;
       const html = buildStrukHTML(_strKData);
-      document.getElementById('strukContent').innerHTML = `<div class="modal-header"><h2>🧾 Struk Transaksi</h2><button class="modal-close" onclick="closeStruk()">✕</button></div><div class="action-grid"><div class="action-card" onclick="doStrukPrint()"><div style="font-size:28px">🖨️</div><div style="font-size:13px;font-weight:700">Print</div></div><div class="action-card" onclick="doStrukPng()"><div style="font-size:28px">📥</div><div style="font-size:13px;font-weight:700">Download PNG</div></div><div class="action-card" onclick="doStrukWA()"><div style="font-size:28px">💬</div><div style="font-size:13px;font-weight:700">WhatsApp</div></div></div><div style="border:1px solid var(--border);border-radius:14px;overflow:auto;max-height:480px;background:#e8f2f9;padding:14px"><div style="width:360px;margin:0 auto">${html}</div></div>`;
+      document.getElementById('strukContent').innerHTML = `<div class="modal-header"><h2>🧾 Struk Transaksi</h2><button class="modal-close" onclick="closeStruk()">✕</button></div><div class="action-grid"><div class="action-card" onclick="doStrukPrint()"><div style="font-size:28px">🖨️</div><div style="font-size:13px;font-weight:700">Print</div></div><div class="action-card" onclick="doStrukPng()"><div style="font-size:28px">📥</div><div style="font-size:13px;font-weight:700">Download PDF</div></div><div class="action-card" onclick="doStrukWA()"><div style="font-size:28px">💬</div><div style="font-size:13px;font-weight:700">WhatsApp</div></div></div><div style="border:1px solid var(--border);border-radius:14px;overflow:auto;max-height:480px;background:#e8f2f9;padding:14px"><div style="width:360px;margin:0 auto">${html}</div></div>`;
       document.getElementById('strukModal').classList.add('show');
     }
     function closeStruk() { document.getElementById('strukModal').classList.remove('show'); }
@@ -3150,7 +3150,7 @@
         _rcFoot(settings.bottomLine));
     }
 
-    function showSetoranStrukModal(payload) { const html = buildSetoranStrukHTML(payload); const setoranKey = (payload.sales||'')+'_'+(payload.tgl||''); document.getElementById('strukContent').innerHTML = `<div class="modal-header"><h2>🧾 Struk Setoran</h2><button class="modal-close" onclick="closeStruk()">✕</button></div><div class="action-grid"><div class="action-card" onclick="doSetoranPrint()"><div>🖨️</div><div>Print</div></div><div class="action-card" onclick="doSetoranPng()"><div>📥</div><div>Download PNG</div></div><div class="action-card" onclick="doSetoranWA()"><div>💬</div><div>WhatsApp</div></div><div class="action-card" onclick="document.getElementById('fotoInputSetoran').click()"><div>📸</div><div>Upload Foto</div></div><div class="action-card" onclick="showFotoBukti('${setoranKey}','Setoran ${setoranKey}')"><div>🖼</div><div>Lihat Foto</div></div></div><input type="file" id="fotoInputSetoran" accept="image/*" capture="environment" style="display:none" onchange="uploadFotoBukti('${setoranKey}','setoran',this)"><div style="text-align:center;max-height:70vh;overflow:auto;background:#e8f2f9;border-radius:14px;padding:10px"><img src="" id="setoranStrukImg" style="max-width:100%;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.1)" alt="Struk Setoran"></div>`; document.getElementById('strukModal').classList.add('show');
+    function showSetoranStrukModal(payload) { const html = buildSetoranStrukHTML(payload); const setoranKey = (payload.sales||'')+'_'+(payload.tgl||''); document.getElementById('strukContent').innerHTML = `<div class="modal-header"><h2>🧾 Struk Setoran</h2><button class="modal-close" onclick="closeStruk()">✕</button></div><div class="action-grid"><div class="action-card" onclick="doSetoranPrint()"><div>🖨️</div><div>Print</div></div><div class="action-card" onclick="doSetoranPng()"><div>📥</div><div>Download PDF</div></div><div class="action-card" onclick="doSetoranWA()"><div>💬</div><div>WhatsApp</div></div><div class="action-card" onclick="document.getElementById('fotoInputSetoran').click()"><div>📸</div><div>Upload Foto</div></div><div class="action-card" onclick="showFotoBukti('${setoranKey}','Setoran ${setoranKey}')"><div>🖼</div><div>Lihat Foto</div></div></div><input type="file" id="fotoInputSetoran" accept="image/*" capture="environment" style="display:none" onchange="uploadFotoBukti('${setoranKey}','setoran',this)"><div style="text-align:center;max-height:70vh;overflow:auto;background:#e8f2f9;border-radius:14px;padding:10px"><img src="" id="setoranStrukImg" style="max-width:100%;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.1)" alt="Struk Setoran"></div>`; document.getElementById('strukModal').classList.add('show');
       setTimeout(() => {
         _ensureLogoDataUrl(_logoUrl).then(logoData => {
           const off = document.getElementById('strukOffscreen'); off.innerHTML = buildSetoranStrukHTML(payload, logoData); const el = off.querySelector('#setoran-root');
@@ -3366,7 +3366,7 @@
     }
 
     // [NEW] Cetak struk setoran dari baris Rekap Setoran, memakai modal struk yang SAMA persis dengan menu Setoran
-    // (Print / Download PNG / WhatsApp) — tidak membuat tampilan/struk baru, hanya memanggil ulang infrastruktur yang sudah ada.
+    // (Print / Download PDF / WhatsApp) — tidak membuat tampilan/struk baru, hanya memanggil ulang infrastruktur yang sudah ada.
     function cetakRekapSetoranRow(i) {
       const s = setoranHistory[i];
       if (!s) return;
@@ -3836,7 +3836,7 @@
     }
     function showPiutangCustomerStrukModal(payload) {
       const html = buildPiutangCustomerStrukHTML(payload);
-      document.getElementById('strukContent').innerHTML = `<div class="modal-header"><h2>🧾 Rekap Piutang per Customer</h2><button class="modal-close" onclick="closeStruk()">✕</button></div><div class="action-grid"><div class="action-card" onclick="doPiutangCustomerPrint()"><div>🖨️</div><div>Print</div></div><div class="action-card" onclick="doPiutangCustomerPng()"><div>📥</div><div>Download PNG</div></div><div class="action-card" onclick="doPiutangCustomerWA()"><div>💬</div><div>WhatsApp</div></div></div><div style="text-align:center;max-height:70vh;overflow:auto;background:#e8f2f9;border-radius:14px;padding:10px">${html}</div>`;
+      document.getElementById('strukContent').innerHTML = `<div class="modal-header"><h2>🧾 Rekap Piutang per Customer</h2><button class="modal-close" onclick="closeStruk()">✕</button></div><div class="action-grid"><div class="action-card" onclick="doPiutangCustomerPrint()"><div>🖨️</div><div>Print</div></div><div class="action-card" onclick="doPiutangCustomerPng()"><div>📥</div><div>Download PDF</div></div><div class="action-card" onclick="doPiutangCustomerWA()"><div>💬</div><div>WhatsApp</div></div></div><div style="text-align:center;max-height:70vh;overflow:auto;background:#e8f2f9;border-radius:14px;padding:10px">${html}</div>`;
       document.getElementById('strukModal').classList.add('show');
     }
     function doPiutangCustomerPrint() {
@@ -3904,7 +3904,7 @@
     }
     function showPiutangDetailStrukModal(payload) {
       const html = buildPiutangDetailStrukHTML(payload);
-      document.getElementById('strukContent').innerHTML = `<div class="modal-header"><h2>🧾 Detail Transaksi Belum Bayar</h2><button class="modal-close" onclick="closeStruk()">✕</button></div><div class="action-grid"><div class="action-card" onclick="doPiutangDetailPrint()"><div>🖨️</div><div>Print</div></div><div class="action-card" onclick="doPiutangDetailPng()"><div>📥</div><div>Download PNG</div></div><div class="action-card" onclick="doPiutangDetailWA()"><div>💬</div><div>WhatsApp</div></div></div><div style="text-align:center;max-height:70vh;overflow:auto;background:#e8f2f9;border-radius:14px;padding:10px">${html}</div>`;
+      document.getElementById('strukContent').innerHTML = `<div class="modal-header"><h2>🧾 Detail Transaksi Belum Bayar</h2><button class="modal-close" onclick="closeStruk()">✕</button></div><div class="action-grid"><div class="action-card" onclick="doPiutangDetailPrint()"><div>🖨️</div><div>Print</div></div><div class="action-card" onclick="doPiutangDetailPng()"><div>📥</div><div>Download PDF</div></div><div class="action-card" onclick="doPiutangDetailWA()"><div>💬</div><div>WhatsApp</div></div></div><div style="text-align:center;max-height:70vh;overflow:auto;background:#e8f2f9;border-radius:14px;padding:10px">${html}</div>`;
       document.getElementById('strukModal').classList.add('show');
     }
     function doPiutangDetailPrint() {
@@ -4295,7 +4295,7 @@
       window._dxShare = _cicStrukPayload(entry, t, sisaBaru, lunas);
       window._cicLast = { entry, t, sisaBaru, lunas };
       const html = buildDxShareHTML(window._dxShare);
-      document.getElementById('strukContent').innerHTML = `<div class="modal-header"><h2>${lunas ? '✅ Lunas' : '💸 Cicilan Tercatat'}</h2><button class="modal-close" onclick="closeStruk()">✕</button></div><div class="action-grid"><div class="action-card" onclick="dxShareDo('print')"><div>🖨️</div><div>Print</div></div><div class="action-card" onclick="dxShareDo('png')"><div>📥</div><div>Download PNG</div></div><div class="action-card" onclick="dxShareDo('wa')"><div>💬</div><div>WhatsApp</div></div><div class="action-card" onclick="cicilWaPelanggan()"><div>📤</div><div>Kirim ke Pelanggan</div></div></div><div style="text-align:center;max-height:70vh;overflow:auto;background:#e8f2f9;border-radius:14px;padding:10px"><div style="zoom:${Math.min(1, (window.innerWidth - 76) / 390).toFixed(3)}">${html}</div></div>`;
+      document.getElementById('strukContent').innerHTML = `<div class="modal-header"><h2>${lunas ? '✅ Lunas' : '💸 Cicilan Tercatat'}</h2><button class="modal-close" onclick="closeStruk()">✕</button></div><div class="action-grid"><div class="action-card" onclick="dxShareDo('print')"><div>🖨️</div><div>Print</div></div><div class="action-card" onclick="dxShareDo('png')"><div>📥</div><div>Download PDF</div></div><div class="action-card" onclick="dxShareDo('wa')"><div>💬</div><div>WhatsApp</div></div><div class="action-card" onclick="cicilWaPelanggan()"><div>📤</div><div>Kirim ke Pelanggan</div></div></div><div style="text-align:center;max-height:70vh;overflow:auto;background:#e8f2f9;border-radius:14px;padding:10px"><div style="zoom:${Math.min(1, (window.innerWidth - 76) / 390).toFixed(3)}">${html}</div></div>`;
       document.getElementById('strukModal').classList.add('show');
     }
     function cicilWaPelanggan() {
@@ -4943,7 +4943,7 @@
           ['Salah input?', 'Sales tidak bisa mengedit/menghapus transaksi yang setorannya sudah disimpan. Minta admin untuk mengoreksi.'] ] },
         { t:'Setoran', ic:'fa-money-bill-wave', items:[
           ['Mengisi setoran', 'Menu Setoran → pilih tanggal → isi pengeluaran (makan, bensin, dll.) dan uang yang disetor. Aplikasi menghitung selisih. Selisih besar akan diberitahukan ke pemilik.'],
-          ['Cetak / kirim', 'Setelah tersimpan, struk setoran bisa dicetak, diunduh PNG, atau dikirim lewat WhatsApp.'] ] },
+          ['Cetak / kirim', 'Setelah tersimpan, struk setoran bisa dicetak, diunduh PDF, atau dikirim lewat WhatsApp.'] ] },
         { t:'Masalah umum', ic:'fa-circle-info', items:[
           ['Tertulis “menunggu sinkron”', 'Perangkat sedang offline; data tersimpan di HP dan terkirim otomatis begitu internet kembali. Jangan hapus data aplikasi sebelum sinkron selesai.'],
           ['Lupa kata sandi', 'Hubungi admin untuk mengganti kata sandi di menu Pengguna.'] ] }
@@ -6070,7 +6070,7 @@
 
     // [NEW] Cetak Rekap - dibuat mengikuti pola struk yang SUDAH ADA di menu Jual/Titipan/
     // Setoran/Cek Stock/Cek Kosongan (bukan langsung print, tapi modal preview dulu dengan
-    // pilihan Print / Download PNG / WhatsApp, pakai #strukModal yang sama). Satu shell ini
+    // pilihan Print / Download PDF / WhatsApp, pakai #strukModal yang sama). Satu shell ini
     // dipakai untuk SEMUA pilihan "Jenis Laporan" (Penjualan per Sales, per SKU, per Customer,
     // per Qty, COD, Transfer, QRIS, Belum Transfer, dll) - kontennya diambil dari tabel yang
     // sedang tampil di #rekapContent, dibungkus header gradient + footer bergaya sama seperti
@@ -6124,7 +6124,7 @@
       const filterLabel = fmtDate(tgl) + ' · ' + salesLabel;
       _lastRekapPayload = { jenisLabel, filterLabel, tgl, salesLabel, tableHtml: content.innerHTML };
       const html = buildRekapStrukShell(jenisLabel, filterLabel, _lastRekapPayload.tableHtml);
-      document.getElementById('strukContent').innerHTML = `<div class="modal-header"><h2>🧾 ${esc(jenisLabel)}</h2><button class="modal-close" onclick="closeStruk()">✕</button></div><div class="action-grid"><div class="action-card" onclick="doRekapPrint()"><div>🖨️</div><div>Print</div></div><div class="action-card" onclick="doRekapPng()"><div>📥</div><div>Download PNG</div></div><div class="action-card" onclick="doRekapWA()"><div>💬</div><div>WhatsApp</div></div></div><div style="text-align:center;max-height:70vh;overflow:auto;background:#e8f2f9;border-radius:14px;padding:10px">${html}</div>`;
+      document.getElementById('strukContent').innerHTML = `<div class="modal-header"><h2>🧾 ${esc(jenisLabel)}</h2><button class="modal-close" onclick="closeStruk()">✕</button></div><div class="action-grid"><div class="action-card" onclick="doRekapPrint()"><div>🖨️</div><div>Print</div></div><div class="action-card" onclick="doRekapPng()"><div>📥</div><div>Download PDF</div></div><div class="action-card" onclick="doRekapWA()"><div>💬</div><div>WhatsApp</div></div></div><div style="text-align:center;max-height:70vh;overflow:auto;background:#e8f2f9;border-radius:14px;padding:10px">${html}</div>`;
       document.getElementById('strukModal').classList.add('show');
     }
     function doRekapPrint() {
@@ -6248,7 +6248,7 @@
       if (!s) return Swal.fire('Error','Data input barang tidak ditemukan','error');
       _lastInputBarangStruk = s;
       const html = buildStrukInputBarangHTML(s);
-      document.getElementById('strukContent').innerHTML = `<div class="modal-header"><h2>🧾 Struk Input Barang</h2><button class="modal-close" onclick="closeStruk()">✕</button></div><div class="action-grid"><div class="action-card" onclick="doInputBarangPrint()"><div style="font-size:28px">🖨️</div><div style="font-size:13px;font-weight:700">Print</div></div><div class="action-card" onclick="doInputBarangPng()"><div style="font-size:28px">📥</div><div style="font-size:13px;font-weight:700">Download PNG</div></div><div class="action-card" onclick="doInputBarangWA()"><div style="font-size:28px">💬</div><div style="font-size:13px;font-weight:700">WhatsApp</div></div><div class="action-card" onclick="document.getElementById('fotoInputBarangStruk').click()"><div style="font-size:28px">📸</div><div style="font-size:13px;font-weight:700">Upload Foto</div></div><div class="action-card" onclick="showFotoBukti('${esc(s.id).replace(/'/g,"\\'")}','Input Barang ${esc(s.id).replace(/'/g,"\\'")}')"><div style="font-size:28px">🖼</div><div style="font-size:13px;font-weight:700">Lihat Foto</div></div></div><input type="file" id="fotoInputBarangStruk" accept="image/*" capture="environment" style="display:none" onchange="uploadFotoBukti('${esc(s.id).replace(/'/g,"\\'")}','inputbarang',this)"><div style="border:1px solid var(--border);border-radius:14px;overflow:auto;max-height:480px;background:#e8f2f9;padding:14px"><div style="width:360px;margin:0 auto">${html}</div></div>`;
+      document.getElementById('strukContent').innerHTML = `<div class="modal-header"><h2>🧾 Struk Input Barang</h2><button class="modal-close" onclick="closeStruk()">✕</button></div><div class="action-grid"><div class="action-card" onclick="doInputBarangPrint()"><div style="font-size:28px">🖨️</div><div style="font-size:13px;font-weight:700">Print</div></div><div class="action-card" onclick="doInputBarangPng()"><div style="font-size:28px">📥</div><div style="font-size:13px;font-weight:700">Download PDF</div></div><div class="action-card" onclick="doInputBarangWA()"><div style="font-size:28px">💬</div><div style="font-size:13px;font-weight:700">WhatsApp</div></div><div class="action-card" onclick="document.getElementById('fotoInputBarangStruk').click()"><div style="font-size:28px">📸</div><div style="font-size:13px;font-weight:700">Upload Foto</div></div><div class="action-card" onclick="showFotoBukti('${esc(s.id).replace(/'/g,"\\'")}','Input Barang ${esc(s.id).replace(/'/g,"\\'")}')"><div style="font-size:28px">🖼</div><div style="font-size:13px;font-weight:700">Lihat Foto</div></div></div><input type="file" id="fotoInputBarangStruk" accept="image/*" capture="environment" style="display:none" onchange="uploadFotoBukti('${esc(s.id).replace(/'/g,"\\'")}','inputbarang',this)"><div style="border:1px solid var(--border);border-radius:14px;overflow:auto;max-height:480px;background:#e8f2f9;padding:14px"><div style="width:360px;margin:0 auto">${html}</div></div>`;
       document.getElementById('strukModal').classList.add('show');
     }
     function doInputBarangPrint() { if (!_lastInputBarangStruk) return; const win = window.open('','_blank','width=420,height=700'); win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"><title>Struk Input Barang</title></head><body style="margin:16px;background:#e8f2f9;display:flex;justify-content:center">'); win.document.write(buildStrukInputBarangHTML(_lastInputBarangStruk)); win.document.write('<script>window.onload=function(){window.print();}<\/script></body></html>'); win.document.close(); }
@@ -6839,7 +6839,7 @@
     }
     function showCekStockStrukModal(payload) {
       const html = buildCekStockStrukHTML(payload);
-      document.getElementById('strukContent').innerHTML = `<div class="modal-header"><h2>🧾 Struk Cek Stock</h2><button class="modal-close" onclick="closeStruk()">✕</button></div><div class="action-grid"><div class="action-card" onclick="doCekStockPrint()"><div>🖨️</div><div>Print</div></div><div class="action-card" onclick="doCekStockPng()"><div>📥</div><div>Download PNG</div></div><div class="action-card" onclick="doCekStockWA()"><div>💬</div><div>WhatsApp</div></div></div><div style="text-align:center;max-height:70vh;overflow:auto;background:#e8f2f9;border-radius:14px;padding:10px">${html}</div>`;
+      document.getElementById('strukContent').innerHTML = `<div class="modal-header"><h2>🧾 Struk Cek Stock</h2><button class="modal-close" onclick="closeStruk()">✕</button></div><div class="action-grid"><div class="action-card" onclick="doCekStockPrint()"><div>🖨️</div><div>Print</div></div><div class="action-card" onclick="doCekStockPng()"><div>📥</div><div>Download PDF</div></div><div class="action-card" onclick="doCekStockWA()"><div>💬</div><div>WhatsApp</div></div></div><div style="text-align:center;max-height:70vh;overflow:auto;background:#e8f2f9;border-radius:14px;padding:10px">${html}</div>`;
       document.getElementById('strukModal').classList.add('show');
     }
     function doCekStockPrint() {
@@ -7095,7 +7095,7 @@
     }
     function showCekKosonganStrukModal(payload) {
       const html = buildCekKosonganStrukHTML(payload);
-      document.getElementById('strukContent').innerHTML = `<div class="modal-header"><h2>🧾 Struk Cek Kosongan</h2><button class="modal-close" onclick="closeStruk()">✕</button></div><div class="action-grid"><div class="action-card" onclick="doCekKosonganPrint()"><div>🖨️</div><div>Print</div></div><div class="action-card" onclick="doCekKosonganPng()"><div>📥</div><div>Download PNG</div></div><div class="action-card" onclick="doCekKosonganWA()"><div>💬</div><div>WhatsApp</div></div></div><div style="text-align:center;max-height:70vh;overflow:auto;background:#e8f2f9;border-radius:14px;padding:10px">${html}</div>`;
+      document.getElementById('strukContent').innerHTML = `<div class="modal-header"><h2>🧾 Struk Cek Kosongan</h2><button class="modal-close" onclick="closeStruk()">✕</button></div><div class="action-grid"><div class="action-card" onclick="doCekKosonganPrint()"><div>🖨️</div><div>Print</div></div><div class="action-card" onclick="doCekKosonganPng()"><div>📥</div><div>Download PDF</div></div><div class="action-card" onclick="doCekKosonganWA()"><div>💬</div><div>WhatsApp</div></div></div><div style="text-align:center;max-height:70vh;overflow:auto;background:#e8f2f9;border-radius:14px;padding:10px">${html}</div>`;
       document.getElementById('strukModal').classList.add('show');
     }
     function doCekKosonganPrint() {
@@ -7653,7 +7653,7 @@
     }
     function showPesananSalesStrukModal(payload) {
       const html = buildPesananSalesStrukHTML(payload);
-      document.getElementById('strukContent').innerHTML = `<div class="modal-header"><h2>🧾 Rekap Pesanan per Sales</h2><button class="modal-close" onclick="closeStruk()">✕</button></div><div class="action-grid"><div class="action-card" onclick="doPesananSalesPrint()"><div>🖨️</div><div>Print</div></div><div class="action-card" onclick="doPesananSalesPng()"><div>📥</div><div>Download PNG</div></div><div class="action-card" onclick="doPesananSalesWA()"><div>💬</div><div>WhatsApp</div></div></div><div style="text-align:center;max-height:70vh;overflow:auto;background:#e8f2f9;border-radius:14px;padding:10px">${html}</div>`;
+      document.getElementById('strukContent').innerHTML = `<div class="modal-header"><h2>🧾 Rekap Pesanan per Sales</h2><button class="modal-close" onclick="closeStruk()">✕</button></div><div class="action-grid"><div class="action-card" onclick="doPesananSalesPrint()"><div>🖨️</div><div>Print</div></div><div class="action-card" onclick="doPesananSalesPng()"><div>📥</div><div>Download PDF</div></div><div class="action-card" onclick="doPesananSalesWA()"><div>💬</div><div>WhatsApp</div></div></div><div style="text-align:center;max-height:70vh;overflow:auto;background:#e8f2f9;border-radius:14px;padding:10px">${html}</div>`;
       document.getElementById('strukModal').classList.add('show');
     }
     function doPesananSalesPrint() {
@@ -7750,7 +7750,7 @@
     }
     function showPesananStrukModal(payload) {
       const html = buildPesananStrukHTML(payload);
-      document.getElementById('strukContent').innerHTML = `<div class="modal-header"><h2>🧾 Laporan Order</h2><button class="modal-close" onclick="closeStruk()">✕</button></div><div class="action-grid"><div class="action-card" onclick="doPesananPrint()"><div>🖨️</div><div>Print</div></div><div class="action-card" onclick="doPesananPng()"><div>📥</div><div>Download PNG</div></div><div class="action-card" onclick="doPesananWA()"><div>💬</div><div>WhatsApp</div></div></div><div style="text-align:center;max-height:70vh;overflow:auto;background:#e8f2f9;border-radius:14px;padding:10px">${html}</div>`;
+      document.getElementById('strukContent').innerHTML = `<div class="modal-header"><h2>🧾 Laporan Order</h2><button class="modal-close" onclick="closeStruk()">✕</button></div><div class="action-grid"><div class="action-card" onclick="doPesananPrint()"><div>🖨️</div><div>Print</div></div><div class="action-card" onclick="doPesananPng()"><div>📥</div><div>Download PDF</div></div><div class="action-card" onclick="doPesananWA()"><div>💬</div><div>WhatsApp</div></div></div><div style="text-align:center;max-height:70vh;overflow:auto;background:#e8f2f9;border-radius:14px;padding:10px">${html}</div>`;
       document.getElementById('strukModal').classList.add('show');
     }
     function doPesananPrint() {
@@ -8054,7 +8054,7 @@
     }
     function showTitipanStrukModal(payload) {
       const html = buildTitipanStrukHTML(payload);
-      document.getElementById('strukContent').innerHTML = `<div class="modal-header"><h2>🧾 Sisa Titipan</h2><button class="modal-close" onclick="closeStruk()">✕</button></div><div class="action-grid"><div class="action-card" onclick="doTitipanPrint()"><div>🖨️</div><div>Print</div></div><div class="action-card" onclick="doTitipanPng()"><div>📥</div><div>Download PNG</div></div><div class="action-card" onclick="doTitipanWA()"><div>💬</div><div>WhatsApp</div></div></div><div style="text-align:center;max-height:70vh;overflow:auto;background:#e8f2f9;border-radius:14px;padding:10px">${html}</div>`;
+      document.getElementById('strukContent').innerHTML = `<div class="modal-header"><h2>🧾 Sisa Titipan</h2><button class="modal-close" onclick="closeStruk()">✕</button></div><div class="action-grid"><div class="action-card" onclick="doTitipanPrint()"><div>🖨️</div><div>Print</div></div><div class="action-card" onclick="doTitipanPng()"><div>📥</div><div>Download PDF</div></div><div class="action-card" onclick="doTitipanWA()"><div>💬</div><div>WhatsApp</div></div></div><div style="text-align:center;max-height:70vh;overflow:auto;background:#e8f2f9;border-radius:14px;padding:10px">${html}</div>`;
       document.getElementById('strukModal').classList.add('show');
     }
     function doTitipanPrint() {
@@ -8141,7 +8141,7 @@
     }
     function showTitipanPelangganStrukModal(payload) {
       const html = buildTitipanPelangganStrukHTML(payload);
-      document.getElementById('strukContent').innerHTML = `<div class="modal-header"><h2>🧾 Rekap Titipan per Pelanggan</h2><button class="modal-close" onclick="closeStruk()">✕</button></div><div class="action-grid"><div class="action-card" onclick="doTitipanPelangganPrint()"><div>🖨️</div><div>Print</div></div><div class="action-card" onclick="doTitipanPelangganPng()"><div>📥</div><div>Download PNG</div></div><div class="action-card" onclick="doTitipanPelangganWA()"><div>💬</div><div>WhatsApp</div></div></div><div style="text-align:center;max-height:70vh;overflow:auto;background:#e8f2f9;border-radius:14px;padding:10px">${html}</div>`;
+      document.getElementById('strukContent').innerHTML = `<div class="modal-header"><h2>🧾 Rekap Titipan per Pelanggan</h2><button class="modal-close" onclick="closeStruk()">✕</button></div><div class="action-grid"><div class="action-card" onclick="doTitipanPelangganPrint()"><div>🖨️</div><div>Print</div></div><div class="action-card" onclick="doTitipanPelangganPng()"><div>📥</div><div>Download PDF</div></div><div class="action-card" onclick="doTitipanPelangganWA()"><div>💬</div><div>WhatsApp</div></div></div><div style="text-align:center;max-height:70vh;overflow:auto;background:#e8f2f9;border-radius:14px;padding:10px">${html}</div>`;
       document.getElementById('strukModal').classList.add('show');
     }
     function doTitipanPelangganPrint() {
@@ -8895,7 +8895,7 @@
     }
     function showPelangganStrukModal(payload) {
       const html = buildPelangganStrukHTML(payload);
-      document.getElementById('strukContent').innerHTML = `<div class="modal-header"><h2>🧾 Riwayat ${esc(payload.name)}</h2><button class="modal-close" onclick="closeStruk()">✕</button></div><div class="action-grid"><div class="action-card" onclick="doPelangganStrukPrint()"><div>🖨️</div><div>Print</div></div><div class="action-card" onclick="doPelangganStrukPng()"><div>📥</div><div>Download PNG</div></div><div class="action-card" onclick="doPelangganStrukWA()"><div>💬</div><div>WhatsApp</div></div><div class="action-card" onclick="doPelangganStrukWaPelanggan()"><div>📤</div><div>Kirim ke Pelanggan</div></div></div><div style="text-align:center;max-height:70vh;overflow:auto;background:#e8f2f9;border-radius:14px;padding:10px">${html}</div>`;
+      document.getElementById('strukContent').innerHTML = `<div class="modal-header"><h2>🧾 Riwayat ${esc(payload.name)}</h2><button class="modal-close" onclick="closeStruk()">✕</button></div><div class="action-grid"><div class="action-card" onclick="doPelangganStrukPrint()"><div>🖨️</div><div>Print</div></div><div class="action-card" onclick="doPelangganStrukPng()"><div>📥</div><div>Download PDF</div></div><div class="action-card" onclick="doPelangganStrukWA()"><div>💬</div><div>WhatsApp</div></div><div class="action-card" onclick="doPelangganStrukWaPelanggan()"><div>📤</div><div>Kirim ke Pelanggan</div></div></div><div style="text-align:center;max-height:70vh;overflow:auto;background:#e8f2f9;border-radius:14px;padding:10px">${html}</div>`;
       document.getElementById('strukModal').classList.add('show');
     }
     function doPelangganStrukPrint() {
@@ -9645,7 +9645,7 @@ if ('serviceWorker' in navigator) {
   // (EMBEDDED_LOGO tetap seperti semula). Blok ini hanya MENIMPA nilai
   // runtime dari variabel _logoUrl (yang memang sudah "let", boleh
   // diubah) dari URL remote image2url.com (yang tidak CORS-friendly,
-  // menyebabkan logo hilang saat Download PNG) menjadi data URI
+  // menyebabkan logo hilang saat Download PDF) menjadi data URI
   // (base64 WebP transparan) yang tertanam langsung di kode ini.
   //
   // Berlaku HANYA jika user belum upload logo custom sendiri lewat
