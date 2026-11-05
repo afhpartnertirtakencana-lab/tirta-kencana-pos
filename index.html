@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Tirta Kencana">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css?v=20261105a">
+  <link rel="stylesheet" href="css/style.css?v=20261105b">
   <style>
     /* [PERF] Optimasi scroll untuk HP RAM kecil.
        - overscroll-behavior-y:contain menahan efek "rubber-band" pantulan browser
@@ -210,11 +210,12 @@
       } catch (e) {}
       return a;
     }
-    // [PNG PANJANG -> BEBERAPA HALAMAN] Gambar yang sangat tinggi (mis. rekap per SKU) dikecilkan paksa oleh
-    // WhatsApp/galeri sehingga tulisan tidak terbaca. Unduhan PNG yang tingginya > ±1,7x lebarnya otomatis
-    // digabung jadi SATU file PDF berhalaman A4 (dipotong di baris kosong, bukan di tengah tulisan).
+    // [SEMUA CETAK -> PDF A4] Setiap unduhan "PNG" (struk, rekap, setoran, dll) dibuat jadi PDF berukuran A4.
+    // - Kalau isinya bisa muat 1 halaman A4 (boleh diperkecil sedikit, tetap terbaca), jadi 1 halaman utuh.
+    // - Kalau terlalu panjang, dipecah ke halaman berikutnya (lebar penuh A4), dipotong di baris kosong.
     (function () {
       var origClick = HTMLAnchorElement.prototype.click;
+      var PW = 595.28, PH = 841.89, M = 18, MIN_FIT = 0.55;
       function cutRow(ctx, W, H, target, lo, hi) {
         var best = target, bestScore = 1e9;
         for (var y = lo; y <= hi; y++) {
@@ -229,15 +230,15 @@
         var enc = new TextEncoder(), parts = [], len = 0, offs = [];
         function add(x) { var u = typeof x === 'string' ? enc.encode(x) : x; parts.push(u); len += u.length; }
         function obj(id, fn) { offs[id] = len; add(id + ' 0 obj\n'); fn(); add('\nendobj\n'); }
-        var PW = 595.28, N = 2 + pages.length * 3, kids = [];
+        var N = 2 + pages.length * 3, kids = [];
         add('%PDF-1.4\n');
         pages.forEach(function (p, i) { kids.push((3 + i * 3) + ' 0 R'); });
         obj(1, function () { add('<< /Type /Catalog /Pages 2 0 R >>'); });
         obj(2, function () { add('<< /Type /Pages /Kids [' + kids.join(' ') + '] /Count ' + pages.length + ' >>'); });
         pages.forEach(function (p, i) {
-          var po = 3 + i * 3, co = po + 1, io = po + 2, ph = (p.h * PW / p.w).toFixed(2);
-          obj(po, function () { add('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + PW + ' ' + ph + '] /Resources << /XObject << /Im0 ' + io + ' 0 R >> >> /Contents ' + co + ' 0 R >>'); });
-          var cs = 'q ' + PW + ' 0 0 ' + ph + ' 0 0 cm /Im0 Do Q';
+          var po = 3 + i * 3, co = po + 1, io = po + 2;
+          obj(po, function () { add('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + PW + ' ' + PH + '] /Resources << /XObject << /Im0 ' + io + ' 0 R >> >> /Contents ' + co + ' 0 R >>'); });
+          var cs = p.bg[0] + ' ' + p.bg[1] + ' ' + p.bg[2] + ' rg 0 0 ' + PW + ' ' + PH + ' re f q ' + p.dw.toFixed(2) + ' 0 0 ' + p.dh.toFixed(2) + ' ' + p.x.toFixed(2) + ' ' + (PH - p.y - p.dh).toFixed(2) + ' cm /Im0 Do Q';
           obj(co, function () { add('<< /Length ' + cs.length + ' >>\nstream\n' + cs + '\nendstream'); });
           obj(io, function () { add('<< /Type /XObject /Subtype /Image /Width ' + p.w + ' /Height ' + p.h + ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + p.jpg.length + ' >>\nstream\n'); add(p.jpg); add('\nendstream'); });
         });
@@ -247,31 +248,38 @@
         var out = new Uint8Array(len), pos = 0; parts.forEach(function (u) { out.set(u, pos); pos += u.length; });
         return out;
       }
+      function jpgOf(canvas) {
+        var b64 = canvas.toDataURL('image/jpeg', 0.95).split(',')[1], bin = atob(b64), u8 = new Uint8Array(bin.length);
+        for (var z = 0; z < bin.length; z++) u8[z] = bin.charCodeAt(z);
+        return u8;
+      }
       HTMLAnchorElement.prototype.click = function () {
         var a = this, name = a.download || '', href = a.href || '';
         if (a.__noSplit || !/\.png$/i.test(name) || href.indexOf('data:image/png') !== 0) return origClick.call(a);
         var img = new Image();
         img.onload = function () {
           try {
-            var W = img.width, H = img.height, pageH = Math.round(W * 1.414);
-            if (H <= W * 1.6) return origClick.call(a);
-            var n = Math.ceil(H / pageH), ph = H / n;
+            var W = img.width, H = img.height, aw = PW - 2 * M, ah = PH - 2 * M;
             var src = document.createElement('canvas'); src.width = W; src.height = H;
             var sctx = src.getContext('2d', { willReadFrequently: true }); sctx.drawImage(img, 0, 0);
-            var cuts = [0];
-            for (var k = 1; k < n; k++) cuts.push(cutRow(sctx, W, H, Math.round(ph * k), Math.max(cuts[k - 1] + 100, Math.round(ph * k - ph * 0.18)), Math.min(H - 100, Math.round(ph * k + ph * 0.18))));
-            cuts.push(H);
-            var base = name.replace(/\.png$/i, '');
-            var pages = [];
-            for (var q = 0; q < n; q++) {
-              var y0 = cuts[q], h = cuts[q + 1] - y0, c = document.createElement('canvas'); c.width = W; c.height = h;
-              var cx = c.getContext('2d'); cx.fillStyle = '#ffffff'; cx.fillRect(0, 0, W, h); cx.drawImage(src, 0, y0, W, h, 0, 0, W, h);
-              var b64 = c.toDataURL('image/jpeg', 0.95).split(',')[1], bin = atob(b64), u8 = new Uint8Array(bin.length);
-              for (var z = 0; z < bin.length; z++) u8[z] = bin.charCodeAt(z);
-              pages.push({ w: W, h: h, jpg: u8 });
+            // warna latar halaman = warna sudut gambar (struk berlatar biru muda tidak jadi bingkai putih)
+            var px = sctx.getImageData(2, 2, 1, 1).data, bg = [(px[0] / 255).toFixed(3), (px[1] / 255).toFixed(3), (px[2] / 255).toFixed(3)];
+            var sFull = aw / W, sFit = Math.min(aw / W, ah / H), pages = [];
+            if (sFit / sFull >= MIN_FIT) {
+              // muat 1 halaman A4 (diperkecil seperlunya, di tengah)
+              var dw = W * sFit, dh = H * sFit;
+              pages.push({ w: W, h: H, jpg: jpgOf(src), bg: bg, x: (PW - dw) / 2, y: M, dw: dw, dh: dh });
+            } else {
+              var pageH = Math.round(ah / sFull), n = Math.ceil(H / pageH), ph = H / n, cuts = [0];
+              for (var k = 1; k < n; k++) cuts.push(cutRow(sctx, W, H, Math.round(ph * k), Math.max(cuts[k - 1] + 100, Math.round(ph * k - ph * 0.12)), Math.min(H - 100, Math.round(ph * k + ph * 0.12))));
+              cuts.push(H);
+              for (var q = 0; q < n; q++) {
+                var y0 = cuts[q], h = cuts[q + 1] - y0, c = document.createElement('canvas'); c.width = W; c.height = h;
+                var cx = c.getContext('2d'); cx.fillStyle = '#ffffff'; cx.fillRect(0, 0, W, h); cx.drawImage(src, 0, y0, W, h, 0, 0, W, h);
+                pages.push({ w: W, h: h, jpg: jpgOf(c), bg: bg, x: M, y: M, dw: aw, dh: h * sFull });
+              }
             }
-            var pdf = buildPdf(pages);
-            var b = document.createElement('a'); b.download = base + '.pdf'; b.href = URL.createObjectURL(new Blob([pdf], { type: 'application/pdf' })); b.__noSplit = 1;
+            var b = document.createElement('a'); b.download = name.replace(/\.png$/i, '.pdf'); b.href = URL.createObjectURL(new Blob([buildPdf(pages)], { type: 'application/pdf' })); b.__noSplit = 1;
             document.body.appendChild(b); origClick.call(b); document.body.removeChild(b);
             setTimeout(function () { URL.revokeObjectURL(b.href); }, 60000);
           } catch (e) { origClick.call(a); }
@@ -524,6 +532,6 @@
     });
   })();
   </script>
-  <script src="js/app.js?v=20261105a" defer></script>
+  <script src="js/app.js?v=20261105b" defer></script>
 </body>
 </html>
