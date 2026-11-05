@@ -9557,8 +9557,51 @@
 
     // PWA
     let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredPrompt = e; document.getElementById('installBtn').style.display = 'block'; });
-    function installApp() { if (deferredPrompt) { deferredPrompt.prompt(); deferredPrompt.userChoice.then(r => { if (r.outcome === 'accepted') console.log('Installed'); deferredPrompt = null; document.getElementById('installBtn').style.display = 'none'; }); } else { Swal.fire('Info','Klik menu browser > Add to Home Screen','info'); } }
+    window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredPrompt = e; document.getElementById('installBtn').style.display = 'inline-flex'; });
+    function _isStandalone() { try { return window.matchMedia('(display-mode: standalone)').matches || window.matchMedia('(display-mode: fullscreen)').matches || window.navigator.standalone === true; } catch(e) { return false; } }
+    function installApp() {
+      if (deferredPrompt) { deferredPrompt.prompt(); deferredPrompt.userChoice.then(r => { deferredPrompt = null; if (r.outcome === 'accepted') { const b = document.getElementById('installBtn'); if (b) b.style.display = 'none'; } }); return; }
+      pwaDiagnosa();
+    }
+    // Panduan + diagnosa: kenapa menu "Install" tidak muncul di browser perangkat ini.
+    async function pwaDiagnosa() {
+      const ua = navigator.userAgent || '', ok = (v, t, h) => `<div style="display:flex;gap:8px;margin:5px 0;text-align:left;font-size:.82rem"><span>${v === true ? '✅' : (v === false ? '❌' : '⚠️')}</span><span><b>${t}</b>${h ? '<br><span style="color:var(--text3);font-size:.74rem">' + h + '</span>' : ''}</span></div>`;
+      const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      const inApp = /FBAN|FBAV|Instagram|Line\/|WhatsApp|Telegram|MiuiBrowser.*XiaoMi.*Mb|; wv\)/i.test(ua);
+      const isFF = /Firefox|FxiOS/i.test(ua), isSam = /SamsungBrowser/i.test(ua), isEdge = /Edg/i.test(ua), isChrome = /Chrome|CriOS/i.test(ua) && !isEdge && !isSam && !/OPR|Opera/i.test(ua);
+      const secure = window.isSecureContext;
+      let mf = null, mfErr = '', icons = { i192: false, i512: false }, sw = null;
+      try { const link = document.querySelector('link[rel="manifest"]'); const r = await fetch(link ? link.href : 'manifest.json', { cache: 'no-store' }); if (r.ok) mf = await r.json(); else mfErr = 'HTTP ' + r.status; } catch(e) { mfErr = String(e.message || e); }
+      if (mf && Array.isArray(mf.icons)) {
+        icons.i192 = mf.icons.some(x => /192x192/.test(x.sizes || '') || /512x512/.test(x.sizes || ''));
+        icons.i512 = mf.icons.some(x => /512x512/.test(x.sizes || ''));
+        try { const base = document.querySelector('link[rel="manifest"]')?.href || location.href; const first = mf.icons.find(x => /512x512/.test(x.sizes || '')) || mf.icons[0]; const rr = await fetch(new URL(first.src, base).href, { cache: 'no-store' }); icons.load = rr.ok; } catch(e) { icons.load = false; }
+      }
+      try { sw = await navigator.serviceWorker.getRegistration(); } catch(e) {}
+      const dispOk = mf && ['standalone', 'fullscreen', 'minimal-ui'].includes(mf.display);
+      const rows = [
+        ok(secure, 'Alamat aman (HTTPS)', secure ? '' : 'Aplikasi harus dibuka lewat alamat https:// supaya bisa di-install.'),
+        ok(!!mf, 'File manifest terbaca', mf ? '' : 'manifest.json tidak bisa dibuka (' + esc(mfErr) + '). Pastikan file ada di folder yang sama dengan index.html.'),
+        ok(!!(mf && (mf.name || mf.short_name)), 'Nama aplikasi di manifest'),
+        ok(!!(mf && mf.start_url), 'start_url di manifest'),
+        ok(!!dispOk, 'display: standalone', mf ? 'Sekarang: ' + esc(String(mf.display)) : ''),
+        ok(!!(icons.i192 && icons.i512), 'Ikon 192×192 dan 512×512', 'Wajib ada keduanya (PNG) di manifest.'),
+        ok(icons.load === undefined ? null : !!icons.load, 'File ikon bisa dibuka', icons.load === false ? 'Alamat ikon di manifest salah atau file tidak ada di server.' : ''),
+        ok(!!(sw && (sw.active || sw.waiting)), 'Service Worker aktif', sw ? '' : 'Belum terpasang. Buka ulang halaman 1-2 kali.'),
+        ok(!_isStandalone(), 'Belum terpasang sebagai aplikasi', _isStandalone() ? 'Aplikasi ini sudah berjalan sebagai aplikasi terpasang.' : ''),
+        ok(!inApp, 'Dibuka di browser biasa', inApp ? 'Sepertinya dibuka dari dalam aplikasi lain (WhatsApp/Facebook/dll). Salin link lalu buka di Chrome.' : '')
+      ].join('');
+      let cara;
+      if (isIOS) cara = '<b>iPad / iPhone (Safari):</b> ketuk ikon <b>Bagikan</b> (kotak dengan panah ke atas) → <b>Tambah ke Layar Utama</b>. Di iPad/iPhone memang tidak ada pop-up "Install" otomatis, dan hanya Safari yang bisa.';
+      else if (isFF) cara = '<b>Firefox:</b> Firefox di Android/tablet tidak mendukung install PWA penuh. Buka dengan <b>Chrome</b> atau <b>Samsung Internet</b>.';
+      else if (isSam) cara = '<b>Samsung Internet:</b> menu ☰ → <b>Tambahkan halaman ke</b> → <b>Layar utama</b> (atau ikon + di bilah alamat).';
+      else if (isChrome || isEdge) cara = '<b>Chrome/Edge:</b> menu ⋮ → <b>Instal aplikasi</b> (atau <b>Tambahkan ke layar utama</b>). Kalau pilihan itu tidak ada: (1) matikan <b>Mode Samaran/Incognito</b>, (2) matikan <b>Situs Desktop</b> di menu ⋮, (3) hapus cache situs lalu buka lagi 2 kali, (4) pastikan belum pernah terpasang sebelumnya — kalau sudah, cari ikon "Tirta Kencana" di layar utama/laci aplikasi.';
+      else cara = 'Buka menu browser lalu cari <b>Instal aplikasi</b> / <b>Tambahkan ke layar utama</b>. Disarankan memakai Chrome.';
+      Swal.fire({ title: 'Install Aplikasi', html: `<div style="max-height:60vh;overflow:auto">${rows}<hr style="border:0;border-top:1px dashed var(--border);margin:10px 0"><div style="text-align:left;font-size:.8rem;line-height:1.5">${cara}</div></div>`, confirmButtonText: 'Mengerti', width: 460 });
+    }
+    // tombol 📲 selalu tampil (kecuali sudah terpasang) supaya ada panduan walau browser tidak mengirim pop-up install
+    window.addEventListener('load', () => { try { const b = document.getElementById('installBtn'); if (b && !_isStandalone()) b.style.display = 'inline-flex'; } catch(e) {} });
+    window.addEventListener('appinstalled', () => { try { const b = document.getElementById('installBtn'); if (b) b.style.display = 'none'; } catch(e) {} });
     // Service Worker diaktifkan kembali agar memenuhi syarat installability PWA (Add to Home Screen)
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js')
