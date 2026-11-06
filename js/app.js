@@ -9579,6 +9579,11 @@
       }
       try { sw = await navigator.serviceWorker.getRegistration(); } catch(e) {}
       const dispOk = mf && ['standalone', 'fullscreen', 'minimal-ui'].includes(mf.display);
+      // pemeriksaan lanjutan yang sering membuat Chrome menyembunyikan menu Install
+      let scopeOk = null, swFetch = null, anyIcon = null;
+      try { const base = document.querySelector('link[rel="manifest"]')?.href || location.href; if (mf) { const st = new URL(mf.start_url || '.', base).href, sc = new URL(mf.scope || '.', base).href; scopeOk = st.indexOf(sc) === 0; } } catch(e) {}
+      try { if (mf && Array.isArray(mf.icons)) anyIcon = [192, 512].every(n => mf.icons.some(x => (x.sizes || '').split(' ').includes(n + 'x' + n) && (!x.purpose || /\bany\b/.test(x.purpose)) && /png/i.test(x.type || x.src || 'png'))); } catch(e) {}
+      try { const rs = await fetch('sw.js', { cache: 'no-store' }); const tx = rs.ok ? await rs.text() : ''; swFetch = /addEventListener\(\s*['"]fetch['"]/.test(tx); } catch(e) {}
       const rows = [
         ok(secure, 'Alamat aman (HTTPS)', secure ? '' : 'Aplikasi harus dibuka lewat alamat https:// supaya bisa di-install.'),
         ok(!!mf, 'File manifest terbaca', mf ? '' : 'manifest.json tidak bisa dibuka (' + esc(mfErr) + '). Pastikan file ada di folder yang sama dengan index.html.'),
@@ -9588,6 +9593,11 @@
         ok(!!(icons.i192 && icons.i512), 'Ikon 192×192 dan 512×512', 'Wajib ada keduanya (PNG) di manifest.'),
         ok(icons.load === undefined ? null : !!icons.load, 'File ikon bisa dibuka', icons.load === false ? 'Alamat ikon di manifest salah atau file tidak ada di server.' : ''),
         ok(!!(sw && (sw.active || sw.waiting)), 'Service Worker aktif', sw ? '' : 'Belum terpasang. Buka ulang halaman 1-2 kali.'),
+        ok(swFetch, 'Service Worker punya fetch handler', swFetch === false ? 'sw.js harus punya addEventListener("fetch", …).' : ''),
+        ok(scopeOk, 'start_url berada di dalam scope', scopeOk === false ? 'start_url di luar scope manifest.' : ''),
+        ok(anyIcon, 'Ikon PNG 192 & 512 berpurpose "any"', anyIcon === false ? 'Ikon "maskable" saja tidak cukup; tambahkan ikon biasa (purpose any) 192 dan 512.' : ''),
+        ok(!(mf && mf.prefer_related_applications === true), 'prefer_related_applications tidak aktif', mf && mf.prefer_related_applications === true ? 'Nilai true membuat Chrome tidak menawarkan install. Hapus atau ubah ke false.' : ''),
+        ok(mf && mf.id ? true : null, 'Properti id di manifest', mf && mf.id ? '' : 'Disarankan menambah "id": "./" agar identitas aplikasi stabil.'),
         ok(!_isStandalone(), 'Belum terpasang sebagai aplikasi', _isStandalone() ? 'Aplikasi ini sudah berjalan sebagai aplikasi terpasang.' : ''),
         ok(!inApp, 'Dibuka di browser biasa', inApp ? 'Sepertinya dibuka dari dalam aplikasi lain (WhatsApp/Facebook/dll). Salin link lalu buka di Chrome.' : '')
       ].join('');
@@ -9595,9 +9605,10 @@
       if (isIOS) cara = '<b>iPad / iPhone (Safari):</b> ketuk ikon <b>Bagikan</b> (kotak dengan panah ke atas) → <b>Tambah ke Layar Utama</b>. Di iPad/iPhone memang tidak ada pop-up "Install" otomatis, dan hanya Safari yang bisa.';
       else if (isFF) cara = '<b>Firefox:</b> Firefox di Android/tablet tidak mendukung install PWA penuh. Buka dengan <b>Chrome</b> atau <b>Samsung Internet</b>.';
       else if (isSam) cara = '<b>Samsung Internet:</b> menu ☰ → <b>Tambahkan halaman ke</b> → <b>Layar utama</b> (atau ikon + di bilah alamat).';
-      else if (isChrome || isEdge) cara = '<b>Chrome/Edge:</b> menu ⋮ → <b>Instal aplikasi</b> (atau <b>Tambahkan ke layar utama</b>). Kalau pilihan itu tidak ada: (1) matikan <b>Mode Samaran/Incognito</b>, (2) matikan <b>Situs Desktop</b> di menu ⋮, (3) hapus cache situs lalu buka lagi 2 kali, (4) pastikan belum pernah terpasang sebelumnya — kalau sudah, cari ikon "Tirta Kencana" di layar utama/laci aplikasi.';
+      else if (isChrome || isEdge) cara = '<b>Chrome/Edge:</b> menu ⋮ → <b>Save and share</b> (Simpan dan bagikan) → <b>Install page as app / Install app</b> atau <b>Add to Home screen</b>. Di Chrome versi baru pilihan ini ada di dalam submenu <b>Save and share</b>, bukan di daftar utama. Kalau pilihan itu tidak ada: (1) matikan <b>Mode Samaran/Incognito</b>, (2) matikan <b>Situs Desktop</b> di menu ⋮, (3) hapus cache situs lalu buka lagi 2 kali, (4) pastikan belum pernah terpasang sebelumnya — kalau sudah, cari ikon "Tirta Kencana" di layar utama/laci aplikasi.';
       else cara = 'Buka menu browser lalu cari <b>Instal aplikasi</b> / <b>Tambahkan ke layar utama</b>. Disarankan memakai Chrome.';
-      Swal.fire({ title: 'Install Aplikasi', html: `<div style="max-height:60vh;overflow:auto">${rows}<hr style="border:0;border-top:1px dashed var(--border);margin:10px 0"><div style="text-align:left;font-size:.8rem;line-height:1.5">${cara}</div></div>`, confirmButtonText: 'Mengerti', width: 460 });
+      const raw = mf ? '<details style="text-align:left;margin-top:8px"><summary style="font-size:.76rem;cursor:pointer">Lihat isi manifest</summary><pre style="font-size:.68rem;white-space:pre-wrap;word-break:break-all;max-height:30vh;overflow:auto">' + esc(JSON.stringify(mf, null, 1)) + '</pre></details>' : '';
+      Swal.fire({ title: 'Install Aplikasi', html: `<div style="max-height:60vh;overflow:auto">${rows}<hr style="border:0;border-top:1px dashed var(--border);margin:10px 0"><div style="text-align:left;font-size:.8rem;line-height:1.5">${cara}</div>${raw}</div>`, confirmButtonText: 'Mengerti', width: 460 });
     }
     // tombol 📲 selalu tampil (kecuali sudah terpasang) supaya ada panduan walau browser tidak mengirim pop-up install
     window.addEventListener('load', () => { try { const b = document.getElementById('installBtn'); if (b && !_isStandalone()) b.style.display = 'inline-flex'; } catch(e) {} });
