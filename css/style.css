@@ -2261,3 +2261,8 @@ body.light-mode .drv-ok { color:#047857; }
 .dp-rule { display:flex; align-items:center; gap:6px; margin:4px 0; }
 .dp-sku { flex:1; min-width:0; font-size:.78rem; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .dp-rule input { width:96px; flex:none; text-align:right; }
+
+.dp-edit { gap:6px; margin:6px 0; }
+.dp-edit .dp-sk { flex:1; min-width:0; }
+.dp-edit .dp-ds { width:110px; flex:none; text-align:right; }
+.dp-edit .dp-sk { text-align:left; }
