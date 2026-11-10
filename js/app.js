@@ -2723,15 +2723,17 @@
       const hargaInput = div.querySelector('[data-field="harga"]');
       skuInput.addEventListener('input', () => {
         const val = skuInput.value.trim();
-        if (!val) { namaInput.value = ''; recalcTotals(); return; }
+        if (!val) { namaInput.value = ''; try { _dpApplyRow(div); } catch(e) {} recalcTotals(); return; }
         const p = products.find(x => String(x.sku).toLowerCase() === val.toLowerCase() || (x.barcode && String(x.barcode) === val));
         if (p) { skuInput.value = p.sku; namaInput.value = p.nama; hargaInput.value = p.jual || p.harga || 0; }
         else { namaInput.value = ''; }
+        try { _dpApplyRow(div); } catch(e) {}
         recalcTotals();
       });
       ['qty','harga','disc'].forEach(f => div.querySelector(`[data-field="${f}"]`).addEventListener('input', recalcTotals));
       document.getElementById('itemsContainer').appendChild(div);
       if (skuVal) { const p = products.find(x => String(x.sku).toLowerCase() === skuVal.toLowerCase()); if (p) { skuInput.value = p.sku; namaInput.value = p.nama; hargaInput.value = p.jual || p.harga || 0; } }
+      try { _dpApplyRow(div); } catch(e) {}
       recalcTotals();
     }
 
@@ -4225,19 +4227,14 @@
     // --- menu Jual: isi otomatis ---
     function _dpApplyRow(row) {
       const cust = document.getElementById('trxCust')?.value || '', d = row.querySelector('[data-field="disc"]'); if (!d || d.dataset.manual === '1') return;
-      const v = _dpFor(cust, row.querySelector('[data-field="sku"]')?.value || '');
+      const sk = (row.querySelector('[data-field="sku"]')?.value || '').trim();
+      const v = sk ? _dpFor(cust, sk) : null;
       if (v !== null) { d.value = v || ''; d.dataset.auto = '1'; }
       else if (d.dataset.auto === '1') { d.value = ''; d.dataset.auto = ''; }
     }
     function dpApplyAll() {
       document.querySelectorAll('#itemsContainer .cart-item-row').forEach(_dpApplyRow);
       try { recalcTotals(); } catch(e) {}
-      const el = document.getElementById('trxDiscNote'), cust = (document.getElementById('trxCust')?.value || '').trim(); if (!el) return;
-      if (!cust) { el.innerHTML = ''; return; }
-      const rs = _dpRules(cust);
-      el.innerHTML = rs.length
-        ? `<div class="dp-note ok"><i class="fas fa-tags"></i> Diskon pelanggan tersimpan: ${rs.map(r => (r.sku === '*' ? 'semua barang' : esc(r.sku)) + ' −' + Number(r.disc).toLocaleString('id-ID')).join(' · ')} <span>(terisi otomatis, bisa diubah)</span></div>`
-        : `<div class="dp-note"><i class="fas fa-pen"></i> Pelanggan ini belum punya diskon tersimpan — isi kolom Disc manual bila perlu.</div>`;
     }
     // --- menu Diskon Pelanggan ---
     function loadDiskonPel() {
@@ -4246,20 +4243,19 @@
       el.innerHTML = `${_pgHero('fa-tags','Diskon Pelanggan','Diskon tetap per pelanggan, terisi otomatis di menu Jual','<span id="dpCount">0</span>','pelanggan')}
         <div class="card">
           <div class="card-title"><i class="fas fa-plus-circle"></i> Tambah / Ubah Diskon</div>
-          <div class="dp-form">
-            <label>Nama pelanggan<input id="dpCust" list="dpCustList" placeholder="Ketik atau pilih pelanggan" autocomplete="off"><datalist id="dpCustList">${(allCustomers || []).map(c => `<option value="${esc(c)}">`).join('')}</datalist></label>
-            <label>Berlaku untuk<select id="dpSku"><option value="*">Semua barang</option>${(products || []).slice().sort((a,b) => String(a.nama||a.sku).localeCompare(String(b.nama||b.sku))).map(p => `<option value="${esc(p.sku)}">${esc(p.nama || p.sku)} (${esc(p.sku)})</option>`).join('')}</select></label>
-            <label>Diskon per unit (Rp)<input id="dpDisc" type="number" min="0" inputmode="numeric" placeholder="mis. 1000"></label>
-          </div>
-          <button class="btn btn-primary btn-block" onclick="dpSimpan()"><i class="fas fa-floppy-disk"></i> Simpan Diskon</button>
-          <div class="text-sm" style="color:var(--text3);margin-top:8px;line-height:1.5">Kalau pelanggan punya diskon untuk SKU tertentu <b>dan</b> “Semua barang”, yang SKU tertentu dipakai. Isi 0 untuk menghapus aturan.</div>
+          <div class="dp-form"><label>Nama pelanggan<input id="dpCust" list="dpCustList" placeholder="Ketik atau pilih pelanggan" autocomplete="off" oninput="dpCustChange()" onchange="dpCustChange()"><datalist id="dpCustList">${(allCustomers || []).map(c => `<option value="${esc(c)}">`).join('')}</datalist></label></div>
+          <datalist id="dpSkuList"><option value="*">Semua barang</option>${(products || []).map(p => `<option value="${esc(p.sku)}">${esc(p.nama || '')}</option>`).join('')}</datalist>
+          <div id="dpItems"></div>
+          <button type="button" class="btn btn-ghost btn-block" style="margin:8px 0" onclick="dpAddRow()"><i class="fas fa-plus"></i> Tambah Item</button>
+          <button class="btn btn-primary btn-block" onclick="dpSimpan()"><i class="fas fa-floppy-disk"></i> Simpan Semua Diskon</button>
+          <div class="text-sm" style="color:var(--text3);margin-top:8px;line-height:1.5">Isi nama pelanggan, tambahkan semua item + diskonnya, lalu simpan sekali. Kolom barang diisi kode SKU, atau <b>*</b> untuk semua barang. Kalau pelanggan sudah punya diskon, otomatis tampil di sini dan bisa diubah/dihapus. SKU tertentu diutamakan daripada <b>*</b>.</div>
         </div>
         <div class="card">
           <div class="card-title"><i class="fas fa-list"></i> Daftar Diskon Pelanggan</div>
           <input id="dpSearch" placeholder="Cari nama pelanggan…" oninput="_dpRender()" style="margin-bottom:10px">
           <div id="dpList"></div>
         </div>`;
-      _dpRender();
+      window._dpLoadedFor = ''; dpAddRow(); _dpRender();
     }
     function _dpRender() {
       const box = document.getElementById('dpList'); if (!box) return;
@@ -4281,18 +4277,45 @@
       else if (i >= 0) diskonPel[i].disc = disc; else diskonPel.push({ customer, sku, disc });
       _dpSave();
     }
+    function dpAddRow(sku, disc) {
+      const box = document.getElementById('dpItems'); if (!box) return;
+      const d = document.createElement('div'); d.className = 'dp-rule dp-edit';
+      d.innerHTML = `<input class="dp-sk" list="dpSkuList" placeholder="SKU / * semua barang" autocomplete="off" value="${esc(sku || '')}"><input class="dp-ds" type="number" min="0" inputmode="numeric" placeholder="Disc Rp" value="${disc || ''}"><button type="button" class="btn btn-sm btn-ghost" style="color:#DC2626" title="Hapus baris" onclick="this.parentElement.remove()"><i class="fas fa-xmark"></i></button>`;
+      box.appendChild(d);
+    }
+    function _dpRows() {
+      return [...document.querySelectorAll('#dpItems .dp-edit')].map(r => {
+        let sku = r.querySelector('.dp-sk').value.trim(); const raw = r.querySelector('.dp-ds').value;
+        if (/^(\*|semua|semua barang)$/i.test(sku)) sku = '*';
+        const p = (products || []).find(x => _dpN(x.sku) === _dpN(sku)); if (p) sku = p.sku;
+        return { sku, disc: raw === '' ? NaN : Math.round(parseFloat(raw)), raw };
+      }).filter(x => x.sku || x.raw !== '');
+    }
+    // pilih pelanggan: tampilkan diskon yang sudah tersimpan sebagai baris yang bisa diedit
+    function dpCustChange() {
+      const c = (document.getElementById('dpCust')?.value || '').trim(), box = document.getElementById('dpItems'); if (!box) return;
+      const rs = _dpRules(c); if (c === window._dpLoadedFor) return; window._dpLoadedFor = c;
+      box.innerHTML = ''; if (rs.length) rs.forEach(r => dpAddRow(r.sku, r.disc)); else dpAddRow();
+    }
     function dpSimpan() {
-      const customer = (document.getElementById('dpCust')?.value || '').trim(), sku = document.getElementById('dpSku')?.value || '*', disc = Math.round(parseFloat(document.getElementById('dpDisc')?.value));
+      const customer = (document.getElementById('dpCust')?.value || '').trim(), rows = _dpRows();
       if (!customer) return Swal.fire('Nama kosong', 'Isi nama pelanggan dulu.', 'warning');
-      if (!isFinite(disc) || disc < 0) return Swal.fire('Diskon belum diisi', 'Isi diskon per unit (angka, 0 untuk menghapus).', 'warning');
+      if (!rows.length) return Swal.fire('Belum ada item', 'Tambahkan minimal satu item dan diskonnya.', 'warning');
+      for (const r of rows) {
+        if (!r.sku) return Swal.fire('SKU kosong', 'Ada baris yang kode SKU-nya belum diisi (atau isi * untuk semua barang).', 'warning');
+        if (!isFinite(r.disc) || r.disc < 0) return Swal.fire('Diskon belum diisi', 'Ada baris yang diskonnya belum diisi (angka 0 atau lebih).', 'warning');
+        if (r.sku !== '*' && !(products || []).some(x => _dpN(x.sku) === _dpN(r.sku))) return Swal.fire('SKU tidak dikenal', `SKU “${esc(r.sku)}” tidak ada di daftar barang.`, 'warning');
+      }
+      const seen = {}; for (const r of rows) { const k = _dpN(r.sku); if (seen[k]) return Swal.fire('SKU dobel', `SKU “${esc(r.sku)}” muncul dua kali.`, 'warning'); seen[k] = 1; }
       const known = (allCustomers || []).some(c => _dpN(c) === _dpN(customer));
       const go = () => {
-        _dpUpsertLocal(customer, sku, disc);
-        enqueueSync('saveDiskonPelanggan', [{ customer, sku, disc }], 'Diskon ' + customer);
-        document.getElementById('dpDisc').value = ''; _dpRender();
-        Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1800, icon: 'success', title: disc > 0 ? 'Diskon disimpan' : 'Aturan dihapus' });
+        const keep = new Set(rows.map(r => _dpN(r.sku)));
+        _dpRules(customer).filter(r => !keep.has(_dpN(r.sku))).forEach(r => { _dpUpsertLocal(customer, r.sku, 0); enqueueSync('deleteDiskonPelanggan', [{ customer, sku: r.sku }], 'Hapus diskon ' + customer); });
+        rows.forEach(r => { _dpUpsertLocal(customer, r.sku, r.disc); enqueueSync('saveDiskonPelanggan', [{ customer, sku: r.sku, disc: r.disc }], 'Diskon ' + customer); });
+        document.getElementById('dpCust').value = ''; window._dpLoadedFor = ''; document.getElementById('dpItems').innerHTML = ''; dpAddRow(); _dpRender();
+        Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, icon: 'success', title: `Diskon ${customer} disimpan (${rows.length} item)` });
       };
-      if (!known) Swal.fire({ icon: 'question', title: 'Pelanggan belum terdaftar', html: `“${esc(customer)}” tidak ada di daftar pelanggan. Tetap simpan diskonnya? Pastikan penulisan namanya sama dengan di menu Jual.`, showCancelButton: true, confirmButtonText: 'Tetap simpan', cancelButtonText: 'Batal' }).then(r => { if (r.isConfirmed) go(); });
+      if (!known) Swal.fire({ icon: 'question', title: 'Pelanggan belum terdaftar', html: `“${esc(customer)}” tidak ada di daftar pelanggan. Tetap simpan? Pastikan penulisan namanya sama dengan di menu Jual.`, showCancelButton: true, confirmButtonText: 'Tetap simpan', cancelButtonText: 'Batal' }).then(r => { if (r.isConfirmed) go(); });
       else go();
     }
     function dpUbah(btn) {
