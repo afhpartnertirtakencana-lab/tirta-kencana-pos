@@ -2248,3 +2248,16 @@ body.light-mode .drv-ok { color:#047857; }
 .pesrw-ord { margin-top:14px; padding-top:12px; border-top:1px dashed var(--border); }
 .pesrw-ordt { font-weight:800; font-size:.85rem; margin-bottom:8px; color:var(--text); }
 .pesrw-ordt i { color:#29A8FF; margin-right:4px; }
+
+/* ===== v21: Diskon Pelanggan ===== */
+.dp-note { margin-top:6px; padding:7px 10px; border-radius:10px; font-size:.74rem; font-weight:700; line-height:1.4; background:rgba(245,158,11,.14); color:#B45309; border:1px solid rgba(245,158,11,.4); }
+.dp-note.ok { background:rgba(16,185,129,.13); color:#047857; border-color:rgba(16,185,129,.4); }
+.dp-note span { font-weight:600; opacity:.85; }
+.dp-form { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px; margin-bottom:10px; }
+.dp-form label { display:flex; flex-direction:column; gap:4px; font-size:.74rem; font-weight:800; color:var(--text2); }
+.dp-form input, .dp-form select { width:100%; }
+.dp-cust { border:1px solid var(--border); border-radius:14px; padding:8px 10px; margin-bottom:10px; background:var(--surface2); }
+.dp-ch { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px; font-size:.86rem; }
+.dp-rule { display:flex; align-items:center; gap:6px; margin:4px 0; }
+.dp-sku { flex:1; min-width:0; font-size:.78rem; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.dp-rule input { width:96px; flex:none; text-align:right; }
