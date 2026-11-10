@@ -2266,3 +2266,75 @@ body.light-mode .drv-ok { color:#047857; }
 .dp-edit .dp-sk { flex:1; min-width:0; }
 .dp-edit .dp-ds { width:110px; flex:none; text-align:right; }
 .dp-edit .dp-sk { text-align:left; }
+
+/* ===== v22: Dialog (SweetAlert2) seragam azure blue — terbaca di Dark & Light Mode =====
+   Popup umum SELALU terang-azure (isi dialog dirancang untuk latar terang), variabel warna
+   di dalam popup dikunci ke palet terang supaya teks/kotak tidak ikut warna Dark Mode. */
+.swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) {
+  --text:#0B2A4A; --text2:#2F5F8F; --text3:#4A6E94; --border:rgba(0,120,212,.22);
+  --card:#FFFFFF; --surface:#F3F9FF; --surface2:#EAF4FF; --biru:#0067B8; --biru2:#0078D4; --kuning:#0067B8; --teal:#0067B8;
+  --biru-muda:#E3F1FF; --glass:rgba(0,120,212,.06); --glass-border:rgba(0,120,212,.2); --merah:#DC2626; --hijau:#0A7F55; --warn:#B45309;
+  position:relative; overflow:hidden; border-radius:24px !important; color:#0B2A4A !important;
+  background:linear-gradient(180deg,#FFFFFF 0%,#EEF6FF 100%) !important;
+  border:1px solid rgba(0,120,212,.25) !important; box-shadow:0 24px 60px rgba(0,40,100,.35) !important;
+  font-family:var(--font);
+}
+.swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup)::before {
+  content:''; position:absolute; left:0; right:0; top:0; height:5px; background:linear-gradient(90deg,#0A4FA8,#0078D4 55%,#29A8FF); z-index:2;
+}
+.swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) .swal2-title { color:#0A4FA8 !important; font-weight:800 !important; font-size:1.2rem !important; padding-top:10px; }
+.swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) .swal2-html-container { color:#0B2A4A !important; }
+.swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) label { color:#0067B8; }
+.swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) input:not([type=checkbox]):not([type=radio]):not([type=range]),
+.swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) select,
+.swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) textarea {
+  background:#F3F9FF !important; color:#0B2A4A !important; border:1px solid rgba(0,120,212,.32) !important; border-radius:12px !important; box-shadow:none !important;
+}
+.swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) input::placeholder,
+.swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) textarea::placeholder { color:#5F84A8 !important; opacity:1 !important; }
+.swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) input:focus,
+.swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) select:focus,
+.swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) textarea:focus { outline:none; border-color:#0078D4 !important; box-shadow:0 0 0 3px rgba(0,120,212,.2) !important; }
+.swal2-popup select option { background:#fff !important; color:#0B2A4A !important; }
+.swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) input[type=checkbox],
+.swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) input[type=radio] { accent-color:#0078D4; }
+/* tombol bawaan dialog */
+.swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) .swal2-actions { gap:10px; margin-top:16px; }
+.swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) .swal2-confirm:not(.clay-btn) { background:linear-gradient(135deg,#0A5FC4,#0078D4 55%,#29A8FF) !important; color:#fff !important; border:0 !important; border-radius:14px !important; font-weight:800 !important; padding:11px 24px !important; box-shadow:0 6px 16px rgba(0,120,212,.4) !important; }
+.swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) .swal2-cancel:not(.clay-btn) { background:#fff !important; color:#0067B8 !important; border:1.5px solid rgba(0,120,212,.45) !important; border-radius:14px !important; font-weight:800 !important; padding:10px 22px !important; box-shadow:none !important; }
+.swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) .swal2-deny { background:linear-gradient(135deg,#DC2626,#F05252) !important; color:#fff !important; border:0 !important; border-radius:14px !important; font-weight:800 !important; padding:11px 24px !important; }
+.swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) .swal2-validation-message { background:#FFEDEE; color:#B42318; font-weight:700; }
+/* tombol & tabel buatan aplikasi yang tampil di dalam dialog */
+.swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) .btn-outline { background:#EAF4FF !important; color:#0067B8 !important; border:1px solid #9CC7EE !important; font-weight:800; }
+.swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) .btn-primary { background:linear-gradient(135deg,#0A5FC4,#29A8FF) !important; color:#fff !important; border:0 !important; }
+.swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) th { background:#E3F1FF !important; color:#0A4FA8 !important; border-bottom:1px solid rgba(0,120,212,.22) !important; backdrop-filter:none !important; }
+.swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) td { color:#0B2A4A; border-bottom:1px solid rgba(0,120,212,.14) !important; }
+.swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) tr:hover td { background:#F3F9FF !important; }
+/* dialog pilih SKU cetak */
+.swal2-popup .tps-list { background:#F3F9FF; border:1px solid rgba(0,120,212,.3); }
+.swal2-popup .tps-row { color:#0B2A4A; }
+.swal2-popup .tps-row:hover, .swal2-popup .tps-row:active { background:#DDEEFF; }
+.swal2-popup .tps-q { background:#DDF6EA; color:#0A7F55; }
+.swal2-popup .tps-q.neg { background:#FFE4E4; color:#C62828; }
+.swal2-popup .tps-info { color:#3F6590; }
+/* toast */
+.swal2-popup.swal2-toast { padding:10px 14px !important; border-radius:16px !important; }
+.swal2-popup.swal2-toast::before { display:none; }
+.swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) [style*="color:var(--biru"], .swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) [style*="color: var(--biru"],
+.swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) [style*="color:var(--kuning"], .swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) [style*="color:var(--teal"] { color:#0067B8 !important; }
+.swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) a { color:#0067B8; }
+
+/* ===== v23: Notifikasi / Kesehatan Sync terbaca di Dark & Light + input dialog tidak meluber ===== */
+.swal2-popup .swal2-input, .swal2-popup .swal2-select, .swal2-popup .swal2-textarea { width:100% !important; max-width:100% !important; box-sizing:border-box; margin:10px 0 4px !important; }
+.clay-popup .swal2-title, .dash-status-popup .swal2-title { color:#E8F4FF !important; font-weight:800 !important; }
+.clay-popup .swal2-html-container, .dash-status-popup .swal2-html-container { color:#CFE6F8 !important; }
+.clay-popup .swal2-html-container *:not(button):not(i):not([style*="color"]), .dash-status-popup .swal2-html-container *:not(button):not(i):not([style*="color"]) { color:inherit; }
+body.light-mode .clay-popup .swal2-title { color:#0A4FA8 !important; }
+body.light-mode .dash-status-popup .swal2-title { color:#0A4FA8 !important; }
+body.light-mode .clay-popup .swal2-html-container, body.light-mode .dash-status-popup .swal2-html-container { color:#0B2A4A !important; }
+.dash-status-popup .swal2-actions { gap:8px; margin-top:16px; flex-wrap:wrap; }
+.dash-status-popup .swal2-confirm { background:linear-gradient(135deg,#0A5FC4,#0078D4 55%,#29A8FF) !important; color:#fff !important; border:0 !important; border-radius:14px !important; font-weight:800 !important; box-shadow:0 6px 16px rgba(0,120,212,.4) !important; }
+.dash-status-popup .swal2-cancel { background:rgba(41,168,255,.14) !important; color:#8FD3FF !important; border:1.5px solid rgba(41,168,255,.5) !important; border-radius:14px !important; font-weight:800 !important; }
+.dash-status-popup .swal2-deny { background:linear-gradient(135deg,#DC2626,#F05252) !important; color:#fff !important; border:0 !important; border-radius:14px !important; font-weight:800 !important; }
+body.light-mode .dash-status-popup .swal2-cancel { background:#EAF4FF !important; color:#0067B8 !important; border-color:rgba(0,120,212,.45) !important; }
+.dash-status-popup .swal2-confirm:focus, .dash-status-popup .swal2-cancel:focus, .dash-status-popup .swal2-deny:focus { box-shadow:0 0 0 3px rgba(41,168,255,.35) !important; }
