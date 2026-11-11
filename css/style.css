@@ -2372,3 +2372,22 @@ body.light-mode [style*="color:var(--text)"], body.light-mode [style*="color: va
 body.light-mode .swal2-popup .swal2-title { color:#073B85 !important; }
 body.light-mode .card-title { color:#0A3F8F; }
 body.light-mode .dx-kpi-l, body.light-mode .dx-col-l { color:#1F3A63; }
+
+/* ===== v25: ukuran dialog rapi di HP — tidak mentok ke tepi, teks proporsional ===== */
+.swal2-container.swal2-center, .swal2-container { padding:16px !important; }
+.swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) { width:min(92vw,400px); max-width:92vw !important; box-sizing:border-box; padding:0 20px 22px !important; font-size:15px; }
+.swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) .swal2-title { font-size:1.15rem !important; line-height:1.3; padding:20px 4px 4px !important; margin:0 !important; word-break:break-word; }
+.swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) .swal2-html-container { font-size:.92rem !important; line-height:1.5; margin:10px 0 0 !important; padding:0 !important; text-align:center; font-weight:600; }
+.swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) .swal2-input-label { display:block; margin:12px 0 6px !important; padding:0; font-size:.84rem !important; font-weight:700; line-height:1.4; text-align:center; color:#2F5F8F !important; }
+.swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) .swal2-input, .swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) .swal2-select, .swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) .swal2-textarea { font-size:1rem !important; height:46px; padding:0 14px !important; margin:6px 0 0 !important; text-align:left; }
+.swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) .swal2-textarea { height:auto; min-height:90px; padding:10px 14px !important; }
+.swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) .swal2-actions { margin:18px 0 0 !important; gap:10px; width:100%; flex-wrap:nowrap; }
+.swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) .swal2-actions button { flex:1 1 0; min-width:0; margin:0 !important; font-size:.95rem !important; padding:.7em .6em !important; }
+.swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) .swal2-icon { width:4.6em; height:4.6em; margin:22px auto 6px; }
+.swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) .swal2-validation-message { margin:10px 0 0 !important; border-radius:10px; font-size:.82rem; }
+@media (max-width:420px) { .swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup) { padding:0 16px 20px !important; } }
+
+/* ===== v26: dialog default lebih ramping (HP) — lebar khusus lewat opsi width tetap dihormati ===== */
+.swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup):not([style*="width"]) { width:min(84vw,340px) !important; max-width:84vw !important; }
+.swal2-container { padding:12px !important; }
+.swal2-popup .swal2-actions button { font-size:.9rem !important; padding:.7em .4em !important; }
