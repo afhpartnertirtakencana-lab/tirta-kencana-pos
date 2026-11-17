@@ -2391,3 +2391,31 @@ body.light-mode .dx-kpi-l, body.light-mode .dx-col-l { color:#1F3A63; }
 .swal2-popup:not(.etx-popup):not(.clay-popup):not(.dxp-popup):not(.dash-status-popup):not([style*="width"]) { width:min(84vw,340px) !important; max-width:84vw !important; }
 .swal2-container { padding:12px !important; }
 .swal2-popup .swal2-actions button { font-size:.9rem !important; padding:.7em .4em !important; }
+
+/* ===== v27: Riwayat Cek Stock / Cek Kosongan / Titipan (azure, dark & light) ===== */
+.rw-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(86px,1fr)); gap:8px; margin:2px 0 12px; }
+.rw-stat { border-radius:14px; padding:9px 8px; text-align:center; background:rgba(41,168,255,.13); border:1px solid rgba(41,168,255,.38); }
+.rw-stat b { display:block; font-size:1.15rem; font-weight:800; line-height:1.2; color:var(--text); }
+.rw-stat span { font-size:.68rem; font-weight:700; color:var(--text3); }
+.rw-stat.ok { background:rgba(16,185,129,.14); border-color:rgba(16,185,129,.42); } .rw-stat.ok b { color:#34D399; }
+.rw-stat.warn { background:rgba(245,158,11,.14); border-color:rgba(245,158,11,.45); } .rw-stat.warn b { color:#FBBF24; }
+.rw-stat.bad { background:rgba(239,68,68,.13); border-color:rgba(239,68,68,.42); } .rw-stat.bad b { color:#F87171; }
+.rw-ok { color:#34D399; } .rw-bad { color:#F87171; } .rw-mute { color:var(--text3); }
+.rw-badge { display:inline-block; padding:2px 9px; border-radius:999px; font-size:.68rem; font-weight:800; white-space:nowrap; }
+.rw-badge.ok { background:rgba(16,185,129,.18); color:#34D399; } .rw-badge.warn { background:rgba(245,158,11,.2); color:#FBBF24; } .rw-badge.mute { background:rgba(148,163,184,.18); color:var(--text3); }
+.rw-grid, .rw-cust { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; }
+.rw-box { border:1px solid rgba(41,168,255,.35); border-radius:14px; padding:10px 12px; background:rgba(41,168,255,.06); }
+.rw-boxh { display:flex; align-items:center; gap:6px; font-weight:800; font-size:.84rem; color:var(--text); margin-bottom:6px; }
+.rw-boxh i { color:#29A8FF; } .rw-boxh em { margin-left:auto; font-style:normal; font-size:.7rem; padding:1px 8px; border-radius:999px; background:rgba(41,168,255,.2); color:var(--text); }
+.rw-line { display:flex; justify-content:space-between; gap:8px; font-size:.78rem; padding:3px 0; color:var(--text); border-bottom:1px dashed rgba(41,168,255,.22); }
+.rw-line b { font-family:var(--mono); } .rw-line.rw-sum { border-bottom:0; border-top:1px solid rgba(41,168,255,.45); margin-top:4px; padding-top:6px; font-weight:800; }
+.rw-sub { margin:8px 0 2px; font-size:.7rem; font-weight:800; letter-spacing:.02em; color:#29A8FF; }
+body.light-mode .rw-stat.ok b, body.light-mode .rw-ok, body.light-mode .rw-badge.ok { color:#047857; }
+body.light-mode .rw-stat.warn b, body.light-mode .rw-badge.warn { color:#B45309; }
+body.light-mode .rw-stat.bad b, body.light-mode .rw-bad { color:#B91C1C; }
+body.light-mode .rw-stat { background:#EAF4FF; border-color:rgba(0,120,212,.4); }
+body.light-mode .rw-stat.ok { background:#E3F8EE; } body.light-mode .rw-stat.warn { background:#FFF3DC; } body.light-mode .rw-stat.bad { background:#FDE8E8; }
+body.light-mode .rw-box { background:#F4F9FF; border-color:rgba(0,120,212,.35); }
+body.light-mode .rw-boxh i, body.light-mode .rw-sub { color:#0067B8; }
+body.light-mode .rw-boxh em { background:#D6EAFF; color:#04285A; }
+body.light-mode .rw-line { border-bottom-color:rgba(0,80,158,.2); }
