@@ -6779,6 +6779,7 @@
           </div>
           <button class="btn btn-primary btn-block mt-2" onclick="saveCekStockSelection()"><i class="fas fa-save"></i> Simpan Pilihan &amp; Mulai Cek</button>
         </div>`;
+      _rwMount('cs');
     }
     function _toggleAllCekStockCheckbox(checked) {
       document.querySelectorAll('#cekStockCheckList input[type="checkbox"]').forEach(cb => { if (cb.closest('.cek-stock-check-row').style.display !== 'none') cb.checked = checked; });
@@ -6836,6 +6837,7 @@
             </tbody>
           </table></div>
         </div>`;
+      _rwMount('cs');
     }
     function _renderCekStockRow(r, savedVal) {
       const hasVal = savedVal !== undefined && savedVal !== '' && savedVal !== null;
@@ -7029,6 +7031,124 @@
       _waOpen(lines);
     }
 
+
+    // ========== RIWAYAT per TANGGAL: Cek Stock / Cek Kosongan / Titipan ==========
+    // Kartu "Riwayat" di bawah tiap menu: pilih tanggal -> detail hari itu -> Cetak / WhatsApp.
+    const _RW = {
+      cs: { icon:'fa-clipboard-check', title:'Riwayat Cek Stock',    note:'Pilih tanggal untuk melihat hasil Cek Stock hari itu, lalu cetak atau kirim ke WhatsApp.' },
+      ck: { icon:'fa-recycle',         title:'Riwayat Cek Kosongan', note:'Pilih tanggal untuk melihat hitungan galon kosong hari itu, lalu cetak atau kirim ke WhatsApp.' },
+      tt: { icon:'fa-people-carry-box',title:'Riwayat Titipan',      note:'Pilih tanggal untuk melihat pergerakan titipan hari itu (per pelanggan), lalu cetak atau kirim ke WhatsApp.' }
+    };
+    function _rwMount(kind) {
+      const area = document.getElementById('contentArea'); if (!area) return;
+      const old = document.getElementById('rwCard_' + kind); if (old) old.remove();
+      const m = _RW[kind], today = localDateStr();
+      area.insertAdjacentHTML('beforeend', `<div class="card rw-card" id="rwCard_${kind}">
+        <div class="card-title"><i class="fas ${m.icon}"></i> ${m.title}</div>
+        <div class="text-sm" style="color:var(--text3);margin-bottom:8px">${m.note}</div>
+        <div class="pesrw-bar">
+          <button class="btn btn-outline btn-sm" onclick="_rwGeser('${kind}',-1)" aria-label="Hari sebelumnya"><i class="fas fa-chevron-left"></i></button>
+          <input type="date" id="rwTgl_${kind}" value="${localDateStr(new Date(Date.now() - 86400000))}" max="${today}" onchange="_rwLoad('${kind}')">
+          <button class="btn btn-outline btn-sm" onclick="_rwGeser('${kind}',1)" aria-label="Hari berikutnya"><i class="fas fa-chevron-right"></i></button>
+          <button class="btn btn-primary btn-sm" onclick="_rwLoad('${kind}')"><i class="fas fa-magnifying-glass"></i> Tampilkan</button>
+        </div>
+        <div id="rwBody_${kind}"></div></div>`);
+      _rwLoad(kind);
+    }
+    function _rwGeser(kind, n) {
+      const el = document.getElementById('rwTgl_' + kind); if (!el) return;
+      const d = new Date((el.value || localDateStr()) + 'T00:00:00'); d.setDate(d.getDate() + n);
+      const v = localDateStr(d); if (v > localDateStr()) return; el.value = v; _rwLoad(kind);
+    }
+    function _rwStat(items) { return '<div class="rw-stats">' + items.map(i => `<div class="rw-stat ${i.cls || ''}"><b>${i.v}</b><span>${i.l}</span></div>`).join('') + '</div>'; }
+    function _rwEmpty(msg) { return '<div class="text-sm" style="color:var(--text3);padding:20px;text-align:center">' + msg + '</div>'; }
+    async function _rwLoad(kind) {
+      const body = document.getElementById('rwBody_' + kind), tgl = document.getElementById('rwTgl_' + kind)?.value;
+      if (!body) return; if (!tgl) { body.innerHTML = ''; return; }
+      body.innerHTML = '<p class="text-center text-sm" style="padding:16px"><i class="fas fa-spinner fa-spin"></i> Memuat ' + esc(fmtDate(tgl)) + '…</p>';
+      try {
+        const html = await ({ cs: _rwCekStock, ck: _rwCekKosongan, tt: _rwTitipan }[kind])(tgl);
+        if (document.getElementById('rwTgl_' + kind)?.value !== tgl) return;   // tanggal sudah diganti
+        body.innerHTML = html;
+      } catch (e) { if (document.getElementById('rwTgl_' + kind)?.value === tgl) body.innerHTML = _rwEmpty('Gagal memuat data: ' + esc(e.message || e)); }
+    }
+    // ---------- Cek Stock ----------
+    async function _rwCekStock(tgl) {
+      let skus = [], values = {};
+      try { const r = await gasCall('getCekStockByDate', [tgl], 0); if (r && Array.isArray(r.skus) && r.skus.length) { skus = r.skus; values = r.values || {}; } } catch (e) {}
+      if (!skus.length) { values = _loadCekStockValues(tgl); if (Object.keys(values).length) skus = _loadCekStockSkus(); }
+      if (!skus.length || !Object.keys(values).filter(k => values[k] !== '' && values[k] != null).length) return _rwEmpty('Tidak ada hasil Cek Stock pada ' + esc(fmtDate(tgl)) + '.');
+      let stock = []; try { stock = await getCorrectedStockBarangForDate(tgl); } catch (e) {}
+      const rows = skus.map(sku => {
+        const sr = (stock || []).find(d => d.sku === sku), pr = products.find(x => x.sku === sku), st = sr ? sr.stokAkhir : 0;
+        const v = values[sku], hasVal = v !== undefined && v !== '' && v !== null;
+        return { sku, nama: (sr && sr.nama) || (pr && pr.nama) || sku, stock: st, hasVal, cekStock: hasVal ? Number(v) : null, selisih: hasVal ? Number(v) - st : null };
+      }).sort((a, b) => (a.nama || '').localeCompare(b.nama || ''));
+      const cocok = rows.filter(r => r.hasVal && r.selisih === 0).length, cekLagi = rows.filter(r => r.hasVal && r.selisih !== 0).length;
+      window._rwData = Object.assign(window._rwData || {}, { cs: { date: tgl, rows, cocokCount: cocok, cekLagiCount: cekLagi, belumCount: rows.length - cocok - cekLagi } });
+      return `${_rwStat([{ v: rows.length, l: 'Total SKU' }, { v: cocok, l: 'Cocok', cls: 'ok' }, { v: cekLagi, l: 'Cek Lagi', cls: 'warn' }, { v: rows.length - cocok - cekLagi, l: 'Belum Dicek' }])}
+        <div class="table-wrap"><table><thead><tr><th>SKU</th><th>Nama Barang</th><th style="text-align:center">Stock</th><th style="text-align:center">Cek</th><th style="text-align:center">Selisih</th><th style="text-align:center">Status</th></tr></thead><tbody>
+        ${rows.map(r => `<tr><td style="font-family:var(--mono);font-size:11px">${esc(r.sku)}</td><td>${esc(r.nama)}</td><td style="text-align:center;font-family:var(--mono);font-weight:700">${r.stock}</td><td style="text-align:center;font-family:var(--mono);font-weight:700">${r.hasVal ? r.cekStock : '-'}</td>
+          <td style="text-align:center;font-family:var(--mono);font-weight:800" class="${!r.hasVal ? 'rw-mute' : (r.selisih === 0 ? 'rw-ok' : 'rw-bad')}">${r.hasVal ? (r.selisih > 0 ? '+' : '') + r.selisih : '-'}</td>
+          <td style="text-align:center"><span class="rw-badge ${!r.hasVal ? 'mute' : (r.selisih === 0 ? 'ok' : 'warn')}">${!r.hasVal ? 'Belum' : (r.selisih === 0 ? '✔ Cocok' : '⚠ Cek Lagi')}</span></td></tr>`).join('')}
+        </tbody></table></div>
+        <div class="pesrw-act"><button class="btn btn-primary" onclick="rwCetak('cs')"><i class="fas fa-receipt"></i> Cetak</button><button class="btn btn-outline" onclick="rwWA('cs')"><i class="fab fa-whatsapp"></i> WhatsApp</button></div>`;
+    }
+    // ---------- Cek Kosongan ----------
+    async function _rwCekKosongan(tgl) {
+      let d = null;
+      try { const r = await gasCall('getCekKosonganByDate', [tgl], 0); if (r) d = { toko: r.toko, mobil: r.mobil, titipan: r.titipan || [], pinjaman: r.pinjaman || [] }; } catch (e) {}
+      if (!d || !_ckAda(d)) d = _loadCK(tgl);
+      if (!_ckAda(d)) return _rwEmpty('Tidak ada data Cek Kosongan pada ' + esc(fmtDate(tgl)) + '.');
+      const t = _ckTotals(d);
+      window._rwData = Object.assign(window._rwData || {}, { ck: { date: tgl, toko: t.toko, mobil: t.mobil, totalStok: t.totalStok, titipan: d.titipan, totalTitipan: t.totalTitipan, stokMinusTitipan: t.stokMinusTitipan, pinjaman: d.pinjaman, totalPinjaman: t.totalPinjaman, totalGalon: t.totalGalon } });
+      const list = (arr, empty) => arr.length ? arr.map(r => `<div class="rw-line"><span>${esc(r.nama || '-')}</span><b>${Number(r.qty) || 0}</b></div>`).join('') : `<div class="rw-line rw-mute"><span>${empty}</span></div>`;
+      return `${_rwStat([{ v: t.toko, l: '🏬 Toko' }, { v: t.mobil, l: '🚚 Mobil' }, { v: t.totalStok, l: 'Total Stok' }, { v: t.totalGalon, l: 'Total Galon', cls: 'ok' }])}
+        <div class="rw-grid">
+          <div class="rw-box"><div class="rw-boxh"><i class="fas fa-people-carry-box"></i> Titipan <em>${t.totalTitipan}</em></div>${list(d.titipan, 'Tidak ada titipan')}<div class="rw-line rw-sum"><span>Total − Titipan</span><b>${t.stokMinusTitipan}</b></div></div>
+          <div class="rw-box"><div class="rw-boxh"><i class="fas fa-hand-holding"></i> Pinjaman <em>${t.totalPinjaman}</em></div>${list(d.pinjaman, 'Tidak ada pinjaman')}<div class="rw-line rw-sum"><span>Total Galon</span><b>${t.totalGalon}</b></div></div>
+        </div>
+        <div class="pesrw-act"><button class="btn btn-primary" onclick="rwCetak('ck')"><i class="fas fa-receipt"></i> Cetak</button><button class="btn btn-outline" onclick="rwWA('ck')"><i class="fab fa-whatsapp"></i> WhatsApp</button></div>`;
+    }
+    // ---------- Titipan ----------
+    async function _rwTitipan(tgl) {
+      if (!Array.isArray(window._titipanList)) { try { const l = await gasCall('getTitipanList', []); window._titipanList = Array.isArray(l) ? l : []; } catch (e) { window._titipanList = []; } }
+      const all = window._titipanList, day = all.filter(e => e.date === tgl);
+      if (!day.length) return _rwEmpty('Tidak ada pergerakan titipan pada ' + esc(fmtDate(tgl)) + '.');
+      const NONAME = '(Tanpa Nama)', groups = {};
+      day.forEach(e => { const c = e.customer || NONAME; (groups[c] = groups[c] || []).push(e); });
+      const names = Object.keys(groups).sort();
+      const masuk = day.filter(e => e.tipe === 'masuk').reduce((a, e) => a + (Number(e.qty) || 0), 0), keluar = day.filter(e => e.tipe !== 'masuk').reduce((a, e) => a + (Number(e.qty) || 0), 0);
+      const payloads = names.map(c => {
+        const mine = all.filter(e => (e.customer || NONAME) === c && e.date <= tgl), map = {};
+        mine.forEach(e => { (map[e.sku] = map[e.sku] || { nama: e.nama, masuk: 0, keluar: 0 }); if (e.tipe === 'masuk') map[e.sku].masuk += Number(e.qty) || 0; else map[e.sku].keluar += Number(e.qty) || 0; });
+        const sisaRows = Object.keys(map).map(sku => ({ sku, nama: map[sku].nama, sisa: map[sku].masuk - map[sku].keluar })).sort((a, b) => (a.nama || '').localeCompare(b.nama || ''));
+        return { date: tgl, customer: c, todayEntries: groups[c], sisaRows };
+      });
+      window._rwData = Object.assign(window._rwData || {}, { tt: payloads });
+      return `${_rwStat([{ v: day.length, l: 'Pergerakan' }, { v: names.length, l: 'Pelanggan' }, { v: '+' + masuk, l: 'Masuk', cls: 'ok' }, { v: '−' + keluar, l: 'Keluar', cls: 'bad' }])}
+        <div class="rw-cust">${payloads.map((pl, i) => `<div class="rw-box">
+          <div class="rw-boxh"><i class="fas fa-user"></i> ${esc(pl.customer)} <em>${pl.todayEntries.length} entri</em></div>
+          ${pl.todayEntries.map(e => { const m = e.tipe === 'masuk'; return `<div class="rw-line"><span>${esc(e.nama)}</span><b class="${m ? 'rw-ok' : 'rw-bad'}">${m ? '+' : '−'}${Number(e.qty) || 0}</b></div>`; }).join('')}
+          <div class="rw-sub">Sisa titipan s/d ${esc(fmtDate(tgl))}</div>
+          ${pl.sisaRows.map(r => `<div class="rw-line"><span>${esc(r.nama)}</span><b class="${r.sisa < 0 ? 'rw-bad' : ''}">${r.sisa}</b></div>`).join('')}
+          <div class="pesrw-act"><button class="btn btn-primary btn-sm" onclick="rwCetak('tt',${i})"><i class="fas fa-receipt"></i> Cetak</button><button class="btn btn-outline btn-sm" onclick="rwWA('tt',${i})"><i class="fab fa-whatsapp"></i> WA</button></div>
+        </div>`).join('')}</div>`;
+    }
+    function _rwGet(kind, i) { const d = (window._rwData || {})[kind]; return kind === 'tt' ? (d || [])[i] : d; }
+    function rwCetak(kind, i) {
+      const p = _rwGet(kind, i); if (!p) return;
+      if (kind === 'cs') { _lastCekStockPayload = p; showCekStockStrukModal(p); }
+      else if (kind === 'ck') { _lastCekKosonganPayload = p; showCekKosonganStrukModal(p); }
+      else { _lastTitipanPayload = p; showTitipanStrukModal(p); }
+    }
+    function rwWA(kind, i) {
+      const p = _rwGet(kind, i); if (!p) return;
+      if (kind === 'cs') { _lastCekStockPayload = p; doCekStockWA(); }
+      else if (kind === 'ck') { _lastCekKosonganPayload = p; doCekKosonganWA(); }
+      else { _lastTitipanPayload = p; doTitipanWA(); }
+    }
+
     // ========== CEK KOSONGAN (GALON KOSONG: TOKO/MOBIL/TITIPAN/PINJAMAN) ==========
     // Pola data & penyimpanan sama seperti Cek Stock (localStorage per-tanggal, murni
     // alat bantu operasional, tidak dikirim ke Google Sheets). Struktur mengikuti
@@ -7166,6 +7286,7 @@
           <div class="total-box" style="margin:8px 0"><div class="flex-between"><span>Total Pinjaman</span><span id="ckTotalPinjaman" style="font-family:var(--mono);color:#D97706">${tToday.totalPinjaman}</span></div><div class="flex-between" style="font-size:1.05rem;font-weight:900"><span>TOTAL GALON</span><span id="ckTotalGalon" style="font-family:var(--mono);color:var(--hijau,#16A34A)">${tToday.totalGalon}</span></div></div>
         </div>
         </div>`;
+      _rwMount('ck');
       ensureJualTwoColStyles();
     }
     function _ckRowHtml(type, i, r) {
@@ -8167,6 +8288,7 @@
               </div>`;
             }).join('')}</div>`}
         </div>`;
+      _rwMount('tt');
       ensureJualTwoColStyles();
     }
     function titSkuChange() {
