@@ -60,7 +60,75 @@
     // Fungsi yang memang butuh waktu lama (AI, kirim email): batas waktu lebih panjang dan TANPA jalur cadangan GET,
     // supaya server tidak diminta mengerjakan hal yang sama dua kali (boros jatah AI / email ganda).
     const _GAS_LONG = { aiTanya: 75000, kirimLaporanEmail: 60000, kirimNotifTes: 45000, selfTest: 60000, backupNow: 60000, driveStatus: 60000, driveSimpanLaporan: 60000, driveEksporData: 120000, driveRestoreBackup: 240000 };
+    // ===== [v28] Cache baca + stale-while-revalidate =====
+    // Panggilan baca (get*) tertentu: hasil disimpan sebentar di memori sehingga membuka menu/riwayat/ulangi-pesanan
+    // tidak menunggu server lagi. 'fresh' = langsung dipakai tanpa ke server; 'stale' = tetap ditampilkan seketika
+    // sambil diperbarui di latar belakang (halaman 'page' otomatis digambar ulang bila isinya berubah).
+    // Setiap penulisan (simpan/hapus/sync) mengosongkan cache, jadi perubahan dari perangkat ini selalu langsung terlihat.
+    const _RC_CFG = {
+      getTitipanList:       { fresh: 45000, stale: 900000, page: 'titipan' },
+      getCekKosonganByDate: { fresh: 45000, stale: 900000, page: 'cekkosongan' },
+      getCekStockByDate:    { fresh: 45000, stale: 900000, page: 'cekstock' },
+      getTrxDetail:         { fresh: 600000, stale: 3600000 },
+      getPesananByDate:     { fresh: 30000, stale: 0 },
+      getRetur:             { fresh: 45000, stale: 0 },
+      getDiskonPelanggan:   { fresh: 60000, stale: 0 },
+      getStockBarang:       { fresh: 20000, stale: 0 }
+    };
+    let _RC = {}, _RCP = {}, _rcGen = 0;
+    function _rcKey(fn, args) { return fn + '|' + JSON.stringify(args || []); }
+    function _rcClear() { _rcGen++; _RC = {}; _RCP = {}; }
+    function _rcPeek(fn, args) { const c = _RC[_rcKey(fn, args)]; return c ? JSON.parse(c.v) : null; }
+    function _rcNotify(page) {
+      try {
+        if (!page || currentPage !== page) return;
+        if (typeof Swal !== 'undefined' && Swal.isVisible && Swal.isVisible()) return;
+        const a = document.activeElement; if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && a.closest && a.closest('#contentArea')) return;
+        renderContent();
+      } catch (e) {}
+    }
+    function _rcFetch(key, fn, args, retry, cfg, bg) {
+      if (_RCP[key]) return _RCP[key];
+      const gen = _rcGen;
+      const pr = _gasCallRaw(fn, args, retry).then(r => {
+        if (gen === _rcGen) {
+          const v = JSON.stringify(r === undefined ? null : r), old = _RC[key];
+          _RC[key] = { t: Date.now(), v };
+          if (bg && old && old.v !== v) _rcNotify(cfg.page);
+        }
+        return r;
+      }).finally(() => { if (_RCP[key] === pr) delete _RCP[key]; });
+      _RCP[key] = pr;
+      if (bg) pr.catch(() => {});
+      return pr;
+    }
     async function gasCall(fn, args = [], retry = 1) {
+      const cfg = _RC_CFG[fn];
+      if (!cfg) {
+        if (!/^get/.test(fn)) {
+          _rcClear();
+          const r = await _gasCallRaw(fn, args, retry);
+          _rcClear();
+          return r;
+        }
+        return _gasCallRaw(fn, args, retry);
+      }
+      const key = _rcKey(fn, args), c = _RC[key], age = c ? Date.now() - c.t : Infinity;
+      if (c && age < cfg.fresh) return JSON.parse(c.v);
+      if (c && age < cfg.stale) { _rcFetch(key, fn, args, 0, cfg, true); return JSON.parse(c.v); }
+      return _rcFetch(key, fn, args, retry, cfg, false).then(r => (r === undefined || r === null) ? r : JSON.parse(JSON.stringify(r)));
+    }
+    // Isi cache lebih awal (di latar belakang, satu per satu) supaya menu pertama kali dibuka sudah instan
+    let _warmBusy = false;
+    async function warmCache() {
+      if (_warmBusy || !navigator.onLine || !sessionToken) return; _warmBusy = true;
+      try {
+        const t = localDateStr(), y = localDateStr(new Date(Date.now() - 86400000));
+        const jobs = [['getTitipanList', []], ['getCekKosonganByDate', [t]], ['getCekStockByDate', [t]], ['getCekKosonganByDate', [y]], ['getCekStockByDate', [y]], ['getPesananByDate', [t]], ['getStockBarang', []]];
+        for (const [fn, a] of jobs) { try { await gasCall(fn, a, 0); } catch (e) {} await new Promise(r => setTimeout(r, 150)); }
+      } finally { _warmBusy = false; }
+    }
+    async function _gasCallRaw(fn, args = [], retry = 1) {
       if (_GAS_LONG[fn]) return await _gasCallPost(fn, args, _GAS_LONG[fn]);
       try {
         return await _gasCallPost(fn, args);
@@ -1141,6 +1209,7 @@
         syncCustomerAddressesFromGAS(); // [NEW] tarik alamat pelanggan terbaru dari Sheets juga
         cicilanSync(); // [NEW] cicilan piutang
         returSync(); // [v16] retur barang
+        try { setTimeout(warmCache, 1500); } catch(e) {}
         try { diskonPelSync(); } catch(e) {} // [v21] diskon pelanggan
         if (Array.isArray(prod)) products = prod;
         if (Array.isArray(cust)) { allCustomers = cust; pelanggan = cust.slice(); }
@@ -2520,7 +2589,7 @@
         </div>`;
       ensureJualTwoColStyles();
       cfgSyncFromServer();
-      { const _ci = document.getElementById('trxCust'); if (_ci) { ['input','change'].forEach(ev => _ci.addEventListener(ev, () => { clearTimeout(_custHintTimer); _custHintTimer = setTimeout(() => { updateCustomerHints(); try { dpApplyAll(); } catch(e) {} }, 250); })); } }
+      { const _ci = document.getElementById('trxCust'); if (_ci) { ['input','change'].forEach(ev => _ci.addEventListener(ev, () => { clearTimeout(_custHintTimer); _custHintTimer = setTimeout(() => { updateCustomerHints(); try { dpApplyAll(); } catch(e) {} }, 80); })); } }
       { const _ic = document.getElementById('itemsContainer'); if (_ic) _ic.addEventListener('input', e => { const t = e.target; if (e.isTrusted && t && t.matches && t.matches('[data-field="disc"]')) { t.dataset.manual = '1'; t.dataset.auto = ''; } }); }
       _itemIdx = 0;
       document.getElementById('trxTgl').value = localDateStr();
@@ -4636,6 +4705,7 @@
         h += `<div style="margin-top:6px;padding:8px 10px;border-radius:10px;font-size:.74rem;font-weight:700;background:${bad?'rgba(220,38,38,.12)':'rgba(245,158,11,.12)'};color:${bad?'#DC2626':'#D97706'};border:1px solid ${bad?'rgba(220,38,38,.35)':'rgba(245,158,11,.35)'}">${bad?'⚠️':'ℹ️'} Piutang ${fmtRp(cs.total)} (${cs.count} trx, tertua ${cs.days} hari)${cs.overLimit?` · melewati batas ${fmtRp(cs.limit)}`:''}${cs.overDue?` · lewat ${appConfig.kredit.maxHari} hari`:''}</div>`;
       }
       { const _nm = x => String(x||'').trim().replace(/\s+/g,' ').toLowerCase(), _mine = allTrxList.filter(t => _nm(t.customer) === _nm(name)).sort(window._trxNewestFirst || (() => 0));
+        if (_mine.length) { try { gasCall('getTrxDetail', [_mine[0].id], 0).catch(() => {}); } catch(e) {} }
         if (_mine.length) h += `<button type="button" class="btn btn-sm btn-outline" style="margin-top:6px" onclick="repeatLastOrder()"><i class="fas fa-rotate-right"></i> Ulangi pesanan terakhir <span style="opacity:.75;font-weight:600">(${esc(fmtDate(_mine[0].tgl))})</span></button>`; }
       el.innerHTML = h;
     }
@@ -4648,8 +4718,9 @@
       if (!last) return Swal.fire('Info', 'Belum ada transaksi sebelumnya untuk pelanggan ini.', 'info');
       // Ambil detail dari server dulu (paling akurat); bila gagal pakai item yang tersimpan di HP ini
       let items = null;
-      try { const d = await gasCall('getTrxDetail', [last.id]); if (d && Array.isArray(d.items) && d.items.length) items = d.items; } catch(e) {}
-      if (!items && Array.isArray(last.items) && last.items.length) items = last.items;
+      { const pk = _rcPeek('getTrxDetail', [last.id]); if (pk && Array.isArray(pk.items) && pk.items.length) items = pk.items; }   // sudah di-prefetch -> instan
+      if (!items && Array.isArray(last.items) && last.items.length) { items = last.items; gasCall('getTrxDetail', [last.id], 0).catch(() => {}); }   // pakai data HP dulu, tanpa menunggu
+      if (!items) { try { const d = await gasCall('getTrxDetail', [last.id]); if (d && Array.isArray(d.items) && d.items.length) items = d.items; } catch(e) {} }
       if (!Array.isArray(items) || !items.length) return Swal.fire('Info', 'Detail item transaksi terakhir (' + last.id + ') tidak tersedia.', 'info');
       const ts = window._trxTs ? window._trxTs(last) : 0;
       const waktu = ts ? new Date(ts).toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' }).replace('.', ':') : '';
@@ -8152,10 +8223,16 @@
     // referensi gambar (tabel Masuk/Keluar/Sisa berjalan dari waktu ke waktu).
     window._titipanList = [];
     async function loadTitipan() {
-      document.getElementById('contentArea').innerHTML = `<div class="card"><p class="text-center text-sm" style="padding:40px">Memuat data titipan...</p></div>`;
+      const _had = Array.isArray(window._titipanList), _before = _had ? JSON.stringify(window._titipanList) : '';
+      if (_had) renderTitipanPage();   // tampil langsung dari data yang sudah ada, lalu diperbarui di bawah
+      else document.getElementById('contentArea').innerHTML = `<div class="card"><p class="text-center text-sm" style="padding:40px">Memuat data titipan...</p></div>`;
       try {
         const list = await gasCall('getTitipanList', []);
         window._titipanList = Array.isArray(list) ? list : [];
+        if (_had) {
+          if (JSON.stringify(window._titipanList) === _before) return;   // tidak ada perubahan -> tidak perlu gambar ulang
+          const a = document.activeElement; if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && a.closest && a.closest('#contentArea')) return;   // jangan ganggu yang sedang mengetik
+        }
       } catch(e) {
         console.warn('Gagal ambil data titipan:', e);
         Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:3000, icon:'warning', title:'Gagal ambil data dari server: ' + e.message });
