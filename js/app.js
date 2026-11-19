@@ -1720,6 +1720,32 @@
     function _pgHero(icon, title, sub, val, lbl) {
       return `<div class="pg-hero"><div class="pg-hero-eyebrow"><i class="fas ${icon}"></i> ${title}</div><div class="pg-hero-sub">${sub||''}</div>${val !== undefined && val !== null ? `<div class="pg-hero-val">${val}</div><div class="pg-hero-lbl">${lbl||''}</div>` : ''}</div>`;
     }
+    // [v33] Scrollbar samping melebar saat kursor mendekat (hanya perangkat dengan mouse)
+    (function () {
+      try { if (!window.matchMedia || !matchMedia('(hover:hover) and (pointer:fine)').matches) return; } catch (e) { return; }
+      const ZONE = 24; let last = null, raf = 0, mx = 0, my = 0;
+      function scrollableAt(x, y) {
+        let el = document.elementFromPoint(x, y);
+        while (el && el !== document.body && el !== document.documentElement) {
+          const cs = getComputedStyle(el);
+          if ((cs.overflowY === 'auto' || cs.overflowY === 'scroll') && el.scrollHeight > el.clientHeight + 1) {
+            const r = el.getBoundingClientRect();
+            if (r.right - x <= ZONE && r.right - x >= 0) return el;
+          }
+          el = el.parentElement;
+        }
+        const de = document.documentElement;
+        if (de.scrollHeight > de.clientHeight + 1 && window.innerWidth - x <= ZONE) return de;
+        return null;
+      }
+      // scrollbar halaman (viewport) hanya mau berubah lewat penggantian isi <style>, bukan class
+      let _vs = null;
+      function pageNear(on) { try { if (!_vs) { _vs = document.createElement('style'); document.head.appendChild(_vs); } _vs.textContent = on ? '::-webkit-scrollbar-thumb{border-width:1px!important;background-color:rgba(0,150,230,.85)!important}' : ''; } catch (e) {} }
+      function mark(el, on) { if (!el) return; el.classList.toggle('sb-near', on); if (el === document.documentElement) pageNear(on); }
+      function tick() { raf = 0; const el = scrollableAt(mx, my); if (el === last) return; mark(last, false); mark(el, true); last = el; }
+      document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; if (!raf) raf = requestAnimationFrame(tick); }, { passive: true });
+      document.addEventListener('mouseleave', () => { if (last) { mark(last, false); last = null; } });
+    })();
     // [v29] Sales & Driver otomatis terisi sesuai user yang login (dikunci); admin tetap bisa memilih bebas
     const _AUTOUSER_SEL = { trxSales:'sales', setorSales:'sales', pesSales:'sales', inpDriver:'driver' };
     function _autoUserSelects() {
