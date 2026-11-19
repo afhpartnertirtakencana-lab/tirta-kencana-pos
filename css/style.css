@@ -2501,3 +2501,28 @@ tr.ri-sub td:first-child { color:#0067B8; }
 body:not(.light-mode) tr.ri-sub td { background:rgba(41,168,255,.14); color:#CFE8FF; }
 body:not(.light-mode) tr.ri-sub td:first-child { color:#7CC8FF; }
 body.light-mode tr.ri-sub td { color:#05224A; }
+
+/* ===== [v33] Scrollbar samping: tipis saat diam, melebar saat kursor mendekat (web/desktop) ===== */
+@media (hover:hover) and (pointer:fine) {
+  ::-webkit-scrollbar { width:14px; height:14px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-corner { background:transparent; }
+  ::-webkit-scrollbar-thumb { background-color:rgba(0,150,230,.4); border:5px solid transparent; background-clip:content-box; border-radius:99px; min-height:44px; min-width:44px; }
+  .sb-near::-webkit-scrollbar-thumb { border-width:1px; background-color:rgba(0,150,230,.8); }
+  ::-webkit-scrollbar-thumb:hover { background-color:rgba(0,170,255,.95); }
+  .content-area::-webkit-scrollbar { width:14px; }
+  .menu-tabs-wrap .menu-tabs { scrollbar-width:auto !important; scrollbar-color:auto !important; }
+  .menu-tabs-wrap .menu-tabs::-webkit-scrollbar { width:14px; height:14px; }
+  .menu-tabs-wrap .menu-tabs::-webkit-scrollbar-thumb { background-color:rgba(0,150,230,.4); border:5px solid transparent; background-clip:content-box; border-radius:99px; }
+  .menu-tabs-wrap .menu-tabs.sb-near::-webkit-scrollbar-thumb { border-width:1px; background-color:rgba(0,150,230,.8); }
+  .content-area::-webkit-scrollbar-thumb { border:5px solid transparent; background-clip:content-box; background-color:rgba(0,150,230,.4); }
+  .content-area.sb-near::-webkit-scrollbar-thumb { border-width:1px; background-color:rgba(0,150,230,.8); }
+}
+@supports (-moz-appearance:none) {
+  * { scrollbar-width:thin; scrollbar-color:rgba(0,150,230,.5) transparent; }
+  .sb-near { scrollbar-width:auto; }
+}
+@media (hover:hover) and (pointer:fine) {
+  html { color-scheme:dark; }
+  html:has(body.light-mode) { color-scheme:light; }
+}
