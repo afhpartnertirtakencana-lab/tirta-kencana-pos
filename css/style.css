@@ -2419,3 +2419,17 @@ body.light-mode .rw-box { background:#F4F9FF; border-color:rgba(0,120,212,.35); 
 body.light-mode .rw-boxh i, body.light-mode .rw-sub { color:#0067B8; }
 body.light-mode .rw-boxh em { background:#D6EAFF; color:#04285A; }
 body.light-mode .rw-line { border-bottom-color:rgba(0,80,158,.2); }
+
+/* ===== [v29] Menu bawah lebih rapi: bar pendek, ikon+label rapat & sejajar, tombol Jual menonjol di atas bar ===== */
+.bottom-nav-mobile { align-items:stretch; padding:0 6px env(safe-area-inset-bottom); height:calc(60px + env(safe-area-inset-bottom)); box-sizing:border-box; }
+.bottom-nav-mobile .bnav-item { justify-content:flex-end; gap:4px; padding:0 2px 9px; }
+.bottom-nav-mobile .bnav-item i { font-size:1.15rem; line-height:1; height:1.15rem; display:flex; align-items:center; justify-content:center; }
+.bottom-nav-mobile .bnav-item span { font-size:.64rem; line-height:1; }
+.bottom-nav-mobile .bnav-item.active span { font-weight:800; }
+.bottom-nav-mobile .bnav-item.active::before { content:''; position:absolute; top:0; left:28%; right:28%; height:3px; border-radius:0 0 4px 4px; background:currentColor; }
+.bottom-nav-mobile .bnav-center { flex:1.15; overflow:visible; }
+.bottom-nav-mobile .bnav-center.active::before { display:none; }
+.bottom-nav-mobile .bnav-center .bnav-center-btn { position:absolute; top:-24px; left:50%; width:52px; height:52px; margin:0; transform:translateX(-50%); }
+.bottom-nav-mobile .bnav-center .bnav-center-btn i { height:auto; }
+.bottom-nav-mobile .bnav-center span { transform:none; }
+.bottom-nav-mobile .bnav-item .bnav-lock { top:4px; right:20%; height:auto; }
