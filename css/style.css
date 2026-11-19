@@ -2487,3 +2487,10 @@ body.light-mode .menu-tabs-wrap .menu-tabs .tab i{background:#EAF4FF}
 .menu-tabs-wrap .menu-tabs .tab.active{box-shadow:0 8px 20px rgba(0,120,212,.4)!important}
 body.light-mode .side-hide{background:#EAF4FF!important;border:1px solid rgba(0,120,212,.35)!important;color:#0067B8!important}
 }
+
+/* ===== [v31] Kartu header azure (logo + nama), HP & web ===== */
+.header-top-row,body:not(.light-mode) .header-top-row{background:linear-gradient(120deg,#00509E 0%,#0078D4 55%,#29A8FF 100%)!important;border:1px solid rgba(255,255,255,.28)!important;box-shadow:0 10px 24px rgba(0,100,200,.35),inset 0 1px 0 rgba(255,255,255,.25)!important;position:relative;overflow:hidden}
+.header-top-row::after{content:'';position:absolute;right:-30px;top:-40px;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.22),transparent 70%);pointer-events:none}
+.header .brand .tirta,body.light-mode .header .brand .tirta{color:#fff!important;text-shadow:0 1px 6px rgba(0,40,100,.35)!important}
+.header .brand .kencana,body.light-mode .header .brand .kencana{color:#FFD54A!important;text-shadow:0 1px 6px rgba(0,40,100,.35)!important}
+.header .logo-header{box-shadow:0 0 0 3px rgba(255,255,255,.55),0 4px 12px rgba(0,40,100,.35)!important}
