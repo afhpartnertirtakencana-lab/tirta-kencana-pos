@@ -2433,3 +2433,57 @@ body.light-mode .rw-line { border-bottom-color:rgba(0,80,158,.2); }
 .bottom-nav-mobile .bnav-center .bnav-center-btn i { height:auto; }
 .bottom-nav-mobile .bnav-center span { transform:none; }
 .bottom-nav-mobile .bnav-item .bnav-lock { top:4px; right:20%; height:auto; }
+
+/* ===== [v30] Header & menu baru: kartu kaca + kapsul tombol (HP), panel sidebar melayang (web) — semua sudut bulat ===== */
+@media (max-width:767px){
+.app-container{background:transparent!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;overflow:visible!important}
+.header{margin:8px 10px 0!important;padding:0!important;background:transparent!important;box-shadow:none!important;border:0!important;border-radius:0!important;overflow:visible!important}
+.header>div:first-child{display:none!important}.header::before{display:none!important}
+.header-top-row{background:linear-gradient(135deg,rgba(255,255,255,.96),rgba(234,244,255,.96));border:1px solid rgba(0,120,212,.25);border-radius:22px;padding:8px 14px!important;box-shadow:0 8px 22px rgba(0,80,160,.2)}
+body:not(.light-mode) .header-top-row{background:linear-gradient(135deg,rgba(14,48,92,.95),rgba(8,32,66,.95));border-color:rgba(41,168,255,.35);box-shadow:0 8px 22px rgba(0,10,30,.5)}
+.header .logo-header{width:46px!important;height:46px!important}.header .logo-header img{width:54px!important;height:54px!important}
+.header .brand{font-size:1.35rem!important}
+.header .brand .tirta{color:var(--text)!important;text-shadow:none!important}.header .brand .kencana{color:#0078D4!important;text-shadow:none!important}
+body.light-mode .header .brand .kencana{color:#0067B8!important}
+.header-top-row>div[style*="width:64px"]{display:none!important}
+.mobile-greeting,body.light-mode .mobile-greeting{margin:10px 18px 0!important;padding:0!important;background:transparent!important;border:0!important}
+.menu-row .nav-bar,body.light-mode .menu-row .nav-bar{margin:6px 10px 0!important;padding:8px 6px!important;border-radius:22px!important;background:rgba(255,255,255,.96)!important;border:1px solid rgba(0,120,212,.2)!important;box-shadow:0 6px 16px rgba(0,80,160,.15)!important;width:auto!important}
+body:not(.light-mode) .menu-row .nav-bar{background:rgba(10,40,80,.9)!important;border-color:rgba(41,168,255,.3)!important}
+.bottom-bar{background:transparent!important;border:0!important}
+}
+@media (min-width:768px){
+/* ---- Header web: kartu kaca + kapsul, semua bulat ---- */
+.app-container{background:transparent!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important;overflow:visible!important}
+.header{margin:10px 0 0!important;padding:0!important;background:transparent!important;box-shadow:none!important;border:0!important;border-radius:0!important;overflow:visible!important}
+.header>div:first-child{display:none!important}.header::before{display:none!important}
+.header-top-row{background:linear-gradient(135deg,rgba(255,255,255,.96),rgba(234,244,255,.96));border:1px solid rgba(0,120,212,.22);border-radius:24px;padding:10px 20px!important;box-shadow:0 10px 26px rgba(0,80,160,.16)}
+body:not(.light-mode) .header-top-row{background:linear-gradient(135deg,rgba(14,48,92,.95),rgba(8,32,66,.95));border-color:rgba(41,168,255,.32);box-shadow:0 10px 26px rgba(0,10,30,.5)}
+.header .logo-header{width:50px!important;height:50px!important}.header .logo-header img{width:58px!important;height:58px!important}
+.header .brand{font-size:1.5rem!important}
+.header .brand .tirta{color:var(--text)!important;text-shadow:none!important}.header .brand .kencana{color:#0078D4!important;text-shadow:none!important}
+body.light-mode .header .brand .kencana{color:#0067B8!important}
+.mobile-greeting,body.light-mode .mobile-greeting{margin:8px 22px 0!important;padding:0!important;background:transparent!important;border:0!important}
+.menu-row .nav-bar,body.light-mode .menu-row .nav-bar{background:transparent!important;border:0!important;box-shadow:none!important}
+.menu-row{margin:4px 6px 0!important;padding:8px 10px!important;border-radius:24px!important;background:rgba(255,255,255,.96)!important;border:1px solid rgba(0,120,212,.2)!important;box-shadow:0 6px 18px rgba(0,80,160,.12)!important;gap:8px!important}
+body:not(.light-mode) .menu-row{background:rgba(10,40,80,.88)!important;border-color:rgba(41,168,255,.28)!important}
+.bottom-bar{background:transparent!important;border:0!important}
+
+/* ---- Sidebar: panel melayang bersudut bulat, kepala lembut tanpa blok biru ---- */
+.menu-tabs-wrap{top:10px!important;bottom:10px!important;left:10px!important;width:256px!important;border-radius:26px!important;border:1px solid rgba(41,168,255,.3)!important;overflow:hidden;
+  background:linear-gradient(180deg,rgba(8,40,86,.97),rgba(4,24,54,.97))!important;box-shadow:0 18px 48px rgba(0,10,40,.55)!important}
+body.light-mode .menu-tabs-wrap{background:linear-gradient(180deg,#fff,#F2F8FF)!important;border-color:rgba(0,120,212,.2)!important;box-shadow:0 18px 48px rgba(0,60,140,.22)!important}
+.side-head,body.light-mode .side-head{background:transparent!important;box-shadow:none!important;border:0!important;padding:18px 16px 14px!important;position:relative;gap:12px!important}
+.side-head::after{content:'';position:absolute;left:18px;right:18px;bottom:0;height:2px;border-radius:2px;background:linear-gradient(90deg,#29A8FF,#FFD700,transparent)}
+.side-head img{width:46px!important;height:46px!important;box-shadow:0 4px 14px rgba(0,120,212,.35)}
+.side-brand{font-size:1.12rem!important;color:#fff!important;line-height:1.1}
+.side-brand span{color:#FFD54A!important}
+body.light-mode .side-brand{color:#0A2E5C!important}body.light-mode .side-brand span{color:#0078D4!important}
+.side-hide{border-radius:50%!important;width:32px!important;height:32px!important}
+.menu-tabs-wrap .menu-tabs{padding:12px 12px 16px!important;gap:4px!important}
+.menu-tabs-wrap .menu-tabs .tab{border-radius:16px!important;padding:10px 12px!important}
+.menu-tabs-wrap .menu-tabs .tab i{width:30px!important;height:30px!important;line-height:30px;border-radius:10px;background:rgba(41,168,255,.14);font-size:.9rem!important}
+body.light-mode .menu-tabs-wrap .menu-tabs .tab i{background:#EAF4FF}
+.menu-tabs-wrap .menu-tabs .tab.active i{background:rgba(255,255,255,.22)!important}
+.menu-tabs-wrap .menu-tabs .tab.active{box-shadow:0 8px 20px rgba(0,120,212,.4)!important}
+body.light-mode .side-hide{background:#EAF4FF!important;border:1px solid rgba(0,120,212,.35)!important;color:#0067B8!important}
+}
