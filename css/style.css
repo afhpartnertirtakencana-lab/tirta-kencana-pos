@@ -2494,3 +2494,10 @@ body.light-mode .side-hide{background:#EAF4FF!important;border:1px solid rgba(0,
 .header .brand .tirta,body.light-mode .header .brand .tirta{color:#fff!important;text-shadow:0 1px 6px rgba(0,40,100,.35)!important}
 .header .brand .kencana,body.light-mode .header .brand .kencana{color:#FFD54A!important;text-shadow:0 1px 6px rgba(0,40,100,.35)!important}
 .header .logo-header{box-shadow:0 0 0 3px rgba(255,255,255,.55),0 4px 12px rgba(0,40,100,.35)!important}
+
+/* ===== [v32] Subtotal per driver di Rekap Input ===== */
+tr.ri-sub td { font-weight:800; background:rgba(0,120,212,.12); border-top:1px solid rgba(0,120,212,.3); }
+tr.ri-sub td:first-child { color:#0067B8; }
+body:not(.light-mode) tr.ri-sub td { background:rgba(41,168,255,.14); color:#CFE8FF; }
+body:not(.light-mode) tr.ri-sub td:first-child { color:#7CC8FF; }
+body.light-mode tr.ri-sub td { color:#05224A; }
