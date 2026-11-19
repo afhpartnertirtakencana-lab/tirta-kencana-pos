@@ -109,6 +109,7 @@
           _rcClear();
           const r = await _gasCallRaw(fn, args, retry);
           _rcClear();
+          try { _chgPoll(true); } catch (e) {}   // tandai perubahan milik sendiri agar tidak dianggap dari perangkat lain
           return r;
         }
         return _gasCallRaw(fn, args, retry);
@@ -117,6 +118,49 @@
       if (c && age < cfg.fresh) return JSON.parse(c.v);
       if (c && age < cfg.stale) { _rcFetch(key, fn, args, 0, cfg, true); return JSON.parse(c.v); }
       return _rcFetch(key, fn, args, retry, cfg, false).then(r => (r === undefined || r === null) ? r : JSON.parse(JSON.stringify(r)));
+    }
+        // ===== [v28] Sinkron antar perangkat: polling penanda perubahan =====
+    const _CHG_MS = 6000;               // cek tiap 6 detik saat aplikasi terlihat
+    let _chgTimer = null, _chgBase = null, _chgBusy = false, _chgLastSync = 0, _chgPending = false;
+    const _CHG_SYNC_RE = /Trx|Cicilan|Status|Product|Customer|Retur|Stok|Stock|Setoran|InputBarang|Barang|Pelanggan|Driver|User|Setting|Pesanan/i;   // aksi yang perlu tarik data utama
+    const _CHG_AUTOPAGES = ['dashboard','transaksi','rekap','rekapharian','piutang','stockbarang','grafik','profit','analisacust','laporanbulanan','retur','rekapsetoran','produk','pelanggan'];   // halaman tampilan-saja, aman digambar ulang
+    async function _chgPoll(silent) {
+      if (_chgBusy || !sessionToken || (typeof navigator !== 'undefined' && navigator.onLine === false)) return;
+      _chgBusy = true;
+      try {
+        const r = await _gasCallRaw('getChangeStamp', [], 0);
+        if (!r || typeof r.t !== 'number') return;
+        if (_chgBase === null || silent) { _chgBase = r.t; return; }
+        if (r.t !== _chgBase) { _chgBase = r.t; await _onRemoteChange(r.a); }
+      } catch (e) { /* diam: jaringan lambat/offline */ } finally { _chgBusy = false; }
+    }
+    async function _onRemoteChange(action) {
+      _rcClear();                                         // buang cache baca
+      if (_syncProcessing || (typeof _syncQueue !== 'undefined' && _syncQueue.length)) { _chgPending = true; }   // masih ada kiriman milik sendiri -> tarik setelah beres
+      const needMain = _CHG_SYNC_RE.test(action || '') || !action;
+      if (needMain && Date.now() - _chgLastSync > 4000) {
+        _chgLastSync = Date.now();
+        try { await syncFromGAS(); } catch (e) {}
+      }
+      try { diskonPelSync(); } catch (e) {}
+      if (_CHG_AUTOPAGES.indexOf(currentPage) >= 0) _rcNotifyAny(); else if (['titipan','cekkosongan','cekstock','pesanan'].indexOf(currentPage) >= 0) _rcNotify(currentPage);   // halaman form lain tidak digambar ulang
+    }
+    function _rcNotifyAny() {
+      try {
+        if (typeof Swal !== 'undefined' && Swal.isVisible && Swal.isVisible()) return;
+        const a = document.activeElement; if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && a.closest && a.closest('#contentArea')) return;
+        renderContent();
+      } catch (e) {}
+    }
+    function startChangePolling() {
+      if (_chgTimer) clearInterval(_chgTimer);
+      _chgBase = null; _chgPoll(true);
+      _chgTimer = setInterval(() => { if (!document.hidden) _chgPoll(false); }, _CHG_MS);
+    }
+    function stopChangePolling() { if (_chgTimer) { clearInterval(_chgTimer); _chgTimer = null; } _chgBase = null; }
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', () => { if (!document.hidden && _chgTimer) _chgPoll(false); });
+      window.addEventListener('online', () => { if (_chgTimer) _chgPoll(false); });
     }
     // Isi cache lebih awal (di latar belakang, satu per satu) supaya menu pertama kali dibuka sudah instan
     let _warmBusy = false;
@@ -1325,6 +1369,7 @@
     }
 
     function startAutoSync() {
+      try { startChangePolling(); } catch (e) {}
       if (_autoSyncTimer) clearInterval(_autoSyncTimer);
       _nextSyncTime = Date.now() + AUTO_SYNC_INTERVAL;
       updateSyncStatus();
@@ -1339,6 +1384,7 @@
     }
 
     function stopAutoSync() {
+      try { stopChangePolling(); } catch (e) {}
       if (_autoSyncTimer) { clearInterval(_autoSyncTimer); _autoSyncTimer = null; }
       if (_syncInterval) { clearInterval(_syncInterval); _syncInterval = null; }
       const el = document.getElementById('syncStatus');
@@ -9209,7 +9255,7 @@
           <td class="fw-bold">${esc(c)}</td>
           <td style="text-align:center;font-family:var(--mono)">${jumlahTrx || '-'}</td>
           <td style="text-align:right;font-family:var(--mono);font-weight:700;color:${piutang>0?'var(--merah)':'var(--text3)'}">${piutang>0?fmtRp(piutang):'-'}</td>
-          <td><div class="pl-act"><button class="btn act-sq btn-outline" onclick="showPelangganDetail('${esc(c).replace(/'/g,"\\'")}')" title="Lihat riwayat & piutang"><i class="fas fa-eye"></i></button><button class="btn act-sq btn-outline" onclick="editCustomerPhone('${esc(c).replace(/'/g,"\\'")}')" title="Atur nomor WA"><i class="fas fa-phone"></i></button><button class="btn act-sq btn-outline" onclick="editCustomerAddress('${esc(c).replace(/'/g,"\\'")}')" title="Atur alamat"><i class="fas fa-map-marker-alt"></i></button><button class="btn act-sq btn-outline" onclick="openCustomerAddressInMaps('${esc(c).replace(/'/g,"\\'")}')" title="Buka di Google Maps"><i class="fas fa-location-arrow"></i></button><button class="btn act-sq act-del" title="Hapus pelanggan" aria-label="Hapus pelanggan" onclick="deletePelanggan(${i})">🗑</button></div></td>
+          <td><div class="pl-act"><button class="btn act-sq btn-outline" onclick="showPelangganDetail('${esc(c).replace(/'/g,"\\'")}')" title="Lihat riwayat & piutang"><i class="fas fa-eye"></i></button><button class="btn act-sq btn-outline" onclick="editCustomerPhone('${esc(c).replace(/'/g,"\\'")}')" title="Atur nomor WA"><i class="fas fa-phone"></i></button><button class="btn act-sq btn-outline" onclick="editCustomerAddress('${esc(c).replace(/'/g,"\\'")}')" title="Atur alamat"><i class="fas fa-map-marker-alt"></i></button><button class="btn act-sq btn-outline" onclick="openCustomerAddressInMaps('${esc(c).replace(/'/g,"\\'")}')" title="Buka di Google Maps"><i class="fas fa-location-arrow"></i></button><button class="btn act-sq btn-outline" onclick="editPelanggan(${i})" title="Edit pelanggan (nama, WA, alamat)"><i class="fas fa-pen"></i></button><button class="btn act-sq act-del" title="Hapus pelanggan" aria-label="Hapus pelanggan" onclick="deletePelanggan(${i})">🗑</button></div></td>
         </tr>`;
       }).join('');
     }
@@ -9380,6 +9426,48 @@
       kirimWaKeNomorPelanggan(p.name, lines.join('\n'));
     }
     function addPelanggan() { Swal.fire({ title:'Tambah Pelanggan', input:'text', inputLabel:'Nama pelanggan', showCancelButton:true }).then(r => { if (r.isConfirmed && r.value) { const name = r.value.trim(); if (!allCustomers.includes(name)) { allCustomers.push(name); pelanggan = allCustomers.slice(); saveLocalData(); renderPelangganList(); syncCustomersToSheet(); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Pelanggan ditambahkan' }); } else Swal.fire('Info','Sudah ada','info'); } }); }
+    // [v29] Edit pelanggan: nama + nomor WA + alamat dalam satu dialog, langsung tersimpan ke server saat "Simpan"
+    function editPelanggan(idx) {
+      const old = allCustomers[idx]; if (old == null) return;
+      const ph0 = getCustomerPhone(old), ad0 = getCustomerAddress(old);
+      Swal.fire({
+        title: 'Edit Pelanggan',
+        html: `<div style="text-align:left"><label class="form-label">Nama pelanggan</label><input id="epNama" class="swal2-input" style="margin:2px 0 10px;width:100%" value="${esc(old)}">
+          <label class="form-label">Nomor WA</label><input id="epWA" class="swal2-input" style="margin:2px 0 10px;width:100%" inputmode="tel" placeholder="0812xxxxxxx" value="${esc(ph0)}">
+          <label class="form-label">Alamat</label><textarea id="epAlamat" class="swal2-textarea" style="margin:2px 0 0;width:100%" rows="3">${esc(ad0)}</textarea></div>`,
+        showCancelButton: true, confirmButtonText: 'Simpan', cancelButtonText: 'Batal', focusConfirm: false,
+        preConfirm: () => {
+          const nama = document.getElementById('epNama').value.trim().replace(/\s+/g, ' ');
+          const wa = document.getElementById('epWA').value.trim();
+          const alamat = document.getElementById('epAlamat').value.trim();
+          if (!nama) { Swal.showValidationMessage('Nama tidak boleh kosong'); return false; }
+          if (wa && wa.replace(/[^0-9]/g, '').length < 8) { Swal.showValidationMessage('Nomor HP tidak valid'); return false; }
+          if (nama !== old) {
+            if (allCustomers.some((c, j) => j !== idx && c.toLowerCase() === nama.toLowerCase())) { Swal.showValidationMessage('Nama sudah dipakai pelanggan lain'); return false; }
+            const pu = (allTrxList || []).filter(t => (t.customer || '') === old && t.status === 'belumTransfer').reduce((a, t) => a + _sisa(t), 0);
+            if (pu > 0) { Swal.showValidationMessage('Nama tidak bisa diganti: masih ada piutang ' + fmtRp(pu) + ' atas nama lama'); return false; }
+            if ((diskonPel || []).some(x => _dpN(x.customer) === _dpN(old))) { Swal.showValidationMessage('Nama tidak bisa diganti: pelanggan ini punya Diskon Pelanggan (hapus dulu / atur ulang)'); return false; }
+          }
+          return { nama, wa, alamat };
+        }
+      }).then(r => {
+        if (!r.isConfirmed || !r.value) return;
+        const { nama, wa, alamat } = r.value;
+        const before = {}, after = {};
+        if (nama !== old) {
+          allCustomers[idx] = nama; pelanggan = allCustomers.slice(); saveLocalData();
+          const pm = _loadCustomerPhones(); delete pm[old]; localStorage.setItem(CUSTOMER_PHONE_KEY, JSON.stringify(pm));
+          const am = _loadCustomerAddresses(); delete am[old]; localStorage.setItem(CUSTOMER_ADDRESS_KEY, JSON.stringify(am));
+          syncCustomersToSheet();
+          before.nama = old; after.nama = nama;
+        }
+        if (nama !== old || wa !== ph0) { setCustomerPhone(nama, wa); if (wa !== ph0) { before.nomorWA = ph0; after.nomorWA = wa; } }
+        if (nama !== old || alamat !== ad0) { setCustomerAddress(nama, alamat); if (alamat !== ad0) { before.alamat = ad0; after.alamat = alamat; } }
+        if (Object.keys(after).length) { try { logEditAction('pelanggan', old, nama, before, after); } catch (e) {} }
+        renderPelangganList(true);
+        Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: Object.keys(after).length ? 'Pelanggan disimpan ke server' : 'Tidak ada perubahan' });
+      });
+    }
     function deletePelanggan(idx) { const nama = allCustomers[idx]; Swal.fire(_delOpts('Hapus pelanggan?', '<b>'+esc(allCustomers[idx])+'</b>')).then(r => { if (r.isConfirmed) { allCustomers.splice(idx,1); pelanggan = allCustomers.slice(); saveLocalData(); renderPelangganList(); syncCustomersToSheet(); if (nama) logEditAction('pelanggan', nama, nama, { nama }, null); Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, icon: 'success', title: 'Pelanggan dihapus' }); } }); }
 
     // ========== PENGATURAN ==========
