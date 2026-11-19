@@ -1720,6 +1720,29 @@
     function _pgHero(icon, title, sub, val, lbl) {
       return `<div class="pg-hero"><div class="pg-hero-eyebrow"><i class="fas ${icon}"></i> ${title}</div><div class="pg-hero-sub">${sub||''}</div>${val !== undefined && val !== null ? `<div class="pg-hero-val">${val}</div><div class="pg-hero-lbl">${lbl||''}</div>` : ''}</div>`;
     }
+    // [v29] Sales & Driver otomatis terisi sesuai user yang login (dikunci); admin tetap bisa memilih bebas
+    const _AUTOUSER_SEL = { trxSales:'sales', setorSales:'sales', pesSales:'sales', inpDriver:'driver' };
+    function _autoUserSelects() {
+      try {
+        if (!currentUser || currentUser.role === 'admin') return;
+        const me = String(currentUser.name || '').trim().toLowerCase(); if (!me) return;
+        Object.keys(_AUTOUSER_SEL).forEach(id => {
+          if (currentUser.role !== _AUTOUSER_SEL[id]) return;
+          const sel = document.getElementById(id); if (!sel || sel.dataset.autoUser) return;
+          const opt = Array.from(sel.options).find(o => String(o.value).trim().toLowerCase() === me);
+          if (!opt) return;
+          sel.value = opt.value; sel.dataset.autoUser = '1'; sel.disabled = true;
+          sel.title = 'Terisi otomatis sesuai akun Anda';
+          const mic = sel.parentElement && sel.parentElement.querySelector('.jx-mic'); if (mic) mic.style.display = 'none';
+          sel.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+      } catch (e) {}
+    }
+    (function () {
+      let t = null;
+      const start = () => { const ca = document.getElementById('contentArea'); if (!ca) return setTimeout(start, 500); new MutationObserver(() => { clearTimeout(t); t = setTimeout(_autoUserSelects, 30); }).observe(ca, { childList: true, subtree: true }); };
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+    })();
     function renderContent() { try { document.getElementById('contentArea').setAttribute('data-page', currentPage); } catch(e) {} switch (currentPage) { case 'dashboard': loadDashboard(); break; case 'penjualan': loadPenjualan(); break; case 'transaksi': loadTransaksi(); break; case 'rekap': loadRekap(); break; case 'rekapinput': loadRekapInput(); break; case 'setoran': loadSetoran(); break; case 'rekapsetoran': loadRekapSetoran(); break; case 'inputbarang': loadInputBarang(); break; case 'stockbarang': loadStockBarang(); break; case 'cekstock': loadCekStock(); break; case 'cekkosongan': loadCekKosongan(); break; case 'pesanan': loadPesanan(); break; case 'titipan': loadTitipan(); break; case 'produk': loadProduk(); break; case 'pelanggan': loadPelanggan(); break; case 'pengaturan': loadPengaturan(); break; case 'pengaturanUser': loadPengaturanUser(); break; case 'grafik': loadGrafik(); break; case 'piutang': loadPiutang(); break; case 'retur': loadRetur(); break; case 'googledrive': loadGoogleDrive(); break; case 'diskonpel': loadDiskonPel(); break; case 'laporanbulanan': loadLaporanBulanan(); break; case 'profit': loadProfit(); break; case 'analisacust': loadAnalisaCust(); break; case 'rekapharian': loadRekapHarian(); break; case 'auditlog': loadAuditLog(); break; case 'googlesheets': loadGoogleSheets(); break; case 'panduan': loadPanduan(); break; } }
 
     // ========== DASHBOARD (MENU UTAMA) ==========
