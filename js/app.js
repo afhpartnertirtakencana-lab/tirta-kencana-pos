@@ -1752,8 +1752,19 @@
       try {
         if (!currentUser || currentUser.role === 'admin') return;
         const me = String(currentUser.name || '').trim().toLowerCase(); if (!me) return;
+        // [v34] User "padong": di Input Barang, Driver terisi padong tapi TIDAK dikunci (bebas pilih driver lain); menu lain berlaku aturan biasa
+        if (me === 'padong') {
+          const dsel = document.getElementById('inpDriver');
+          if (dsel && !dsel.dataset.autoUser) {
+            const opt = Array.from(dsel.options).find(o => String(o.value).trim().toLowerCase() === 'padong');
+            if (opt && !dsel.value) dsel.value = opt.value;
+            dsel.dataset.autoUser = '1'; dsel.disabled = false;
+            dsel.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        }
         Object.keys(_AUTOUSER_SEL).forEach(id => {
           if (currentUser.role !== _AUTOUSER_SEL[id]) return;
+          if (me === 'padong' && id === 'inpDriver') return;
           const sel = document.getElementById(id); if (!sel || sel.dataset.autoUser) return;
           const opt = Array.from(sel.options).find(o => String(o.value).trim().toLowerCase() === me);
           if (!opt) return;
