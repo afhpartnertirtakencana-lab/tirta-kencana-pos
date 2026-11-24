@@ -3,13 +3,34 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <script>
+  /* [v35] HP landscape = tampilan web (lebar 1024) yang otomatis diperkecil proporsional agar pas layar; portrait kembali normal */
+  (function () {
+    var m = document.querySelector('meta[name="viewport"]'); if (!m) return;
+    var PORTRAIT = m.getAttribute('content'), DESK = 1024, last = '';
+    function isPhone() { try { return matchMedia('(pointer:coarse)').matches && Math.min(screen.width, screen.height) < 600; } catch (e) { return false; } }
+    function isLand() { try { if (screen.orientation && screen.orientation.type) return screen.orientation.type.indexOf('landscape') === 0; } catch (e) {} return screen.width > screen.height; }
+    function apply() {
+      var c = PORTRAIT;
+      if (isPhone() && isLand()) {
+        var w = Math.max(screen.width, screen.height), sc = Math.round(w / DESK * 1000) / 1000;
+        c = 'width=' + DESK + ', initial-scale=' + sc + ', minimum-scale=' + sc + ', maximum-scale=' + sc + ', user-scalable=no, viewport-fit=cover';
+      }
+      if (c !== last) { last = c; m.setAttribute('content', c); }
+    }
+    apply();
+    window.addEventListener('orientationchange', function () { setTimeout(apply, 60); setTimeout(apply, 350); });
+    window.addEventListener('resize', function () { setTimeout(apply, 60); });
+    try { screen.orientation.addEventListener('change', function () { setTimeout(apply, 60); }); } catch (e) {}
+  })();
+  </script>
   <meta name="theme-color" content="#00509E">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Tirta Kencana">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css?v=20261121b">
+  <link rel="stylesheet" href="css/style.css?v=20261124a">
   <style>
     /* [PERF] Optimasi scroll untuk HP RAM kecil.
        - overscroll-behavior-y:contain menahan efek "rubber-band" pantulan browser
@@ -532,6 +553,6 @@
     });
   })();
   </script>
-  <script src="js/app.js?v=20261121b" defer></script>
+  <script src="js/app.js?v=20261124a" defer></script>
 </body>
 </html>
