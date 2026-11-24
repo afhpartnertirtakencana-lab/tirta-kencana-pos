@@ -13,8 +13,7 @@
     function apply() {
       var c = PORTRAIT;
       if (isPhone() && isLand()) {
-        var w = Math.max(screen.width, screen.height), sc = Math.round(w / DESK * 1000) / 1000;
-        c = 'width=' + DESK + ', initial-scale=' + sc + ', minimum-scale=' + sc + ', maximum-scale=' + sc + ', user-scalable=no, viewport-fit=cover';
+        c = 'width=' + DESK + ', user-scalable=no';   // skala TIDAK dipatok: browser menyesuaikan sendiri dengan lebar jendela sebenarnya (di luar poni/area sistem) => pas layar
       }
       if (c !== last) { last = c; m.setAttribute('content', c); }
     }
@@ -30,7 +29,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Tirta Kencana">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css?v=20261124a">
+  <link rel="stylesheet" href="css/style.css?v=20261124b">
   <style>
     /* [PERF] Optimasi scroll untuk HP RAM kecil.
        - overscroll-behavior-y:contain menahan efek "rubber-band" pantulan browser
@@ -553,6 +552,6 @@
     });
   })();
   </script>
-  <script src="js/app.js?v=20261124a" defer></script>
+  <script src="js/app.js?v=20261124b" defer></script>
 </body>
 </html>
