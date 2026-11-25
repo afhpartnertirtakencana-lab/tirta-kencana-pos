@@ -9358,6 +9358,128 @@
     // ========== GUDANG & LAPORAN TELAH DIHAPUS ==========
     // (fungsi-fungsi terkait gudang dan laporan tidak ada lagi)
 
+    // ===== v39: Cetak Produk (pilih kolom: SKU, Nama Barang, Harga Modal, Harga Jual) =====
+    let _lastProdukPayload = null;
+    function _pcLoad() {
+      const d = { sku: true, nama: true, modal: false, jual: true };
+      try { Object.assign(d, JSON.parse(localStorage.getItem('tirtaProdCols') || '{}')); } catch (e) {}
+      if (!(currentUser && currentUser.role === 'admin')) d.modal = false; // harga modal = data sensitif, hanya admin
+      return d;
+    }
+    function _pcCount() {
+      const all = document.querySelectorAll('.pc_p'), on = document.querySelectorAll('.pc_p:checked'), el = document.getElementById('pcCnt');
+      if (el) el.textContent = on.length + ' dari ' + all.length + ' produk dipilih';
+    }
+    function _pcFilter() {
+      const q = ((document.getElementById('pcSearch') || {}).value || '').trim().toLowerCase();
+      document.querySelectorAll('.pc_row').forEach(r => { r.style.display = (!q || r.dataset.q.indexOf(q) >= 0) ? 'flex' : 'none'; });
+    }
+    function _pcAll(v) { // hanya yang sedang tampil (ikut hasil pencarian)
+      document.querySelectorAll('.pc_row').forEach(r => { if (r.style.display !== 'none') r.querySelector('.pc_p').checked = v; });
+      _pcCount();
+    }
+    function cetakProduk() {
+      if (!products || !products.length) return Swal.fire('Info', 'Belum ada produk', 'info');
+      const isAdmin = !!(currentUser && currentUser.role === 'admin'), c = _pcLoad();
+      const list = products.map(p => ({ sku: p.sku || '', nama: p.nama || '', modal: Number(p.modal || p.hargaModal || 0), jual: Number(p.jual || p.harga || 0) }))
+        .sort((a, b) => String(a.nama || a.sku).localeCompare(String(b.nama || b.sku), 'id', { sensitivity: 'base' }));
+      const opt = (k, l) => `<label style="display:flex;align-items:center;gap:8px;padding:9px 10px;border:1.5px solid #D5E6F7;border-radius:12px;cursor:pointer;font-weight:700;font-size:.82rem;text-align:left"><input type="checkbox" id="pc_${k}" ${c[k] ? 'checked' : ''} style="width:18px;height:18px;margin:0;flex-shrink:0"><span style="flex:1">${l}</span></label>`;
+      const rows = list.map((r, i) => `<label class="pc_row" data-q="${esc((r.sku + ' ' + r.nama).toLowerCase())}" style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid #EEF4F9;cursor:pointer;text-align:left"><input type="checkbox" class="pc_p" value="${i}" checked onchange="_pcCount()" style="width:18px;height:18px;margin:0;flex-shrink:0"><span style="flex:1;min-width:0;font-size:.82rem;font-weight:700;line-height:1.25">${esc(r.nama || r.sku)}<br><span style="font-weight:600;font-size:.7rem;opacity:.65">${esc(r.sku)}</span></span></label>`).join('');
+      Swal.fire({
+        title: 'Cetak Produk',
+        width: 460,
+        html: `<div style="font-size:.78rem;font-weight:700;text-align:left;margin:0 0 6px;opacity:.75">Tampilkan kolom</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">${opt('sku', 'SKU')}${opt('nama', 'Nama Barang')}${isAdmin ? opt('modal', 'Harga Modal') : ''}${opt('jual', 'Harga Jual')}</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin:0 0 6px"><span style="font-size:.78rem;font-weight:700;opacity:.75">Pilih SKU yang dicetak</span>
+            <span style="display:flex;gap:6px"><button type="button" onclick="_pcAll(true)" style="border:1px solid #BCD3EE;background:#fff;color:#1E63E9;border-radius:8px;padding:4px 10px;font-size:.72rem;font-weight:700;cursor:pointer">Semua</button><button type="button" onclick="_pcAll(false)" style="border:1px solid #BCD3EE;background:#fff;color:#1E63E9;border-radius:8px;padding:4px 10px;font-size:.72rem;font-weight:700;cursor:pointer">Kosongkan</button></span></div>
+          <input id="pcSearch" placeholder="Cari SKU / nama..." oninput="_pcFilter()" autocomplete="off" style="width:100%;box-sizing:border-box;margin:0 0 6px;padding:9px 12px;border:1.5px solid #D5E6F7;border-radius:10px;font-size:.85rem">
+          <div style="max-height:min(34vh,260px);overflow-y:auto;border:1.5px solid #D5E6F7;border-radius:12px;background:#fff;color:#0F2A4A">${rows}</div>
+          <div id="pcCnt" style="font-size:.75rem;font-weight:700;margin-top:8px;opacity:.8"></div>`,
+        showCancelButton: true, confirmButtonText: 'Lihat Preview', cancelButtonText: 'Batal',
+        didOpen: () => _pcCount(),
+        preConfirm: () => {
+          const v = {}; ['sku', 'nama', 'modal', 'jual'].forEach(k => { const el = document.getElementById('pc_' + k); v[k] = !!(el && el.checked); });
+          if (!v.sku && !v.nama) { Swal.showValidationMessage('Pilih minimal SKU atau Nama Barang'); return false; }
+          const sel = Array.from(document.querySelectorAll('.pc_p:checked')).map(x => Number(x.value));
+          if (!sel.length) { Swal.showValidationMessage('Pilih minimal 1 SKU yang mau dicetak'); return false; }
+          return { cols: v, sel };
+        }
+      }).then(r => {
+        if (!r.isConfirmed) return;
+        try { localStorage.setItem('tirtaProdCols', JSON.stringify(r.value.cols)); } catch (e) {}
+        _lastProdukPayload = { date: localDateStr(), cols: r.value.cols, rows: r.value.sel.map(i => list[i]) };
+        showProdukStrukModal(_lastProdukPayload);
+      });
+    }
+    function _pcColsLabel(c) { return [c.sku && 'SKU', c.nama && 'Nama', c.modal && 'Harga Modal', c.jual && 'Harga Jual'].filter(Boolean).join(' · '); }
+    function buildProdukStrukHTML(p, logoOverride) {
+      const c = p.cols, tone = 'blue', both = c.modal && c.jual;
+      const rows = p.rows.map(r => {
+        const nm = c.nama ? (r.nama || r.sku || '-') : (r.sku || '-');
+        const o = { n: esc(nm), sub: (c.nama && c.sku && r.sku) ? esc(r.sku) : '' };
+        if (both) { o.q = 'Jual ' + _rcRp(r.jual); o.v = 'Modal ' + _rcRp(r.modal); }
+        else if (c.jual) o.q = _rcRp(r.jual);
+        else if (c.modal) { o.q = _rcRp(r.modal); o.qc = '#B45309'; o.qbg = '#FEF3C7'; }
+        return o;
+      });
+      return _rcRoot('produk-root', 380,
+        _rcHead({ tone, icon: 'fa-cubes', logo: logoOverride, title: 'Daftar Produk', sub: esc(_pcColsLabel(c)) }) +
+        _rcStats([{ l: 'Produk', v: p.rows.length }, { l: 'Tanggal', v: esc(fmtDate(p.date)) }], tone) +
+        _rcBody(_rcSec({ tone, title: '<i class="fas fa-cubes" style="color:#1E63E9;margin-right:5px"></i>Produk', badge: p.rows.length + ' item', rows })) +
+        _rcFoot(settings.bottomLine || 'Terima kasih!'));
+    }
+    function showProdukStrukModal(payload) {
+      const html = '<div style="text-align:left">' + buildProdukStrukHTML(payload) + '</div>';
+      document.getElementById('strukContent').innerHTML = `<div class="modal-header"><h2>🧾 Daftar Produk</h2><button class="modal-close" onclick="closeStruk()">✕</button></div><div class="action-grid"><div class="action-card" onclick="doProdukPrint()"><div>🖨️</div><div>Print</div></div><div class="action-card" onclick="doProdukPng()"><div>📥</div><div>Download PDF</div></div><div class="action-card" onclick="doProdukWA()"><div>💬</div><div>WhatsApp</div></div></div><div style="text-align:center;max-height:70vh;overflow:auto;background:#e8f2f9;border-radius:14px;padding:10px">${html}</div>`;
+      document.getElementById('strukModal').classList.add('show');
+    }
+    function doProdukPrint() {
+      if (!_lastProdukPayload) return;
+      const win = window.open('', '_blank', 'width=420,height=700');
+      if (!win) return Swal.fire('Pop-up diblokir', 'Izinkan pop-up lalu coba lagi.', 'warning');
+      win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"><title>Daftar Produk</title></head><body style="margin:16px;background:#e8f2f9;display:flex;justify-content:center">');
+      win.document.write(buildProdukStrukHTML(_lastProdukPayload));
+      win.document.write('<script>window.onload=function(){window.print();}<\/script></body></html>');
+      win.document.close();
+    }
+    function doProdukPng() {
+      if (!_lastProdukPayload) return;
+      const off = document.getElementById('strukOffscreen');
+      off.style.cssText = 'position:fixed;left:-9999px;top:0;pointer-events:none;z-index:-1;background:#e8f2f9;padding:20px';
+      _ensureLogoDataUrl(_logoUrl).then(logoData => {
+        off.innerHTML = buildProdukStrukHTML(_lastProdukPayload, logoData);
+        const el = off.querySelector('#produk-root');
+        if (!el) return Swal.fire('Error', 'Gagal render', 'error');
+        setTimeout(() => {
+          // daftar panjang: turunkan skala supaya tinggi kanvas tidak melewati batas browser HP (~16000px)
+          const sc = Math.max(1, Math.min(2.5, 15000 / Math.max(1, el.offsetHeight)));
+          html2canvas(el, { backgroundColor: '#e8f2f9', scale: sc, useCORS: true, allowTaint: true, logging: false }).then(canvas => {
+            const a = document.createElement('a');
+            a.download = 'Produk-' + _lastProdukPayload.date + '.png';
+            a.href = canvas.toDataURL('image/png');
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            off.innerHTML = '';
+            Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, icon: 'success', title: 'Daftar produk tersimpan' });
+          }).catch(err => { off.innerHTML = ''; Swal.fire('Error', err.message, 'error'); });
+        }, 400);
+      });
+    }
+    function doProdukWA() {
+      if (!_lastProdukPayload) return;
+      const p = _lastProdukPayload, c = p.cols, both = c.modal && c.jual;
+      let lines = _waHead('📦', 'DAFTAR PRODUK', ['📅 ' + fmtDate(p.date) + ' · ' + p.rows.length + ' produk']);
+      p.rows.forEach((r, i) => {
+        if (i) lines.push('');
+        lines.push('• *' + (c.nama ? (r.nama || r.sku) : r.sku) + '*' + ((c.nama && c.sku && r.sku) ? ' (' + r.sku + ')' : ''));
+        const pr = [];
+        if (c.jual) pr.push((both ? 'Jual ' : 'Harga ') + _rcRp(r.jual));
+        if (c.modal) pr.push((both ? 'Modal ' : 'Modal ') + _rcRp(r.modal));
+        if (pr.length) lines.push('   ' + pr.join(' · '));
+      });
+      lines.push('', _WAL, '✅ Total: *' + p.rows.length + ' produk*');
+      _waOpen(lines);
+    }
+
     // ========== PRODUK ==========
     function loadProduk() {
       document.getElementById('contentArea').innerHTML = `
@@ -9367,6 +9489,7 @@
             <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
               <button class="btn btn-outline btn-sm" onclick="btnSyncProdukToSheet()" style="border-radius:10px;padding:7px 12px;font-size:0.72rem;" title="Kirim data produk lokal ke Google Sheets"><i class="fas fa-cloud-upload-alt"></i> Sync ke Sheets</button>
               <button class="btn btn-outline btn-sm" onclick="btnSyncProdukFromSheet()" style="border-radius:10px;padding:7px 12px;font-size:0.72rem;" title="Ambil data produk terbaru dari Google Sheets"><i class="fas fa-cloud-download-alt"></i> Sync ke Aplikasi</button>
+              <button class="btn btn-outline btn-sm" onclick="cetakProduk()" style="border-radius:10px;padding:7px 12px;font-size:0.72rem;" title="Cetak / bagikan daftar produk"><i class="fas fa-print"></i> Cetak</button>
               <button class="btn btn-primary btn-sm" onclick="openProdukForm(-1)" style="border-radius:10px;padding:7px 14px;font-size:0.75rem;"><i class="fas fa-plus"></i> Tambah</button>
             </div>
           </div>
