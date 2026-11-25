@@ -3147,7 +3147,7 @@
         _rcFoot(settings.bottomLine));
     }
 
-    function showStrukModal() { if (!_strKData) return; const html = buildStrukHTML(_strKData); document.getElementById('strukContent').innerHTML = `<div class="modal-header"><h2>🧾 Struk</h2><button class="modal-close" onclick="closeStruk()">✕</button></div>${_strKData.trx.customer && !_strKData._loading ? `<button type="button" class="btn btn-block" style="background:linear-gradient(135deg,#16A34A,#25D366);color:#fff;border:none;height:48px;font-weight:800;margin:0 0 12px;border-radius:12px" onclick="doStrukWaPelanggan()">📤 Kirim Struk ke ${esc(_strKData.trx.customer)}</button>` : ''}<div class="action-grid"><div class="action-card" onclick="doStrukPrint()"><div style="font-size:28px">🖨️</div><div style="font-size:13px;font-weight:700">Print</div></div><div class="action-card" onclick="doStrukPng()"><div style="font-size:28px">📥</div><div style="font-size:13px;font-weight:700">Download PDF</div></div><div class="action-card" onclick="doStrukWA()"><div style="font-size:28px">💬</div><div style="font-size:13px;font-weight:700">WhatsApp</div></div><div class="action-card" onclick="doStrukWaPelanggan()"><div style="font-size:28px">📤</div><div style="font-size:13px;font-weight:700">Kirim ke Pelanggan</div></div><div class="action-card" onclick="document.getElementById('fotoInputStruk').click()"><div style="font-size:28px">📸</div><div style="font-size:13px;font-weight:700">Upload Foto</div></div><div class="action-card" onclick="showFotoBukti('${_strKData?.id||''}','Struk ${_strKData?.id||''}')"><div style="font-size:28px">🖼</div><div style="font-size:13px;font-weight:700">Lihat Foto</div></div></div><input type="file" id="fotoInputStruk" accept="image/*" capture="environment" style="display:none" onchange="uploadFotoBukti('${_strKData?.id||''}','transfer',this)"><div style="border:1px solid var(--border);border-radius:14px;overflow:auto;max-height:480px;background:#e8f2f9;padding:14px"><div style="width:360px;margin:0 auto">${html}</div></div>`; document.getElementById('strukModal').classList.add('show'); }
+    function showStrukModal() { if (!_strKData) return; const html = buildStrukHTML(_strKData); document.getElementById('strukContent').innerHTML = `<div class="modal-header"><h2>🧾 Struk</h2><button class="modal-close" onclick="closeStruk()">✕</button></div>${_strKData.trx.customer && !_strKData._loading ? `<button type="button" class="btn btn-block" style="background:linear-gradient(135deg,#16A34A,#25D366);color:#fff;border:none;height:48px;font-weight:800;margin:0 0 12px;border-radius:12px" onclick="doStrukWaPelanggan()">📤 Kirim Struk ke ${esc(_strKData.trx.customer)}</button>` : ''}<div class="action-grid"><div class="action-card" onclick="cetakStruk58()"><div style="font-size:28px">🧾</div><div style="font-size:13px;font-weight:700">Cetak 58mm</div></div><div class="action-card" onclick="doStrukPrint()"><div style="font-size:28px">🖨️</div><div style="font-size:13px;font-weight:700">Print</div></div><div class="action-card" onclick="doStrukPng()"><div style="font-size:28px">📥</div><div style="font-size:13px;font-weight:700">Download PDF</div></div><div class="action-card" onclick="doStrukWA()"><div style="font-size:28px">💬</div><div style="font-size:13px;font-weight:700">WhatsApp</div></div><div class="action-card" onclick="doStrukWaPelanggan()"><div style="font-size:28px">📤</div><div style="font-size:13px;font-weight:700">Kirim ke Pelanggan</div></div><div class="action-card" onclick="document.getElementById('fotoInputStruk').click()"><div style="font-size:28px">📸</div><div style="font-size:13px;font-weight:700">Upload Foto</div></div><div class="action-card" onclick="showFotoBukti('${_strKData?.id||''}','Struk ${_strKData?.id||''}')"><div style="font-size:28px">🖼</div><div style="font-size:13px;font-weight:700">Lihat Foto</div></div></div><input type="file" id="fotoInputStruk" accept="image/*" capture="environment" style="display:none" onchange="uploadFotoBukti('${_strKData?.id||''}','transfer',this)"><div style="border:1px solid var(--border);border-radius:14px;overflow:auto;max-height:480px;background:#e8f2f9;padding:14px"><div style="width:360px;margin:0 auto">${html}</div></div>`; document.getElementById('strukModal').classList.add('show'); }
 
     // [NEW] Cek Transaksi Publik - dipanggil dari #publicCekPage (index.html), TANPA login.
     // Sama sekali tidak menyentuh currentUser/sessionToken. Cetak strukturnya pakai ULANG
@@ -7893,6 +7893,132 @@
       if (document.querySelector('.swal2-container') || document.getElementById('mainApp')?.classList.contains('hidden')) return;
       e.preventDefault(); openGlobalSearch();
     });
+
+    // ===================== [v36] CEK SELISIH SETORAN · EXCEL TAMBAHAN · STRUK 58MM =====================
+    // --- Cek Selisih Setoran: bandingkan COD per sales (dari transaksi) dengan setoran yang tersimpan
+    function _csRows(tgl) {
+      const norm = s => String(s || '').toLowerCase().trim();
+      const day = allTrxList.filter(t => (t.tgl || '').substring(0, 10) === tgl);
+      const recs = (setoranHistory || []).map(normalizeSetoranRecord).filter(r => r && (r.tgl || '').substring(0, 10) === tgl);
+      const names = new Map();
+      day.forEach(t => { if (t.sales && _metodeAmt(t, 'cod') > 0) names.set(norm(t.sales), t.sales); });
+      recs.forEach(r => { if (r.sales) names.set(norm(r.sales), r.sales); });
+      const rows = [];
+      names.forEach((nm, k) => {
+        const cod = day.filter(t => norm(t.sales) === k).reduce((s, t) => s + _metodeAmt(t, 'cod'), 0);
+        const rec = recs.find(r => norm(r.sales) === k);
+        let st = 'belum', selisih = 0, setor = 0, total = 0;
+        if (rec) {
+          setor = rec.setor || 0; total = rec.total || 0; selisih = total - setor;
+          if (Math.abs((rec.grandTotal || 0) - cod) >= 1) st = 'berubah';
+          else if (Math.abs(selisih) < 1) st = 'cocok';
+          else st = selisih > 0 ? 'kurang' : 'lebih';
+        }
+        rows.push({ nama: nm, cod, total, setor, selisih, st });
+      });
+      const ord = { belum: 0, kurang: 1, berubah: 2, lebih: 3, cocok: 4 };
+      rows.sort((a, b) => (ord[a.st] - ord[b.st]) || a.nama.localeCompare(b.nama));
+      return rows;
+    }
+    function _csHtml(tgl) {
+      const rows = _csRows(tgl);
+      const M = { belum:['Belum setor','#DC2626'], kurang:['Kurang','#DC2626'], berubah:['COD berubah','#D97706'], lebih:['Lebih','#D97706'], cocok:['Cocok','#16A34A'] };
+      const cnt = k => rows.filter(r => r.st === k).length;
+      const bad = rows.filter(r => r.st !== 'cocok').length;
+      const chip = (t, c) => `<span style="display:inline-block;padding:3px 9px;border-radius:999px;background:${c};color:#fff;font-size:.68rem;font-weight:800">${t}</span>`;
+      const head = `<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:2px 0 10px">${chip(cnt('cocok') + ' cocok', '#16A34A')}${bad ? chip(bad + ' perlu dicek', '#DC2626') : ''}</div>`;
+      if (!rows.length) return head + '<div style="padding:22px 6px;font-size:.85rem;opacity:.8">Tidak ada transaksi COD maupun setoran pada tanggal ini.</div>';
+      const card = r => { const m = M[r.st]; return `<div style="text-align:left;border:1px solid rgba(128,150,180,.35);border-left:4px solid ${m[1]};border-radius:12px;padding:9px 11px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="font-size:.9rem">${esc(r.nama)}</b>${chip(m[0], m[1])}</div>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:2px 10px;font-size:.78rem;margin-top:6px">
+          <span style="opacity:.75">COD dari transaksi</span><b style="text-align:right">${fmtRp(r.cod)}</b>
+          <span style="opacity:.75">Total setoran seharusnya</span><b style="text-align:right">${r.st === 'belum' ? '-' : fmtRp(r.total)}</b>
+          <span style="opacity:.75">Disetor</span><b style="text-align:right">${r.st === 'belum' ? '-' : fmtRp(r.setor)}</b>
+          <span style="opacity:.75">Selisih</span><b style="text-align:right;color:${r.selisih ? m[1] : 'inherit'}">${r.st === 'belum' ? '-' : (r.selisih > 0 ? 'Kurang ' : r.selisih < 0 ? 'Lebih ' : '') + fmtRp(Math.abs(r.selisih))}</b></div>
+        ${r.st === 'berubah' ? '<div style="font-size:.7rem;margin-top:5px;color:#D97706;font-weight:700">COD transaksi sudah berubah sejak setoran disimpan. Buka Setoran lalu simpan ulang.</div>' : ''}</div>`; };
+      return head + rows.map(card).join('');
+    }
+    function openCekSelisih(tgl) {
+      tgl = tgl || localDateStr();
+      Swal.fire({
+        title: 'Cek Selisih Setoran',
+        html: `<div style="margin-bottom:8px"><input type="date" id="csTgl" value="${tgl}" class="swal2-input" style="margin:0 auto;max-width:200px;height:38px;font-size:.85rem"></div><div id="csBody" style="max-height:52vh;overflow:auto;padding:2px">${_csHtml(tgl)}</div>`,
+        showConfirmButton: false, showCloseButton: true,
+        didOpen: () => { const i = document.getElementById('csTgl'); i.addEventListener('change', () => { document.getElementById('csBody').innerHTML = _csHtml(i.value || localDateStr()); }); }
+      });
+    }
+
+    // --- Excel tambahan: Pelanggan, Produk, Rekap Setoran
+    async function _xlsxSave(rows, sheet, file) {
+      if (typeof XLSX === 'undefined') { Swal.fire('Mohon tunggu', 'Komponen Excel masih dimuat, coba lagi sebentar.', 'info'); return; }
+      const ws = XLSX.utils.aoa_to_sheet(rows); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, sheet); XLSX.writeFile(wb, file + '-' + localDateStr() + '.xlsx');
+    }
+    function exportPelangganExcel() {
+      const rows = [['No', 'Nama', 'Nomor WA', 'Alamat']];
+      allCustomers.slice().sort((a, b) => String(a).localeCompare(String(b), 'id')).forEach((c, i) => rows.push([i + 1, c, getCustomerPhone(c) || '', getCustomerAddress(c) || '']));
+      _xlsxSave(rows, 'Pelanggan', 'pelanggan');
+    }
+    function exportProdukExcel() {
+      const rows = [['SKU', 'Nama', 'Barcode', 'Harga Jual', 'Harga Modal']];
+      products.forEach(p => rows.push([p.sku, p.nama || '', p.barcode || '', p.jual || p.harga || 0, p.modal || p.hargaModal || 0]));
+      _xlsxSave(rows, 'Produk', 'produk');
+    }
+    function exportRekapSetoranExcel() {
+      const rows = [['Tanggal', 'Sales', 'COD', 'Makan', 'Tips', 'Parkir', 'Bensin', 'Flazz', 'Transfer', 'Cicilan', 'Tagihan', 'Total', 'Setor', 'Selisih']];
+      (setoranHistory || []).map(normalizeSetoranRecord).sort((a, b) => String(b.tgl).localeCompare(String(a.tgl))).forEach(r => rows.push([String(r.tgl).substring(0, 10), r.sales, r.grandTotal, r.makan, r.tips, r.parkir, r.bensin, r.flazz, r.transfer, r.cicilan, r.tagihan, r.total, r.setor, r.selisih]));
+      _xlsxSave(rows, 'Rekap Setoran', 'rekap-setoran');
+    }
+
+    // --- Struk 58mm (printer termal): 32 karakter per baris, siap dicetak lewat dialog cetak / aplikasi printer apa pun
+    function _s58Build(data) {
+      const W = 32, trx = data.trx, items = data.items || [];
+      const ctr = s => { s = String(s); return ' '.repeat(Math.max(0, Math.floor((W - s.length) / 2))) + s; };
+      const lr = (a, b) => { a = String(a); b = String(b); const sp = W - a.length - b.length; return sp >= 1 ? a + ' '.repeat(sp) + b : a + '\n' + ' '.repeat(Math.max(0, W - b.length)) + b; };
+      const wrap = (s, n) => { const out = []; s = String(s); while (s.length > n) { let cut = s.lastIndexOf(' ', n); if (cut < 5) cut = n; out.push(s.slice(0, cut)); s = s.slice(cut).trim(); } out.push(s); return out; };
+      const rp = n => 'Rp' + Math.round(n || 0).toLocaleString('id-ID');
+      const hr = '-'.repeat(W), L = [];
+      wrap(settings.namaToko || 'Tirta Kencana', W).forEach(x => L.push(ctr(x)));
+      L.push(ctr('STRUK PENJUALAN')); L.push(hr);
+      L.push('No  : ' + trx.id); L.push('Tgl : ' + fmtDate(trx.tgl)); wrap('Plg : ' + (trx.customer || '-'), W).forEach(x => L.push(x)); L.push('Sls : ' + (trx.sales || '-')); L.push(hr);
+      let qty = 0;
+      items.forEach(it => { const per = it.nettPer !== undefined ? it.nettPer : (it.harga || 0) - (it.discRpPer || 0); qty += (it.qty || 0);
+        wrap(it.nama || '-', W).forEach(x => L.push(x)); L.push(lr('  ' + (it.qty || 0) + ' x ' + rp(per), rp(per * (it.qty || 1)))); });
+      L.push(hr); L.push(lr('Gross', rp(trx.gross)));
+      if (trx.diskon) L.push(lr('Diskon', '-' + rp(trx.diskon)));
+      if (trx.biayaJml > 0) L.push(lr(trx.biayaKet || 'Biaya', '+' + rp(trx.biayaJml)));
+      L.push(lr('TOTAL (' + qty + ' pcs)', rp(trx.nett)));
+      let pay = ''; try { pay = _payText(trx) || ''; } catch (e) {}
+      if (pay) L.push(lr('Bayar', pay));
+      L.push(hr); wrap(settings.bottomLine || 'Terima kasih', W).forEach(x => L.push(ctr(x))); L.push('');
+      return L.join('\n');
+    }
+    function cetakStruk58() {
+      if (!_strKData) return; const txt = _s58Build(_strKData);
+      Swal.fire({
+        title: 'Struk 58mm',
+        html: `<div style="background:#fff;color:#111;border-radius:6px;padding:10px 8px;margin:0 auto;width:236px;box-shadow:0 2px 12px rgba(0,0,0,.35);text-align:left;max-height:50vh;overflow:auto"><pre id="s58pre" style="margin:0;font:11.5px/1.35 'Courier New',monospace;color:#111;white-space:pre;background:none;border:0;padding:0">${esc(txt)}</pre></div>`,
+        showCancelButton: true, confirmButtonText: '🖨️ Cetak', cancelButtonText: 'Tutup'
+      }).then(r => {
+        if (!r.isConfirmed) return;
+        const w = window.open('', '_blank', 'width=320,height=600'); if (!w) return Swal.fire('Pop-up diblokir', 'Izinkan pop-up lalu coba lagi.', 'warning');
+        w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Struk</title><style>@page{size:58mm auto;margin:0}html,body{margin:0;padding:0;background:#fff}pre{margin:0;padding:2mm;width:58mm;box-sizing:border-box;font:11px/1.3 "Courier New",monospace;color:#000;white-space:pre}</style></head><body><pre>' + esc(txt) + '</pre><script>window.onload=function(){setTimeout(function(){window.print()},200)}<\/script></body></html>');
+        w.document.close();
+      });
+    }
+
+    // --- Tombol tambahan disisipkan otomatis ke halaman terkait (tanpa mengubah kode halaman)
+    function _v36Inject() {
+      try {
+        const ca = document.getElementById('contentArea'); if (!ca) return;
+        const add = (host, id, html, before) => { if (!host || document.getElementById(id)) return; const t = document.createElement('div'); t.innerHTML = html; const b = t.firstElementChild; b.id = id; if (before && before.parentNode === host) host.insertBefore(b, before); else host.appendChild(b); };
+        const pg = currentPage;
+        if (pg === 'setoran') add(ca.querySelector('.stp-hero-actions'), 'v36Cs', '<button class="stp-hbtn" onclick="openCekSelisih()"><i class="fas fa-scale-balanced"></i> Cek Selisih</button>');
+        if (pg === 'rekapsetoran') { const h = ca.querySelector('.rsp-hero-top'); add(h, 'v36Cs2', '<div class="rsp-hero-actions" style="display:flex;gap:6px;flex-wrap:wrap"><button class="stp-hbtn" onclick="openCekSelisih()"><i class="fas fa-scale-balanced"></i> Cek Selisih</button><button class="stp-hbtn" onclick="exportRekapSetoranExcel()"><i class="fas fa-file-excel"></i> Excel</button></div>'); }
+        if (pg === 'pelanggan') { const b = ca.querySelector('[onclick^="btnSyncPelangganToSheet"]'); add(b && b.parentNode, 'v36Xp', '<button class="btn btn-outline btn-sm" onclick="exportPelangganExcel()"><i class="fas fa-file-excel"></i> Excel</button>', b); }
+        if (pg === 'produk') { const b = ca.querySelector('[onclick^="btnSyncProdukFromSheet"]'); add(b && b.parentNode, 'v36Xd', '<button class="btn btn-outline btn-sm" onclick="exportProdukExcel()" style="border-radius:10px;padding:7px 12px;font-size:0.72rem"><i class="fas fa-file-excel"></i> Excel</button>', b); }
+      } catch (e) {}
+    }
+    (function () { let t = null; const start = () => { const ca = document.getElementById('contentArea'); if (!ca) return setTimeout(start, 500); new MutationObserver(() => { clearTimeout(t); t = setTimeout(_v36Inject, 40); }).observe(ca, { childList: true, subtree: true }); }; if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start(); })();
 
     // ========== SARAN ORDER (prediksi dari penjualan 28 hari terakhir) ==========
     const PRED_COVER_KEY = 'tirtaPredCover';
