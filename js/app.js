@@ -3181,6 +3181,80 @@
       document.getElementById('strukModal').classList.add('show');
     }
     function closeStruk() { document.getElementById('strukModal').classList.remove('show'); }
+
+    // ===== v38: Preview struk FIT-SCREEN (tanpa digeser) =====
+    // Semua modal preview (#strukModal) otomatis: tombol aksi dipadatkan, preview diskalakan
+    // (transform) agar muat penuh satu layar. HP portrait = atas-bawah, landscape/web = kiri-kanan.
+    // Hanya tampilan: print/PDF/WA tetap membangun struk sendiri di area offscreen (tidak terpengaruh).
+    (function () {
+      const CSS = `
+      #strukContent.sfit{display:flex!important;flex-direction:column;overflow:hidden!important;box-sizing:border-box;padding:12px!important;
+        width:min(94vw,520px)!important;max-width:none!important;height:calc(var(--sfh,100vh) - 16px)!important;max-height:calc(var(--sfh,100vh) - 16px)!important}
+      #strukContent.sfit.sfit-land{flex-direction:row;gap:12px;width:min(96vw,980px)!important}
+      #strukContent.sfit .sfit-l{display:flex;flex-direction:column;flex:none;min-width:0;min-height:0}
+      #strukContent.sfit.sfit-land .sfit-l{width:40%;max-width:340px;overflow-y:auto}
+      #strukContent.sfit .modal-header{margin-bottom:6px;flex:none}
+      #strukContent.sfit .modal-header h2{font-size:.92rem}
+      #strukContent.sfit .sfit-l>button.btn{height:40px!important;margin:0 0 4px!important;font-size:.85rem!important}
+      #strukContent.sfit .action-grid{gap:6px!important;margin:6px 0!important;flex:none}
+      #strukContent.sfit .action-card{padding:6px 4px!important;min-height:0!important;border-radius:12px!important;gap:2px!important}
+      #strukContent.sfit .action-card>div:first-child{font-size:20px!important;line-height:1.1!important}
+      #strukContent.sfit .action-card>div:last-child{font-size:11px!important;line-height:1.15!important}
+      #strukContent.sfit .sfit-r{flex:1 1 0;min-height:0;min-width:0;overflow:hidden!important;max-height:none!important;padding:6px!important;
+        display:flex!important;justify-content:center;align-items:flex-start;box-sizing:border-box}
+      #strukContent.sfit .sfit-r.sfit-scroll{overflow-y:auto!important}
+      #strukContent.sfit .sfit-in{flex:none;width:max-content;transform-origin:top center}`;
+      let st = null, busy = false;
+      function injectCss() {
+        if (st) return; st = document.createElement('style'); st.id = 'sfitCss'; st.textContent = CSS; document.head.appendChild(st);
+      }
+      function fit() {
+        const c = document.getElementById('strukContent'); if (!c || !c.classList.contains('sfit')) return;
+        c.style.setProperty('--sfh', window.innerHeight + 'px');
+        c.classList.toggle('sfit-land', window.innerWidth > window.innerHeight * 1.25);
+        const r = c.querySelector('.sfit-r'), i = r && r.querySelector('.sfit-in'); if (!i) return;
+        i.querySelectorAll('[style*="zoom"]').forEach(z => { z.style.zoom = '1'; });
+        i.style.transform = 'none'; i.style.marginBottom = '0';
+        const w = i.offsetWidth, h = i.offsetHeight; if (!w || !h) return;
+        const cs = getComputedStyle(r);
+        const aw = r.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+        const ah = r.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+        if (aw <= 0 || ah <= 0) return;
+        let k = Math.min(aw / w, ah / h, 1);
+        // struk sangat panjang (mis. rekap puluhan baris): jangan dikecilkan sampai tak terbaca -> fit lebar + boleh digulir
+        const scroll = k < 0.4; if (scroll) k = Math.min(aw / w, 1);
+        r.classList.toggle('sfit-scroll', scroll);
+        i.style.transform = 'scale(' + k.toFixed(4) + ')';
+        i.style.marginBottom = (h * (k - 1)) + 'px';
+      }
+      function setup() {
+        if (busy) return; const c = document.getElementById('strukContent'); if (!c) return;
+        if (c.querySelector(':scope > .sfit-l')) { fit(); return; }
+        const kids = Array.from(c.children);
+        const box = kids.slice().reverse().find(e => e.tagName === 'DIV' && /e8f2f9/i.test(e.getAttribute('style') || ''));
+        if (!box) { c.classList.remove('sfit'); return; }
+        busy = true;
+        try {
+          injectCss();
+          const L = document.createElement('div'); L.className = 'sfit-l';
+          kids.forEach(k => { if (k !== box) L.appendChild(k); });
+          const I = document.createElement('div'); I.className = 'sfit-in';
+          while (box.firstChild) I.appendChild(box.firstChild);
+          box.classList.add('sfit-r'); box.appendChild(I);
+          c.insertBefore(L, box); c.classList.add('sfit');
+          if (window.ResizeObserver) { try { new ResizeObserver(() => { if (!busy) fit(); }).observe(I); } catch (e) {} }
+        } finally { busy = false; }
+        fit(); setTimeout(fit, 120); setTimeout(fit, 500);
+      }
+      window._fitStruk = fit;
+      function boot() {
+        const c = document.getElementById('strukContent'), m = document.getElementById('strukModal'); if (!c || !m) return;
+        new MutationObserver(() => setup()).observe(c, { childList: true });
+        new MutationObserver(() => { if (m.classList.contains('show')) setup(); }).observe(m, { attributes: true, attributeFilter: ['class'] });
+        window.addEventListener('resize', fit); window.addEventListener('orientationchange', () => setTimeout(fit, 250));
+      }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+    })();
     function doStrukPrint() { if (!_strKData) return; const win = window.open('','_blank','width=420,height=700'); win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"><title>Struk</title></head><body style="margin:16px;background:#e8f2f9;display:flex;justify-content:center">'); win.document.write(buildStrukHTML(_strKData)); win.document.write('<script>window.onload=function(){window.print();}<\/script></body></html>'); win.document.close(); }
     function doStrukPng() { if (!_strKData) return; const off = document.getElementById('strukOffscreen'); off.style.cssText = 'position:fixed;left:-9999px;top:0;pointer-events:none;z-index:-1;background:#e8f2f9;padding:20px'; const ns = (_strKData.trx.status||'').toLowerCase(); const render = () => { off.innerHTML = buildStrukHTML(_strKData); const el = off.querySelector('#struk-root'); if (!el) return Swal.fire('Error','Gagal render','error'); setTimeout(() => { html2canvas(el, {backgroundColor:'#e8f2f9',scale:2.5,useCORS:true,allowTaint:true,logging:false}).then(canvas => { const a = document.createElement('a'); a.download = 'Struk-'+(_strKData.trx.id||'trx')+'.png'; a.href = canvas.toDataURL('image/png'); document.body.appendChild(a); a.click(); document.body.removeChild(a); off.innerHTML = ''; Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, icon: 'success', title: 'Struk tersimpan' }); }).catch(err => { off.innerHTML=''; Swal.fire('Error',err.message,'error'); }); }, 400); }; if (ns === 'qris' && _qrisUrl && _qrisUrl.indexOf('data:') !== 0) { _ensureQrisDataUrl(_qrisUrl).then(dataUrl => { const orig = _qrisUrl; _qrisUrl = dataUrl || ''; render(); _qrisUrl = orig; if (!dataUrl) Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 4500, icon: 'warning', title: 'Gambar QRIS gagal disertakan di PNG. Upload ulang QRIS lewat menu Pengaturan agar selalu muncul saat download.' }); }); } else { render(); } }
     // [NEW] Footer pesan struk WA - dipakai baik oleh "WhatsApp" (share generik)
@@ -7997,8 +8071,13 @@
       if (!_strKData) return; const txt = _s58Build(_strKData);
       Swal.fire({
         title: 'Struk 58mm',
-        html: `<div style="background:#fff;color:#111;border-radius:6px;padding:10px 8px;margin:0 auto;width:236px;box-shadow:0 2px 12px rgba(0,0,0,.35);text-align:left;max-height:50vh;overflow:auto"><pre id="s58pre" style="margin:0;font:11.5px/1.35 'Courier New',monospace;color:#111;white-space:pre;background:none;border:0;padding:0">${esc(txt)}</pre></div>`,
-        showCancelButton: true, confirmButtonText: '🖨️ Cetak', cancelButtonText: 'Tutup'
+        html: `<div style="background:#fff;color:#111;border-radius:6px;padding:10px 8px;margin:0 auto;width:236px;box-shadow:0 2px 12px rgba(0,0,0,.35);text-align:left;overflow:hidden"><pre id="s58pre" style="margin:0;font:11.5px/1.35 'Courier New',monospace;color:#111;white-space:pre;background:none;border:0;padding:0">${esc(txt)}</pre></div>`,
+        showCancelButton: true, confirmButtonText: '🖨️ Cetak', cancelButtonText: 'Tutup',
+        didOpen: () => { try {
+          const p = document.getElementById('s58pre'), box = p && p.parentElement; if (!box) return;
+          const h = box.offsetHeight, avail = window.innerHeight - 230;
+          if (h > avail && avail > 120) { const k = Math.max(0.45, avail / h); box.style.transformOrigin = 'top center'; box.style.transform = 'scale(' + k.toFixed(3) + ')'; box.style.marginBottom = (h * (k - 1)) + 'px'; if (k * h > avail) { box.style.transform = 'none'; box.style.marginBottom = '0'; box.style.maxHeight = avail + 'px'; box.style.overflow = 'auto'; } }
+        } catch (e) {} }
       }).then(r => {
         if (!r.isConfirmed) return;
         const w = window.open('', '_blank', 'width=320,height=600'); if (!w) return Swal.fire('Pop-up diblokir', 'Izinkan pop-up lalu coba lagi.', 'warning');
