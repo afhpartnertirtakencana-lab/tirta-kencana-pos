@@ -298,11 +298,31 @@
     let _syncQueue = [];
     let _syncProcessing = false;
 
+    // [v39] Data yang masih ANTRE kirim ke server jangan ikut terhapus saat daftar lokal diganti data server
+    // (penyebab "input tidak masuk": entri baru hilang dari layar setelah sinkron, padahal belum sampai ke server).
+    function _keepPending(srv, loc, fns) {
+      try {
+        const ids = new Set((_syncQueue || []).filter(q => fns.indexOf(q.fn) >= 0 && q.args && q.args[0] && q.args[0].id != null).map(q => String(q.args[0].id)));
+        if (!ids.size || !Array.isArray(srv)) return srv;
+        const have = new Set(srv.map(x => String(x && x.id)));
+        const extra = (loc || []).filter(x => x && ids.has(String(x.id)) && !have.has(String(x.id)));
+        return extra.length ? extra.concat(srv) : srv;
+      } catch (e) { return srv; }
+    }
+    // [v39] Penyimpanan HP penuh (iPhone batas ±5MB): sebelumnya gagal diam-diam. Sekarang diberi peringatan jelas.
+    let _lastFullToast = 0;
+    function _storageFull(e) {
+      console.warn('localStorage gagal menyimpan:', e && e.message);
+      if (Date.now() - _lastFullToast < 60000) return; _lastFullToast = Date.now();
+      try { Swal.fire({ icon: 'warning', title: 'Penyimpanan HP penuh', html: '<div style="font-size:.85rem;text-align:left">Data terbaru <b>mungkin tidak tersimpan di HP ini</b>. Pastikan internet aktif agar terkirim ke server, lalu hubungi admin untuk membersihkan data lama.</div>' }); } catch (x) {}
+    }
+    const _IS_IOS = (typeof navigator !== 'undefined') && (/iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
+    let _syncProcStart = 0;
     function _loadSyncQueue() {
       try { _syncQueue = JSON.parse(localStorage.getItem(SYNC_QUEUE_KEY) || '[]'); } catch(e) { _syncQueue = []; }
     }
     function _saveSyncQueueState() {
-      localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(_syncQueue));
+      try { localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(_syncQueue)); } catch (e) { _storageFull(e); }
       updateSyncBadge();
     }
     // Dipanggil dari semua tempat yang tadinya langsung gasCall(...) untuk simpan
@@ -316,10 +336,10 @@
       return item.qid;
     }
     async function processSyncQueue() {
-      if (_syncProcessing) return; // cegah 2 proses jalan bersamaan (dobel kirim)
-      if (typeof navigator !== 'undefined' && navigator.onLine === false) { updateSyncBadge(); return; }
+      if (_syncProcessing && Date.now() - _syncProcStart < 90000) return; // cegah 2 proses jalan bersamaan; kalau macet >90 dtk (iPhone membekukan app saat kirim) boleh jalan lagi
+      if (typeof navigator !== 'undefined' && navigator.onLine === false && !_IS_IOS) { updateSyncBadge(); return; } // iPhone sering salah lapor offline -> tetap dicoba kirim
       if (_syncQueue.length === 0) { updateSyncBadge(); return; }
-      _syncProcessing = true;
+      _syncProcessing = true; _syncProcStart = Date.now();
       const snapshot = _syncQueue.slice();
       const MAX_AUTO_ATTEMPTS = 15; // [NEW] setelah gagal 15x otomatis (±6 menit), berhenti coba sendiri -
                                      // tetap ada di antrian/badge, tapi nunggu diklik manual (mencegah retry
@@ -422,6 +442,9 @@
       window.addEventListener('online', () => { console.log('Koneksi kembali online, proses antrian sync...'); processSyncQueue(); });
       setInterval(() => { if (_syncQueue.length > 0) processSyncQueue(); }, 25000);
       window.addEventListener('offline', () => updateSyncBadge());
+      // [v39] iPhone membekukan app di background: begitu app dibuka lagi, langsung lanjutkan kirim antrian
+      document.addEventListener('visibilitychange', () => { if (!document.hidden && _syncQueue.length > 0) setTimeout(processSyncQueue, 300); });
+      window.addEventListener('pageshow', () => { if (_syncQueue.length > 0) setTimeout(processSyncQueue, 300); });
       let _lastStaleToast = 0;
       setInterval(() => {
         updateSyncBadge();
@@ -976,7 +999,7 @@
     let _strKData = null, _lastSetoranPayload = null, _lastInputBarangStruk = null;
     let masterStockHistory = {};
 
-    function saveLocalData() { localStorage.setItem('tirtaFullData', JSON.stringify({ products, pelanggan, allTrxList, allCustomers, stockInHistory, setoranHistory, drivers, settings, allUsers, masterStockHistory })); }
+    function saveLocalData() { try { localStorage.setItem('tirtaFullData', JSON.stringify({ products, pelanggan, allTrxList, allCustomers, stockInHistory, setoranHistory, drivers, settings, allUsers, masterStockHistory })); } catch (e) { _storageFull(e); } }
     
     // [CLEANUP] Fungsi syncMasterStockToSheet() DIHAPUS - ternyata backend-nya tidak
     // pernah ada (selalu gagal diam-diam), dan datanya (masterStockHistory) juga
@@ -1268,12 +1291,12 @@
           // SERVER (sumber kebenaran bersama - supaya edit item dari device lain
           // ikut ter-refresh di sini juga); cache lokal cuma jadi fallback kalau
           // server kebetulan tidak mengembalikan item sama sekali.
-          allTrxList = trx.map(t => {
+          allTrxList = _keepPending(trx.map(t => {
             if (Array.isArray(t.items) && t.items.length > 0) return t;
             const existing = localMap.get(t.id);
             if (existing && Array.isArray(existing.items) && existing.items.length > 0) return { ...t, items: existing.items };
             return t;
-          });
+          }), allTrxList, ['saveTrx', 'upsertTrx']);
           allTrxList.sort((a, b) => (b.tgl || '').localeCompare(a.tgl || '') || (b.id || '').localeCompare(a.id || ''));
         }
         if (set && typeof set === 'object') {
@@ -1296,7 +1319,7 @@
           }
         }
         if (Array.isArray(stockIn) && stockIn.length > 0) {
-          stockInHistory = stockIn;
+          stockInHistory = _keepPending(stockIn, stockInHistory, ['saveInputBarang']);
         }
         if (Array.isArray(users) && users.length > 0) {
           const localMap = new Map(allUsers.map(u => [u.name, u]));
@@ -9323,7 +9346,7 @@
         Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:1500, icon:'success', title:'Data dihapus' });
       }
     }
-    async function syncStockHistoryFromGAS() { try { const data = await gasCall('getInputBarangHistory', []); if (Array.isArray(data) && data.length > 0) { stockInHistory = data; saveLocalData(); if (document.getElementById('stkHistory')) renderStockHistory(); } } catch(e) { console.warn('Gagal ambil riwayat input barang:', e); } }
+    async function syncStockHistoryFromGAS() { try { const data = await gasCall('getInputBarangHistory', []); if (Array.isArray(data) && data.length > 0) { stockInHistory = _keepPending(data, stockInHistory, ['saveInputBarang']); saveLocalData(); if (document.getElementById('stkHistory')) renderStockHistory(); } } catch(e) { console.warn('Gagal ambil riwayat input barang:', e); } }
     // [NEW] Sync riwayat setoran dari Google Sheets secara independen (tidak ikut Promise.all utama agar tidak mengganggu sync lain bila endpoint belum tersedia di backend)
     // [NEW] Normalisasi record setoran dari Google Sheets: kolom sheet memakai nama berbeda
     // (UangMak, Ekstra1Li, Ekstra1, Ekstra2Li, Ekstra2, CicilanHu, GrandTot, dst.) dari field internal aplikasi.
